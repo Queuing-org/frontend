@@ -6,9 +6,10 @@ import NicknameEditForm from "@/src/features/user/profile/ui/NicknameEditForm";
 import { useRouter } from "next/navigation";
 import IsLogin from "@/src/entities/user/ui/IsLogin";
 import CreateRoomTest from "@/src/features/room/create/ui/CreateRoomTest";
-import FriendsList from "@/src/features/friend/ui/FriendsList";
+import FriendsList from "@/src/features/friend/list/ui/FriendsList";
 import RoomsListTest from "@/src/features/room/list/ui/RoomListTest";
 import UserSearchBox from "@/src/features/user/search/ui/UserSearchBox";
+import FriendsRequestList from "@/src/features/friend/requests/ui/FriendsReceivedRequestList";
 
 export default function TestPage() {
   const router = useRouter();
@@ -34,7 +35,12 @@ export default function TestPage() {
           <RoomsListTest />
         </div>
         <div className="flex-1">
-          <FriendsList />
+          <div>
+            <FriendsRequestList />
+          </div>
+          <div className="pt-10">
+            <FriendsList />
+          </div>
         </div>
       </div>
 
