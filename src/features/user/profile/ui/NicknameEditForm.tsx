@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUpdateMe } from "../hooks/useUpdateMe";
-import CheckNicknameButton from "@/src/features/user-profile/ui/CheckNicknameButton";
+import CheckNicknameButton from "@/src/features/user/profile/ui/CheckNicknameButton";
 
 export default function NicknameEditForm() {
   const { mutate, isPending, error } = useUpdateMe();
