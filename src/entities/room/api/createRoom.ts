@@ -1,6 +1,5 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
-import { ApiError } from "@/src/shared/api/api-error";
 import type { CreateRoomPayload, CreateRoomResult } from "./types";
 
 type CreateRoomResponse = ApiResponse<{ slug: string }>;

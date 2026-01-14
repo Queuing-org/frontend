@@ -1,13 +1,27 @@
 "use client";
 
+import SendFriendRequestButton from "@/src/features/friend/requests/ui/SendFriendRequestButton";
 import type { SearchUser } from "../model/types";
 
 export default function UserSearchCard({ user }: { user: SearchUser }) {
   return (
-    <div className="border p-2">
-      <div className="text-sm">{user.nickname}</div>
-      <div className="text-xs text-gray-600">{user.slug}</div>
-      <div className="text-xs">relationship: {user.relationship}</div>
+    <div className="border p-3 text-black flex justify-between">
+      <div className="space-y-1 flex-1 min-w-0">
+        <div className="text-sm">
+          <span className="font-semibold">닉네임:</span> {user.nickname}
+        </div>
+        <div className="text-sm">
+          <span className="font-semibold">슬러그:</span> {user.slug}
+        </div>
+        <div className="text-sm">
+          <span className="font-semibold">relationship:</span>{" "}
+          {user.relationship}
+        </div>
+      </div>
+
+      <div>
+        <SendFriendRequestButton targetSlug={user.slug} />
+      </div>
     </div>
   );
 }
