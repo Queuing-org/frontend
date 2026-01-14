@@ -20,3 +20,7 @@ export type FetchReceivedFriendRequestsParams = {
   lastId?: number;
   limit?: number;
 };
+
+export type AcceptFriendRequestParams = {
+  requestId: number;
+};

@@ -5,13 +5,14 @@ import FriendCard from "./FriendCard";
 
 export default function FriendsList() {
   const { data, isLoading, isError } = useFriendsList({ size: 20 });
+  console.log(data);
 
   if (isLoading)
     return <div className="border p-4 text-black">친구목록 로딩중...</div>;
   if (isError)
     return <div className="border p-4 text-black">친구목록 로딩 실패</div>;
 
-  const friends = data?.friends ?? [];
+  const friends = data?.items ?? [];
 
   return (
     <div className="border p-4 space-y-3 text-black">

@@ -6,6 +6,6 @@ export type Friend = {
 };
 
 export type FriendsListResponse = {
-  friends: Friend[];
+  items: Friend[];
   hasNext: boolean;
 };
