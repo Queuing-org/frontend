@@ -1,4 +1,3 @@
-// features/friend/requests/api/sendFriendRequest.ts
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
 import type { SendFriendRequestPayload } from "../model/types";

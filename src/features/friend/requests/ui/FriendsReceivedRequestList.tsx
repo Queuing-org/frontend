@@ -1,10 +1,10 @@
 "use client";
 
-import { useFetchRecivedFriendRequest } from "../hooks/useFetchRecivedFriendRequest";
+import { useFetchReceivedFriendRequest } from "../hooks/useFetchReceivedFriendRequest";
 import FriendRequestCard from "./FriendRequestCard";
 
 export default function FriendsRequestList() {
-  const { data, isLoading, isError } = useFetchRecivedFriendRequest({
+  const { data, isLoading, isError } = useFetchReceivedFriendRequest({
     limit: 20,
   });
 
@@ -25,7 +25,9 @@ export default function FriendsRequestList() {
       ) : (
         <ul className="space-y-2">
           {recived.map((item) => (
-            <FriendRequestCard key={item.requestId} item={item} />
+            <li key={item.requestId}>
+              <FriendRequestCard item={item} />
+            </li>
           ))}
         </ul>
       )}

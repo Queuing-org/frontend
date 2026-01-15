@@ -1,5 +1,5 @@
 export type Friend = {
-  id: string;
+  id: number;
   nickname: string;
   slug: string;
   profileImageUrl: string;

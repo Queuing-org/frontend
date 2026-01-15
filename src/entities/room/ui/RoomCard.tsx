@@ -1,10 +1,11 @@
-type RoomTag = { slug: string; name: string };
+import type { ReactNode } from "react";
+import type { RoomTag } from "@/src/entities/room/model/types";
 
 type Props = {
   title: string;
   slug: string;
   tags?: RoomTag[];
-  actions?: React.ReactNode;
+  actions?: ReactNode;
 };
 
 export default function RoomCard({ title, slug, tags, actions }: Props) {

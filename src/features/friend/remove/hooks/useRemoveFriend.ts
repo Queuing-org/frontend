@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { removeFriend } from "../api/removeFriend";
-import { RemoveFriendParams } from "../model/types";
+import type { RemoveFriendParams } from "../model/types";
 
 export function useRemoveFriend() {
   const qc = useQueryClient();

@@ -1,20 +1,20 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchReceivedFriendRequests } from "../api/fetchRecivedFriendRequests";
+import { fetchReceivedFriendRequests } from "../api/fetchReceivedFriendRequests";
 import {
   FetchReceivedFriendRequestsParams,
   ReceivedFriendRequestsResponse,
 } from "../model/types";
-import { ApiError } from "next/dist/server/api-utils";
+import { ApiError } from "@/src/shared/api/api-error";
 
-export function useFetchRecivedFriendRequest(
+export function useFetchReceivedFriendRequest(
   params?: FetchReceivedFriendRequestsParams
 ) {
   return useQuery<ReceivedFriendRequestsResponse, ApiError>({
     queryKey: [
       "friendRequests",
-      "recived",
+      "received",
       params?.lastId ?? null,
       params?.limit ?? null,
     ],
