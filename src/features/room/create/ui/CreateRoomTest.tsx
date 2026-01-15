@@ -2,13 +2,33 @@
 
 import { useState } from "react";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
+import { useRoomTags } from "@/src/entities/room/hooks/useRoomTags";
+
+const MAX_TAGS = 5;
 
 export default function CreateRoomTest() {
   const { mutate, isPending, error, data } = useCreateRoom();
+  const {
+    data: roomTags,
+    isLoading: tagsLoading,
+    isError: tagsError,
+  } = useRoomTags();
 
   const [title, setTitle] = useState("");
-  const [password, setPassword] = useState(""); // optional
-  const [tagSlug, setTagSlug] = useState("lo-fi"); // tags: ["lo-fi"]
+  const [password, setPassword] = useState("");
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+
+  const toggleTag = (slug: string) => {
+    setSelectedTagSlugs((prev) => {
+      const exists = prev.includes(slug);
+
+      if (exists) return prev.filter((s) => s !== slug);
+
+      if (prev.length >= MAX_TAGS) return prev;
+
+      return [...prev, slug];
+    });
+  };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,15 +39,17 @@ export default function CreateRoomTest() {
     mutate({
       title: t,
       password: password.trim() ? password.trim() : undefined,
-      tags: tagSlug.trim() ? [tagSlug.trim()] : [],
+      tags: selectedTagSlugs,
     });
   };
+
+  const tags = roomTags ?? [];
 
   return (
     <div className="border p-4 space-y-3 text-black">
       <div className="text-sm font-semibold">방 생성 테스트</div>
 
-      <form onSubmit={onSubmit} className="space-y-2">
+      <form onSubmit={onSubmit} className="space-y-3">
         <div className="space-y-1">
           <label className="block text-xs">title</label>
           <input
@@ -51,14 +73,43 @@ export default function CreateRoomTest() {
         </div>
 
         <div className="space-y-1">
-          <label className="block text-xs">tag slug</label>
-          <input
-            className="border px-2 py-1 w-full"
-            value={tagSlug}
-            onChange={(e) => setTagSlug(e.target.value)}
-            placeholder="lo-fi"
-            disabled={isPending}
-          />
+          <label className="block text-xs">tags (0~5)</label>
+
+          {tagsLoading && <div className="text-sm">태그 로딩중...</div>}
+          {tagsError && <div className="text-sm">태그 로딩 실패</div>}
+
+          {!tagsLoading && !tagsError && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => {
+                const selected = selectedTagSlugs.includes(tag.slug);
+                const disabled =
+                  !selected && selectedTagSlugs.length >= MAX_TAGS;
+
+                return (
+                  <button
+                    key={tag.slug}
+                    type="button"
+                    className={`px-2 py-1 rounded-md border text-sm ${
+                      selected ? "bg-black text-white" : ""
+                    } ${disabled ? "opacity-40 cursor-not-allowed" : ""}`}
+                    onClick={() => toggleTag(tag.slug)}
+                    disabled={isPending || disabled}
+                  >
+                    {tag.name}
+                  </button>
+                );
+              })}
+
+              {tags.length === 0 && (
+                <div className="text-sm">태그가 없습니다.</div>
+              )}
+            </div>
+          )}
+
+          <div className="text-xs text-gray-600">
+            선택됨 ({selectedTagSlugs.length}/{MAX_TAGS}):{" "}
+            {selectedTagSlugs.length ? selectedTagSlugs.join(", ") : "없음"}
+          </div>
         </div>
 
         <button
@@ -76,9 +127,8 @@ export default function CreateRoomTest() {
         </div>
       )}
 
-      {/* createRoom이 boolean을 반환한다는 전제 */}
       {data !== undefined && (
-        <div className="text-sm">결과: {String(data)}</div>
+        <div className="text-sm">결과: {JSON.stringify(data)}</div>
       )}
     </div>
   );

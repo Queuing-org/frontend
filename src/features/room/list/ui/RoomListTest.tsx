@@ -1,7 +1,9 @@
 "use client";
 
 import JoinRoomButton from "@/src/features/room/join/JoinRoomButton";
-import { useRoomsQuery } from "../hooks/useFetchRooms";
+import DeleteRoomButton from "@/src/features/room/delete/ui/DeleteRoomButton";
+import RoomCard from "@/src/entities/room/ui/RoomCard";
+import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 
 export default function RoomsListTest() {
   const { data, isLoading, isError, error } = useRoomsQuery();
@@ -28,25 +30,18 @@ export default function RoomsListTest() {
       ) : (
         <ul className="space-y-2">
           {rooms.map((room) => (
-            <li key={room.id} className="border p-3 space-y-1">
-              <div className="text-sm">
-                <span className="font-semibold">제목:</span> {room.title}
-              </div>
-
-              <div className="text-sm">
-                <span className="font-semibold">슬러그:</span> {room.slug}
-              </div>
-
-              <div className="text-sm">
-                <span className="font-semibold">태그:</span>{" "}
-                {room.tags?.length ? (
-                  room.tags.map((t) => t.name).join(", ")
-                ) : (
-                  <span className="text-gray-600">없음</span>
-                )}
-              </div>
-              <JoinRoomButton slug={room.slug} />
-            </li>
+            <RoomCard
+              key={room.id}
+              title={room.title}
+              slug={room.slug}
+              tags={room.tags}
+              actions={
+                <div className="flex gap-2">
+                  <JoinRoomButton slug={room.slug} />
+                  <DeleteRoomButton slug={room.slug} />
+                </div>
+              }
+            />
           ))}
         </ul>
       )}
