@@ -21,7 +21,7 @@ export default function UserSearchCard({ user }: { user: SearchUser }) {
       </div>
 
       <div>
-        <SendFriendRequestButton targetSlug={user.nickname} />
+        <SendFriendRequestButton targetSlug={user.slug} />
       </div>
     </div>
   );
