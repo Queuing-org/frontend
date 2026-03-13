@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
-import { joinRoom } from "@/src/entities/room/api/joinRoom";
+import {
+  joinRoom,
+  type JoinRoomResult,
+} from "@/src/entities/room/api/joinRoom";
 import { ApiError } from "@/src/shared/api/api-error";
 
 type JoinStatus = "joining" | "joined" | "error";
@@ -10,6 +13,10 @@ type JoinStatus = "joining" | "joined" | "error";
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const joinRequestRef = useRef<{
+    slug: string;
+    promise: Promise<JoinRoomResult>;
+  } | null>(null);
 
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [message, setMessage] = useState("joining...");
@@ -19,9 +26,19 @@ export default function RoomPage() {
 
     let isActive = true;
 
+    if (joinRequestRef.current?.slug !== slug) {
+      joinRequestRef.current = {
+        slug,
+        promise: joinRoom(slug, { password: null }),
+      };
+    }
+
+    const currentJoinRequest = joinRequestRef.current;
+    if (!currentJoinRequest) return;
+
     (async () => {
       try {
-        const result = await joinRoom(slug, { password: null });
+        const result = await currentJoinRequest.promise;
         if (!isActive) return;
 
         setStatus("joined");

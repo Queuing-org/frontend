@@ -1,4 +1,12 @@
-import { Client } from "@stomp/stompjs";
+import { Client, type IFrame } from "@stomp/stompjs";
+
+type SocketListener = {
+  onStompError?: (frame: IFrame) => void;
+  onWebSocketClose?: (event: CloseEvent) => void;
+  onWebSocketError?: (event: Event) => void;
+};
+
+const socketListeners = new Set<SocketListener>();
 
 const client = new Client({
   brokerURL: process.env.NEXT_PUBLIC_WS_URL,
@@ -16,10 +24,16 @@ client.onConnect = () => {
 
 client.onStompError = (frame) => {
   console.error("STOMP error:", frame.headers["message"], frame.body);
+  for (const listener of socketListeners) {
+    listener.onStompError?.(frame);
+  }
 };
 
 client.onWebSocketError = (event) => {
   console.error("WebSocket error event:", event);
+  for (const listener of socketListeners) {
+    listener.onWebSocketError?.(event);
+  }
 };
 
 client.onWebSocketClose = (event) => {
@@ -29,6 +43,9 @@ client.onWebSocketClose = (event) => {
     reason: event.reason,
     wasClean: event.wasClean,
   });
+  for (const listener of socketListeners) {
+    listener.onWebSocketClose?.(event);
+  }
 };
 
 export function connectSocket() {
@@ -41,4 +58,12 @@ export function disconnectSocket() {
 
 export function getSocketClient() {
   return client;
+}
+
+export function addSocketListener(listener: SocketListener) {
+  socketListeners.add(listener);
+
+  return () => {
+    socketListeners.delete(listener);
+  };
 }
