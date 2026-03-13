@@ -1,6 +1,6 @@
 "use client";
 
-import JoinRoomButton from "@/src/features/room/join/JoinRoomButton";
+import JoinRoomButton from "@/src/features/room/join/ui/JoinRoomButton";
 import DeleteRoomButton from "@/src/features/room/delete/ui/DeleteRoomButton";
 import RoomCard from "@/src/entities/room/ui/RoomCard";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
@@ -35,6 +35,7 @@ export default function RoomsListTest() {
               title={room.title}
               slug={room.slug}
               tags={room.tags}
+              isPrivate={room.isPrivate}
               actions={
                 <div className="flex gap-2">
                   <JoinRoomButton slug={room.slug} />

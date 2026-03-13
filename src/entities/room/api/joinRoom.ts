@@ -115,12 +115,12 @@ function subscribeUserJoinEvents(
     }
 
     if (event.type === "ERROR" || event.type === "ROOM_JOIN_FAILED") {
-      const errorData = (event.data ?? {}) as Partial<WsErrorData>;
+      const errorData = event.data as WsErrorData;
       handlers.onError(
         new ApiError({
-          status: errorData.statusCode ?? 400,
-          code: errorData.code ?? "room.join-failed",
-          message: errorData.message ?? "방 참가에 실패했습니다.",
+          status: errorData.statusCode,
+          code: errorData.code,
+          message: errorData.message,
         }),
       );
     }
