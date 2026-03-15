@@ -1,24 +1,15 @@
 import type { IFrame, StompSubscription } from "@stomp/stompjs";
 import { ApiError } from "@/src/shared/api/api-error";
-import type { WsErrorData, WsEvent } from "@/src/entities/room/model/types";
 import {
   addSocketListener,
   connectSocket,
   getSocketClient,
 } from "@/src/shared/api/websocket/stompConnection";
+import type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
+import { publishJoinRequest } from "./websocket/publishJoinRequest";
+import { subscribeUserJoinEvents } from "./websocket/subscribeUserJoinEvents";
 
-type RoomJoinEvent = Partial<WsEvent>;
-const USER_EVENTS_DESTINATION = "/user/playlist/events";
-
-export type JoinRoomPayload = {
-  password?: string | null;
-};
-
-export type JoinRoomResult = {
-  roomSlug: string;
-  timestamp: number;
-  data: unknown;
-};
+export type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
 
 // STOMP 연결을 기다리는 함수
 async function waitForSocketConnected(timeoutMs = 5000) {
@@ -76,63 +67,6 @@ function createSocketError() {
     status: 503,
     code: "socket.error",
     message: "웹소켓 통신 중 오류가 발생했습니다.",
-  });
-}
-
-type JoinHandlers = {
-  onJoined: (result: JoinRoomResult) => void;
-  onError: (error: ApiError) => void;
-};
-
-function subscribeUserJoinEvents(
-  safeSlug: string,
-  handlers: JoinHandlers,
-): StompSubscription {
-  const client = getSocketClient();
-
-  return client.subscribe(USER_EVENTS_DESTINATION, ({ body }) => {
-    if (!body) return;
-
-    let event: RoomJoinEvent;
-    try {
-      event = JSON.parse(body) as RoomJoinEvent;
-    } catch {
-      return;
-    }
-
-    const eventRoomSlug = event.roomSlug ?? safeSlug;
-    if (eventRoomSlug !== safeSlug) {
-      return;
-    }
-
-    if (event.type === "ROOM_JOINED") {
-      handlers.onJoined({
-        roomSlug: eventRoomSlug,
-        timestamp: event.timestamp ?? Date.now(),
-        data: event.data ?? null,
-      });
-      return;
-    }
-
-    if (event.type === "ERROR" || event.type === "ROOM_JOIN_FAILED") {
-      const errorData = event.data as WsErrorData;
-      handlers.onError(
-        new ApiError({
-          status: errorData.statusCode,
-          code: errorData.code,
-          message: errorData.message,
-        }),
-      );
-    }
-  });
-}
-
-function publishJoinRequest(safeSlug: string, payload: JoinRoomPayload) {
-  const client = getSocketClient();
-
-  client.publish({
-    destination: `/app/room/${encodeURIComponent(safeSlug)}/join`,
-    body: JSON.stringify({ password: payload.password ?? null }),
   });
 }
 
