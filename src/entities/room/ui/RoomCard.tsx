@@ -6,9 +6,16 @@ type Props = {
   slug: string;
   tags?: RoomTag[];
   actions?: ReactNode;
+  isPrivate: boolean;
 };
 
-export default function RoomCard({ title, slug, tags, actions }: Props) {
+export default function RoomCard({
+  title,
+  slug,
+  tags,
+  actions,
+  isPrivate,
+}: Props) {
   return (
     <li className="border p-3 space-y-1">
       <div className="text-sm">
@@ -26,6 +33,11 @@ export default function RoomCard({ title, slug, tags, actions }: Props) {
         ) : (
           <span className="text-gray-600">없음</span>
         )}
+      </div>
+
+      <div className="text-sm">
+        <span className="font-semibold">isPrivate: </span>
+        {isPrivate ? "true" : "false"}
       </div>
 
       {actions}
