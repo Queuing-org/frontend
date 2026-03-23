@@ -2,7 +2,7 @@
 
 import JoinRoomButton from "@/src/features/room/join/ui/JoinRoomButton";
 import DeleteRoomButton from "@/src/features/room/delete/ui/DeleteRoomButton";
-import RoomCard from "@/src/entities/room/ui/RoomCard";
+import RoomCardTemp from "@/src/entities/room/ui/RoomCardTemp";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 
 export default function RoomsListTest() {
@@ -30,7 +30,7 @@ export default function RoomsListTest() {
       ) : (
         <ul className="space-y-2">
           {rooms.map((room) => (
-            <RoomCard
+            <RoomCardTemp
               key={room.id}
               title={room.title}
               slug={room.slug}
