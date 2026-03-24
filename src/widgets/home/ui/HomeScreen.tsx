@@ -10,10 +10,10 @@ import styles from "./HomeScreen.module.css";
 export default function HomeScreen() {
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
-  const [currentRoomId, setCurrentRoomId] = useState<number | null>(null);
+  const [currentRoomSlug, setCurrentRoomSlug] = useState<string | null>(null);
 
   const currentRoom: Room | null =
-    rooms.find((room) => room.id === currentRoomId) ?? rooms[0] ?? null;
+    rooms.find((room) => room.slug === currentRoomSlug) ?? rooms[0] ?? null;
 
   if (isLoading) return <div>방 목록 로딩중...</div>;
   if (isError)
@@ -28,8 +28,8 @@ export default function HomeScreen() {
       <HomeTopBar currentRoom={currentRoom} />
       <HomeRoomStage
         rooms={rooms}
-        currentRoomId={currentRoom?.id ?? null}
-        onSelectRoom={setCurrentRoomId}
+        currentRoomSlug={currentRoom?.slug ?? null}
+        onSelectRoom={setCurrentRoomSlug}
       />
     </div>
   );

@@ -1,0 +1,46 @@
+.roomInfoContainer {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.title {
+  display: inline-flex;
+  font-size: 16px;
+  font-weight: 800;
+  justify-content: center;
+  align-items: center;
+}
+
+.tag {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.tagItem {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 28px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  background-color: #d9d9d9;
+  padding: 0 12px;
+  border-radius: 4px;
+}
+
+.usersCount {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 28px;
+  box-shadow: inset 0 0 0 1px #d9d9d9;
+  border-radius: 4px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}

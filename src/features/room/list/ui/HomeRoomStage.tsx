@@ -15,8 +15,8 @@ type RoomSlot =
 
 type Props = {
   rooms: Room[];
-  currentRoomId: number | null;
-  onSelectRoom: (roomId: number) => void;
+  currentRoomSlug: string | null;
+  onSelectRoom: (roomSlug: string) => void;
 };
 
 function getRoomSlot(relativeIndex: number): RoomSlot {
@@ -35,7 +35,7 @@ function isNavigableSlot(slot: RoomSlot) {
 
 export default function HomeRoomStage({
   rooms,
-  currentRoomId,
+  currentRoomSlug,
   onSelectRoom,
 }: Props) {
   if (rooms.length === 0) {
@@ -46,12 +46,8 @@ export default function HomeRoomStage({
     );
   }
 
-  const currentIndex = rooms.findIndex((room) => room.id === currentRoomId);
+  const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
   const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
-
-  function handleRoomClick(roomId: number) {
-    onSelectRoom(roomId);
-  }
 
   return (
     <section className={styles.viewport} aria-label="방 선택 스테이지">
@@ -69,9 +65,7 @@ export default function HomeRoomStage({
                   title={room.title}
                   isSelected={isSelected}
                   disabled={!isNavigable}
-                  onClick={
-                    isNavigable ? () => handleRoomClick(room.id) : undefined
-                  }
+                  onClick={isNavigable ? () => onSelectRoom(room.slug) : undefined}
                 />
               </div>
             </div>
