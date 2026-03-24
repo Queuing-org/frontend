@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 import type { Room } from "@/src/entities/room/model/types";
 import HomeTopBar from "./HomeTopBar";
+import HomeBottomControl from "./HomeBottomControl";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import styles from "./HomeScreen.module.css";
 
@@ -31,6 +32,7 @@ export default function HomeScreen() {
         currentRoomSlug={currentRoom?.slug ?? null}
         onSelectRoom={setCurrentRoomSlug}
       />
+      <HomeBottomControl />
     </div>
   );
 }
