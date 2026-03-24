@@ -1,7 +1,16 @@
+"use client";
+
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import styles from "./HomeBottomControl.module.css";
 
-export default function HomeBottomControl() {
+type Props = {
+  currentRoomSlug: string;
+};
+
+export default function HomeBottomControl({ currentRoomSlug }: Props) {
+  const router = useRouter();
+
   return (
     <div className={styles.controlWrap}>
       <button
@@ -16,7 +25,11 @@ export default function HomeBottomControl() {
         <span className={styles.rightArrow} aria-hidden="true">
           <Image src="/icons/right_arrow.svg" alt="" width={20} height={20} />
         </span>
-        <span className={styles.centerCircle} aria-hidden="true" />
+        <span
+          className={styles.centerCircle}
+          onClick={() => router.push(`/room/${currentRoomSlug}`)}
+          aria-hidden="true"
+        />
         <span className={styles.bottomLabel}>FILTER</span>
       </button>
     </div>

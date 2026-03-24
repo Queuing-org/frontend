@@ -32,7 +32,9 @@ export default function HomeScreen() {
         currentRoomSlug={currentRoom?.slug ?? null}
         onSelectRoom={setCurrentRoomSlug}
       />
-      <HomeBottomControl />
+      {currentRoom ? (
+        <HomeBottomControl currentRoomSlug={currentRoom.slug} />
+      ) : null}
     </div>
   );
 }
