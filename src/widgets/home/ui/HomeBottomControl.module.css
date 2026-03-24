@@ -1,0 +1,103 @@
+.controlWrap {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.control {
+  position: relative;
+  width: 180px;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 999px;
+  background: #1f1f1f;
+  cursor: default;
+}
+
+.topLabel,
+.bottomLabel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  color: #f4f4f5;
+  cursor: pointer;
+}
+
+.topLabel {
+  top: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #d9d9d9;
+}
+
+.bottomLabel {
+  bottom: 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #d9d9d9;
+}
+
+.leftArrow,
+.rightArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #d9d9d9;
+  cursor: pointer;
+}
+
+.leftArrow {
+  left: 13px;
+}
+
+.rightArrow {
+  right: 13px;
+}
+
+.centerCircle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 70px;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  border: 1px solid #000;
+  background: #444;
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .controlWrap {
+    bottom: 32px;
+  }
+
+  .control {
+    width: 150px;
+  }
+
+  .topLabel,
+  .bottomLabel {
+    font-size: 12px;
+  }
+
+  .leftArrow {
+    left: 18px;
+  }
+
+  .rightArrow {
+    right: 18px;
+  }
+
+  .centerCircle {
+    width: 44px;
+  }
+}

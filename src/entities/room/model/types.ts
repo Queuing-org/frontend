@@ -12,6 +12,22 @@ export type Room = {
   tags: RoomTag[];
 }; // 웹소켓 호출 가이드 범위 외(기존 REST 방 응답)
 
+export type RoomMeta = {
+  slug: string;
+  owner?: RoomOwner | null;
+  title: string;
+  isPublic: boolean;
+  hasPassword: boolean;
+  activeUsersCount: number;
+};
+
+export type RoomOwner = {
+  slug: string;
+  userId: number;
+  nickname: string;
+  profileImageUrl?: string | null;
+};
+
 export type RoomsResponse = {
   rooms: Room[];
   hasNext: boolean;

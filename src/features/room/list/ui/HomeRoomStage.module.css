@@ -1,0 +1,143 @@
+.viewport {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  padding: 3rem clamp(1rem, 4vw, 3rem) 15rem;
+  perspective: 1400px;
+  perspective-origin: center center;
+  --card-current-width: clamp(19rem, 29vw, 24rem);
+  --card-current-height: clamp(19rem, 29vw, 24rem);
+  --card-side-size: clamp(11.75rem, 17vw, 14.5rem);
+  --side-offset: clamp(16rem, 25vw, 21rem);
+  --peek-visible-ratio: 0.2;
+}
+
+.rail {
+  position: relative;
+  width: 100%;
+  height: clamp(24rem, 62vh, 38rem);
+  transform-style: preserve-3d;
+}
+
+.slot {
+  position: absolute;
+  left: var(--slot-left, 50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: left;
+}
+
+.slotCard {
+  --card-width: var(--card-side-size);
+  --card-height: var(--card-side-size);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 280ms ease,
+    filter 280ms ease;
+  will-change: transform, opacity;
+}
+
+.slot[data-slot="current"] {
+  z-index: 5;
+  --slot-left: 50%;
+}
+
+.slot[data-slot="prev"],
+.slot[data-slot="next"] {
+  z-index: 4;
+}
+
+.slot[data-slot="prev"] {
+  --slot-left: calc(44% - var(--side-offset));
+}
+
+.slot[data-slot="next"] {
+  --slot-left: calc(56% + var(--side-offset));
+}
+
+.slot[data-slot="peek-prev"],
+.slot[data-slot="peek-next"] {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.slot[data-slot="peek-prev"] {
+  --slot-left: calc((var(--peek-visible-ratio) - 0.5) * var(--card-side-size));
+}
+
+.slot[data-slot="peek-next"] {
+  --slot-left: calc(
+    100% + (0.5 - var(--peek-visible-ratio)) * var(--card-side-size)
+  );
+}
+
+.slot[data-slot="off-left"],
+.slot[data-slot="off-right"] {
+  z-index: 1;
+  pointer-events: none;
+}
+
+.slot[data-slot="off-left"] {
+  --slot-left: calc(-1.1 * var(--card-side-size));
+}
+
+.slot[data-slot="off-right"] {
+  --slot-left: calc(100% + 1.1 * var(--card-side-size));
+}
+
+.slot[data-slot="current"] .slotCard {
+  --card-width: var(--card-current-width);
+  --card-height: var(--card-current-height);
+  opacity: 1;
+  filter: none;
+}
+
+.slot[data-slot="prev"] .slotCard {
+  opacity: 0.98;
+  filter: saturate(0.88) brightness(0.95);
+}
+
+.slot[data-slot="next"] .slotCard {
+  opacity: 0.98;
+  filter: saturate(0.88) brightness(0.95);
+}
+
+.slot[data-slot="peek-prev"] .slotCard {
+  opacity: 0.3;
+  filter: saturate(0.72) brightness(0.82);
+}
+
+.slot[data-slot="peek-next"] .slotCard {
+  opacity: 0.3;
+  filter: saturate(0.72) brightness(0.82);
+}
+
+.slot[data-slot="off-left"] .slotCard {
+  opacity: 0;
+  filter: brightness(0.72);
+}
+
+.slot[data-slot="off-right"] .slotCard {
+  opacity: 0;
+  filter: brightness(0.72);
+}
+
+@media (max-width: 900px) {
+  .viewport {
+    --card-current-width: clamp(14rem, 44vw, 18rem);
+    --card-current-height: clamp(14rem, 44vw, 18rem);
+    --card-side-size: clamp(8.75rem, 24vw, 10.75rem);
+    --side-offset: clamp(10rem, 28vw, 14rem);
+    padding-bottom: 2rem;
+  }
+
+  .rail {
+    height: clamp(18rem, 52vh, 26rem);
+  }
+}

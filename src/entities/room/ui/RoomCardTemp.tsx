@@ -9,7 +9,7 @@ type Props = {
   isPrivate: boolean;
 };
 
-export default function RoomCard({
+export default function RoomCardTemp({
   title,
   slug,
   tags,
