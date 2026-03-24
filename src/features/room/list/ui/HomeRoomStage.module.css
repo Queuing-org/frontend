@@ -94,43 +94,36 @@
 .slot[data-slot="current"] .slotCard {
   --card-width: var(--card-current-width);
   --card-height: var(--card-current-height);
-  transform: rotate(0deg);
   opacity: 1;
   filter: none;
 }
 
 .slot[data-slot="prev"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0.98;
   filter: saturate(0.88) brightness(0.95);
 }
 
 .slot[data-slot="next"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0.98;
   filter: saturate(0.88) brightness(0.95);
 }
 
 .slot[data-slot="peek-prev"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0.3;
   filter: saturate(0.72) brightness(0.82);
 }
 
 .slot[data-slot="peek-next"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0.3;
   filter: saturate(0.72) brightness(0.82);
 }
 
 .slot[data-slot="off-left"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0;
   filter: brightness(0.72);
 }
 
 .slot[data-slot="off-right"] .slotCard {
-  transform: rotate(0deg);
   opacity: 0;
   filter: brightness(0.72);
 }

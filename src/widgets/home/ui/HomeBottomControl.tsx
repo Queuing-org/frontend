@@ -1,16 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import styles from "./HomeBottomControl.module.css";
+import Link from "next/link";
 
 type Props = {
   currentRoomSlug: string;
 };
 
 export default function HomeBottomControl({ currentRoomSlug }: Props) {
-  const router = useRouter();
-
   return (
     <div className={styles.controlWrap}>
       <button
@@ -25,10 +23,10 @@ export default function HomeBottomControl({ currentRoomSlug }: Props) {
         <span className={styles.rightArrow} aria-hidden="true">
           <Image src="/icons/right_arrow.svg" alt="" width={20} height={20} />
         </span>
-        <span
+        <Link
+          href={`/room/ ${currentRoomSlug} `}
           className={styles.centerCircle}
-          onClick={() => router.push(`/room/${currentRoomSlug}`)}
-          aria-hidden="true"
+          aria-label="방입장"
         />
         <span className={styles.bottomLabel}>FILTER</span>
       </button>

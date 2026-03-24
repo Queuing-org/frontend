@@ -14,11 +14,18 @@ export type Room = {
 
 export type RoomMeta = {
   slug: string;
-  owner?: unknown | null;
+  owner?: RoomOwner | null;
   title: string;
   isPublic: boolean;
   hasPassword: boolean;
   activeUsersCount: number;
+};
+
+export type RoomOwner = {
+  slug: string;
+  userId: number;
+  nickname: string;
+  profileImageUrl?: string | null;
 };
 
 export type RoomsResponse = {
