@@ -5,6 +5,7 @@ import {
   connectSocket,
   getSocketClient,
 } from "@/src/shared/api/websocket/stompConnection";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
 import { publishJoinRequest } from "./websocket/publishJoinRequest";
 import { subscribeUserJoinEvents } from "./websocket/subscribeUserJoinEvents";
@@ -74,7 +75,7 @@ export async function joinRoom(
   slug: string,
   payload: JoinRoomPayload = {},
 ): Promise<JoinRoomResult> {
-  const safeSlug = slug.trim();
+  const safeSlug = normalizeRoomSlug(slug);
   if (!safeSlug) {
     throw new ApiError({
       status: 400,

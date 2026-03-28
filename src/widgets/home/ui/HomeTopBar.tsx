@@ -1,7 +1,7 @@
 import type { Room } from "@/src/entities/room/model/types";
+import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 import RoomSearchButton from "@/src/features/room/search/ui/RoomSearchButton";
 import MainLogo from "./MainLogo";
-import RoomInfo from "./RoomInfo";
 import styles from "./HomeTopBar.module.css";
 
 type Props = {

@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -12,7 +13,9 @@ export default function JoinRoomButton({ slug }: Props) {
   return (
     <button
       className="border cursor-pointer"
-      onClick={() => router.push(`/room/${slug}`)}
+      onClick={() =>
+        router.push(`/room/${encodeURIComponent(normalizeRoomSlug(slug))}`)
+      }
     >
       방 입장하기
     </button>
