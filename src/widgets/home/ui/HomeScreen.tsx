@@ -16,6 +16,18 @@ export default function HomeScreen() {
   const currentRoom: Room | null =
     rooms.find((room) => room.slug === currentRoomSlug) ?? rooms[0] ?? null;
 
+  const currentRoomIndex = currentRoom
+    ? rooms.findIndex((room) => room.slug === currentRoom.slug)
+    : -1;
+
+  const previousRoom =
+    currentRoomIndex > 0 ? rooms[currentRoomIndex - 1] : null;
+
+  const nextRoom =
+    currentRoomIndex >= 0 && currentRoomIndex < rooms.length - 1
+      ? rooms[currentRoomIndex + 1]
+      : null;
+
   if (isLoading) return <div>방 목록 로딩중...</div>;
   if (isError)
     return (
@@ -33,7 +45,21 @@ export default function HomeScreen() {
         onSelectRoom={setCurrentRoomSlug}
       />
       {currentRoom ? (
-        <HomeBottomControl currentRoomSlug={currentRoom.slug} />
+        <HomeBottomControl
+          currentRoomSlug={currentRoom.slug}
+          canGoPrevious={Boolean(previousRoom)}
+          canGoNext={Boolean(nextRoom)}
+          onGoPrevious={() => {
+            if (previousRoom) {
+              setCurrentRoomSlug(previousRoom.slug);
+            }
+          }}
+          onGoNext={() => {
+            if (nextRoom) {
+              setCurrentRoomSlug(nextRoom.slug);
+            }
+          }}
+        />
       ) : null}
     </div>
   );
