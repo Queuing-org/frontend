@@ -5,8 +5,8 @@ import {
   connectSocket,
   getSocketClient,
 } from "@/src/shared/api/websocket/stompConnection";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
-import { normalizeRoomSlug } from "./normalizeRoomSlug";
 import { publishJoinRequest } from "./websocket/publishJoinRequest";
 import { subscribeUserJoinEvents } from "./websocket/subscribeUserJoinEvents";
 

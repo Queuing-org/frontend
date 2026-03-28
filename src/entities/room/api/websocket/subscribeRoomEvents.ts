@@ -1,6 +1,6 @@
 import type { IMessage, StompSubscription } from "@stomp/stompjs";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
-import { normalizeRoomSlug } from "../normalizeRoomSlug";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 
 // join 완료 후 방 토픽 이벤트를 계속 수신한다.
 export function subscribeRoomEvents(

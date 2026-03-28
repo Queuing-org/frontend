@@ -1,6 +1,6 @@
 "use client";
 
-import { normalizeRoomSlug } from "@/src/entities/room/api/normalizeRoomSlug";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { useRouter } from "next/navigation";
 
 type Props = {

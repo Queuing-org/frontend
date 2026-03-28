@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useParams } from "next/navigation";
+import { useGetPlayList } from "@/src/entities/playlist/model/useGetPlayList";
 import {
   joinRoom,
   type JoinRoomResult,
 } from "@/src/entities/room/api/joinRoom";
-import { normalizeRoomSlug } from "@/src/entities/room/api/normalizeRoomSlug";
 import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
 import type { WsEvent } from "@/src/entities/room/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
+
+function shouldRefetchPlaylist(eventType: string) {
+  return eventType === "QUEUE_ADDED";
+}
 
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
@@ -33,6 +39,13 @@ export default function RoomPage() {
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [lastRoomEventType, setLastRoomEventType] = useState("없음");
   const [lastRoomEventTime, setLastRoomEventTime] = useState("");
+  const {
+    data: playlist,
+    error: playlistError,
+    isFetching: isPlaylistFetching,
+    isLoading: isPlaylistLoading,
+    refetch: refetchPlaylist,
+  } = useGetPlayList(slug, false);
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -50,30 +63,34 @@ export default function RoomPage() {
 
   const ensureRoomSubscription = useCallback(
     (roomSlug: string) => {
-    if (roomSubscriptionRef.current?.slug === roomSlug) {
-      return;
-    }
+      if (roomSubscriptionRef.current?.slug === roomSlug) {
+        return;
+      }
 
-    cleanupRoomSubscription();
+      cleanupRoomSubscription();
 
-    roomSubscriptionRef.current = {
-      slug: roomSlug,
-      subscription: subscribeRoomEvents(roomSlug, ({ body }) => {
-        if (!body) return;
+      roomSubscriptionRef.current = {
+        slug: roomSlug,
+        subscription: subscribeRoomEvents(roomSlug, ({ body }) => {
+          if (!body) return;
 
-        let event: WsEvent;
-        try {
-          event = JSON.parse(body) as WsEvent;
-        } catch {
-          return;
-        }
+          let event: WsEvent;
+          try {
+            event = JSON.parse(body) as WsEvent;
+          } catch {
+            return;
+          }
 
-        setLastRoomEventType(event.type);
-        setLastRoomEventTime(new Date(event.timestamp).toLocaleTimeString());
-      }),
-    };
+          setLastRoomEventType(event.type);
+          setLastRoomEventTime(new Date(event.timestamp).toLocaleTimeString());
+
+          if (status === "joined" && shouldRefetchPlaylist(event.type)) {
+            void refetchPlaylist();
+          }
+        }),
+      };
     },
-    [cleanupRoomSubscription],
+    [cleanupRoomSubscription, refetchPlaylist, status],
   );
 
   async function handlePasswordSubmit(password: string) {
@@ -153,6 +170,14 @@ export default function RoomPage() {
     };
   }, [slug, cleanupRoomSubscription, ensureRoomSubscription]);
 
+  useEffect(() => {
+    if (!slug || status !== "joined") {
+      return;
+    }
+
+    void refetchPlaylist();
+  }, [refetchPlaylist, slug, status]);
+
   if (status === "needs-password") {
     return (
       <RoomPasswordInput
@@ -164,13 +189,29 @@ export default function RoomPage() {
   }
 
   return (
-    <div>
+    <div className="space-y-4 p-4">
       <div>room: {slug}</div>
       <div>join: {status}</div>
       <div>message: {message}</div>
       <div>Error Code: {code}</div>
       <div>last room event: {lastRoomEventType}</div>
       <div>last room event time: {lastRoomEventTime || "-"}</div>
+      {status === "joined" ? <AddTrackAction slug={slug} /> : null}
+      <div>
+        playlist loading:{" "}
+        {isPlaylistLoading || isPlaylistFetching ? "yes" : "no"}
+      </div>
+      <div>playlist count: {playlist?.length ?? 0}</div>
+      <div>playlist error: {playlistError?.message ?? "-"}</div>
+      {playlist?.length ? (
+        <ul>
+          {playlist.map((entry) => (
+            <li key={entry.entryId}>
+              {entry.order}. {entry.entryId}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
