@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useParams } from "next/navigation";
-import { useGetPlayList } from "@/src/entities/playlist/model/useGetPlayList";
+import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
+import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
 import {
   joinRoom,
   type JoinRoomResult,
@@ -13,12 +14,42 @@ import type { WsEvent } from "@/src/entities/room/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
+import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
+type RoomEventLog = {
+  id: string;
+  type: string;
+  receivedAt: string;
+  body: string;
+};
 
-function shouldRefetchPlaylist(eventType: string) {
-  return eventType === "QUEUE_ADDED";
+function shouldRefetchRoomState(eventType: string) {
+  return [
+    "QUEUE_ADDED",
+    "QUEUE_REMOVED",
+    "TRACK_STARTED",
+    "TRACK_ENDED",
+    "ROOM_JOINED",
+    "ROOM_LEFT",
+  ].includes(eventType);
+}
+
+function getCurrentVideoId(roomState: RoomStateSnapshot | undefined) {
+  if (!roomState) {
+    return null;
+  }
+
+  const currentTrackVideoId = roomState.currentEntry?.track.videoId;
+  if (typeof currentTrackVideoId === "string" && currentTrackVideoId.trim()) {
+    return currentTrackVideoId.trim();
+  }
+
+  const playbackVideoId = roomState.playbackStatus?.videoId;
+  return typeof playbackVideoId === "string" && playbackVideoId.trim()
+    ? playbackVideoId.trim()
+    : null;
 }
 
 export default function RoomPage() {
@@ -37,15 +68,22 @@ export default function RoomPage() {
   const [message, setMessage] = useState("joining...");
   const [code, setErrorCode] = useState("joining...");
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [lastRoomEventType, setLastRoomEventType] = useState("없음");
   const [lastRoomEventTime, setLastRoomEventTime] = useState("");
+  const [roomEventLogs, setRoomEventLogs] = useState<RoomEventLog[]>([]);
   const {
-    data: playlist,
-    error: playlistError,
-    isFetching: isPlaylistFetching,
-    isLoading: isPlaylistLoading,
-    refetch: refetchPlaylist,
-  } = useGetPlayList(slug, false);
+    data: roomState,
+    error: roomStateError,
+    isFetching: isRoomStateFetching,
+    isLoading: isRoomStateLoading,
+    refetch: refetchRoomState,
+  } = useRoomState(slug, roomPassword, status === "joined");
+  const currentVideoId = getCurrentVideoId(roomState);
+  const currentEntry = roomState?.currentEntry ?? null;
+  const queue = roomState?.queue ?? [];
+  const participants = roomState?.participants ?? [];
+  const playbackStatus = roomState?.playbackStatus ?? null;
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -74,23 +112,47 @@ export default function RoomPage() {
         subscription: subscribeRoomEvents(roomSlug, ({ body }) => {
           if (!body) return;
 
+          const receivedAt = new Date().toLocaleTimeString();
+
           let event: WsEvent;
           try {
             event = JSON.parse(body) as WsEvent;
           } catch {
+            setRoomEventLogs((prev) =>
+              [
+                {
+                  id: `${Date.now()}-${Math.random()}`,
+                  type: "INVALID_JSON",
+                  receivedAt,
+                  body,
+                },
+                ...prev,
+              ].slice(0, 20),
+            );
             return;
           }
 
           setLastRoomEventType(event.type);
           setLastRoomEventTime(new Date(event.timestamp).toLocaleTimeString());
+          setRoomEventLogs((prev) =>
+            [
+              {
+                id: `${Date.now()}-${event.type}`,
+                type: event.type,
+                receivedAt,
+                body: JSON.stringify(event, null, 2),
+              },
+              ...prev,
+            ].slice(0, 20),
+          );
 
-          if (status === "joined" && shouldRefetchPlaylist(event.type)) {
-            void refetchPlaylist();
+          if (shouldRefetchRoomState(event.type)) {
+            void refetchRoomState();
           }
         }),
       };
     },
-    [cleanupRoomSubscription, refetchPlaylist, status],
+    [cleanupRoomSubscription, refetchRoomState],
   );
 
   async function handlePasswordSubmit(password: string) {
@@ -101,6 +163,7 @@ export default function RoomPage() {
 
     try {
       const result = await joinRoom(slug, { password });
+      setRoomPassword(password);
       ensureRoomSubscription(slug);
       setStatus("joined");
       setMessage(
@@ -127,6 +190,7 @@ export default function RoomPage() {
     if (!slug) return;
 
     let isActive = true;
+    setRoomPassword(null);
 
     if (joinRequestRef.current?.slug !== slug) {
       joinRequestRef.current = {
@@ -144,10 +208,12 @@ export default function RoomPage() {
         if (!isActive) return;
 
         ensureRoomSubscription(slug);
+        setRoomPassword(null);
         setStatus("joined");
         setMessage(
           `joined at ${new Date(result.timestamp).toLocaleTimeString()}`,
         );
+        setErrorCode("");
       } catch (error) {
         if (!isActive) return;
 
@@ -175,8 +241,8 @@ export default function RoomPage() {
       return;
     }
 
-    void refetchPlaylist();
-  }, [refetchPlaylist, slug, status]);
+    void refetchRoomState();
+  }, [refetchRoomState, slug, status]);
 
   if (status === "needs-password") {
     return (
@@ -196,22 +262,76 @@ export default function RoomPage() {
       <div>Error Code: {code}</div>
       <div>last room event: {lastRoomEventType}</div>
       <div>last room event time: {lastRoomEventTime || "-"}</div>
+      <YouTubePlayer
+        videoId={currentVideoId}
+        playbackStatus={playbackStatus?.status ?? null}
+        currentTimeMs={playbackStatus?.currentTime ?? null}
+      />
       {status === "joined" ? <AddTrackAction slug={slug} /> : null}
       <div>
-        playlist loading:{" "}
-        {isPlaylistLoading || isPlaylistFetching ? "yes" : "no"}
+        state loading: {isRoomStateLoading || isRoomStateFetching ? "yes" : "no"}
       </div>
-      <div>playlist count: {playlist?.length ?? 0}</div>
-      <div>playlist error: {playlistError?.message ?? "-"}</div>
-      {playlist?.length ? (
+      <div>state error: {roomStateError?.message ?? "-"}</div>
+      <div>participants count: {participants.length}</div>
+      <div>current entry id: {currentEntry?.entryId ?? "-"}</div>
+      <div>current track videoId: {currentEntry?.track.videoId ?? "-"}</div>
+      <div>playback status: {playbackStatus?.status ?? "-"}</div>
+      <div>playback currentTime(ms): {playbackStatus?.currentTime ?? "-"}</div>
+      <div>queue count: {queue.length}</div>
+      {participants.length ? (
         <ul>
-          {playlist.map((entry) => (
-            <li key={entry.entryId}>
-              {entry.order}. {entry.entryId}
+          {participants.map((participant, index) => (
+            <li key={participant.participantId ?? participant.id ?? index}>
+              {participant.nickname ?? participant.participantId ?? "unknown"}
             </li>
           ))}
         </ul>
       ) : null}
+      {currentEntry ? (
+        <div>
+          current entry:
+          <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all text-xs text-gray-700">
+            {JSON.stringify(currentEntry, null, 2)}
+          </pre>
+        </div>
+      ) : null}
+      <div>
+        queue entries:
+      </div>
+      {queue.length ? (
+        <ul>
+          {queue.map((entry) => (
+            <li key={entry.entryId}>
+              {entry.order}. {entry.entryId} ({entry.track.videoId})
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="space-y-2">
+        <div className="font-semibold">room event logs</div>
+        {roomEventLogs.length ? (
+          <ul className="space-y-2">
+            {roomEventLogs.map((eventLog) => (
+              <li
+                key={eventLog.id}
+                className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+              >
+                <div className="text-sm font-medium text-gray-900">
+                  {eventLog.type}
+                </div>
+                <div className="text-xs text-gray-500">
+                  received at {eventLog.receivedAt}
+                </div>
+                <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all text-xs text-gray-700">
+                  {eventLog.body}
+                </pre>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div>아직 받은 방 이벤트 없음</div>
+        )}
+      </div>
     </div>
   );
 }
