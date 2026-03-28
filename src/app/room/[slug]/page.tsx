@@ -7,6 +7,7 @@ import {
   joinRoom,
   type JoinRoomResult,
 } from "@/src/entities/room/api/joinRoom";
+import { normalizeRoomSlug } from "@/src/entities/room/api/normalizeRoomSlug";
 import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
 import type { WsEvent } from "@/src/entities/room/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
@@ -16,7 +17,7 @@ type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const slug = normalizeRoomSlug(params.slug ?? "");
   const joinRequestRef = useRef<{
     slug: string;
     promise: Promise<JoinRoomResult>;

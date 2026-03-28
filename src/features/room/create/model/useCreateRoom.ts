@@ -1,6 +1,7 @@
 "use client";
 
 import { createRoom } from "@/src/entities/room/api/createRoom";
+import { normalizeRoomSlug } from "@/src/entities/room/api/normalizeRoomSlug";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import type {
@@ -17,7 +18,9 @@ export function useCreateRoom() {
     mutationFn: createRoom,
     onSuccess: async (result) => {
       await qc.invalidateQueries({ queryKey: ["rooms"] });
-      router.push(`/room/${result.slug}`);
+      router.push(
+        `/room/${encodeURIComponent(normalizeRoomSlug(result.slug))}`,
+      );
     },
   });
 }
