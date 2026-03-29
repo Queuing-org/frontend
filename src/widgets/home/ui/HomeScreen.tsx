@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 import type { Room } from "@/src/entities/room/model/types";
+import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
 import HomeTopBar from "./HomeTopBar";
-import HomeBottomControl from "./HomeBottomControl";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import styles from "./HomeScreen.module.css";
 
@@ -45,21 +46,47 @@ export default function HomeScreen() {
         onSelectRoom={setCurrentRoomSlug}
       />
       {currentRoom ? (
-        <HomeBottomControl
-          currentRoomSlug={currentRoom.slug}
-          canGoPrevious={Boolean(previousRoom)}
-          canGoNext={Boolean(nextRoom)}
-          onGoPrevious={() => {
-            if (previousRoom) {
-              setCurrentRoomSlug(previousRoom.slug);
-            }
-          }}
-          onGoNext={() => {
-            if (nextRoom) {
-              setCurrentRoomSlug(nextRoom.slug);
-            }
-          }}
-        />
+        <div className={styles.controlWrap}>
+          <RadialControl
+            ariaLabel="홈 하단 컨트롤"
+            topItem={{ content: "MENU" }}
+            leftItem={{
+              ariaLabel: "이전 방 보기",
+              content: (
+                <Image
+                  src="/icons/left_arrow.svg"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
+              ),
+              onClick: previousRoom
+                ? () => setCurrentRoomSlug(previousRoom.slug)
+                : undefined,
+              disabled: !previousRoom,
+            }}
+            rightItem={{
+              ariaLabel: "다음 방 보기",
+              content: (
+                <Image
+                  src="/icons/right_arrow.svg"
+                  alt=""
+                  width={20}
+                  height={20}
+                />
+              ),
+              onClick: nextRoom
+                ? () => setCurrentRoomSlug(nextRoom.slug)
+                : undefined,
+              disabled: !nextRoom,
+            }}
+            centerItem={{
+              ariaLabel: "방입장",
+              href: `/room/${encodeURIComponent(currentRoom.slug)}`,
+            }}
+            bottomItem={{ content: "FILTER" }}
+          />
+        </div>
       ) : null}
     </div>
   );

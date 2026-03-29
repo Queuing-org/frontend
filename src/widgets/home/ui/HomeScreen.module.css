@@ -4,3 +4,17 @@
   flex-direction: column;
   position: relative;
 }
+
+.controlWrap {
+  position: absolute;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+@media (max-width: 900px) {
+  .controlWrap {
+    bottom: 32px;
+  }
+}
