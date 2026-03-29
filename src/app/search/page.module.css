@@ -1,0 +1,61 @@
+.container {
+  min-height: 100vh;
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.list_container {
+  position: relative;
+  z-index: 2;
+  min-height: 98vh;
+  width: 664px;
+  margin: 1vh auto;
+  background-color: rgba(60, 60, 60, 0.96);
+  border-radius: 12px;
+  backdrop-filter: blur(8px);
+  padding: 24px;
+}
+
+.thumbnail_container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100vh;
+  height: 100vh;
+  z-index: 1;
+}
+
+.thumbnail {
+  object-fit: cover;
+}
+
+.logo {
+  position: fixed;
+  top: 24px;
+  left: 24px;
+  z-index: 100;
+}
+
+.controlWrap {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  z-index: 20;
+}
+
+.search_badge {
+  margin-top: 60px;
+}
+
+.search_input {
+  margin-top: 44px;
+}
+
+.room_list {
+  margin-top: 32px;
+}

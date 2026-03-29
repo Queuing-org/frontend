@@ -3,10 +3,10 @@
   align-items: center;
   justify-content: center;
   padding: 10px;
-  background: #111111;
+  background: #000000;
   color: #ffffff;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: var(--fw-black);
   letter-spacing: -0.04em;
   line-height: 1.4;
 }

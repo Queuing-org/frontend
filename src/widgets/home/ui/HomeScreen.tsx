@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
-import type { Room } from "@/src/entities/room/model/types";
+import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
 import HomeTopBar from "./HomeTopBar";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
@@ -12,22 +12,15 @@ import styles from "./HomeScreen.module.css";
 export default function HomeScreen() {
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
-  const [currentRoomSlug, setCurrentRoomSlug] = useState<string | null>(null);
-
-  const currentRoom: Room | null =
-    rooms.find((room) => room.slug === currentRoomSlug) ?? rooms[0] ?? null;
-
-  const currentRoomIndex = currentRoom
-    ? rooms.findIndex((room) => room.slug === currentRoom.slug)
-    : -1;
-
-  const previousRoom =
-    currentRoomIndex > 0 ? rooms[currentRoomIndex - 1] : null;
-
-  const nextRoom =
-    currentRoomIndex >= 0 && currentRoomIndex < rooms.length - 1
-      ? rooms[currentRoomIndex + 1]
-      : null;
+  const {
+    currentRoom,
+    selectedRoomSlug,
+    setCurrentRoomSlug,
+    previousRoom,
+    nextRoom,
+    goPrevious,
+    goNext,
+  } = useRoomNavigator(rooms);
 
   if (isLoading) return <div>방 목록 로딩중...</div>;
   if (isError)
@@ -42,49 +35,51 @@ export default function HomeScreen() {
       <HomeTopBar currentRoom={currentRoom} />
       <HomeRoomStage
         rooms={rooms}
-        currentRoomSlug={currentRoom?.slug ?? null}
+        currentRoomSlug={selectedRoomSlug}
         onSelectRoom={setCurrentRoomSlug}
       />
       {currentRoom ? (
         <div className={styles.controlWrap}>
           <RadialControl
             ariaLabel="홈 하단 컨트롤"
-            topItem={{ content: "MENU" }}
-            leftItem={{
-              ariaLabel: "이전 방 보기",
-              content: (
+            top={<span>MENU</span>}
+            left={
+              <button
+                type="button"
+                onClick={goPrevious}
+                disabled={!previousRoom}
+                aria-label="이전 방 보기"
+              >
                 <Image
                   src="/icons/left_arrow.svg"
                   alt=""
                   width={20}
                   height={20}
                 />
-              ),
-              onClick: previousRoom
-                ? () => setCurrentRoomSlug(previousRoom.slug)
-                : undefined,
-              disabled: !previousRoom,
-            }}
-            rightItem={{
-              ariaLabel: "다음 방 보기",
-              content: (
+              </button>
+            }
+            center={
+              <Link
+                href={`/room/${encodeURIComponent(selectedRoomSlug ?? "")}`}
+                aria-label="방입장"
+              />
+            }
+            right={
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!nextRoom}
+                aria-label="다음 방 보기"
+              >
                 <Image
                   src="/icons/right_arrow.svg"
                   alt=""
                   width={20}
                   height={20}
                 />
-              ),
-              onClick: nextRoom
-                ? () => setCurrentRoomSlug(nextRoom.slug)
-                : undefined,
-              disabled: !nextRoom,
-            }}
-            centerItem={{
-              ariaLabel: "방입장",
-              href: `/room/${encodeURIComponent(currentRoom.slug)}`,
-            }}
-            bottomItem={{ content: "FILTER" }}
+              </button>
+            }
+            bottom={<span>FILTER</span>}
           />
         </div>
       ) : null}
