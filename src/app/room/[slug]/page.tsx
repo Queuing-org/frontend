@@ -18,6 +18,7 @@ import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import styles from "./page.module.css";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
+import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
@@ -225,6 +226,7 @@ export default function RoomPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
+        <RoomInfo slug={slug} isRoom />
         <YouTubePlayer
           videoId={currentVideoId}
           playbackStatus={playbackStatus?.status ?? null}
