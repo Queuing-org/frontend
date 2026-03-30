@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
@@ -10,47 +12,82 @@ import {
   type JoinRoomResult,
 } from "@/src/entities/room/api/joinRoom";
 import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
-import type { WsEvent } from "@/src/entities/room/model/types";
+import type {
+  PlaybackSyncData,
+  PlaybackStatus,
+  WsEvent,
+} from "@/src/entities/room/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import styles from "./page.module.css";
-import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
-function shouldRefetchRoomState(eventType: string) {
-  return [
-    "QUEUE_ADDED",
-    "QUEUE_REMOVED",
-    "TRACK_STARTED",
-    "TRACK_ENDED",
-    "ROOM_JOINED",
-    "ROOM_LEFT",
-  ].includes(eventType);
-}
+type PlaybackState = {
+  status: PlaybackStatus;
+  videoId: string;
+  currentTime: number;
+  serverTimestamp: number;
+};
 
-function getCurrentVideoId(roomState: RoomStateSnapshot | undefined) {
-  if (!roomState) {
-    return null;
+function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
+  if (!data || typeof data !== "object") {
+    return false;
   }
 
-  const currentTrackVideoId = roomState.currentEntry?.track.videoId;
+  const candidate = data as Partial<PlaybackSyncData>;
+
+  return (
+    typeof candidate.videoId === "string" &&
+    ["PLAYING", "PAUSED", "BUFFERING", "ENDED"].includes(
+      candidate.status ?? "",
+    ) &&
+    typeof candidate.currentTime === "number" &&
+    typeof candidate.serverTimestamp === "number"
+  );
+}
+
+function getLatestPlaybackState(
+  roomStatePlayback: RoomStateSnapshot["playbackStatus"] | null | undefined,
+  livePlayback: PlaybackState | null,
+) {
+  if (!roomStatePlayback) {
+    return livePlayback;
+  }
+
+  if (!livePlayback) {
+    return roomStatePlayback;
+  }
+
+  return roomStatePlayback.serverTimestamp >= livePlayback.serverTimestamp
+    ? roomStatePlayback
+    : livePlayback;
+}
+
+function getCurrentVideoId(
+  roomState: RoomStateSnapshot | undefined,
+  playbackStatus: PlaybackState | RoomStateSnapshot["playbackStatus"] | null,
+) {
+  const playbackVideoId = playbackStatus?.videoId;
+  if (typeof playbackVideoId === "string" && playbackVideoId.trim()) {
+    return playbackVideoId.trim();
+  }
+
+  const currentTrackVideoId = roomState?.currentEntry?.track.videoId;
   if (typeof currentTrackVideoId === "string" && currentTrackVideoId.trim()) {
     return currentTrackVideoId.trim();
   }
 
-  const playbackVideoId = roomState.playbackStatus?.videoId;
-  return typeof playbackVideoId === "string" && playbackVideoId.trim()
-    ? playbackVideoId.trim()
-    : null;
+  return null;
 }
 
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
+  const queryClient = useQueryClient();
   const slug = normalizeRoomSlug(params.slug ?? "");
   const joinRequestRef = useRef<{
     slug: string;
@@ -65,14 +102,20 @@ export default function RoomPage() {
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
+  const [livePlaybackStatus, setLivePlaybackStatus] = useState<PlaybackState | null>(
+    null,
+  );
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
     roomPassword,
     status === "joined",
   );
-  const { data, isLoading, isError } = useRoomMeta(slug);
-  const currentVideoId = getCurrentVideoId(roomState);
-  const playbackStatus = roomState?.playbackStatus ?? null;
+  const playbackStatus = getLatestPlaybackState(
+    roomState?.playbackStatus,
+    livePlaybackStatus,
+  );
+  const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
+  const currentRequester = roomState?.currentEntry?.addedBy ?? null;
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -108,13 +151,46 @@ export default function RoomPage() {
             return;
           }
 
-          if (shouldRefetchRoomState(event.type)) {
+          if (event.type === "PLAYBACK_SYNC" && isPlaybackSyncData(event.data)) {
+            const syncedPlayback: PlaybackState = {
+              videoId: event.data.videoId,
+              status: event.data.status,
+              currentTime: event.data.currentTime,
+              serverTimestamp: event.data.serverTimestamp,
+            };
+
+            setLivePlaybackStatus((previous) => {
+              if (
+                previous &&
+                previous.serverTimestamp > syncedPlayback.serverTimestamp
+              ) {
+                return previous;
+              }
+
+              return syncedPlayback;
+            });
+            return;
+          }
+
+          if (
+            event.type === "QUEUE_ADDED" ||
+            event.type === "QUEUE_REMOVED" ||
+            event.type === "TRACK_STARTED" ||
+            event.type === "TRACK_ENDED"
+          ) {
             void refetchRoomState();
+            return;
+          }
+
+          if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
+            void queryClient.invalidateQueries({
+              queryKey: ["roomMeta", roomSlug],
+            });
           }
         }),
       };
     },
-    [cleanupRoomSubscription, refetchRoomState],
+    [cleanupRoomSubscription, queryClient, refetchRoomState],
   );
 
   async function handlePasswordSubmit(password: string) {
@@ -199,6 +275,10 @@ export default function RoomPage() {
     void refetchRoomState();
   }, [refetchRoomState, slug, status]);
 
+  useEffect(() => {
+    setLivePlaybackStatus(null);
+  }, [slug]);
+
   if (status === "needs-password") {
     return (
       <div className={styles.passwordState}>
@@ -232,6 +312,33 @@ export default function RoomPage() {
           playbackStatus={playbackStatus?.status ?? null}
           currentTimeMs={playbackStatus?.currentTime ?? null}
         />
+        {currentRequester ? (
+          <div className={styles.requesterCard}>
+            {currentRequester.avatarUrl ? (
+              <Image
+                src={currentRequester.avatarUrl}
+                alt={`${currentRequester.nickname} avatar`}
+                width={44}
+                height={44}
+                unoptimized
+                className={styles.requesterAvatar}
+              />
+            ) : (
+              <div
+                className={styles.requesterAvatarFallback}
+                aria-hidden="true"
+              >
+                {currentRequester.nickname.slice(0, 1)}
+              </div>
+            )}
+            <div className={styles.requesterMeta}>
+              <div className={styles.requesterLabel}>현재 신청자</div>
+              <div className={styles.requesterName}>
+                {currentRequester.nickname}
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className={styles.actionBar}>
           <AddTrackAction slug={slug} />
         </div>
