@@ -1,0 +1,23 @@
+.viewport {
+  --room-card-height: 77px;
+  --room-card-gap: 12px;
+  --room-viewport-padding: 245px;
+  width: 100%;
+  height: 100%;
+  padding-inline: 8px;
+  box-sizing: border-box;
+  margin-inline: auto;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+.track {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--room-card-gap);
+  padding-block: var(--room-viewport-padding);
+  transition: transform 320ms ease;
+  will-change: transform;
+}

@@ -31,8 +31,56 @@ export default function SearchPage() {
           <RoomSearchInput />
         </div>
         <div className={styles.room_list}>
-          <SearchPageRoomList rooms={rooms} />
+          <SearchPageRoomList
+            rooms={rooms}
+            selectedRoomSlug={selectedRoomSlug}
+          />
         </div>
+        {selectedRoomSlug ? (
+          <div className={styles.controlWrap}>
+            <RadialControl
+              ariaLabel="검색 페이지 방 이동 컨트롤"
+              top={<span>MENU</span>}
+              left={
+                <button
+                  type="button"
+                  onClick={goPrevious}
+                  disabled={!previousRoom}
+                  aria-label="이전 방 보기"
+                >
+                  <Image
+                    src="/icons/left_arrow.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                  />
+                </button>
+              }
+              center={
+                <Link
+                  href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
+                  aria-label="방입장"
+                />
+              }
+              right={
+                <button
+                  type="button"
+                  onClick={goNext}
+                  disabled={!nextRoom}
+                  aria-label="다음 방 보기"
+                >
+                  <Image
+                    src="/icons/right_arrow.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                  />
+                </button>
+              }
+              bottom={<span>FILTER</span>}
+            />
+          </div>
+        ) : null}
       </div>
 
       <div className={styles.thumbnail_container}>
@@ -43,52 +91,6 @@ export default function SearchPage() {
           className={styles.thumbnail}
           priority
         />
-      </div>
-
-      <div className={styles.controlWrap}>
-        {selectedRoomSlug ? (
-          <RadialControl
-            ariaLabel="검색 페이지 방 이동 컨트롤"
-            top={<span>MENU</span>}
-            left={
-              <button
-                type="button"
-                onClick={goPrevious}
-                disabled={!previousRoom}
-                aria-label="이전 방 보기"
-              >
-                <Image
-                  src="/icons/left_arrow.svg"
-                  alt=""
-                  width={20}
-                  height={20}
-                />
-              </button>
-            }
-            center={
-              <Link
-                href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
-                aria-label="방입장"
-              />
-            }
-            right={
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={!nextRoom}
-                aria-label="다음 방 보기"
-              >
-                <Image
-                  src="/icons/right_arrow.svg"
-                  alt=""
-                  width={20}
-                  height={20}
-                />
-              </button>
-            }
-            bottom={<span>FILTER</span>}
-          />
-        ) : null}
       </div>
     </div>
   );

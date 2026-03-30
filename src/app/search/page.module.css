@@ -1,5 +1,6 @@
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: #000000;
   position: relative;
   overflow: hidden;
@@ -9,15 +10,25 @@
 }
 
 .list_container {
+  --panel-horizontal-padding: 24px;
+  --panel-content-width: 640px;
   position: relative;
   z-index: 2;
-  min-height: 98vh;
-  width: 664px;
+  display: flex;
+  flex-direction: column;
+  width: min(
+    calc(var(--panel-content-width) + (var(--panel-horizontal-padding) * 2)),
+    calc(100vw - 32px)
+  );
+  height: 98vh;
+  height: 98dvh;
   margin: 1vh auto;
+  margin: 1dvh auto;
   background-color: rgba(60, 60, 60, 0.96);
   border-radius: 12px;
   backdrop-filter: blur(8px);
-  padding: 24px;
+  padding: var(--panel-horizontal-padding);
+  overflow: hidden;
 }
 
 .thumbnail_container {
@@ -41,11 +52,9 @@
 }
 
 .controlWrap {
-  position: fixed;
-  left: 50%;
-  bottom: 32px;
-  transform: translateX(-50%);
-  z-index: 20;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .search_badge {
@@ -58,4 +67,7 @@
 
 .room_list {
   margin-top: 32px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
