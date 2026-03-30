@@ -1,3 +1,4 @@
+import { useRoomMeta } from "../hooks/useRoomMeta";
 import type { RoomTag } from "../model/types";
 import styles from "./SearchPageRoomCard.module.css";
 
@@ -23,6 +24,11 @@ export default function SearchPageRoomCard({
   isSelected,
   distance,
 }: Props) {
+  const { data, isLoading, isError } = useRoomMeta(slug);
+  const activeUsersCount =
+    isLoading || isError ? "-" : (data?.activeUsersCount ?? "-");
+  const tagsText = tag.map((roomTag) => roomTag.name).join(" · ");
+
   return (
     <div
       className={styles.card}
@@ -31,14 +37,11 @@ export default function SearchPageRoomCard({
       data-distance={distance}
       style={{ opacity: getOpacity(distance) }}
     >
-      <div className={styles.title}>{title}</div>
-      <div className={styles.tags}>
-        {tag.map((roomTag) => (
-          <span key={roomTag.slug} className={styles.tag}>
-            {roomTag.name}
-          </span>
-        ))}
+      <div className={styles.header}>
+        <div className={styles.title}>{title}</div>
+        {tagsText ? <div className={styles.tags}>{tagsText}</div> : null}
       </div>
+      <div className={styles.activeUsersCount}>{activeUsersCount}명</div>
     </div>
   );
 }
