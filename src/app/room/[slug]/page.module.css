@@ -7,6 +7,12 @@
 .container {
   --panel-horizontal-padding: 24px;
   --panel-content-width: 640px;
+  --control-bar-width: min(372px, calc(100% - 8px), calc(100vw - 48px));
+  --control-bar-height: calc(var(--control-bar-width) * 76 / 372);
+  --control-bar-bottom-offset: 24px;
+  --control-bar-reserved-space: calc(
+    var(--control-bar-height) + var(--control-bar-bottom-offset) + 16px
+  );
   position: relative;
   z-index: 2;
   display: flex;
@@ -22,8 +28,18 @@
   background-color: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   backdrop-filter: blur(8px);
+  box-sizing: border-box;
   padding: var(--panel-horizontal-padding);
+  padding-bottom: var(--control-bar-reserved-space);
   overflow: hidden;
+}
+
+.mainArea {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .passwordState {
@@ -53,16 +69,38 @@
 .actionBar {
   display: flex;
   justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.chatSection {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.chatSection > * {
+  flex: 1;
+  min-height: 0;
+}
+
+.controlBarDock {
+  position: absolute;
+  left: 50%;
+  bottom: var(--control-bar-bottom-offset);
+  width: var(--control-bar-width);
+  transform: translateX(-50%);
+  z-index: 3;
 }
 
 .requesterCard {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 16px;
   padding: 12px 14px;
   border-radius: 12px;
   background-color: rgba(255, 255, 255, 0.92);
+  flex-shrink: 0;
 }
 
 .requesterAvatar {

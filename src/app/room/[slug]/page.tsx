@@ -24,6 +24,8 @@ import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import styles from "./page.module.css";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
+import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
+import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
@@ -102,9 +104,8 @@ export default function RoomPage() {
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
-  const [livePlaybackStatus, setLivePlaybackStatus] = useState<PlaybackState | null>(
-    null,
-  );
+  const [livePlaybackStatus, setLivePlaybackStatus] =
+    useState<PlaybackState | null>(null);
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
     roomPassword,
@@ -151,7 +152,10 @@ export default function RoomPage() {
             return;
           }
 
-          if (event.type === "PLAYBACK_SYNC" && isPlaybackSyncData(event.data)) {
+          if (
+            event.type === "PLAYBACK_SYNC" &&
+            isPlaybackSyncData(event.data)
+          ) {
             const syncedPlayback: PlaybackState = {
               videoId: event.data.videoId,
               status: event.data.status,
@@ -306,41 +310,49 @@ export default function RoomPage() {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <RoomInfo slug={slug} isRoom />
-        <YouTubePlayer
-          videoId={currentVideoId}
-          playbackStatus={playbackStatus?.status ?? null}
-          currentTimeMs={playbackStatus?.currentTime ?? null}
-        />
-        {currentRequester ? (
-          <div className={styles.requesterCard}>
-            {currentRequester.avatarUrl ? (
-              <Image
-                src={currentRequester.avatarUrl}
-                alt={`${currentRequester.nickname} avatar`}
-                width={44}
-                height={44}
-                unoptimized
-                className={styles.requesterAvatar}
-              />
-            ) : (
-              <div
-                className={styles.requesterAvatarFallback}
-                aria-hidden="true"
-              >
-                {currentRequester.nickname.slice(0, 1)}
-              </div>
-            )}
-            <div className={styles.requesterMeta}>
-              <div className={styles.requesterLabel}>현재 신청자</div>
-              <div className={styles.requesterName}>
-                {currentRequester.nickname}
+        <div className={styles.mainArea}>
+          <RoomInfo slug={slug} isRoom />
+          <YouTubePlayer
+            videoId={currentVideoId}
+            playbackStatus={playbackStatus?.status ?? null}
+            currentTimeMs={playbackStatus?.currentTime ?? null}
+          />
+          {currentRequester ? (
+            <div className={styles.requesterCard}>
+              {currentRequester.avatarUrl ? (
+                <Image
+                  src={currentRequester.avatarUrl}
+                  alt={`${currentRequester.nickname} avatar`}
+                  width={44}
+                  height={44}
+                  unoptimized
+                  className={styles.requesterAvatar}
+                />
+              ) : (
+                <div
+                  className={styles.requesterAvatarFallback}
+                  aria-hidden="true"
+                >
+                  {currentRequester.nickname.slice(0, 1)}
+                </div>
+              )}
+              <div className={styles.requesterMeta}>
+                <div className={styles.requesterLabel}>현재 신청자</div>
+                <div className={styles.requesterName}>
+                  {currentRequester.nickname}
+                </div>
               </div>
             </div>
+          ) : null}
+          <div className={styles.actionBar}>
+            <AddTrackAction slug={slug} />
           </div>
-        ) : null}
-        <div className={styles.actionBar}>
-          <AddTrackAction slug={slug} />
+          <div className={styles.chatSection}>
+            <ChatArea />
+          </div>
+          <div className={styles.controlBarDock}>
+            <RoomButtonControlBar />
+          </div>
         </div>
       </div>
     </div>

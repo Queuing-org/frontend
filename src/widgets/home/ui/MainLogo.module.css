@@ -5,8 +5,9 @@
   padding: 10px;
   background: #000000;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: var(--fw-black);
   letter-spacing: -0.04em;
   line-height: 1.4;
+  height: 30px;
 }
