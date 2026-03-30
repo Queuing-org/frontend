@@ -1,5 +1,10 @@
+import Link from "next/link";
 import styles from "./MainLogo.module.css";
 
 export default function MainLogo() {
-  return <div className={styles.logo}>QUEUING.COM</div>;
+  return (
+    <Link href="/home" className={styles.logo}>
+      QUEUING.COM
+    </Link>
+  );
 }
