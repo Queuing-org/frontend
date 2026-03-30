@@ -1,21 +1,25 @@
 "use client";
 
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
-import type { Room } from "@/src/entities/room/model/types";
 import styles from "./RoomInfo.module.css";
 
 type Props = {
-  currentRoom: Room | null;
+  slug: string | null;
 };
 
-export default function RoomInfo({ currentRoom }: Props) {
-  const { data: roomMeta, isLoading: isRoomMetaLoading } = useRoomMeta(
-    currentRoom?.slug ?? null,
-  );
-  const tags = currentRoom?.tags ?? [];
-  const activeUsersCount = isRoomMetaLoading
-    ? "-"
-    : (roomMeta?.activeUsersCount ?? "-");
+export default function RoomInfo({ slug }: Props) {
+  const { data: roomMeta, isLoading: isRoomMetaLoading, isError } =
+    useRoomMeta(slug);
+  const tags = roomMeta?.tags ?? [];
+  const activeUsersCount =
+    !slug || isRoomMetaLoading || isError
+      ? "-"
+      : (roomMeta?.activeUsersCount ?? "-");
+  const title = !slug
+    ? "선택된 방 없음"
+    : isRoomMetaLoading || isError
+      ? "-"
+      : (roomMeta?.title ?? "선택된 방 없음");
 
   return (
     <div className={styles.roomInfoContainer}>
@@ -33,9 +37,7 @@ export default function RoomInfo({ currentRoom }: Props) {
 
       <div className={styles.usersCount}>{activeUsersCount} 명</div>
 
-      <div className={styles.title}>
-        {currentRoom?.title ?? "선택된 방 없음"}
-      </div>
+      <div className={styles.title}>{title}</div>
     </div>
   );
 }
