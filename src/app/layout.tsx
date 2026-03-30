@@ -1,5 +1,6 @@
 // app/layout.tsx
 import Providers from "./providers";
+import SsgoiProvider from "./ssgoi-provider";
 import "./globals.css";
 import localFont from "next/font/local";
 
@@ -18,7 +19,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${suit.className} ${suit.variable}`}>
-        <Providers>{children}</Providers>
+        <SsgoiProvider>
+          <div style={{ position: "relative", minHeight: "100vh" }}>
+            <Providers>{children}</Providers>
+          </div>
+        </SsgoiProvider>
       </body>
     </html>
   );
