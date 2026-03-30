@@ -44,7 +44,7 @@
   color: #8d8d8d;
   opacity: 1;
   font-size: 16px;
-  font-weight: var(--font-medium);
+  font-weight: var(--fw-medium);
 }
 
 .input::-webkit-search-decoration,

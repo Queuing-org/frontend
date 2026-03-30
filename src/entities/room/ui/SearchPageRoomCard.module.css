@@ -20,7 +20,6 @@
 
 .card[data-selected="true"] {
   background-color: #8d8d8d;
-  border-color: rgba(255, 255, 255, 0.3);
   transform: scale(1.01);
 }
 

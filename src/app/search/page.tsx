@@ -10,9 +10,10 @@ import Link from "next/link";
 import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
 import RoomSearchBadge from "@/src/features/room/search/ui/RoomSearchBadge";
 import RoomSearchInput from "@/src/features/room/search/ui/RoomSearchInput";
+import { ClipLoader } from "react-spinners";
 
 export default function SearchPage() {
-  const { data } = useRoomsQuery();
+  const { data, isLoading, isError } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const { selectedRoomSlug, previousRoom, nextRoom, goPrevious, goNext } =
     useRoomNavigator(rooms);
@@ -31,12 +32,20 @@ export default function SearchPage() {
           <RoomSearchInput />
         </div>
         <div className={styles.room_list}>
-          <SearchPageRoomList
-            rooms={rooms}
-            selectedRoomSlug={selectedRoomSlug}
-          />
+          {isLoading ? (
+            <div className={styles.statePanel}>
+              <ClipLoader color="#ffffff" size={36} aria-label="로딩 중" />
+            </div>
+          ) : isError ? (
+            <div className={styles.statePanel}>새로고침을 시도해주세요.</div>
+          ) : (
+            <SearchPageRoomList
+              rooms={rooms}
+              selectedRoomSlug={selectedRoomSlug}
+            />
+          )}
         </div>
-        {selectedRoomSlug ? (
+        {!isLoading && !isError && selectedRoomSlug ? (
           <div className={styles.controlWrap}>
             <RadialControl
               ariaLabel="검색 페이지 방 이동 컨트롤"

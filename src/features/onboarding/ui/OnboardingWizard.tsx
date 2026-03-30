@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { OnboardingPayload } from "@/src/entities/user/model/types";
 import { useCompleteOnboarding } from "@/src/entities/user/hooks/useCompleteOnboarding";
+import { isSafeInternalPath } from "@/src/shared/lib/isSafeInternalPath";
 import NicknameStep from "./steps/NicknameStep";
 
 type Step = "nickname"; //"avatar" | "genre" | "favoriteSong"
@@ -11,7 +12,8 @@ type Step = "nickname"; //"avatar" | "genre" | "favoriteSong"
 export default function OnboardingWizard() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/";
+  const nextParam = sp.get("next");
+  const next = nextParam && isSafeInternalPath(nextParam) ? nextParam : "/";
 
   const [step, setStep] = useState<Step>("nickname");
 
