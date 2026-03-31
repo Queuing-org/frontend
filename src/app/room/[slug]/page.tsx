@@ -335,18 +335,27 @@ export default function RoomPage() {
   function handleProfileToggle() {
     const nextValue = !isProfileOpen;
     setIsProfileOpen(nextValue);
+    if (nextValue) {
+      setActiveWidget("profile");
+    }
     window.localStorage.setItem("isProfileOpen", String(nextValue));
   }
 
   function handleQueueToggle() {
     const nextValue = !isQueueOpen;
     setIsQueueOpen(nextValue);
+    if (nextValue) {
+      setActiveWidget("queue");
+    }
     window.localStorage.setItem("isQueueOpen", String(nextValue));
   }
 
   function handleChatToggle() {
     const nextValue = !isChatOpen;
     setIsChatOpen(nextValue);
+    if (nextValue) {
+      setActiveWidget("chat");
+    }
     window.localStorage.setItem("isChatOpen", String(nextValue));
   }
 
