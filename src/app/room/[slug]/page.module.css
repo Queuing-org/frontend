@@ -57,6 +57,7 @@
   --control-bar-reserved-space: calc(
     var(--control-bar-height) + var(--control-bar-bottom-offset) + 16px
   );
+
   position: relative;
   z-index: 2;
   display: flex;
@@ -65,6 +66,7 @@
     calc(var(--panel-content-width) + (var(--panel-horizontal-padding) * 2)),
     calc(100vw - 32px)
   );
+
   height: 98vh;
   height: 98dvh;
   margin: 1vh auto;

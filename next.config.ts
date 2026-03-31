@@ -5,11 +5,18 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "**.googleusercontent.com", //구글 프로필 이미지
+      },
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        pathname: "/vi/**", //유튜브 api 썸네일
       },
       {
         protocol: "http",
-        hostname: "**",
+        hostname: "localhost",
+        port: "8080",
+        pathname: "/uploads/**", //방 사진
       },
     ],
   },
