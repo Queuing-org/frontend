@@ -5,10 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import Draggable, {
-  type DraggableData,
-  type DraggableEvent,
-} from "react-draggable";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
 import {
@@ -29,7 +25,8 @@ import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import styles from "./page.module.css";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
-import FloatingRoomPanelShell from "@/src/widgets/room/ui/FloatingRoomPanelShell";
+import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
+import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
@@ -39,68 +36,6 @@ type PlaybackState = {
   videoId: string;
   currentTime: number;
   serverTimestamp: number;
-};
-
-type WidgetOffset = {
-  x: number;
-  y: number;
-};
-
-type WidgetId = "profile" | "queue" | "chat";
-
-type ViewportSize = {
-  height: number;
-  width: number;
-};
-
-type WidgetBounds = {
-  bottom: number;
-  left: number;
-  right: number;
-  top: number;
-};
-
-type WidgetConfig = {
-  height: number;
-  left?: number;
-  storageKey: string;
-  top?: number;
-  width: number;
-} & (
-  | {
-      bottom: number;
-      centeredX?: boolean;
-    }
-  | {
-      bottom?: never;
-      centeredX?: boolean;
-    }
-);
-
-const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
-
-const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
-  chat: {
-    bottom: 140,
-    centeredX: true,
-    height: 205,
-    storageKey: "chatWidgetOffset",
-    width: 300,
-  },
-  profile: {
-    height: 380,
-    left: 24,
-    storageKey: "profileWidgetOffset",
-    top: 80,
-    width: 300,
-  },
-  queue: {
-    bottom: 140,
-    height: 407,
-    left: 24,
-    storageKey: "queueWidgetOffset",
-    width: 300,
-  },
 };
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
@@ -154,120 +89,6 @@ function getCurrentVideoId(
   return null;
 }
 
-function getStoredBoolean(key: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.localStorage.getItem(key) === "true";
-}
-
-function getViewportSize(): ViewportSize {
-  if (typeof window === "undefined") {
-    return { height: 0, width: 0 };
-  }
-
-  return {
-    height: window.innerHeight,
-    width: window.innerWidth,
-  };
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function getWidgetBasePosition(
-  widgetId: WidgetId,
-  viewportSize: ViewportSize,
-): WidgetOffset {
-  const widget = WIDGET_CONFIG[widgetId];
-  const x = widget.centeredX
-    ? (viewportSize.width - widget.width) / 2
-    : (widget.left ?? 0);
-  const y =
-    typeof widget.top === "number"
-      ? widget.top
-      : viewportSize.height - widget.height - (widget.bottom ?? 0);
-
-  return { x, y };
-}
-
-function getWidgetBounds(
-  widgetId: WidgetId,
-  viewportSize: ViewportSize,
-): WidgetBounds {
-  const widget = WIDGET_CONFIG[widgetId];
-  const basePosition = getWidgetBasePosition(widgetId, viewportSize);
-  const maxHiddenWidth = widget.width * MAX_WIDGET_OUT_OF_VIEW_RATIO;
-  const maxHiddenHeight = widget.height * MAX_WIDGET_OUT_OF_VIEW_RATIO;
-  const minVisibleWidth = widget.width - maxHiddenWidth;
-  const minVisibleHeight = widget.height - maxHiddenHeight;
-  const minLeft = -maxHiddenWidth;
-  const maxLeft = viewportSize.width - minVisibleWidth;
-  const minTop = -maxHiddenHeight;
-  const maxTop = viewportSize.height - minVisibleHeight;
-
-  return {
-    bottom: Math.round(maxTop - basePosition.y),
-    left: Math.round(minLeft - basePosition.x),
-    right: Math.round(maxLeft - basePosition.x),
-    top: Math.round(minTop - basePosition.y),
-  };
-}
-
-function clampWidgetOffset(
-  widgetId: WidgetId,
-  nextOffset: WidgetOffset,
-  viewportSize = getViewportSize(),
-): WidgetOffset {
-  const bounds = getWidgetBounds(widgetId, viewportSize);
-
-  return {
-    x: Math.round(clamp(nextOffset.x, bounds.left, bounds.right)),
-    y: Math.round(clamp(nextOffset.y, bounds.top, bounds.bottom)),
-  };
-}
-
-function getStoredWidgetOffset(key: string, widgetId: WidgetId): WidgetOffset {
-  if (typeof window === "undefined") {
-    return { x: 0, y: 0 };
-  }
-
-  const savedValue = window.localStorage.getItem(key);
-  if (!savedValue) {
-    return { x: 0, y: 0 };
-  }
-
-  try {
-    const parsedValue = JSON.parse(savedValue) as Partial<WidgetOffset>;
-    if (
-      typeof parsedValue.x !== "number" ||
-      typeof parsedValue.y !== "number"
-    ) {
-      window.localStorage.removeItem(key);
-      return { x: 0, y: 0 };
-    }
-
-    const clampedOffset = clampWidgetOffset(widgetId, {
-      x: parsedValue.x,
-      y: parsedValue.y,
-    });
-
-    if (
-      clampedOffset.x !== parsedValue.x ||
-      clampedOffset.y !== parsedValue.y
-    ) {
-      window.localStorage.setItem(key, JSON.stringify(clampedOffset));
-    }
-
-    return clampedOffset;
-  } catch {
-    window.localStorage.removeItem(key);
-    return { x: 0, y: 0 };
-  }
-}
-
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -280,12 +101,6 @@ export default function RoomPage() {
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
-  const profileWidgetRef = useRef<HTMLDivElement>(null);
-  const queueWidgetRef = useRef<HTMLDivElement>(null);
-  const chatWidgetRef = useRef<HTMLDivElement>(null);
-  const [viewportSize, setViewportSize] = useState<ViewportSize>(() =>
-    getViewportSize(),
-  );
 
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
@@ -293,32 +108,7 @@ export default function RoomPage() {
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [livePlaybackStatus, setLivePlaybackStatus] =
     useState<PlaybackState | null>(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(() =>
-    getStoredBoolean("isProfileOpen"),
-  );
-  const [isQueueOpen, setIsQueueOpen] = useState(() =>
-    getStoredBoolean("isQueueOpen"),
-  );
-  const [isChatOpen, setIsChatOpen] = useState(() =>
-    getStoredBoolean("isChatOpen"),
-  );
-  const [profileWidgetOffset, setProfileWidgetOffset] = useState<WidgetOffset>(
-    () =>
-      getStoredWidgetOffset(
-        WIDGET_CONFIG.profile.storageKey,
-        "profile",
-      ),
-  );
-  const [queueWidgetOffset, setQueueWidgetOffset] = useState<WidgetOffset>(() =>
-    getStoredWidgetOffset(WIDGET_CONFIG.queue.storageKey, "queue"),
-  );
-  const [chatWidgetOffset, setChatWidgetOffset] = useState<WidgetOffset>(() =>
-    getStoredWidgetOffset(WIDGET_CONFIG.chat.storageKey, "chat"),
-  );
-
-  const [activeWidget, setActiveWidget] = useState<
-    "profile" | "queue" | "chat" | null
-  >(null);
+  const floatingWidgets = useFloatingWidgetsState();
 
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
@@ -331,75 +121,6 @@ export default function RoomPage() {
   );
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
   const currentRequester = roomState?.currentEntry?.addedBy ?? null;
-
-  function handleProfileToggle() {
-    const nextValue = !isProfileOpen;
-    setIsProfileOpen(nextValue);
-    if (nextValue) {
-      setActiveWidget("profile");
-    }
-    window.localStorage.setItem("isProfileOpen", String(nextValue));
-  }
-
-  function handleQueueToggle() {
-    const nextValue = !isQueueOpen;
-    setIsQueueOpen(nextValue);
-    if (nextValue) {
-      setActiveWidget("queue");
-    }
-    window.localStorage.setItem("isQueueOpen", String(nextValue));
-  }
-
-  function handleChatToggle() {
-    const nextValue = !isChatOpen;
-    setIsChatOpen(nextValue);
-    if (nextValue) {
-      setActiveWidget("chat");
-    }
-    window.localStorage.setItem("isChatOpen", String(nextValue));
-  }
-
-  function handleProfileWidgetStop(
-    _event: DraggableEvent,
-    data: DraggableData,
-  ) {
-    const nextOffset = clampWidgetOffset(
-      "profile",
-      { x: data.x, y: data.y },
-      viewportSize,
-    );
-    setProfileWidgetOffset(nextOffset);
-    window.localStorage.setItem(
-      WIDGET_CONFIG.profile.storageKey,
-      JSON.stringify(nextOffset),
-    );
-  }
-
-  function handleQueueWidgetStop(_event: DraggableEvent, data: DraggableData) {
-    const nextOffset = clampWidgetOffset(
-      "queue",
-      { x: data.x, y: data.y },
-      viewportSize,
-    );
-    setQueueWidgetOffset(nextOffset);
-    window.localStorage.setItem(
-      WIDGET_CONFIG.queue.storageKey,
-      JSON.stringify(nextOffset),
-    );
-  }
-
-  function handleChatWidgetStop(_event: DraggableEvent, data: DraggableData) {
-    const nextOffset = clampWidgetOffset(
-      "chat",
-      { x: data.x, y: data.y },
-      viewportSize,
-    );
-    setChatWidgetOffset(nextOffset);
-    window.localStorage.setItem(
-      WIDGET_CONFIG.chat.storageKey,
-      JSON.stringify(nextOffset),
-    );
-  }
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -566,19 +287,6 @@ export default function RoomPage() {
     setLivePlaybackStatus(null);
   }, [slug]);
 
-  useEffect(() => {
-    function handleResize() {
-      setViewportSize(getViewportSize());
-    }
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const profileWidgetBounds = getWidgetBounds("profile", viewportSize);
-  const queueWidgetBounds = getWidgetBounds("queue", viewportSize);
-  const chatWidgetBounds = getWidgetBounds("chat", viewportSize);
-
   if (status === "needs-password") {
     return (
       <div className={styles.passwordState}>
@@ -648,90 +356,21 @@ export default function RoomPage() {
           </div>
           <div className={styles.controlBarDock}>
             <RoomButtonControlBar
-              isChatOpen={isChatOpen}
-              isProfileOpen={isProfileOpen}
-              isQueueOpen={isQueueOpen}
-              onToggleChat={handleChatToggle}
-              onToggleProfile={handleProfileToggle}
-              onToggleQueue={handleQueueToggle}
+              isChatOpen={floatingWidgets.widgets.chat.isOpen}
+              isProfileOpen={floatingWidgets.widgets.profile.isOpen}
+              isQueueOpen={floatingWidgets.widgets.queue.isOpen}
+              onToggleChat={() => floatingWidgets.toggleWidget("chat")}
+              onToggleProfile={() => floatingWidgets.toggleWidget("profile")}
+              onToggleQueue={() => floatingWidgets.toggleWidget("queue")}
             />
           </div>
         </div>
       </div>
-      <div className={styles.widgetLayer}>
-        {isProfileOpen ? (
-          <div
-            className={styles.profileWidget}
-            onMouseDown={() => setActiveWidget("profile")}
-            style={{ zIndex: activeWidget === "profile" ? 3 : 1 }}
-          >
-            <Draggable
-              bounds={profileWidgetBounds}
-              defaultPosition={profileWidgetOffset}
-              handle="[data-drag-handle='true']"
-              nodeRef={profileWidgetRef}
-              onStop={handleProfileWidgetStop}
-            >
-              <div ref={profileWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell
-                  height={WIDGET_CONFIG.profile.height}
-                  width={WIDGET_CONFIG.profile.width}
-                >
-                  <div className={styles.widgetPlaceholder}>프로필 모달임</div>
-                </FloatingRoomPanelShell>
-              </div>
-            </Draggable>
-          </div>
-        ) : null}
-        {isQueueOpen ? (
-          <div
-            className={styles.queueWidget}
-            onMouseDown={() => setActiveWidget("queue")}
-            style={{ zIndex: activeWidget === "queue" ? 3 : 1 }}
-          >
-            <Draggable
-              bounds={queueWidgetBounds}
-              defaultPosition={queueWidgetOffset}
-              handle="[data-drag-handle='true']"
-              nodeRef={queueWidgetRef}
-              onStop={handleQueueWidgetStop}
-            >
-              <div ref={queueWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell
-                  height={WIDGET_CONFIG.queue.height}
-                  width={WIDGET_CONFIG.queue.width}
-                >
-                  <div className={styles.widgetPlaceholder}>큐 모달임</div>
-                </FloatingRoomPanelShell>
-              </div>
-            </Draggable>
-          </div>
-        ) : null}
-        {isChatOpen ? (
-          <div
-            className={styles.chatWidget}
-            onMouseDown={() => setActiveWidget("chat")}
-            style={{ zIndex: activeWidget === "chat" ? 3 : 1 }}
-          >
-            <Draggable
-              bounds={chatWidgetBounds}
-              defaultPosition={chatWidgetOffset}
-              handle="[data-drag-handle='true']"
-              nodeRef={chatWidgetRef}
-              onStop={handleChatWidgetStop}
-            >
-              <div ref={chatWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell
-                  height={WIDGET_CONFIG.chat.height}
-                  width={WIDGET_CONFIG.chat.width}
-                >
-                  <div className={styles.widgetPlaceholder}>채팅 모달임</div>
-                </FloatingRoomPanelShell>
-              </div>
-            </Draggable>
-          </div>
-        ) : null}
-      </div>
+      <RoomFloatingWidgets
+        widgets={floatingWidgets.widgets}
+        onActivateWidget={floatingWidgets.activateWidget}
+        onWidgetStop={floatingWidgets.handleWidgetStop}
+      />
     </div>
   );
 }

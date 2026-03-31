@@ -1,0 +1,25 @@
+.widgetLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.widget {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.widgetFrame {
+  width: fit-content;
+}
+
+.widgetPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
