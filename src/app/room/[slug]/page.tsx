@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import Image from "next/image";
 import { useParams } from "next/navigation";
+import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
 import {
@@ -35,6 +36,11 @@ type PlaybackState = {
   videoId: string;
   currentTime: number;
   serverTimestamp: number;
+};
+
+type WidgetOffset = {
+  x: number;
+  y: number;
 };
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
@@ -96,6 +102,29 @@ function getStoredBoolean(key: string) {
   return window.localStorage.getItem(key) === "true";
 }
 
+function getStoredWidgetOffset(key: string): WidgetOffset {
+  if (typeof window === "undefined") {
+    return { x: 0, y: 0 };
+  }
+
+  const savedValue = window.localStorage.getItem(key);
+  if (!savedValue) {
+    return { x: 0, y: 0 };
+  }
+
+  try {
+    const parsedValue = JSON.parse(savedValue) as Partial<WidgetOffset>;
+
+    return {
+      x: typeof parsedValue.x === "number" ? parsedValue.x : 0,
+      y: typeof parsedValue.y === "number" ? parsedValue.y : 0,
+    };
+  } catch {
+    window.localStorage.removeItem(key);
+    return { x: 0, y: 0 };
+  }
+}
+
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -108,6 +137,9 @@ export default function RoomPage() {
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
+  const profileWidgetRef = useRef<HTMLDivElement>(null);
+  const queueWidgetRef = useRef<HTMLDivElement>(null);
+  const chatWidgetRef = useRef<HTMLDivElement>(null);
 
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
@@ -123,6 +155,15 @@ export default function RoomPage() {
   );
   const [isChatOpen, setIsChatOpen] = useState(() =>
     getStoredBoolean("isChatOpen"),
+  );
+  const [profileWidgetOffset, setProfileWidgetOffset] = useState<WidgetOffset>(
+    () => getStoredWidgetOffset("profileWidgetOffset"),
+  );
+  const [queueWidgetOffset, setQueueWidgetOffset] = useState<WidgetOffset>(() =>
+    getStoredWidgetOffset("queueWidgetOffset"),
+  );
+  const [chatWidgetOffset, setChatWidgetOffset] = useState<WidgetOffset>(() =>
+    getStoredWidgetOffset("chatWidgetOffset"),
   );
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
@@ -152,6 +193,39 @@ export default function RoomPage() {
     const nextValue = !isChatOpen;
     setIsChatOpen(nextValue);
     window.localStorage.setItem("isChatOpen", String(nextValue));
+  }
+
+  function handleProfileWidgetStop(
+    _event: DraggableEvent,
+    data: DraggableData,
+  ) {
+    const nextOffset = { x: data.x, y: data.y };
+    setProfileWidgetOffset(nextOffset);
+    window.localStorage.setItem(
+      "profileWidgetOffset",
+      JSON.stringify(nextOffset),
+    );
+  }
+
+  function handleQueueWidgetStop(
+    _event: DraggableEvent,
+    data: DraggableData,
+  ) {
+    const nextOffset = { x: data.x, y: data.y };
+    setQueueWidgetOffset(nextOffset);
+    window.localStorage.setItem(
+      "queueWidgetOffset",
+      JSON.stringify(nextOffset),
+    );
+  }
+
+  function handleChatWidgetStop(
+    _event: DraggableEvent,
+    data: DraggableData,
+  ) {
+    const nextOffset = { x: data.x, y: data.y };
+    setChatWidgetOffset(nextOffset);
+    window.localStorage.setItem("chatWidgetOffset", JSON.stringify(nextOffset));
   }
 
   const cleanupRoomSubscription = useCallback(() => {
@@ -401,23 +475,50 @@ export default function RoomPage() {
       <div className={styles.widgetLayer}>
         {isProfileOpen ? (
           <div className={styles.profileWidget}>
-            <FloatingRoomPanelShell height={407} width={300}>
-              <div className={styles.widgetPlaceholder}>프로필 모달임</div>
-            </FloatingRoomPanelShell>
+            <Draggable
+              defaultPosition={profileWidgetOffset}
+              handle="[data-drag-handle='true']"
+              nodeRef={profileWidgetRef}
+              onStop={handleProfileWidgetStop}
+            >
+              <div ref={profileWidgetRef} className={styles.widgetFrame}>
+                <FloatingRoomPanelShell height={380} width={300}>
+                  <div className={styles.widgetPlaceholder}>프로필 모달임</div>
+                </FloatingRoomPanelShell>
+              </div>
+            </Draggable>
           </div>
         ) : null}
         {isQueueOpen ? (
           <div className={styles.queueWidget}>
-            <FloatingRoomPanelShell height={407} width={300}>
-              <div className={styles.widgetPlaceholder}>큐 모달임</div>
-            </FloatingRoomPanelShell>
+            <Draggable
+              defaultPosition={queueWidgetOffset}
+              handle="[data-drag-handle='true']"
+              nodeRef={queueWidgetRef}
+              onStop={handleQueueWidgetStop}
+            >
+              <div ref={queueWidgetRef} className={styles.widgetFrame}>
+                <FloatingRoomPanelShell height={407} width={300}>
+                  <div className={styles.widgetPlaceholder}>큐 모달임</div>
+                </FloatingRoomPanelShell>
+              </div>
+            </Draggable>
           </div>
         ) : null}
         {isChatOpen ? (
           <div className={styles.chatWidget}>
-            <FloatingRoomPanelShell height={205} width={300}>
-              <div className={styles.widgetPlaceholder}>채팅 모달임</div>
-            </FloatingRoomPanelShell>
+            <Draggable
+              defaultPosition={chatWidgetOffset}
+              handle="[data-drag-handle='true']"
+              nodeRef={chatWidgetRef}
+              onStop={handleChatWidgetStop}
+            >
+              <div ref={chatWidgetRef} className={styles.widgetFrame}>
+                <FloatingRoomPanelShell height={205} width={300}>
+                  <div className={styles.widgetPlaceholder}>채팅 모달임</div>
+                </FloatingRoomPanelShell>
+              </div>
+            </Draggable>
           </div>
         ) : null}
       </div>

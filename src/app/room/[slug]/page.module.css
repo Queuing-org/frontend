@@ -18,6 +18,10 @@
   pointer-events: auto;
 }
 
+.widgetFrame {
+  width: fit-content;
+}
+
 .profileWidget {
   top: 80px;
   left: 24px;

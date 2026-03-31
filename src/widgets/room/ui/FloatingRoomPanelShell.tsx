@@ -16,7 +16,11 @@ export default function FloatingRoomPanelShell({
 }: Props) {
   return (
     <div className={styles.panel} style={{ width, height }}>
-      <div className={styles.header} aria-hidden="true">
+      <div
+        className={styles.header}
+        aria-hidden="true"
+        data-drag-handle="true"
+      >
         <span className={styles.handle} />
       </div>
       <div className={styles.content}>{children}</div>
