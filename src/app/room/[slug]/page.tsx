@@ -5,7 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import Draggable, { type DraggableData, type DraggableEvent } from "react-draggable";
+import Draggable, {
+  type DraggableData,
+  type DraggableEvent,
+} from "react-draggable";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
 import {
@@ -165,6 +168,11 @@ export default function RoomPage() {
   const [chatWidgetOffset, setChatWidgetOffset] = useState<WidgetOffset>(() =>
     getStoredWidgetOffset("chatWidgetOffset"),
   );
+
+  const [activeWidget, setActiveWidget] = useState<
+    "profile" | "queue" | "chat" | null
+  >(null);
+
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
     roomPassword,
@@ -207,10 +215,7 @@ export default function RoomPage() {
     );
   }
 
-  function handleQueueWidgetStop(
-    _event: DraggableEvent,
-    data: DraggableData,
-  ) {
+  function handleQueueWidgetStop(_event: DraggableEvent, data: DraggableData) {
     const nextOffset = { x: data.x, y: data.y };
     setQueueWidgetOffset(nextOffset);
     window.localStorage.setItem(
@@ -219,10 +224,7 @@ export default function RoomPage() {
     );
   }
 
-  function handleChatWidgetStop(
-    _event: DraggableEvent,
-    data: DraggableData,
-  ) {
+  function handleChatWidgetStop(_event: DraggableEvent, data: DraggableData) {
     const nextOffset = { x: data.x, y: data.y };
     setChatWidgetOffset(nextOffset);
     window.localStorage.setItem("chatWidgetOffset", JSON.stringify(nextOffset));
@@ -474,7 +476,11 @@ export default function RoomPage() {
       </div>
       <div className={styles.widgetLayer}>
         {isProfileOpen ? (
-          <div className={styles.profileWidget}>
+          <div
+            className={styles.profileWidget}
+            onMouseDown={() => setActiveWidget("profile")}
+            style={{ zIndex: activeWidget === "profile" ? 3 : 1 }}
+          >
             <Draggable
               defaultPosition={profileWidgetOffset}
               handle="[data-drag-handle='true']"
@@ -490,7 +496,11 @@ export default function RoomPage() {
           </div>
         ) : null}
         {isQueueOpen ? (
-          <div className={styles.queueWidget}>
+          <div
+            className={styles.queueWidget}
+            onMouseDown={() => setActiveWidget("queue")}
+            style={{ zIndex: activeWidget === "queue" ? 3 : 1 }}
+          >
             <Draggable
               defaultPosition={queueWidgetOffset}
               handle="[data-drag-handle='true']"
@@ -506,7 +516,11 @@ export default function RoomPage() {
           </div>
         ) : null}
         {isChatOpen ? (
-          <div className={styles.chatWidget}>
+          <div
+            className={styles.chatWidget}
+            onMouseDown={() => setActiveWidget("chat")}
+            style={{ zIndex: activeWidget === "chat" ? 3 : 1 }}
+          >
             <Draggable
               defaultPosition={chatWidgetOffset}
               handle="[data-drag-handle='true']"
