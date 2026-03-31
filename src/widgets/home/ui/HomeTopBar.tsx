@@ -16,7 +16,7 @@ export default function HomeTopBar({ currentRoom }: Props) {
         <RoomSearchButton />
       </div>
       <div className={styles.rightGroup}>
-        <RoomInfo currentRoom={currentRoom} />
+        <RoomInfo slug={currentRoom?.slug ?? null} />
       </div>
     </div>
   );

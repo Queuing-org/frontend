@@ -19,6 +19,7 @@ export type RoomMeta = {
   isPublic: boolean;
   hasPassword: boolean;
   activeUsersCount: number;
+  tags: RoomTag[];
 };
 
 export type RoomOwner = {

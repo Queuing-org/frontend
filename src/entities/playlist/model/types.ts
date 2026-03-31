@@ -9,23 +9,32 @@ export type PlaylistProtectedRequestParams = {
   password?: string | null;
 };
 
+export type RoomQueueRequestParams = PlaylistProtectedRequestParams & {
+  offset?: number;
+  size?: number;
+};
+
 export type TrackProvider = "YOUTUBE" | (string & {});
 
 export type PlaylistTrack = {
+  title: string;
   videoId: string;
   provider: TrackProvider;
-  title?: string | null;
-  thumbnailUrl?: string | null;
-  durationMs?: number | null;
-  [key: string]: unknown;
+  durationMs: number;
+  thumbnailUrl: string;
+  regionRestriction: unknown | null;
 };
 
 export type PlaylistEntryStatus = {
-  [key: string]: unknown;
+  skipped: boolean;
+  isActive: boolean;
+  isPlayed: boolean;
 };
 
 export type PlaylistAddedBy = {
-  [key: string]: unknown;
+  userId: number | null;
+  nickname: string;
+  avatarUrl?: string | null;
 };
 
 export type PlaylistEntry = {
@@ -39,16 +48,13 @@ export type PlaylistEntry = {
 };
 
 export type PlaylistResult = PlaylistEntry[];
+export type RoomQueueResult = PlaylistEntry[];
 
 export type PlaylistParticipant = {
-  id?: string | null;
-  participantId?: string | null;
-  userId?: number | null;
-  nickname?: string | null;
+  slug: string;
+  userId: number;
+  nickname: string;
   profileImageUrl?: string | null;
-  role?: string | null;
-  type?: string | null;
-  [key: string]: unknown;
 };
 
 export type PlaybackSnapshot = {
@@ -60,7 +66,7 @@ export type PlaybackSnapshot = {
 
 export type RoomStateSnapshot = {
   queue: PlaylistEntry[];
-  currentEntry: PlaylistEntry | null;
+  currentEntry?: PlaylistEntry | null;
   participants: PlaylistParticipant[];
   currentEntryId?: string | null;
   playbackStatus?: PlaybackSnapshot | null;

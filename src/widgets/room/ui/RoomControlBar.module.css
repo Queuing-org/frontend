@@ -1,0 +1,37 @@
+.outerBar {
+  width: 372px;
+  height: 76px;
+  background: #3c3c3c;
+  border: 6px solid #242424;
+  border-radius: 9999px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: #8d8d8d;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.iconButton[data-selected="true"] {
+  color: #ffffff;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
