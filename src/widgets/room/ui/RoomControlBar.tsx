@@ -1,25 +1,173 @@
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
 import styles from "./RoomControlBar.module.css";
+import { useState } from "react";
+
+type IconProps = {
+  className?: string;
+};
+
+function getStoredBoolean(key: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(key) === "true";
+}
+
+function ProfileIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 0C8.67392 0 7.40215 0.526784 6.46447 1.46447C5.52678 2.40215 5 3.67392 5 5C5 6.32608 5.52678 7.59785 6.46447 8.53553C7.40215 9.47322 8.67392 10 10 10C11.3261 10 12.5979 9.47322 13.5355 8.53553C14.4732 7.59785 15 6.32608 15 5C15 3.67392 14.4732 2.40215 13.5355 1.46447C12.5979 0.526784 11.3261 0 10 0ZM10 12.5C4.475 12.5 0 14.7375 0 17.5V20H20V17.5C20 14.7375 15.525 12.5 10 12.5Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function QueueIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M6.73077 3.75V15.5C6.20769 15.25 5.55385 15 4.76923 15C2.93846 15 1.5 16.125 1.5 17.5C1.5 18.875 2.93846 20 4.76923 20C6.6 20 8.03846 18.875 8.03846 17.5V8.375L17.1923 5.5V11.875C16.6692 11.5 16.0154 11.25 15.2308 11.25C13.4 11.25 11.9615 12.375 11.9615 13.75C11.9615 15.125 13.4 16.25 15.2308 16.25C17.0615 16.25 18.5 15.125 18.5 13.75V0L6.73077 3.75Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ExitIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 17"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M4.33333 5.175L5.50833 4L10.1667 8.65833L14.825 4L16 5.175L11.3417 9.83333L16 14.4917L14.825 15.6667L10.1667 11.0083L5.50833 15.6667L4.33333 14.4917L8.99167 9.83333L4.33333 5.175Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function HeartIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M10 19.35L8.55 18.03C3.4 13.36 0 10.27 0 6.5C0 3.41 2.42 1 5.5 1C7.24 1 8.91 1.81 10 3.08C11.09 1.81 12.76 1 14.5 1C17.58 1 20 3.41 20 6.5C20 10.27 16.6 13.36 11.45 18.03L10 19.35Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ChatIcon({ className }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      className={className}
+      aria-hidden="true"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M0 0H20V15.4559H5.12L0 20V0Z" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function RoomButtonControlBar() {
+  const [isProfileOpen, setIsProfileOpen] = useState(() =>
+    getStoredBoolean("isProfileOpen"),
+  );
+  const [isQueueOpen, setIsQueueOpen] = useState(() =>
+    getStoredBoolean("isQueueOpen"),
+  );
+  const [isChatOpen, setIsChatOpen] = useState(() =>
+    getStoredBoolean("isChatOpen"),
+  );
+
+  function handleProfileToggle() {
+    const nextValue = !isProfileOpen;
+    setIsProfileOpen(nextValue);
+    window.localStorage.setItem("isProfileOpen", String(nextValue));
+  }
+
+  function handleQueueToggle() {
+    const nextValue = !isQueueOpen;
+    setIsQueueOpen(nextValue);
+    window.localStorage.setItem("isQueueOpen", String(nextValue));
+  }
+
+  function handleChatToggle() {
+    const nextValue = !isChatOpen;
+    setIsChatOpen(nextValue);
+    window.localStorage.setItem("isChatOpen", String(nextValue));
+  }
   return (
     <div className={styles.outerBar}>
-      <button type="button" className={styles.iconButton} aria-label="프로필">
-        <Image src="/icons/profile.svg" alt="" width={20} height={20} />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label="프로필"
+        aria-pressed={isProfileOpen}
+        data-selected={isProfileOpen}
+        onClick={handleProfileToggle}
+      >
+        <ProfileIcon className={styles.icon} />
       </button>
-      <button type="button" className={styles.iconButton} aria-label="큐">
-        <Image src="/icons/queue.svg" alt="" width={20} height={20} />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label="큐"
+        aria-pressed={isQueueOpen}
+        data-selected={isQueueOpen}
+        onClick={handleQueueToggle}
+      >
+        <QueueIcon className={styles.icon} />
       </button>
-      <button type="button" className={styles.iconButton} aria-label="나가기">
-        <Image src="/icons/exit.svg" alt="" width={20} height={20} />
-      </button>
+      <Link
+        href="/home"
+        replace
+        className={styles.iconButton}
+        aria-label="나가기"
+      >
+        <ExitIcon className={styles.icon} />
+      </Link>
       <button type="button" className={styles.iconButton} aria-label="좋아요">
-        <Image src="/icons/heart.svg" alt="" width={20} height={20} />
+        <HeartIcon className={styles.icon} />
       </button>
-      <button type="button" className={styles.iconButton} aria-label="채팅">
-        <Image src="/icons/chat.svg" alt="" width={20} height={20} />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label="채팅"
+        aria-pressed={isChatOpen}
+        data-selected={isChatOpen}
+        onClick={handleChatToggle}
+      >
+        <ChatIcon className={styles.icon} />
       </button>
     </div>
   );

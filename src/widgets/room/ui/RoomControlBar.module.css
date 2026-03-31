@@ -21,5 +21,17 @@
   border: 0;
   border-radius: 9999px;
   background: transparent;
+  color: #8d8d8d;
   cursor: pointer;
+  text-decoration: none;
+}
+
+.iconButton[data-selected="true"] {
+  color: #ffffff;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
