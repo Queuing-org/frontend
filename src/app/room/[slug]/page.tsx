@@ -401,21 +401,21 @@ export default function RoomPage() {
       <div className={styles.widgetLayer}>
         {isProfileOpen ? (
           <div className={styles.profileWidget}>
-            <FloatingRoomPanelShell height={220} width={320}>
+            <FloatingRoomPanelShell height={407} width={300}>
               <div className={styles.widgetPlaceholder}>프로필 모달임</div>
             </FloatingRoomPanelShell>
           </div>
         ) : null}
         {isQueueOpen ? (
           <div className={styles.queueWidget}>
-            <FloatingRoomPanelShell height={260} width={320}>
+            <FloatingRoomPanelShell height={407} width={300}>
               <div className={styles.widgetPlaceholder}>큐 모달임</div>
             </FloatingRoomPanelShell>
           </div>
         ) : null}
         {isChatOpen ? (
           <div className={styles.chatWidget}>
-            <FloatingRoomPanelShell height={220} width={380}>
+            <FloatingRoomPanelShell height={205} width={300}>
               <div className={styles.widgetPlaceholder}>채팅 모달임</div>
             </FloatingRoomPanelShell>
           </div>
