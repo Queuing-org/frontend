@@ -25,6 +25,7 @@ import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import styles from "./page.module.css";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
+import FloatingRoomPanelShell from "@/src/widgets/room/ui/FloatingRoomPanelShell";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
@@ -87,6 +88,14 @@ function getCurrentVideoId(
   return null;
 }
 
+function getStoredBoolean(key: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(key) === "true";
+}
+
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -106,6 +115,15 @@ export default function RoomPage() {
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [livePlaybackStatus, setLivePlaybackStatus] =
     useState<PlaybackState | null>(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(() =>
+    getStoredBoolean("isProfileOpen"),
+  );
+  const [isQueueOpen, setIsQueueOpen] = useState(() =>
+    getStoredBoolean("isQueueOpen"),
+  );
+  const [isChatOpen, setIsChatOpen] = useState(() =>
+    getStoredBoolean("isChatOpen"),
+  );
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
     slug,
     roomPassword,
@@ -117,6 +135,24 @@ export default function RoomPage() {
   );
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
   const currentRequester = roomState?.currentEntry?.addedBy ?? null;
+
+  function handleProfileToggle() {
+    const nextValue = !isProfileOpen;
+    setIsProfileOpen(nextValue);
+    window.localStorage.setItem("isProfileOpen", String(nextValue));
+  }
+
+  function handleQueueToggle() {
+    const nextValue = !isQueueOpen;
+    setIsQueueOpen(nextValue);
+    window.localStorage.setItem("isQueueOpen", String(nextValue));
+  }
+
+  function handleChatToggle() {
+    const nextValue = !isChatOpen;
+    setIsChatOpen(nextValue);
+    window.localStorage.setItem("isChatOpen", String(nextValue));
+  }
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -351,9 +387,39 @@ export default function RoomPage() {
             <ChatArea />
           </div>
           <div className={styles.controlBarDock}>
-            <RoomButtonControlBar />
+            <RoomButtonControlBar
+              isChatOpen={isChatOpen}
+              isProfileOpen={isProfileOpen}
+              isQueueOpen={isQueueOpen}
+              onToggleChat={handleChatToggle}
+              onToggleProfile={handleProfileToggle}
+              onToggleQueue={handleQueueToggle}
+            />
           </div>
         </div>
+      </div>
+      <div className={styles.widgetLayer}>
+        {isProfileOpen ? (
+          <div className={styles.profileWidget}>
+            <FloatingRoomPanelShell height={220} width={320}>
+              <div className={styles.widgetPlaceholder}>프로필 모달임</div>
+            </FloatingRoomPanelShell>
+          </div>
+        ) : null}
+        {isQueueOpen ? (
+          <div className={styles.queueWidget}>
+            <FloatingRoomPanelShell height={260} width={320}>
+              <div className={styles.widgetPlaceholder}>큐 모달임</div>
+            </FloatingRoomPanelShell>
+          </div>
+        ) : null}
+        {isChatOpen ? (
+          <div className={styles.chatWidget}>
+            <FloatingRoomPanelShell height={220} width={380}>
+              <div className={styles.widgetPlaceholder}>채팅 모달임</div>
+            </FloatingRoomPanelShell>
+          </div>
+        ) : null}
       </div>
     </div>
   );

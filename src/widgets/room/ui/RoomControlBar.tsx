@@ -2,19 +2,19 @@
 
 import Link from "next/link";
 import styles from "./RoomControlBar.module.css";
-import { useState } from "react";
 
 type IconProps = {
   className?: string;
 };
 
-function getStoredBoolean(key: string) {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  return window.localStorage.getItem(key) === "true";
-}
+type Props = {
+  isChatOpen: boolean;
+  isProfileOpen: boolean;
+  isQueueOpen: boolean;
+  onToggleChat: () => void;
+  onToggleProfile: () => void;
+  onToggleQueue: () => void;
+};
 
 function ProfileIcon({ className }: IconProps) {
   return (
@@ -98,34 +98,14 @@ function ChatIcon({ className }: IconProps) {
   );
 }
 
-export default function RoomButtonControlBar() {
-  const [isProfileOpen, setIsProfileOpen] = useState(() =>
-    getStoredBoolean("isProfileOpen"),
-  );
-  const [isQueueOpen, setIsQueueOpen] = useState(() =>
-    getStoredBoolean("isQueueOpen"),
-  );
-  const [isChatOpen, setIsChatOpen] = useState(() =>
-    getStoredBoolean("isChatOpen"),
-  );
-
-  function handleProfileToggle() {
-    const nextValue = !isProfileOpen;
-    setIsProfileOpen(nextValue);
-    window.localStorage.setItem("isProfileOpen", String(nextValue));
-  }
-
-  function handleQueueToggle() {
-    const nextValue = !isQueueOpen;
-    setIsQueueOpen(nextValue);
-    window.localStorage.setItem("isQueueOpen", String(nextValue));
-  }
-
-  function handleChatToggle() {
-    const nextValue = !isChatOpen;
-    setIsChatOpen(nextValue);
-    window.localStorage.setItem("isChatOpen", String(nextValue));
-  }
+export default function RoomButtonControlBar({
+  isChatOpen,
+  isProfileOpen,
+  isQueueOpen,
+  onToggleChat,
+  onToggleProfile,
+  onToggleQueue,
+}: Props) {
   return (
     <div className={styles.outerBar}>
       <button
@@ -134,7 +114,7 @@ export default function RoomButtonControlBar() {
         aria-label="프로필"
         aria-pressed={isProfileOpen}
         data-selected={isProfileOpen}
-        onClick={handleProfileToggle}
+        onClick={onToggleProfile}
       >
         <ProfileIcon className={styles.icon} />
       </button>
@@ -144,7 +124,7 @@ export default function RoomButtonControlBar() {
         aria-label="큐"
         aria-pressed={isQueueOpen}
         data-selected={isQueueOpen}
-        onClick={handleQueueToggle}
+        onClick={onToggleQueue}
       >
         <QueueIcon className={styles.icon} />
       </button>
@@ -165,7 +145,7 @@ export default function RoomButtonControlBar() {
         aria-label="채팅"
         aria-pressed={isChatOpen}
         data-selected={isChatOpen}
-        onClick={handleChatToggle}
+        onClick={onToggleChat}
       >
         <ChatIcon className={styles.icon} />
       </button>

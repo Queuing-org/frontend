@@ -4,6 +4,46 @@
   display: flow-root;
 }
 
+.widgetLayer {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.profileWidget,
+.queueWidget,
+.chatWidget {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.profileWidget {
+  top: 80px;
+  left: 24px;
+}
+
+.queueWidget {
+  left: 24px;
+  bottom: 140px;
+}
+
+.chatWidget {
+  left: 50%;
+  bottom: 140px;
+  transform: translateX(-50%);
+}
+
+.widgetPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .container {
   --panel-horizontal-padding: 24px;
   --panel-content-width: 640px;
