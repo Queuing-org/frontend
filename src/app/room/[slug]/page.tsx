@@ -46,6 +46,63 @@ type WidgetOffset = {
   y: number;
 };
 
+type WidgetId = "profile" | "queue" | "chat";
+
+type ViewportSize = {
+  height: number;
+  width: number;
+};
+
+type WidgetBounds = {
+  bottom: number;
+  left: number;
+  right: number;
+  top: number;
+};
+
+type WidgetConfig = {
+  height: number;
+  left?: number;
+  storageKey: string;
+  top?: number;
+  width: number;
+} & (
+  | {
+      bottom: number;
+      centeredX?: boolean;
+    }
+  | {
+      bottom?: never;
+      centeredX?: boolean;
+    }
+);
+
+const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
+
+const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
+  chat: {
+    bottom: 140,
+    centeredX: true,
+    height: 205,
+    storageKey: "chatWidgetOffset",
+    width: 300,
+  },
+  profile: {
+    height: 380,
+    left: 24,
+    storageKey: "profileWidgetOffset",
+    top: 80,
+    width: 300,
+  },
+  queue: {
+    bottom: 140,
+    height: 407,
+    left: 24,
+    storageKey: "queueWidgetOffset",
+    width: 300,
+  },
+};
+
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   if (!data || typeof data !== "object") {
     return false;
@@ -105,7 +162,74 @@ function getStoredBoolean(key: string) {
   return window.localStorage.getItem(key) === "true";
 }
 
-function getStoredWidgetOffset(key: string): WidgetOffset {
+function getViewportSize(): ViewportSize {
+  if (typeof window === "undefined") {
+    return { height: 0, width: 0 };
+  }
+
+  return {
+    height: window.innerHeight,
+    width: window.innerWidth,
+  };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getWidgetBasePosition(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): WidgetOffset {
+  const widget = WIDGET_CONFIG[widgetId];
+  const x = widget.centeredX
+    ? (viewportSize.width - widget.width) / 2
+    : (widget.left ?? 0);
+  const y =
+    typeof widget.top === "number"
+      ? widget.top
+      : viewportSize.height - widget.height - (widget.bottom ?? 0);
+
+  return { x, y };
+}
+
+function getWidgetBounds(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): WidgetBounds {
+  const widget = WIDGET_CONFIG[widgetId];
+  const basePosition = getWidgetBasePosition(widgetId, viewportSize);
+  const maxHiddenWidth = widget.width * MAX_WIDGET_OUT_OF_VIEW_RATIO;
+  const maxHiddenHeight = widget.height * MAX_WIDGET_OUT_OF_VIEW_RATIO;
+  const minVisibleWidth = widget.width - maxHiddenWidth;
+  const minVisibleHeight = widget.height - maxHiddenHeight;
+  const minLeft = -maxHiddenWidth;
+  const maxLeft = viewportSize.width - minVisibleWidth;
+  const minTop = -maxHiddenHeight;
+  const maxTop = viewportSize.height - minVisibleHeight;
+
+  return {
+    bottom: Math.round(maxTop - basePosition.y),
+    left: Math.round(minLeft - basePosition.x),
+    right: Math.round(maxLeft - basePosition.x),
+    top: Math.round(minTop - basePosition.y),
+  };
+}
+
+function clampWidgetOffset(
+  widgetId: WidgetId,
+  nextOffset: WidgetOffset,
+  viewportSize = getViewportSize(),
+): WidgetOffset {
+  const bounds = getWidgetBounds(widgetId, viewportSize);
+
+  return {
+    x: Math.round(clamp(nextOffset.x, bounds.left, bounds.right)),
+    y: Math.round(clamp(nextOffset.y, bounds.top, bounds.bottom)),
+  };
+}
+
+function getStoredWidgetOffset(key: string, widgetId: WidgetId): WidgetOffset {
   if (typeof window === "undefined") {
     return { x: 0, y: 0 };
   }
@@ -117,11 +241,27 @@ function getStoredWidgetOffset(key: string): WidgetOffset {
 
   try {
     const parsedValue = JSON.parse(savedValue) as Partial<WidgetOffset>;
+    if (
+      typeof parsedValue.x !== "number" ||
+      typeof parsedValue.y !== "number"
+    ) {
+      window.localStorage.removeItem(key);
+      return { x: 0, y: 0 };
+    }
 
-    return {
-      x: typeof parsedValue.x === "number" ? parsedValue.x : 0,
-      y: typeof parsedValue.y === "number" ? parsedValue.y : 0,
-    };
+    const clampedOffset = clampWidgetOffset(widgetId, {
+      x: parsedValue.x,
+      y: parsedValue.y,
+    });
+
+    if (
+      clampedOffset.x !== parsedValue.x ||
+      clampedOffset.y !== parsedValue.y
+    ) {
+      window.localStorage.setItem(key, JSON.stringify(clampedOffset));
+    }
+
+    return clampedOffset;
   } catch {
     window.localStorage.removeItem(key);
     return { x: 0, y: 0 };
@@ -143,6 +283,9 @@ export default function RoomPage() {
   const profileWidgetRef = useRef<HTMLDivElement>(null);
   const queueWidgetRef = useRef<HTMLDivElement>(null);
   const chatWidgetRef = useRef<HTMLDivElement>(null);
+  const [viewportSize, setViewportSize] = useState<ViewportSize>(() =>
+    getViewportSize(),
+  );
 
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
@@ -160,13 +303,17 @@ export default function RoomPage() {
     getStoredBoolean("isChatOpen"),
   );
   const [profileWidgetOffset, setProfileWidgetOffset] = useState<WidgetOffset>(
-    () => getStoredWidgetOffset("profileWidgetOffset"),
+    () =>
+      getStoredWidgetOffset(
+        WIDGET_CONFIG.profile.storageKey,
+        "profile",
+      ),
   );
   const [queueWidgetOffset, setQueueWidgetOffset] = useState<WidgetOffset>(() =>
-    getStoredWidgetOffset("queueWidgetOffset"),
+    getStoredWidgetOffset(WIDGET_CONFIG.queue.storageKey, "queue"),
   );
   const [chatWidgetOffset, setChatWidgetOffset] = useState<WidgetOffset>(() =>
-    getStoredWidgetOffset("chatWidgetOffset"),
+    getStoredWidgetOffset(WIDGET_CONFIG.chat.storageKey, "chat"),
   );
 
   const [activeWidget, setActiveWidget] = useState<
@@ -207,27 +354,42 @@ export default function RoomPage() {
     _event: DraggableEvent,
     data: DraggableData,
   ) {
-    const nextOffset = { x: data.x, y: data.y };
+    const nextOffset = clampWidgetOffset(
+      "profile",
+      { x: data.x, y: data.y },
+      viewportSize,
+    );
     setProfileWidgetOffset(nextOffset);
     window.localStorage.setItem(
-      "profileWidgetOffset",
+      WIDGET_CONFIG.profile.storageKey,
       JSON.stringify(nextOffset),
     );
   }
 
   function handleQueueWidgetStop(_event: DraggableEvent, data: DraggableData) {
-    const nextOffset = { x: data.x, y: data.y };
+    const nextOffset = clampWidgetOffset(
+      "queue",
+      { x: data.x, y: data.y },
+      viewportSize,
+    );
     setQueueWidgetOffset(nextOffset);
     window.localStorage.setItem(
-      "queueWidgetOffset",
+      WIDGET_CONFIG.queue.storageKey,
       JSON.stringify(nextOffset),
     );
   }
 
   function handleChatWidgetStop(_event: DraggableEvent, data: DraggableData) {
-    const nextOffset = { x: data.x, y: data.y };
+    const nextOffset = clampWidgetOffset(
+      "chat",
+      { x: data.x, y: data.y },
+      viewportSize,
+    );
     setChatWidgetOffset(nextOffset);
-    window.localStorage.setItem("chatWidgetOffset", JSON.stringify(nextOffset));
+    window.localStorage.setItem(
+      WIDGET_CONFIG.chat.storageKey,
+      JSON.stringify(nextOffset),
+    );
   }
 
   const cleanupRoomSubscription = useCallback(() => {
@@ -395,6 +557,19 @@ export default function RoomPage() {
     setLivePlaybackStatus(null);
   }, [slug]);
 
+  useEffect(() => {
+    function handleResize() {
+      setViewportSize(getViewportSize());
+    }
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const profileWidgetBounds = getWidgetBounds("profile", viewportSize);
+  const queueWidgetBounds = getWidgetBounds("queue", viewportSize);
+  const chatWidgetBounds = getWidgetBounds("chat", viewportSize);
+
   if (status === "needs-password") {
     return (
       <div className={styles.passwordState}>
@@ -482,13 +657,17 @@ export default function RoomPage() {
             style={{ zIndex: activeWidget === "profile" ? 3 : 1 }}
           >
             <Draggable
+              bounds={profileWidgetBounds}
               defaultPosition={profileWidgetOffset}
               handle="[data-drag-handle='true']"
               nodeRef={profileWidgetRef}
               onStop={handleProfileWidgetStop}
             >
               <div ref={profileWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell height={380} width={300}>
+                <FloatingRoomPanelShell
+                  height={WIDGET_CONFIG.profile.height}
+                  width={WIDGET_CONFIG.profile.width}
+                >
                   <div className={styles.widgetPlaceholder}>프로필 모달임</div>
                 </FloatingRoomPanelShell>
               </div>
@@ -502,13 +681,17 @@ export default function RoomPage() {
             style={{ zIndex: activeWidget === "queue" ? 3 : 1 }}
           >
             <Draggable
+              bounds={queueWidgetBounds}
               defaultPosition={queueWidgetOffset}
               handle="[data-drag-handle='true']"
               nodeRef={queueWidgetRef}
               onStop={handleQueueWidgetStop}
             >
               <div ref={queueWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell height={407} width={300}>
+                <FloatingRoomPanelShell
+                  height={WIDGET_CONFIG.queue.height}
+                  width={WIDGET_CONFIG.queue.width}
+                >
                   <div className={styles.widgetPlaceholder}>큐 모달임</div>
                 </FloatingRoomPanelShell>
               </div>
@@ -522,13 +705,17 @@ export default function RoomPage() {
             style={{ zIndex: activeWidget === "chat" ? 3 : 1 }}
           >
             <Draggable
+              bounds={chatWidgetBounds}
               defaultPosition={chatWidgetOffset}
               handle="[data-drag-handle='true']"
               nodeRef={chatWidgetRef}
               onStop={handleChatWidgetStop}
             >
               <div ref={chatWidgetRef} className={styles.widgetFrame}>
-                <FloatingRoomPanelShell height={205} width={300}>
+                <FloatingRoomPanelShell
+                  height={WIDGET_CONFIG.chat.height}
+                  width={WIDGET_CONFIG.chat.width}
+                >
                   <div className={styles.widgetPlaceholder}>채팅 모달임</div>
                 </FloatingRoomPanelShell>
               </div>
