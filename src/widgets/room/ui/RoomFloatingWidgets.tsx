@@ -7,11 +7,15 @@ import type {
   FloatingWidgetsView,
   WidgetId,
 } from "@/src/widgets/room/model/useFloatingWidgetsState";
+import type { CurrentRequesterProfile } from "@/src/widgets/room/model/types";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
+import RoomProfilePanel from "./RoomProfilePanel";
 import RoomQueuePanel from "./RoomQueuePanel";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
+  currentRequester: CurrentRequesterProfile | null;
+  currentTrackTitle?: string | null;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
   roomPassword?: string | null;
@@ -20,6 +24,8 @@ type Props = {
 };
 
 export default function RoomFloatingWidgets({
+  currentRequester,
+  currentTrackTitle,
   onActivateWidget,
   onWidgetStop,
   roomPassword,
@@ -50,10 +56,14 @@ export default function RoomFloatingWidgets({
           >
             <div ref={profileWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                contentClassName={styles.profilePanelContent}
                 height={widgets.profile.height}
                 width={widgets.profile.width}
               >
-                <div className={styles.widgetPlaceholder}>프로필 모달임</div>
+                <RoomProfilePanel
+                  currentRequester={currentRequester}
+                  currentTrackTitle={currentTrackTitle}
+                />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>

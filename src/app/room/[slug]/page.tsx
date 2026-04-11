@@ -28,6 +28,7 @@ import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import type { CurrentRequesterProfile } from "@/src/widgets/room/model/types";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
@@ -89,6 +90,30 @@ function getCurrentVideoId(
   return null;
 }
 
+function getCurrentRequesterProfile(
+  roomState: RoomStateSnapshot | undefined,
+): CurrentRequesterProfile | null {
+  const requester = roomState?.currentEntry?.addedBy;
+  if (!requester) {
+    return null;
+  }
+
+  const matchedParticipant = roomState?.participants.find((participant) => {
+    if (requester.userId !== null) {
+      return participant.userId === requester.userId;
+    }
+
+    return participant.nickname === requester.nickname;
+  });
+
+  return {
+    avatarUrl: requester.avatarUrl ?? matchedParticipant?.profileImageUrl ?? null,
+    nickname: requester.nickname,
+    slug: matchedParticipant?.slug ?? null,
+    userId: requester.userId,
+  };
+}
+
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -120,7 +145,8 @@ export default function RoomPage() {
     livePlaybackStatus,
   );
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
-  const currentRequester = roomState?.currentEntry?.addedBy ?? null;
+  const currentRequester = getCurrentRequesterProfile(roomState);
+  const currentTrackTitle = roomState?.currentEntry?.track.title ?? null;
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -370,6 +396,8 @@ export default function RoomPage() {
         </div>
       </div>
       <RoomFloatingWidgets
+        currentRequester={currentRequester}
+        currentTrackTitle={currentTrackTitle}
         roomPassword={roomPassword}
         roomSlug={slug}
         widgets={floatingWidgets.widgets}

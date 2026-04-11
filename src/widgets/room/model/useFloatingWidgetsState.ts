@@ -74,7 +74,7 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
   },
   queue: {
     bottom: 140,
-    height: 407,
+    height: 535,
     left: 24,
     offsetStorageKey: "queueWidgetOffset",
     openStorageKey: "isQueueOpen",
@@ -157,10 +157,7 @@ function clampWidgetOffset(
   };
 }
 
-function getStoredWidgetOffset(
-  key: string,
-  widgetId: WidgetId,
-): WidgetOffset {
+function getStoredWidgetOffset(key: string, widgetId: WidgetId): WidgetOffset {
   if (typeof window === "undefined") {
     return { x: 0, y: 0 };
   }
