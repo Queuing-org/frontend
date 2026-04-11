@@ -151,7 +151,7 @@ export default function YouTubePlayer({
   onPlayerReady,
   onPlaybackStateChange,
 }: YouTubePlayerProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const playerMountRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const isReadyRef = useRef(false);
   const loadedVideoIdRef = useRef<string | null>(null);
@@ -160,10 +160,24 @@ export default function YouTubePlayer({
     playbackStatus,
     currentTimeMs,
   });
+  const onPlayerReadyRef = useRef(onPlayerReady);
+  const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
   const [playerError, setPlayerError] = useState<string | null>(null);
+  const [hasCreatedPlayer, setHasCreatedPlayer] = useState(false);
+
+  useEffect(() => {
+    onPlayerReadyRef.current = onPlayerReady;
+  }, [onPlayerReady]);
+
+  useEffect(() => {
+    onPlaybackStateChangeRef.current = onPlaybackStateChange;
+  }, [onPlaybackStateChange]);
 
   const destroyPlayer = useCallback(() => {
     if (!playerRef.current) {
+      if (playerMountRef.current) {
+        playerMountRef.current.replaceChildren();
+      }
       return;
     }
 
@@ -176,6 +190,21 @@ export default function YouTubePlayer({
     playerRef.current = null;
     isReadyRef.current = false;
     loadedVideoIdRef.current = null;
+  }, []);
+
+  const ensurePlayerHost = useCallback(() => {
+    if (!playerMountRef.current) {
+      return null;
+    }
+
+    const host = document.createElement("div");
+    host.className = "h-full w-full";
+
+    // Keep React in charge of the wrapper only. The actual YouTube host node
+    // lives inside this mount point and can be replaced by the iframe API.
+    playerMountRef.current.replaceChildren(host);
+
+    return host;
   }, []);
 
   const applyDesiredPlayback = useCallback(() => {
@@ -191,7 +220,12 @@ export default function YouTubePlayer({
       (desiredPlayback.currentTimeMs ?? 0) / 1000,
     );
 
-    if (!player || !isReadyRef.current || !nextVideoId || !nextStatus) {
+    if (!player || !isReadyRef.current) {
+      return;
+    }
+
+    if (!nextVideoId || !nextStatus) {
+      player.pauseVideo();
       return;
     }
 
@@ -225,8 +259,7 @@ export default function YouTubePlayer({
   }, []);
 
   useEffect(() => {
-    if (!videoId) {
-      destroyPlayer();
+    if (!videoId || playerRef.current) {
       return;
     }
 
@@ -238,11 +271,16 @@ export default function YouTubePlayer({
         setPlayerError(null);
         const YT = await loadYouTubeIframeApi();
 
-        if (isCancelled || !containerRef.current || playerRef.current) {
+        if (isCancelled || playerRef.current) {
           return;
         }
 
-        createdPlayer = new YT.Player(containerRef.current, {
+        const host = ensurePlayerHost();
+        if (!host) {
+          return;
+        }
+
+        createdPlayer = new YT.Player(host, {
           videoId: videoId ?? undefined,
           playerVars: {
             autoplay: 1,
@@ -253,8 +291,12 @@ export default function YouTubePlayer({
           },
           events: {
             onReady: () => {
+              if (isCancelled) {
+                return;
+              }
+
               isReadyRef.current = true;
-              onPlayerReady?.();
+              onPlayerReadyRef.current?.();
               applyDesiredPlayback();
             },
             onStateChange: (event) => {
@@ -263,7 +305,7 @@ export default function YouTubePlayer({
                 return;
               }
 
-              onPlaybackStateChange?.({
+              onPlaybackStateChangeRef.current?.({
                 status: mappedStatus,
                 currentTimeMs: Math.round(event.target.getCurrentTime() * 1000),
               });
@@ -272,6 +314,7 @@ export default function YouTubePlayer({
         });
 
         playerRef.current = createdPlayer;
+        setHasCreatedPlayer(true);
       } catch (error) {
         if (isCancelled) {
           return;
@@ -289,11 +332,15 @@ export default function YouTubePlayer({
 
     return () => {
       isCancelled = true;
-      if (createdPlayer && playerRef.current === createdPlayer) {
-        destroyPlayer();
+      if (createdPlayer && playerRef.current !== createdPlayer) {
+        try {
+          createdPlayer.destroy();
+        } catch {
+          // ignore player teardown failures during navigation/remount
+        }
       }
     };
-  }, [applyDesiredPlayback, destroyPlayer, onPlaybackStateChange, onPlayerReady, videoId]);
+  }, [applyDesiredPlayback, ensurePlayerHost, videoId]);
 
   useEffect(() => {
     desiredPlaybackRef.current = {
@@ -307,17 +354,27 @@ export default function YouTubePlayer({
     applyDesiredPlayback();
   }, [applyDesiredPlayback, currentTimeMs, playbackStatus, videoId]);
 
-  if (!videoId) {
-    return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-sm text-gray-500">
-        재생할 유튜브 영상이 아직 없습니다.
-      </div>
-    );
-  }
+  useEffect(() => destroyPlayer, [destroyPlayer]);
+
+  const showEmptyState = !videoId && !hasCreatedPlayer;
+  const showPlayerFrame = !!videoId || hasCreatedPlayer;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-black shadow-sm">
-      <div ref={containerRef} className="aspect-video w-full" />
+    <div
+      className={`overflow-hidden rounded-xl border shadow-sm ${
+        showPlayerFrame
+          ? "border-gray-200 bg-black"
+          : "border-dashed border-gray-300 bg-gray-50"
+      }`}
+    >
+      <div className="relative aspect-video w-full">
+        <div ref={playerMountRef} className="h-full w-full" />
+        {showEmptyState ? (
+          <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-gray-500">
+            재생할 유튜브 영상이 아직 없습니다.
+          </div>
+        ) : null}
+      </div>
       {playerError ? (
         <div className="border-t border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           {playerError}

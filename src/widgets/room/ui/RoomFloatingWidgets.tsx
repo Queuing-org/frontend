@@ -8,17 +8,22 @@ import type {
   WidgetId,
 } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
+import RoomQueuePanel from "./RoomQueuePanel";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
+  roomPassword?: string | null;
+  roomSlug: string;
   widgets: FloatingWidgetsView;
 };
 
 export default function RoomFloatingWidgets({
   onActivateWidget,
   onWidgetStop,
+  roomPassword,
+  roomSlug,
   widgets,
 }: Props) {
   const profileWidgetRef = useRef<HTMLDivElement>(null);
@@ -72,10 +77,11 @@ export default function RoomFloatingWidgets({
           >
             <div ref={queueWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                contentClassName={styles.queuePanelContent}
                 height={widgets.queue.height}
                 width={widgets.queue.width}
               >
-                <div className={styles.widgetPlaceholder}>큐 모달임</div>
+                <RoomQueuePanel roomPassword={roomPassword} roomSlug={roomSlug} />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>

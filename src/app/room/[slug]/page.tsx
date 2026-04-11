@@ -186,6 +186,9 @@ export default function RoomPage() {
             event.type === "TRACK_STARTED" ||
             event.type === "TRACK_ENDED"
           ) {
+            void queryClient.invalidateQueries({
+              queryKey: ["roomQueue", roomSlug],
+            });
             void refetchRoomState();
             return;
           }
@@ -367,6 +370,8 @@ export default function RoomPage() {
         </div>
       </div>
       <RoomFloatingWidgets
+        roomPassword={roomPassword}
+        roomSlug={slug}
         widgets={floatingWidgets.widgets}
         onActivateWidget={floatingWidgets.activateWidget}
         onWidgetStop={floatingWidgets.handleWidgetStop}
