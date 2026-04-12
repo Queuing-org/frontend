@@ -7,10 +7,10 @@ import type {
   FloatingWidgetsView,
   WidgetId,
 } from "@/src/widgets/room/model/useFloatingWidgetsState";
-import type { CurrentRequesterProfile } from "@/src/widgets/room/model/types";
+import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
+import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
+import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
-import RoomProfilePanel from "./RoomProfilePanel";
-import RoomQueuePanel from "./RoomQueuePanel";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {

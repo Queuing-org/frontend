@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useMe } from "@/src/entities/user/hooks/useMe";
 import { useSendFriendRequest } from "@/src/features/friend/requests/hooks/useSendFriendRequest";
-import type { CurrentRequesterProfile } from "@/src/widgets/room/model/types";
+import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
 
 type Props = {

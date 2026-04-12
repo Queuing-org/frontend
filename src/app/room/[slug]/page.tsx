@@ -28,7 +28,7 @@ import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
-import type { CurrentRequesterProfile } from "@/src/widgets/room/model/types";
+import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
