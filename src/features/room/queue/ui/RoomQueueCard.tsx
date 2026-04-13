@@ -1,17 +1,30 @@
 "use client";
 
+import type { ComponentPropsWithoutRef, Ref } from "react";
+import { forwardRef } from "react";
 import Image from "next/image";
 import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
 import { formatQueueDuration } from "../model/roomQueue";
 import styles from "./RoomQueueCard.module.css";
 
 type Props = {
+  dragHandleProps?: Omit<ComponentPropsWithoutRef<"button">, "children">;
+  dragHandleRef?: Ref<HTMLButtonElement>;
   entry: PlaylistEntry;
-};
+  showDragHandle?: boolean;
+} & ComponentPropsWithoutRef<"li">;
 
-export default function RoomQueueCard({ entry }: Props) {
+const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
+  { className, dragHandleProps, dragHandleRef, entry, showDragHandle = false, ...props },
+  ref,
+) {
   return (
-    <li className={styles.item} data-active={entry.status.isActive}>
+    <li
+      ref={ref}
+      className={[styles.item, className].filter(Boolean).join(" ")}
+      data-active={entry.status.isActive}
+      {...props}
+    >
       <div className={styles.thumbnailWrap}>
         <Image
           src={entry.track.thumbnailUrl}
@@ -36,6 +49,24 @@ export default function RoomQueueCard({ entry }: Props) {
           </div>
         </div>
       </div>
+      {showDragHandle ? (
+        <button
+          ref={dragHandleRef}
+          type="button"
+          className={[
+            styles.dragHandle,
+            dragHandleProps?.className,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-label="곡 순서 변경"
+          {...dragHandleProps}
+        >
+          <span className={styles.dragHandleIcon} aria-hidden="true" />
+        </button>
+      ) : null}
     </li>
   );
-}
+});
+
+export default RoomQueueCard;

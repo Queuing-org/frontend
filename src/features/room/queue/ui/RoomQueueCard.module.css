@@ -1,10 +1,14 @@
 .item {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
+  grid-template-columns: 46px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   padding: 14px 16px;
   background: #262626;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
 .item:nth-child(even) {
@@ -13,6 +17,15 @@
 
 .item[data-active="true"] {
   background: #5a5a5a;
+}
+
+.item[data-dragging="true"] {
+  opacity: 0.4;
+}
+
+.item[data-drag-overlay="true"] {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  opacity: 1;
 }
 
 .thumbnailWrap {
@@ -51,7 +64,7 @@
   font-size: 14px;
   font-weight: var(--fw-bold);
   line-height: 1.4;
-  text-overflow: ellipsis;
+  text-overflow: clip;
   white-space: nowrap;
 }
 
@@ -79,4 +92,54 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  cursor: grab;
+  transition:
+    color 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.dragHandle:hover {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+  transform: scale(0.96);
+}
+
+.dragHandle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.dragHandle:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dragHandleIcon {
+  position: relative;
+  width: 4px;
+  height: 4px;
+  border-radius: 1px;
+  background: currentColor;
+  box-shadow:
+    0 8px 0 currentColor,
+    8px 0 0 currentColor,
+    8px 8px 0 currentColor;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRoomQueue } from "@/src/entities/playlist/model/useRoomQueue";
+import { useMoveMyQueueEntry } from "@/src/entities/playlist/model/useMoveMyQueueEntry";
 import { useMe } from "@/src/entities/user/hooks/useMe";
 import { isEntryRequestedByUser, type QueueTab } from "../model/roomQueue";
 import RoomQueueList from "./RoomQueueList";
@@ -16,6 +17,7 @@ type Props = {
 
 export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
+  const [moveErrorMessage, setMoveErrorMessage] = useState("");
   const { data: currentUser, isLoading: isMeLoading } = useMe();
   const {
     data: entries,
@@ -23,6 +25,7 @@ export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
     isLoading,
     isRefetching,
   } = useRoomQueue(roomSlug, roomPassword, 0, 200);
+  const moveMyQueueEntry = useMoveMyQueueEntry();
 
   const allEntries = entries ?? [];
   const myEntries = allEntries.filter((entry) =>
@@ -63,9 +66,35 @@ export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
             entries={myEntries}
             errorMessage={error ? errorMessage : undefined}
             isLoading={isLoading}
+            isMovePending={moveMyQueueEntry.isPending}
+            onMove={({ beforeEntryId, movedEntryId, orderedPendingEntryIds }) => {
+              setMoveErrorMessage("");
+              moveMyQueueEntry.mutate(
+                {
+                  beforeEntryId,
+                  movedEntryId,
+                  orderedPendingEntryIds,
+                  password: roomPassword,
+                  slug: roomSlug,
+                },
+                {
+                  onError: (moveError) => {
+                    setMoveErrorMessage(
+                      moveError.message || "큐 순서를 변경하지 못했습니다.",
+                    );
+                  },
+                },
+              );
+            }}
           />
         )}
       </div>
+      {activeTab === "mine" && moveErrorMessage ? (
+        <div className={styles.error}>{moveErrorMessage}</div>
+      ) : null}
+      {activeTab === "mine" && moveMyQueueEntry.isPending ? (
+        <div className={styles.refreshing}>큐 순서를 변경하는 중...</div>
+      ) : null}
       {isRefetching ? (
         <div className={styles.refreshing}>최신 목록으로 갱신 중...</div>
       ) : null}

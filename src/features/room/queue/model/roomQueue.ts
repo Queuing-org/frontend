@@ -31,6 +31,10 @@ export function getQueueEntryStatus(entry: PlaylistEntry): {
   return { label: "대기 중", tone: "queued" };
 }
 
+export function isPendingQueueEntry(entry: PlaylistEntry) {
+  return !entry.status.isActive && !entry.status.isPlayed && !entry.status.skipped;
+}
+
 export function isEntryRequestedByUser(
   entry: PlaylistEntry,
   currentUser: User | null | undefined,
