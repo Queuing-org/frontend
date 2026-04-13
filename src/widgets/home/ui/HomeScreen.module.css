@@ -13,8 +13,31 @@
   z-index: 20;
 }
 
+.panelAnchor {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 18px);
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.panelAnchor > * {
+  pointer-events: auto;
+}
+
+.controlToggle {
+  letter-spacing: 0.04em;
+  transition: color 160ms ease;
+}
+
 @media (max-width: 900px) {
   .controlWrap {
     bottom: 32px;
+  }
+
+  .panelAnchor {
+    bottom: calc(100% + 14px);
   }
 }

@@ -23,3 +23,13 @@
   font-weight: 700;
   color: rgba(255, 255, 255, 0.92);
 }
+
+.queuePanelContent {
+  padding: 0;
+  overflow: hidden;
+}
+
+.profilePanelContent {
+  padding: 0;
+  overflow: auto;
+}

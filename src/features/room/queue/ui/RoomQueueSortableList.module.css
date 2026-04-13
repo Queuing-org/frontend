@@ -1,0 +1,23 @@
+.root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.fixedTopList {
+  list-style: none;
+  overflow-x: hidden;
+}
+
+.sortableList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: hidden;
+}
+
+.fixedList {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: hidden;
+}

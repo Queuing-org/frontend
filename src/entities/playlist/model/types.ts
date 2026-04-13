@@ -14,6 +14,14 @@ export type RoomQueueRequestParams = PlaylistProtectedRequestParams & {
   size?: number;
 };
 
+export type MoveMyQueueEntryPayload = {
+  movedEntryId: string;
+  beforeEntryId: string | null;
+};
+
+export type MoveMyQueueEntryParams = PlaylistProtectedRequestParams &
+  MoveMyQueueEntryPayload;
+
 export type TrackProvider = "YOUTUBE" | (string & {});
 
 export type PlaylistTrack = {
