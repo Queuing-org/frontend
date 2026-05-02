@@ -7,18 +7,29 @@ import type {
   FloatingWidgetsView,
   WidgetId,
 } from "@/src/widgets/room/model/useFloatingWidgetsState";
+import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
+import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
+import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
+  currentRequester: CurrentRequesterProfile | null;
+  currentTrackTitle?: string | null;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
+  roomPassword?: string | null;
+  roomSlug: string;
   widgets: FloatingWidgetsView;
 };
 
 export default function RoomFloatingWidgets({
+  currentRequester,
+  currentTrackTitle,
   onActivateWidget,
   onWidgetStop,
+  roomPassword,
+  roomSlug,
   widgets,
 }: Props) {
   const profileWidgetRef = useRef<HTMLDivElement>(null);
@@ -45,10 +56,14 @@ export default function RoomFloatingWidgets({
           >
             <div ref={profileWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                contentClassName={styles.profilePanelContent}
                 height={widgets.profile.height}
                 width={widgets.profile.width}
               >
-                <div className={styles.widgetPlaceholder}>프로필 모달임</div>
+                <RoomProfilePanel
+                  currentRequester={currentRequester}
+                  currentTrackTitle={currentTrackTitle}
+                />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>
@@ -72,10 +87,11 @@ export default function RoomFloatingWidgets({
           >
             <div ref={queueWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                contentClassName={styles.queuePanelContent}
                 height={widgets.queue.height}
                 width={widgets.queue.width}
               >
-                <div className={styles.widgetPlaceholder}>큐 모달임</div>
+                <RoomQueuePanel roomPassword={roomPassword} roomSlug={roomSlug} />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>

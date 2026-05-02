@@ -1,0 +1,105 @@
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(32, 32, 32, 0.96), rgba(32, 32, 32, 0.96)),
+    rgba(32, 32, 32, 0.96);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+  color: #f6f6f6;
+  backdrop-filter: blur(14px);
+  animation: panelEnter 180ms ease;
+}
+
+.menuPanel {
+  width: min(92vw, 380px);
+  padding: 12px 14px;
+}
+
+.menuRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menuItem,
+.optionChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: var(--fw-extrabold);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #f1f1f1;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.activeChip {
+  background: #f5f5f5;
+  color: #161616;
+}
+
+.filterPanel {
+  width: min(92vw, 460px);
+  padding: 18px;
+}
+
+.filterSection + .filterSection {
+  margin-top: 22px;
+}
+
+.sectionTitle {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  color: #d2d2d2;
+}
+
+.optionGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.optionChip {
+  min-width: 86px;
+}
+
+@keyframes panelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 900px) {
+  .menuPanel {
+    width: min(92vw, 340px);
+  }
+
+  .menuRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filterPanel {
+    padding: 16px;
+  }
+
+  .optionGrid {
+    gap: 10px;
+  }
+
+  .optionChip {
+    min-width: calc(50% - 5px);
+  }
+}

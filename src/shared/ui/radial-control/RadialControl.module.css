@@ -25,12 +25,14 @@
   top: 12px;
   left: 50%;
   transform: translateX(-50%);
+  cursor: pointer;
 }
 
 .bottomSlot {
   bottom: 12px;
   left: 50%;
   transform: translateX(-50%);
+  cursor: pointer;
 }
 
 .leftSlot {

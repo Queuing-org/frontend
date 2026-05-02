@@ -28,10 +28,12 @@ import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
 type PlaybackState = {
+  roomSlug: string;
   status: PlaybackStatus;
   videoId: string;
   currentTime: number;
@@ -89,6 +91,30 @@ function getCurrentVideoId(
   return null;
 }
 
+function getCurrentRequesterProfile(
+  roomState: RoomStateSnapshot | undefined,
+): CurrentRequesterProfile | null {
+  const requester = roomState?.currentEntry?.addedBy;
+  if (!requester) {
+    return null;
+  }
+
+  const matchedParticipant = roomState?.participants.find((participant) => {
+    if (requester.userId !== null) {
+      return participant.userId === requester.userId;
+    }
+
+    return participant.nickname === requester.nickname;
+  });
+
+  return {
+    avatarUrl: requester.avatarUrl ?? matchedParticipant?.profileImageUrl ?? null,
+    nickname: requester.nickname,
+    slug: matchedParticipant?.slug ?? null,
+    userId: requester.userId,
+  };
+}
+
 export default function RoomPage() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
@@ -117,10 +143,11 @@ export default function RoomPage() {
   );
   const playbackStatus = getLatestPlaybackState(
     roomState?.playbackStatus,
-    livePlaybackStatus,
+    livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
   );
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
-  const currentRequester = roomState?.currentEntry?.addedBy ?? null;
+  const currentRequester = getCurrentRequesterProfile(roomState);
+  const currentTrackTitle = roomState?.currentEntry?.track.title ?? null;
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -156,11 +183,16 @@ export default function RoomPage() {
             return;
           }
 
+          if (event.roomSlug !== roomSlug) {
+            return;
+          }
+
           if (
             event.type === "PLAYBACK_SYNC" &&
             isPlaybackSyncData(event.data)
           ) {
             const syncedPlayback: PlaybackState = {
+              roomSlug,
               videoId: event.data.videoId,
               status: event.data.status,
               currentTime: event.data.currentTime,
@@ -170,6 +202,7 @@ export default function RoomPage() {
             setLivePlaybackStatus((previous) => {
               if (
                 previous &&
+                previous.roomSlug === syncedPlayback.roomSlug &&
                 previous.serverTimestamp > syncedPlayback.serverTimestamp
               ) {
                 return previous;
@@ -186,6 +219,9 @@ export default function RoomPage() {
             event.type === "TRACK_STARTED" ||
             event.type === "TRACK_ENDED"
           ) {
+            void queryClient.invalidateQueries({
+              queryKey: ["roomQueue", roomSlug],
+            });
             void refetchRoomState();
             return;
           }
@@ -317,6 +353,7 @@ export default function RoomPage() {
         <div className={styles.mainArea}>
           <RoomInfo slug={slug} isRoom />
           <YouTubePlayer
+            key={slug}
             videoId={currentVideoId}
             playbackStatus={playbackStatus?.status ?? null}
             currentTimeMs={playbackStatus?.currentTime ?? null}
@@ -367,6 +404,10 @@ export default function RoomPage() {
         </div>
       </div>
       <RoomFloatingWidgets
+        currentRequester={currentRequester}
+        currentTrackTitle={currentTrackTitle}
+        roomPassword={roomPassword}
+        roomSlug={slug}
         widgets={floatingWidgets.widgets}
         onActivateWidget={floatingWidgets.activateWidget}
         onWidgetStop={floatingWidgets.handleWidgetStop}

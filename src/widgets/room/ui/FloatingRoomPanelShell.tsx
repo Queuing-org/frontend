@@ -5,12 +5,14 @@ import styles from "./FloatingRoomPanelShell.module.css";
 
 type Props = {
   children: ReactNode;
+  contentClassName?: string;
   height: number;
   width: number;
 };
 
 export default function FloatingRoomPanelShell({
   children,
+  contentClassName,
   height,
   width,
 }: Props) {
@@ -23,7 +25,11 @@ export default function FloatingRoomPanelShell({
       >
         <span className={styles.handle} />
       </div>
-      <div className={styles.content}>{children}</div>
+      <div
+        className={[styles.content, contentClassName].filter(Boolean).join(" ")}
+      >
+        {children}
+      </div>
     </div>
   );
 }

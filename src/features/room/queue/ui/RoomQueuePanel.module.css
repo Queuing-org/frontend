@@ -1,0 +1,36 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #242424;
+  overflow-x: hidden;
+}
+
+.listArea {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.refreshing {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1f1f1f;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.error {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #442626;
+  color: #ffd6d6;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
