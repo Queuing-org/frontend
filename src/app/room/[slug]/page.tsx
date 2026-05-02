@@ -33,6 +33,7 @@ import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
 type PlaybackState = {
+  roomSlug: string;
   status: PlaybackStatus;
   videoId: string;
   currentTime: number;
@@ -142,7 +143,7 @@ export default function RoomPage() {
   );
   const playbackStatus = getLatestPlaybackState(
     roomState?.playbackStatus,
-    livePlaybackStatus,
+    livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
   );
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
   const currentRequester = getCurrentRequesterProfile(roomState);
@@ -182,11 +183,16 @@ export default function RoomPage() {
             return;
           }
 
+          if (event.roomSlug !== roomSlug) {
+            return;
+          }
+
           if (
             event.type === "PLAYBACK_SYNC" &&
             isPlaybackSyncData(event.data)
           ) {
             const syncedPlayback: PlaybackState = {
+              roomSlug,
               videoId: event.data.videoId,
               status: event.data.status,
               currentTime: event.data.currentTime,
@@ -196,6 +202,7 @@ export default function RoomPage() {
             setLivePlaybackStatus((previous) => {
               if (
                 previous &&
+                previous.roomSlug === syncedPlayback.roomSlug &&
                 previous.serverTimestamp > syncedPlayback.serverTimestamp
               ) {
                 return previous;
@@ -346,6 +353,7 @@ export default function RoomPage() {
         <div className={styles.mainArea}>
           <RoomInfo slug={slug} isRoom />
           <YouTubePlayer
+            key={slug}
             videoId={currentVideoId}
             playbackStatus={playbackStatus?.status ?? null}
             currentTimeMs={playbackStatus?.currentTime ?? null}

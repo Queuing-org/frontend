@@ -4,14 +4,48 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { sendFriendRequest } from "../api/sendFriendRequest";
 import type { SendFriendRequestPayload } from "../model/types";
+import {
+  friendRequestTargetStatusQueryKey,
+  type FriendRequestTargetStatus,
+} from "./useFriendRequestTargetStatus";
+
+type SendFriendRequestContext = {
+  previousStatus?: FriendRequestTargetStatus;
+};
 
 export function useSendFriendRequest() {
   const qc = useQueryClient();
 
-  return useMutation<boolean, ApiError, SendFriendRequestPayload>({
+  return useMutation<
+    boolean,
+    ApiError,
+    SendFriendRequestPayload,
+    SendFriendRequestContext
+  >({
     mutationKey: ["friendRequests", "send"],
     mutationFn: (payload) => sendFriendRequest(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["searchUsers"] }),
+    onMutate: (payload) => {
+      const queryKey = friendRequestTargetStatusQueryKey(payload.targetSlug);
+      const previousStatus =
+        qc.getQueryData<FriendRequestTargetStatus>(queryKey);
+
+      qc.setQueryData<FriendRequestTargetStatus>(queryKey, "pending");
+
+      return { previousStatus };
+    },
+    onError: (_error, payload, context) => {
+      qc.setQueryData<FriendRequestTargetStatus>(
+        friendRequestTargetStatusQueryKey(payload.targetSlug),
+        context?.previousStatus ?? "idle",
+      );
+    },
+    onSuccess: (_data, payload) => {
+      qc.setQueryData<FriendRequestTargetStatus>(
+        friendRequestTargetStatusQueryKey(payload.targetSlug),
+        "sent",
+      );
+      qc.invalidateQueries({ queryKey: ["searchUsers"] });
+    },
   });
 }
 

@@ -30,7 +30,7 @@ export async function moveMyQueueEntry({
   if (!res.data.result) {
     throw new ApiError({
       message: "큐 순서를 변경하지 못했습니다.",
-      status: 200,
+      status: 500,
     });
   }
 

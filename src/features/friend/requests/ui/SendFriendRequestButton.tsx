@@ -1,25 +1,44 @@
 "use client";
 
+import { useFriendRequestTargetStatus } from "../hooks/useFriendRequestTargetStatus";
 import { useSendFriendRequest } from "../hooks/useSendFriendRequest";
 import type { SendFriendRequestPayload } from "../model/types";
 
 export default function SendFriendRequestButton({
   targetSlug,
 }: SendFriendRequestPayload) {
-  const { mutate, isPending, isError, error } = useSendFriendRequest();
+  const { mutate, isPending, isError, error, variables } =
+    useSendFriendRequest();
+  const { data: friendRequestStatus } =
+    useFriendRequestTargetStatus(targetSlug);
+  const isCurrentMutationPending =
+    isPending && variables?.targetSlug === targetSlug;
+  const isRequesting =
+    friendRequestStatus === "pending" || isCurrentMutationPending;
+  const hasRequested = friendRequestStatus === "sent";
+
+  function handleClick() {
+    if (isRequesting || hasRequested) {
+      return;
+    }
+
+    mutate({ targetSlug });
+  }
 
   return (
     <div>
       <button
         type="button"
         className="border cursor-pointer"
-        onClick={() => mutate({ targetSlug })}
-        disabled={isPending}
+        onClick={handleClick}
+        disabled={isRequesting || hasRequested}
       >
-        {isPending ? "요청중..." : "친구추가"}
+        {hasRequested ? "요청됨" : isRequesting ? "요청중..." : "친구추가"}
       </button>
 
-      {isError && <div>{error?.message}</div>}
+      {isError && variables?.targetSlug === targetSlug && (
+        <div>{error?.message}</div>
+      )}
     </div>
   );
 }

@@ -163,7 +163,6 @@ export default function YouTubePlayer({
   const onPlayerReadyRef = useRef(onPlayerReady);
   const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
   const [playerError, setPlayerError] = useState<string | null>(null);
-  const [hasCreatedPlayer, setHasCreatedPlayer] = useState(false);
 
   useEffect(() => {
     onPlayerReadyRef.current = onPlayerReady;
@@ -185,6 +184,10 @@ export default function YouTubePlayer({
       playerRef.current.destroy();
     } catch {
       // ignore player teardown failures during navigation/remount
+    }
+
+    if (playerMountRef.current) {
+      playerMountRef.current.replaceChildren();
     }
 
     playerRef.current = null;
@@ -314,7 +317,6 @@ export default function YouTubePlayer({
         });
 
         playerRef.current = createdPlayer;
-        setHasCreatedPlayer(true);
       } catch (error) {
         if (isCancelled) {
           return;
@@ -343,6 +345,14 @@ export default function YouTubePlayer({
   }, [applyDesiredPlayback, ensurePlayerHost, videoId]);
 
   useEffect(() => {
+    if (videoId) {
+      return;
+    }
+
+    destroyPlayer();
+  }, [destroyPlayer, videoId]);
+
+  useEffect(() => {
     desiredPlaybackRef.current = {
       videoId,
       playbackStatus,
@@ -356,8 +366,8 @@ export default function YouTubePlayer({
 
   useEffect(() => destroyPlayer, [destroyPlayer]);
 
-  const showEmptyState = !videoId && !hasCreatedPlayer;
-  const showPlayerFrame = !!videoId || hasCreatedPlayer;
+  const showEmptyState = !videoId;
+  const showPlayerFrame = !!videoId;
 
   return (
     <div
@@ -368,14 +378,17 @@ export default function YouTubePlayer({
       }`}
     >
       <div className="relative aspect-video w-full">
-        <div ref={playerMountRef} className="h-full w-full" />
+        <div
+          ref={playerMountRef}
+          className={`h-full w-full ${showPlayerFrame ? "" : "hidden"}`}
+        />
         {showEmptyState ? (
-          <div className="absolute inset-0 flex items-center justify-center px-4 text-center text-sm text-gray-500">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 px-4 text-center text-sm text-gray-500">
             재생할 유튜브 영상이 아직 없습니다.
           </div>
         ) : null}
       </div>
-      {playerError ? (
+      {videoId && playerError ? (
         <div className="border-t border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
           {playerError}
         </div>

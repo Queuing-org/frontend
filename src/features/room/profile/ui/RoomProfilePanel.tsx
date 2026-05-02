@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { useMe } from "@/src/entities/user/hooks/useMe";
+import { useFriendRequestTargetStatus } from "@/src/features/friend/requests/hooks/useFriendRequestTargetStatus";
 import { useSendFriendRequest } from "@/src/features/friend/requests/hooks/useSendFriendRequest";
 import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
@@ -45,42 +45,33 @@ function isCurrentUserProfile(
 
 export default function RoomProfilePanel({ currentRequester }: Props) {
   const { data: me } = useMe();
-  const { error, isPending, mutate, reset } = useSendFriendRequest();
-  const [lastRequestedKey, setLastRequestedKey] = useState<string | null>(null);
-  const [lastMutationKey, setLastMutationKey] = useState<string | null>(null);
-  const currentRequesterKey = currentRequester
-    ? `${currentRequester.slug ?? ""}:${currentRequester.userId ?? ""}:${currentRequester.nickname}`
-    : null;
+  const { error, isPending, mutate, reset, variables } =
+    useSendFriendRequest();
+  const targetSlug = currentRequester?.slug ?? null;
+  const { data: friendRequestStatus } =
+    useFriendRequestTargetStatus(targetSlug);
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
   const canFollow = !!currentRequester?.slug && !isSelf;
-  const hasRequestedFollow =
-    currentRequesterKey !== null && lastRequestedKey === currentRequesterKey;
+  const isCurrentMutationPending =
+    isPending && variables?.targetSlug === targetSlug;
+  const isRequestingFollow =
+    friendRequestStatus === "pending" || isCurrentMutationPending;
+  const hasRequestedFollow = friendRequestStatus === "sent";
   const shouldShowError =
-    !!error &&
-    currentRequesterKey !== null &&
-    lastMutationKey === currentRequesterKey;
+    !!error && !!targetSlug && variables?.targetSlug === targetSlug;
 
   function handleFollow() {
     if (
       !currentRequester?.slug ||
-      !currentRequesterKey ||
-      isPending ||
+      isRequestingFollow ||
       hasRequestedFollow
     ) {
       return;
     }
 
     reset();
-    setLastMutationKey(currentRequesterKey);
-    mutate(
-      { targetSlug: currentRequester.slug },
-      {
-        onSuccess: () => {
-          setLastRequestedKey(currentRequesterKey);
-        },
-      },
-    );
+    mutate({ targetSlug: currentRequester.slug });
   }
 
   let buttonLabel = "팔로우";
@@ -90,7 +81,7 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     buttonLabel = "나";
   } else if (hasRequestedFollow) {
     buttonLabel = "팔로잉";
-  } else if (isPending) {
+  } else if (isRequestingFollow) {
     buttonLabel = "요청 중...";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
@@ -124,7 +115,7 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
               type="button"
               className={styles.followButton}
               onClick={handleFollow}
-              disabled={!canFollow || isPending || hasRequestedFollow}
+              disabled={!canFollow || isRequestingFollow || hasRequestedFollow}
             >
               {buttonLabel}
             </button>
