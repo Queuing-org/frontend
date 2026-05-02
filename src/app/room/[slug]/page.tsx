@@ -22,6 +22,7 @@ import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
+import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
 import styles from "./page.module.css";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
@@ -216,6 +217,7 @@ export default function RoomPage() {
           if (
             event.type === "QUEUE_ADDED" ||
             event.type === "QUEUE_REMOVED" ||
+            event.type === "QUEUE_REORDERED" ||
             event.type === "TRACK_STARTED" ||
             event.type === "TRACK_ENDED"
           ) {
@@ -351,7 +353,11 @@ export default function RoomPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.mainArea}>
-          <RoomInfo slug={slug} isRoom />
+          <RoomInfo
+            slug={slug}
+            isRoom
+            trailingContent={<UpdateRoomButton slug={slug} />}
+          />
           <YouTubePlayer
             key={slug}
             videoId={currentVideoId}

@@ -52,9 +52,34 @@
 }
 
 .controlWrap {
+  position: relative;
   display: flex;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.panelAnchor {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 18px);
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.panelAnchor > * {
+  pointer-events: auto;
+}
+
+.controlToggle {
+  letter-spacing: 0.04em;
+  transition: color 160ms ease;
+}
+
+.toggleIcon {
+  display: block;
 }
 
 .search_badge {
