@@ -3,8 +3,14 @@
 import { useState } from "react";
 import { useRoomQueue } from "@/src/entities/playlist/model/useRoomQueue";
 import { useMoveMyQueueEntry } from "@/src/entities/playlist/model/useMoveMyQueueEntry";
+import { useDeleteMyQueueEntry } from "@/src/entities/playlist/model/useDeleteMyQueueEntry";
 import { useMe } from "@/src/entities/user/hooks/useMe";
-import { isEntryRequestedByUser, type QueueTab } from "../model/roomQueue";
+import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
+import {
+  isEntryRequestedByUser,
+  isPendingQueueEntry,
+  type QueueTab,
+} from "../model/roomQueue";
 import RoomQueueList from "./RoomQueueList";
 import RoomQueueSortableList from "./RoomQueueSortableList";
 import RoomQueueTabs from "./RoomQueueTabs";
@@ -18,6 +24,7 @@ type Props = {
 export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const [moveErrorMessage, setMoveErrorMessage] = useState("");
+  const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
   const { data: currentUser, isLoading: isMeLoading } = useMe();
   const {
     data: entries,
@@ -26,12 +33,33 @@ export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
     isRefetching,
   } = useRoomQueue(roomSlug, roomPassword, 0, 200);
   const moveMyQueueEntry = useMoveMyQueueEntry();
+  const deleteMyQueueEntry = useDeleteMyQueueEntry();
 
   const allEntries = entries ?? [];
   const myEntries = allEntries.filter((entry) =>
     isEntryRequestedByUser(entry, currentUser),
   );
   const errorMessage = error?.message || "플레이리스트를 불러오지 못했습니다.";
+  const canDeleteEntry = (entry: (typeof allEntries)[number]) =>
+    isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
+
+  const handleDeleteEntry = (entryId: string) => {
+    setDeleteErrorMessage("");
+    deleteMyQueueEntry.mutate(
+      {
+        entryId,
+        password: roomPassword,
+        slug: roomSlug,
+      },
+      {
+        onError: (deleteError) => {
+          setDeleteErrorMessage(
+            deleteError.message || "큐 항목을 삭제하지 못했습니다.",
+          );
+        },
+      },
+    );
+  };
 
   let emptyMessage = "플레이리스트가 아직 비어 있습니다.";
   if (activeTab === "mine") {
@@ -55,18 +83,23 @@ export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
       <div className={styles.listArea}>
         {activeTab === "all" ? (
           <RoomQueueList
+            canDeleteEntry={canDeleteEntry}
             emptyMessage={emptyMessage}
             entries={allEntries}
             errorMessage={error ? errorMessage : undefined}
+            isDeletePending={deleteMyQueueEntry.isPending}
             isLoading={isLoading}
+            onDeleteEntry={handleDeleteEntry}
           />
         ) : (
           <RoomQueueSortableList
             emptyMessage={emptyMessage}
             entries={myEntries}
             errorMessage={error ? errorMessage : undefined}
+            isDeletePending={deleteMyQueueEntry.isPending}
             isLoading={isLoading}
             isMovePending={moveMyQueueEntry.isPending}
+            onDelete={handleDeleteEntry}
             onMove={({ beforeEntryId, movedEntryId, orderedPendingEntryIds }) => {
               setMoveErrorMessage("");
               moveMyQueueEntry.mutate(
@@ -92,12 +125,21 @@ export default function RoomQueuePanel({ roomPassword, roomSlug }: Props) {
       {activeTab === "mine" && moveErrorMessage ? (
         <div className={styles.error}>{moveErrorMessage}</div>
       ) : null}
+      {deleteErrorMessage ? (
+        <div className={styles.error}>{deleteErrorMessage}</div>
+      ) : null}
       {activeTab === "mine" && moveMyQueueEntry.isPending ? (
         <div className={styles.refreshing}>큐 순서를 변경하는 중...</div>
+      ) : null}
+      {deleteMyQueueEntry.isPending ? (
+        <div className={styles.refreshing}>큐 항목을 삭제하는 중...</div>
       ) : null}
       {isRefetching ? (
         <div className={styles.refreshing}>최신 목록으로 갱신 중...</div>
       ) : null}
+      <div className={styles.addTrackDock}>
+        <AddTrackAction slug={roomSlug} variant="queueDock" />
+      </div>
     </div>
   );
 }

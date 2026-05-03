@@ -91,7 +91,10 @@ export default function RoomFloatingWidgets({
                 height={widgets.queue.height}
                 width={widgets.queue.width}
               >
-                <RoomQueuePanel roomPassword={roomPassword} roomSlug={roomSlug} />
+                <RoomQueuePanel
+                  roomPassword={roomPassword}
+                  roomSlug={roomSlug}
+                />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>
@@ -118,7 +121,9 @@ export default function RoomFloatingWidgets({
                 height={widgets.chat.height}
                 width={widgets.chat.width}
               >
-                <div className={styles.widgetPlaceholder}>채팅 모달임</div>
+                <div className={styles.widgetPlaceholder}>
+                  채팅 모달입니다. (개발중)
+                </div>
               </FloatingRoomPanelShell>
             </div>
           </Draggable>

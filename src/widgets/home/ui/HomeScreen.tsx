@@ -16,6 +16,7 @@ import HomeControlPanelShell, {
 } from "./HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
+import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./HomeScreen.module.css";
 
 type HomePanelKey = "menu" | "filter";
@@ -25,6 +26,7 @@ export default function HomeScreen() {
   const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const {
@@ -48,6 +50,15 @@ export default function HomeScreen() {
     setRoomListFilters((currentFilters) =>
       getNextHomeFilters(currentFilters, key, option),
     );
+  };
+
+  const selectMenuItem = (menuItem: HomeMenuItem) => {
+    setActiveMenuItem(menuItem);
+
+    if (menuItem === "CREATE") {
+      setOpenPanel(null);
+      setIsCreateRoomModalOpen(true);
+    }
   };
 
   if (isLoading) return <div>방 목록 로딩중...</div>;
@@ -74,7 +85,7 @@ export default function HomeScreen() {
                 <HomeControlPanelShell
                   variant="menu"
                   activeMenuItem={activeMenuItem}
-                  onSelectMenuItem={setActiveMenuItem}
+                  onSelectMenuItem={selectMenuItem}
                 />
               ) : (
                 <HomeControlPanelShell
@@ -175,6 +186,13 @@ export default function HomeScreen() {
             }
           />
         </div>
+      ) : null}
+      {isCreateRoomModalOpen ? (
+        <RoomFormModal
+          open
+          mode="create"
+          onClose={() => setIsCreateRoomModalOpen(false)}
+        />
       ) : null}
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
+import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
 import MainLogo from "@/src/widgets/home/ui/MainLogo";
@@ -20,6 +21,7 @@ import HomeControlPanelShell, {
   type HomeFilterOption,
   type HomeMenuItem,
 } from "@/src/widgets/home/ui/HomeControlPanelShell";
+import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 
 type SearchPanelKey = "menu" | "filter";
 
@@ -28,11 +30,20 @@ export default function SearchPage() {
   const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const { data, isLoading, isError } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const roomListRooms = rooms;
   const { selectedRoomSlug, previousRoom, nextRoom, goPrevious, goNext } =
     useRoomNavigator(roomListRooms);
+  const selectedRoomIndex = selectedRoomSlug
+    ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
+    : -1;
+  const selectedRoom =
+    selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
+  const backgroundImageSrc = getDefaultRoomImage(
+    selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
+  );
 
   const togglePanel = (panel: SearchPanelKey) => {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
@@ -45,6 +56,15 @@ export default function SearchPage() {
     setRoomListFilters((currentFilters) =>
       getNextHomeFilters(currentFilters, key, option),
     );
+  };
+
+  const selectMenuItem = (menuItem: HomeMenuItem) => {
+    setActiveMenuItem(menuItem);
+
+    if (menuItem === "CREATE") {
+      setOpenPanel(null);
+      setIsCreateRoomModalOpen(true);
+    }
   };
 
   return (
@@ -82,7 +102,7 @@ export default function SearchPage() {
                   <HomeControlPanelShell
                     variant="menu"
                     activeMenuItem={activeMenuItem}
-                    onSelectMenuItem={setActiveMenuItem}
+                    onSelectMenuItem={selectMenuItem}
                   />
                 ) : (
                   <HomeControlPanelShell
@@ -190,13 +210,21 @@ export default function SearchPage() {
 
       <div className={styles.thumbnail_container}>
         <Image
-          src="/Thumbnail.png"
-          alt="룸 썸네일"
+          key={backgroundImageSrc}
+          src={backgroundImageSrc}
+          alt={selectedRoom ? `${selectedRoom.title} 대표 이미지` : "방 대표 이미지"}
           fill
           className={styles.thumbnail}
           priority
         />
       </div>
+      {isCreateRoomModalOpen ? (
+        <RoomFormModal
+          open
+          mode="create"
+          onClose={() => setIsCreateRoomModalOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

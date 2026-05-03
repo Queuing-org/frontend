@@ -1,6 +1,7 @@
 "use client";
 
 import type { Room } from "@/src/entities/room/model/types";
+import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import RoomStageCard from "@/src/entities/room/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
 
@@ -63,9 +64,12 @@ export default function HomeRoomStage({
                 <RoomStageCard
                   slug={room.slug}
                   title={room.title}
+                  imageSrc={getDefaultRoomImage(index)}
                   isSelected={isSelected}
                   disabled={!isNavigable}
-                  onClick={isNavigable ? () => onSelectRoom(room.slug) : undefined}
+                  onClick={
+                    isNavigable ? () => onSelectRoom(room.slug) : undefined
+                  }
                 />
               </div>
             </div>

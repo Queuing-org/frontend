@@ -22,6 +22,10 @@ export type MoveMyQueueEntryPayload = {
 export type MoveMyQueueEntryParams = PlaylistProtectedRequestParams &
   MoveMyQueueEntryPayload;
 
+export type DeleteMyQueueEntryParams = PlaylistProtectedRequestParams & {
+  entryId: string;
+};
+
 export type TrackProvider = "YOUTUBE" | (string & {});
 
 export type PlaylistTrack = {

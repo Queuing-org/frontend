@@ -19,7 +19,6 @@ import type {
 } from "@/src/entities/room/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
-import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
@@ -391,9 +390,6 @@ export default function RoomPage() {
               </div>
             </div>
           ) : null}
-          <div className={styles.actionBar}>
-            <AddTrackAction slug={slug} />
-          </div>
           <div className={styles.chatSection}>
             <ChatArea />
           </div>

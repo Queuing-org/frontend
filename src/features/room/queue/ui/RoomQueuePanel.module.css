@@ -13,6 +13,14 @@
   overflow-y: auto;
 }
 
+.addTrackDock {
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  padding: 18px 16px 22px;
+  background: #242424;
+}
+
 .refreshing {
   flex-shrink: 0;
   padding: 8px 12px;
