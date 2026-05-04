@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
+import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
 import {
   joinRoom,
   type JoinRoomResult,
@@ -29,6 +30,7 @@ import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWid
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
+import { useMe } from "@/src/entities/user/hooks/useMe";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
@@ -100,7 +102,7 @@ function getCurrentRequesterProfile(
   }
 
   const matchedParticipant = roomState?.participants.find((participant) => {
-    if (requester.userId !== null) {
+    if (typeof requester.userId === "number") {
       return participant.userId === requester.userId;
     }
 
@@ -141,6 +143,8 @@ export default function RoomPage() {
     roomPassword,
     status === "joined",
   );
+  const { data: roomMeta } = useRoomMeta(status === "joined" ? slug : null);
+  const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const playbackStatus = getLatestPlaybackState(
     roomState?.playbackStatus,
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
@@ -231,6 +235,7 @@ export default function RoomPage() {
             void queryClient.invalidateQueries({
               queryKey: ["roomMeta", roomSlug],
             });
+            void refetchRoomState();
           }
         }),
       };
@@ -396,9 +401,13 @@ export default function RoomPage() {
           <div className={styles.controlBarDock}>
             <RoomButtonControlBar
               isChatOpen={floatingWidgets.widgets.chat.isOpen}
+              isParticipantsOpen={floatingWidgets.widgets.participants.isOpen}
               isProfileOpen={floatingWidgets.widgets.profile.isOpen}
               isQueueOpen={floatingWidgets.widgets.queue.isOpen}
               onToggleChat={() => floatingWidgets.toggleWidget("chat")}
+              onToggleParticipants={() =>
+                floatingWidgets.toggleWidget("participants")
+              }
               onToggleProfile={() => floatingWidgets.toggleWidget("profile")}
               onToggleQueue={() => floatingWidgets.toggleWidget("queue")}
             />
@@ -408,6 +417,10 @@ export default function RoomPage() {
       <RoomFloatingWidgets
         currentRequester={currentRequester}
         currentTrackTitle={currentTrackTitle}
+        currentUser={currentUser ?? null}
+        isCurrentUserLoading={isCurrentUserLoading}
+        participants={roomState?.participants ?? []}
+        roomMeta={roomMeta ?? null}
         roomPassword={roomPassword}
         roomSlug={slug}
         widgets={floatingWidgets.widgets}

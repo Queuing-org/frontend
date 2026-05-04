@@ -3,6 +3,6 @@
 import { redirect } from "next/navigation";
 
 export default function Page() {
-  // redirect("/home");
-  return <button onClick={() => redirect("/test")}>go to test page</button>;
+  return redirect("/home");
+  // return <button onClick={() => redirect("/test")}>go to test page</button>;
 }

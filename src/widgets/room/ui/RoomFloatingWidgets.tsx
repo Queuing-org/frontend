@@ -7,17 +7,25 @@ import type {
   FloatingWidgetsView,
   WidgetId,
 } from "@/src/widgets/room/model/useFloatingWidgetsState";
+import type { PlaylistParticipant } from "@/src/entities/playlist/model/types";
+import type { RoomMeta } from "@/src/entities/room/model/types";
+import type { User } from "@/src/entities/user/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
+import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
+  currentUser: User | null;
+  isCurrentUserLoading: boolean;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
+  participants: PlaylistParticipant[];
+  roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
   widgets: FloatingWidgetsView;
@@ -26,8 +34,12 @@ type Props = {
 export default function RoomFloatingWidgets({
   currentRequester,
   currentTrackTitle,
+  currentUser,
+  isCurrentUserLoading,
   onActivateWidget,
   onWidgetStop,
+  participants,
+  roomMeta,
   roomPassword,
   roomSlug,
   widgets,
@@ -35,6 +47,7 @@ export default function RoomFloatingWidgets({
   const profileWidgetRef = useRef<HTMLDivElement>(null);
   const queueWidgetRef = useRef<HTMLDivElement>(null);
   const chatWidgetRef = useRef<HTMLDivElement>(null);
+  const participantsWidgetRef = useRef<HTMLDivElement>(null);
 
   return (
     <div className={styles.widgetLayer}>
@@ -69,6 +82,40 @@ export default function RoomFloatingWidgets({
           </Draggable>
         </div>
       ) : null}
+      {widgets.participants.isOpen ? (
+        <div
+          className={styles.widget}
+          onMouseDown={() => onActivateWidget("participants")}
+          style={{
+            ...widgets.participants.placementStyle,
+            zIndex: widgets.participants.zIndex,
+          }}
+        >
+          <Draggable
+            bounds={widgets.participants.bounds}
+            defaultPosition={widgets.participants.offset}
+            handle="[data-drag-handle='true']"
+            nodeRef={participantsWidgetRef}
+            onStop={(_, data) => onWidgetStop("participants", data)}
+          >
+            <div ref={participantsWidgetRef} className={styles.widgetFrame}>
+              <FloatingRoomPanelShell
+                contentClassName={styles.participantsPanelContent}
+                height={widgets.participants.height}
+                width={widgets.participants.width}
+              >
+                <RoomParticipantsPanel
+                  currentUser={currentUser}
+                  participants={participants}
+                  roomMeta={roomMeta}
+                  roomPassword={roomPassword}
+                  roomSlug={roomSlug}
+                />
+              </FloatingRoomPanelShell>
+            </div>
+          </Draggable>
+        </div>
+      ) : null}
       {widgets.queue.isOpen ? (
         <div
           className={styles.widget}
@@ -92,6 +139,9 @@ export default function RoomFloatingWidgets({
                 width={widgets.queue.width}
               >
                 <RoomQueuePanel
+                  currentUser={currentUser}
+                  isCurrentUserLoading={isCurrentUserLoading}
+                  roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
                 />

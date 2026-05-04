@@ -9,9 +9,11 @@ type IconProps = {
 
 type Props = {
   isChatOpen: boolean;
+  isParticipantsOpen: boolean;
   isProfileOpen: boolean;
   isQueueOpen: boolean;
   onToggleChat: () => void;
+  onToggleParticipants: () => void;
   onToggleProfile: () => void;
   onToggleQueue: () => void;
 };
@@ -67,20 +69,12 @@ function ExitIcon({ className }: IconProps) {
   );
 }
 
-function HeartIcon({ className }: IconProps) {
+function HamburgerIcon({ className }: IconProps) {
   return (
-    <svg
-      viewBox="0 0 20 20"
-      className={className}
+    <span
+      className={[styles.hamburgerIcon, className].filter(Boolean).join(" ")}
       aria-hidden="true"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M10 19.35L8.55 18.03C3.4 13.36 0 10.27 0 6.5C0 3.41 2.42 1 5.5 1C7.24 1 8.91 1.81 10 3.08C11.09 1.81 12.76 1 14.5 1C17.58 1 20 3.41 20 6.5C20 10.27 16.6 13.36 11.45 18.03L10 19.35Z"
-        fill="currentColor"
-      />
-    </svg>
+    />
   );
 }
 
@@ -100,9 +94,11 @@ function ChatIcon({ className }: IconProps) {
 
 export default function RoomButtonControlBar({
   isChatOpen,
+  isParticipantsOpen,
   isProfileOpen,
   isQueueOpen,
   onToggleChat,
+  onToggleParticipants,
   onToggleProfile,
   onToggleQueue,
 }: Props) {
@@ -136,8 +132,15 @@ export default function RoomButtonControlBar({
       >
         <ExitIcon className={styles.icon} />
       </Link>
-      <button type="button" className={styles.iconButton} aria-label="좋아요">
-        <HeartIcon className={styles.icon} />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label="참가자 목록"
+        aria-pressed={isParticipantsOpen}
+        data-selected={isParticipantsOpen}
+        onClick={onToggleParticipants}
+      >
+        <HamburgerIcon className={styles.icon} />
       </button>
       <button
         type="button"

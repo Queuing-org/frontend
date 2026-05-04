@@ -1,26 +1,26 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { moveMyQueueEntry } from "../api/moveMyQueueEntry";
-import type { MoveMyQueueEntryParams, RoomQueueResult } from "./types";
+import { moveRoomQueueEntry } from "../api/moveRoomQueueEntry";
+import type { MoveRoomQueueEntryParams, RoomQueueResult } from "./types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import {
   applyPendingEntryOrder,
   type QueueOrderSnapshot,
 } from "./queueOrderOptimistic";
 
-type MoveMyQueueEntryVariables = MoveMyQueueEntryParams & {
+type MoveRoomQueueEntryVariables = MoveRoomQueueEntryParams & {
   orderedPendingEntryIds: string[];
 };
 
-export function useMoveMyQueueEntry() {
+export function useMoveRoomQueueEntry() {
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, ApiError, MoveMyQueueEntryVariables, {
+  return useMutation<boolean, ApiError, MoveRoomQueueEntryVariables, {
     previousRoomQueueSnapshots: QueueOrderSnapshot[];
   }>({
     mutationFn: ({ beforeEntryId, movedEntryId, password, slug }) =>
-      moveMyQueueEntry({
+      moveRoomQueueEntry({
         beforeEntryId,
         movedEntryId,
         password,

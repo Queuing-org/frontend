@@ -1,32 +1,23 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { moveMyQueueEntry } from "../api/moveMyQueueEntry";
-import type { MoveMyQueueEntryParams, RoomQueueResult } from "./types";
+import { deleteRoomQueueEntries } from "../api/deleteRoomQueueEntries";
+import type {
+  DeleteRoomQueueEntriesParams,
+  RoomQueueResult,
+} from "./types";
 import type { ApiError } from "@/src/shared/api/api-error";
-import {
-  applyPendingEntryOrder,
-  type QueueOrderSnapshot,
-} from "./queueOrderOptimistic";
 
-type MoveMyQueueEntryVariables = MoveMyQueueEntryParams & {
-  orderedPendingEntryIds: string[];
-};
+type RoomQueueSnapshot = [readonly unknown[], RoomQueueResult | undefined];
 
-export function useMoveMyQueueEntry() {
+export function useDeleteRoomQueueEntries() {
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, ApiError, MoveMyQueueEntryVariables, {
-    previousRoomQueueSnapshots: QueueOrderSnapshot[];
+  return useMutation<boolean, ApiError, DeleteRoomQueueEntriesParams, {
+    previousRoomQueueSnapshots: RoomQueueSnapshot[];
   }>({
-    mutationFn: ({ beforeEntryId, movedEntryId, password, slug }) =>
-      moveMyQueueEntry({
-        beforeEntryId,
-        movedEntryId,
-        password,
-        slug,
-      }),
-    onMutate: async ({ orderedPendingEntryIds, slug }) => {
+    mutationFn: deleteRoomQueueEntries,
+    onMutate: async ({ entryIds, slug }) => {
       await queryClient.cancelQueries({ queryKey: ["roomQueue", slug] });
 
       const previousRoomQueueSnapshots =
@@ -34,10 +25,11 @@ export function useMoveMyQueueEntry() {
           queryKey: ["roomQueue", slug],
         });
 
+      const entryIdSet = new Set(entryIds);
       queryClient.setQueriesData<RoomQueueResult>(
         { queryKey: ["roomQueue", slug] },
         (currentEntries) =>
-          applyPendingEntryOrder(currentEntries, orderedPendingEntryIds),
+          currentEntries?.filter((entry) => !entryIdSet.has(entry.entryId)),
       );
 
       return { previousRoomQueueSnapshots };

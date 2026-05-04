@@ -34,6 +34,7 @@ type MovePayload = {
 };
 
 type Props = {
+  canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
   errorMessage?: string;
@@ -49,6 +50,7 @@ type SortableQueueCardProps = {
   entry: PlaylistEntry;
   isDeletePending: boolean;
   onDelete?: (entryId: string) => void;
+  showDeleteButton: boolean;
 };
 
 function SortableQueueCard({
@@ -56,6 +58,7 @@ function SortableQueueCard({
   entry,
   isDeletePending,
   onDelete,
+  showDeleteButton,
 }: SortableQueueCardProps) {
   const {
     attributes,
@@ -86,12 +89,13 @@ function SortableQueueCard({
       data-dragging={isDragging}
       isDeletePending={isDeletePending}
       onDelete={onDelete}
-      showDeleteButton
+      showDeleteButton={showDeleteButton}
     />
   );
 }
 
 export default function RoomQueueSortableList({
+  canDeleteEntry,
   emptyMessage,
   entries,
   errorMessage,
@@ -216,6 +220,7 @@ export default function RoomQueueSortableList({
                   entry={entry}
                   isDeletePending={isDeletePending}
                   onDelete={onDelete}
+                  showDeleteButton={canDeleteEntry?.(entry) ?? true}
                 />
               ))}
             </ul>
