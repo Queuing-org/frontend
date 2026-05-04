@@ -2,30 +2,14 @@
 
 import { useMemo, useState } from "react";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
-import type { RoomOwner } from "@/src/entities/room/model/types";
+import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
 import { useMe } from "@/src/entities/user/hooks/useMe";
-import type { User } from "@/src/entities/user/model/types";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./UpdateRoomButton.module.css";
 
 type Props = {
   slug: string | null;
 };
-
-function isRoomOwner(
-  owner: RoomOwner | null | undefined,
-  me: User | null | undefined,
-) {
-  if (!owner || !me) {
-    return false;
-  }
-
-  if (owner.userId != null && me.userId != null) {
-    return owner.userId === me.userId;
-  }
-
-  return owner.slug === me.slug;
-}
 
 export default function UpdateRoomButton({ slug }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);

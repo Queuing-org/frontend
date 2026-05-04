@@ -44,6 +44,13 @@
   gap: 16px;
 }
 
+.roomActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .passwordState {
   width: min(100%, 28rem);
   min-height: 100vh;

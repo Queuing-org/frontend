@@ -18,9 +18,11 @@ import type {
   PlaybackStatus,
   WsEvent,
 } from "@/src/entities/room/model/types";
+import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
+import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
 import styles from "./page.module.css";
@@ -149,6 +151,7 @@ export default function RoomPage() {
     roomState?.playbackStatus,
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
   );
+  const isCurrentUserRoomOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
   const currentRequester = getCurrentRequesterProfile(roomState);
   const currentTrackTitle = roomState?.currentEntry?.track.title ?? null;
@@ -360,7 +363,14 @@ export default function RoomPage() {
           <RoomInfo
             slug={slug}
             isRoom
-            trailingContent={<UpdateRoomButton slug={slug} />}
+            trailingContent={
+              isCurrentUserRoomOwner ? (
+                <div className={styles.roomActions}>
+                  <SkipTrackButton slug={slug} />
+                  <UpdateRoomButton slug={slug} />
+                </div>
+              ) : null
+            }
           />
           <YouTubePlayer
             key={slug}
