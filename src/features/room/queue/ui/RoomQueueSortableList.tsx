@@ -34,25 +34,36 @@ type MovePayload = {
 };
 
 type Props = {
+  canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
   errorMessage?: string;
+  isDeletePending?: boolean;
   isLoading?: boolean;
   isMovePending?: boolean;
+  onDelete?: (entryId: string) => void;
   onMove?: (payload: MovePayload) => void;
 };
 
 type SortableQueueCardProps = {
   disabled: boolean;
   entry: PlaylistEntry;
+  isDeletePending: boolean;
+  onDelete?: (entryId: string) => void;
+  showDeleteButton: boolean;
 };
 
-function SortableQueueCard({ disabled, entry }: SortableQueueCardProps) {
+function SortableQueueCard({
+  disabled,
+  entry,
+  isDeletePending,
+  onDelete,
+  showDeleteButton,
+}: SortableQueueCardProps) {
   const {
     attributes,
     isDragging,
     listeners,
-    setActivatorNodeRef,
     setNodeRef,
     transform,
     transition,
@@ -64,30 +75,34 @@ function SortableQueueCard({ disabled, entry }: SortableQueueCardProps) {
   return (
     <RoomQueueCard
       ref={setNodeRef}
-      dragHandleProps={{
+      dragActivatorProps={{
         ...attributes,
         ...listeners,
-        disabled,
+        "aria-label": `${entry.track.title} 순서 변경`,
       }}
-      dragHandleRef={setActivatorNodeRef}
       entry={entry}
-      showDragHandle
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
       }}
       data-drag-disabled={disabled}
       data-dragging={isDragging}
+      isDeletePending={isDeletePending}
+      onDelete={onDelete}
+      showDeleteButton={showDeleteButton}
     />
   );
 }
 
 export default function RoomQueueSortableList({
+  canDeleteEntry,
   emptyMessage,
   entries,
   errorMessage,
+  isDeletePending = false,
   isLoading = false,
   isMovePending = false,
+  onDelete,
   onMove,
 }: Props) {
   const [pendingEntries, setPendingEntries] = useState<PlaylistEntry[]>(
@@ -203,6 +218,9 @@ export default function RoomQueueSortableList({
                   key={entry.entryId}
                   disabled={isMovePending || pendingEntries.length < 2}
                   entry={entry}
+                  isDeletePending={isDeletePending}
+                  onDelete={onDelete}
+                  showDeleteButton={canDeleteEntry?.(entry) ?? true}
                 />
               ))}
             </ul>

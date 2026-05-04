@@ -1,22 +1,31 @@
 .item {
+  position: relative;
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) auto;
+  grid-template-columns: 46px minmax(0, 1fr);
   gap: 12px;
   align-items: center;
   padding: 14px 16px;
-  background: #262626;
+  background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
-    opacity 180ms ease;
+    opacity 180ms ease,
+    background 180ms ease,
+    padding-right 180ms ease;
 }
 
-.item:nth-child(even) {
-  background: #303030;
+.item[data-has-delete="true"]:hover {
+  padding-right: 50px;
 }
 
-.item[data-active="true"] {
-  background: #5a5a5a;
+.item:hover {
+  background: #555555;
+}
+
+.item[data-drag-disabled="false"]:hover {
+  cursor: move;
 }
 
 .item[data-dragging="true"] {
@@ -39,6 +48,7 @@
 
 .thumbnail {
   object-fit: cover;
+  -webkit-user-drag: none;
 }
 
 .nowPlaying {
@@ -94,52 +104,66 @@
   white-space: nowrap;
 }
 
-.dragHandle {
+.actions {
+  position: absolute;
+  top: 0;
+  right: 16px;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    opacity 180ms ease,
+    width 180ms ease;
+}
+
+.item[data-has-delete="true"]:hover .actions {
+  width: 22px;
+  opacity: 1;
+}
+
+.deleteButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: stretch;
-  width: 28px;
-  min-width: 28px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   border: 0;
+  border-radius: 4px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.42);
-  cursor: grab;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
   transition:
-    color 180ms ease,
+    background 180ms ease,
     opacity 180ms ease,
     transform 180ms ease;
 }
 
-.dragHandle:hover {
-  color: rgba(255, 255, 255, 0.72);
+.item:hover .deleteButton {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.dragHandle:active {
-  cursor: grabbing;
-  transform: scale(0.96);
+.deleteButton:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.dragHandle:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.45);
-  outline-offset: 2px;
-  border-radius: 6px;
+.deleteButton:active {
+  transform: scale(0.94);
 }
 
-.dragHandle:disabled {
-  opacity: 0.35;
+.deleteButton:disabled {
   cursor: default;
+  opacity: 0.35;
 }
 
-.dragHandleIcon {
-  position: relative;
-  width: 4px;
-  height: 4px;
-  border-radius: 1px;
-  background: currentColor;
-  box-shadow:
-    0 8px 0 currentColor,
-    8px 0 0 currentColor,
-    8px 8px 0 currentColor;
+.deleteIcon {
+  width: 14px;
+  height: 14px;
+  -webkit-user-drag: none;
 }

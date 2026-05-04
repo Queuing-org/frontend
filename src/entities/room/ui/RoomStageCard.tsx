@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import styles from "./RoomStageCard.module.css";
 
 type Props = {
   slug: string;
   title: string;
+  imageSrc: string;
   isSelected?: boolean;
   disabled?: boolean;
   onClick?: () => void;
@@ -13,6 +15,7 @@ type Props = {
 export default function RoomStageCard({
   slug,
   title,
+  imageSrc,
   isSelected = false,
   disabled = false,
   onClick,
@@ -23,9 +26,18 @@ export default function RoomStageCard({
       onClick={onClick}
       disabled={disabled}
       data-room-slug={slug}
+      aria-label={`${title} 방 선택`}
       className={`${styles.card} ${isSelected ? styles.selected : ""}`}
     >
-      <div className={styles.title}>{title}</div>
+      <Image
+        src={imageSrc}
+        alt=""
+        fill
+        sizes="(max-width: 900px) 68vw, 38vw"
+        className={styles.image}
+        priority={isSelected}
+      />
+      <div className={styles.scrim} />
     </button>
   );
 }

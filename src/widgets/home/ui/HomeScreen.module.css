@@ -32,6 +32,10 @@
   transition: color 160ms ease;
 }
 
+.toggleIcon {
+  display: block;
+}
+
 @media (max-width: 900px) {
   .controlWrap {
     bottom: 32px;

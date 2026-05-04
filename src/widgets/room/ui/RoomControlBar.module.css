@@ -35,3 +35,9 @@
   height: 20px;
   display: block;
 }
+
+.hamburgerIcon {
+  background: currentColor;
+  mask: url("/icons/hambuger.svg") center / contain no-repeat;
+  -webkit-mask: url("/icons/hambuger.svg") center / contain no-repeat;
+}

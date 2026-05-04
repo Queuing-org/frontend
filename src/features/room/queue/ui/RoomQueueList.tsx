@@ -5,19 +5,25 @@ import RoomQueueCard from "./RoomQueueCard";
 import styles from "./RoomQueueList.module.css";
 
 type Props = {
+  canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
   errorMessage?: string;
+  isDeletePending?: boolean;
   isLoading?: boolean;
   listClassName?: string;
+  onDeleteEntry?: (entryId: string) => void;
 };
 
 export default function RoomQueueList({
+  canDeleteEntry,
   emptyMessage,
   entries,
   errorMessage,
+  isDeletePending = false,
   isLoading = false,
   listClassName,
+  onDeleteEntry,
 }: Props) {
   if (isLoading) {
     return <div className={styles.state}>플레이리스트를 불러오는 중입니다.</div>;
@@ -34,7 +40,13 @@ export default function RoomQueueList({
   return (
     <ul className={[styles.list, listClassName].filter(Boolean).join(" ")}>
       {entries.map((entry) => (
-        <RoomQueueCard key={entry.entryId} entry={entry} />
+        <RoomQueueCard
+          key={entry.entryId}
+          entry={entry}
+          isDeletePending={isDeletePending}
+          onDelete={onDeleteEntry}
+          showDeleteButton={canDeleteEntry?.(entry) ?? false}
+        />
       ))}
     </ul>
   );

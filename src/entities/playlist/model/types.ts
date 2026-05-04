@@ -22,6 +22,17 @@ export type MoveMyQueueEntryPayload = {
 export type MoveMyQueueEntryParams = PlaylistProtectedRequestParams &
   MoveMyQueueEntryPayload;
 
+export type MoveRoomQueueEntryParams = PlaylistProtectedRequestParams &
+  MoveMyQueueEntryPayload;
+
+export type DeleteMyQueueEntryParams = PlaylistProtectedRequestParams & {
+  entryId: string;
+};
+
+export type DeleteRoomQueueEntriesParams = PlaylistProtectedRequestParams & {
+  entryIds: string[];
+};
+
 export type TrackProvider = "YOUTUBE" | (string & {});
 
 export type PlaylistTrack = {
@@ -60,7 +71,7 @@ export type RoomQueueResult = PlaylistEntry[];
 
 export type PlaylistParticipant = {
   slug: string;
-  userId: number;
+  userId: number | null;
   nickname: string;
   profileImageUrl?: string | null;
 };

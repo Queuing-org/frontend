@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useState } from "react";
 import type { DraggableData } from "react-draggable";
 
-export type WidgetId = "profile" | "queue" | "chat";
+export type WidgetId = "profile" | "queue" | "chat" | "participants";
 
 type WidgetOffset = {
   x: number;
@@ -28,6 +28,7 @@ type WidgetConfig = {
   left?: number;
   offsetStorageKey: string;
   openStorageKey: string;
+  right?: number;
   top?: number;
   width: number;
 } & (
@@ -72,6 +73,14 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
     top: 80,
     width: 300,
   },
+  participants: {
+    height: 380,
+    offsetStorageKey: "participantsWidgetOffset",
+    openStorageKey: "isParticipantsOpen",
+    right: 24,
+    top: 80,
+    width: 300,
+  },
   queue: {
     bottom: 140,
     height: 535,
@@ -112,6 +121,8 @@ function getWidgetBasePosition(
   const widget = WIDGET_CONFIG[widgetId];
   const x = widget.centeredX
     ? (viewportSize.width - widget.width) / 2
+    : typeof widget.right === "number"
+      ? viewportSize.width - widget.width - widget.right
     : (widget.left ?? 0);
   const y =
     typeof widget.top === "number"
@@ -200,10 +211,15 @@ function getWidgetPlacementStyle(widgetId: WidgetId): CSSProperties {
   const widget = WIDGET_CONFIG[widgetId];
 
   if (typeof widget.top === "number") {
-    return {
-      left: widget.left ?? 0,
-      top: widget.top,
-    };
+    return typeof widget.right === "number"
+      ? {
+          right: widget.right,
+          top: widget.top,
+        }
+      : {
+          left: widget.left ?? 0,
+          top: widget.top,
+        };
   }
 
   if (widget.centeredX) {
@@ -233,6 +249,9 @@ export function useFloatingWidgetsState() {
   const [isChatOpen, setIsChatOpen] = useState(() =>
     getStoredBoolean(WIDGET_CONFIG.chat.openStorageKey),
   );
+  const [isParticipantsOpen, setIsParticipantsOpen] = useState(() =>
+    getStoredBoolean(WIDGET_CONFIG.participants.openStorageKey),
+  );
   const [profileWidgetOffset, setProfileWidgetOffset] = useState<WidgetOffset>(
     () =>
       getStoredWidgetOffset(WIDGET_CONFIG.profile.offsetStorageKey, "profile"),
@@ -243,6 +262,13 @@ export function useFloatingWidgetsState() {
   const [chatWidgetOffset, setChatWidgetOffset] = useState<WidgetOffset>(() =>
     getStoredWidgetOffset(WIDGET_CONFIG.chat.offsetStorageKey, "chat"),
   );
+  const [participantsWidgetOffset, setParticipantsWidgetOffset] =
+    useState<WidgetOffset>(() =>
+      getStoredWidgetOffset(
+        WIDGET_CONFIG.participants.offsetStorageKey,
+        "participants",
+      ),
+    );
   const [activeWidget, setActiveWidget] = useState<WidgetId | null>(null);
 
   useEffect(() => {
@@ -262,6 +288,8 @@ export function useFloatingWidgetsState() {
         return isQueueOpen;
       case "chat":
         return isChatOpen;
+      case "participants":
+        return isParticipantsOpen;
     }
   }
 
@@ -276,6 +304,9 @@ export function useFloatingWidgetsState() {
       case "chat":
         setIsChatOpen(nextValue);
         return;
+      case "participants":
+        setIsParticipantsOpen(nextValue);
+        return;
     }
   }
 
@@ -289,6 +320,9 @@ export function useFloatingWidgetsState() {
         return;
       case "chat":
         setChatWidgetOffset(nextOffset);
+        return;
+      case "participants":
+        setParticipantsWidgetOffset(nextOffset);
         return;
     }
   }
@@ -343,6 +377,15 @@ export function useFloatingWidgetsState() {
       placementStyle: getWidgetPlacementStyle("profile"),
       width: WIDGET_CONFIG.profile.width,
       zIndex: activeWidget === "profile" ? 3 : 1,
+    },
+    participants: {
+      bounds: getWidgetBounds("participants", viewportSize),
+      height: WIDGET_CONFIG.participants.height,
+      isOpen: isParticipantsOpen,
+      offset: participantsWidgetOffset,
+      placementStyle: getWidgetPlacementStyle("participants"),
+      width: WIDGET_CONFIG.participants.width,
+      zIndex: activeWidget === "participants" ? 3 : 1,
     },
     queue: {
       bounds: getWidgetBounds("queue", viewportSize),

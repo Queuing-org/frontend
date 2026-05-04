@@ -1,75 +1,112 @@
+/* 홈 메뉴/필터 패널 공통 박스 */
 .panel {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 14px;
-  background:
-    linear-gradient(rgba(32, 32, 32, 0.96), rgba(32, 32, 32, 0.96)),
-    rgba(32, 32, 32, 0.96);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.26);
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: black;
   color: #f6f6f6;
   backdrop-filter: blur(14px);
   animation: panelEnter 180ms ease;
 }
 
+/* QUE/CREATE/FRIEND/SETTING 메뉴 패널 */
 .menuPanel {
-  width: min(92vw, 380px);
-  padding: 12px 14px;
+  width: fit-content;
+  max-width: 92vw;
+  height: auto;
+  padding: 12px 16px;
 }
 
+/* QUE/CREATE 메뉴 옵션 배치 */
 .menuRow {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
+  align-items: center;
+  height: auto;
   gap: 10px;
 }
 
+/* 메뉴/필터 옵션 칩 공통 스타일 */
 .menuItem,
 .optionChip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: 8px;
-  font-size: 13px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 12px;
   font-weight: var(--fw-extrabold);
-  line-height: 1;
-  letter-spacing: 0.02em;
+  line-height: 1.4;
   color: #f1f1f1;
   background: transparent;
   white-space: nowrap;
 }
 
+/* QUE/CREATE 메뉴 옵션 버튼 영역 */
+.menuItem {
+  width: fit-content;
+  height: auto;
+  min-width: 0;
+  min-height: 25px;
+  padding: 4px 12px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.menuItem:focus-visible {
+  outline: 2px solid #f5f5f5;
+  outline-offset: 2px;
+}
+
+/* 현재 선택된 옵션 칩 */
 .activeChip {
   background: #f5f5f5;
   color: #161616;
 }
 
+/* Genre/Date/Participants 필터 패널 */
 .filterPanel {
-  width: min(92vw, 460px);
-  padding: 18px;
+  width: min(92vw, 442px);
+  max-width: 92vw;
+  padding: 12px 16px;
 }
 
+/* 필터 섹션 간격 */
 .filterSection + .filterSection {
-  margin-top: 22px;
+  margin-top: 12px;
 }
 
+/* 필터 섹션 제목 */
 .sectionTitle {
   display: block;
   margin-bottom: 12px;
   font-size: 14px;
-  font-weight: var(--fw-medium);
-  color: #d2d2d2;
+  font-weight: var(--fw-regular);
+  color: #ffffff;
 }
 
+/* 필터 옵션 칩 줄바꿈 배치 */
 .optionGrid {
   display: flex;
   flex-wrap: wrap;
+  width: 100%;
+  max-width: 100%;
   gap: 12px;
 }
 
+/* 필터 옵션 칩 버튼 */
 .optionChip {
-  min-width: 86px;
+  padding: 4px 12px;
+  appearance: none;
+  cursor: pointer;
 }
 
+.optionChip:focus-visible {
+  outline: 2px solid #f5f5f5;
+  outline-offset: 2px;
+}
+
+/* 패널 열림 애니메이션 */
 @keyframes panelEnter {
   from {
     opacity: 0;
@@ -82,24 +119,18 @@
   }
 }
 
+/* 모바일 홈 메뉴/필터 패널 레이아웃 */
 @media (max-width: 900px) {
   .menuPanel {
-    width: min(92vw, 340px);
+    width: fit-content;
+    height: auto;
   }
 
   .menuRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .filterPanel {
-    padding: 16px;
+    flex-wrap: wrap;
   }
 
   .optionGrid {
     gap: 10px;
-  }
-
-  .optionChip {
-    min-width: calc(50% - 5px);
   }
 }

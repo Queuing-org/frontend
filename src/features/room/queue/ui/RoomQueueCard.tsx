@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentPropsWithoutRef, Ref } from "react";
+import type { ComponentPropsWithoutRef, PointerEvent } from "react";
 import { forwardRef } from "react";
 import Image from "next/image";
 import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
@@ -8,21 +8,44 @@ import { formatQueueDuration } from "../model/roomQueue";
 import styles from "./RoomQueueCard.module.css";
 
 type Props = {
-  dragHandleProps?: Omit<ComponentPropsWithoutRef<"button">, "children">;
-  dragHandleRef?: Ref<HTMLButtonElement>;
+  dragActivatorProps?: ComponentPropsWithoutRef<"li">;
   entry: PlaylistEntry;
-  showDragHandle?: boolean;
+  isDeletePending?: boolean;
+  onDelete?: (entryId: string) => void;
+  showDeleteButton?: boolean;
 } & ComponentPropsWithoutRef<"li">;
 
 const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
-  { className, dragHandleProps, dragHandleRef, entry, showDragHandle = false, ...props },
+  {
+    className,
+    dragActivatorProps,
+    entry,
+    isDeletePending = false,
+    onDelete,
+    showDeleteButton = false,
+    ...props
+  },
   ref,
 ) {
+  const hasDeleteButton = showDeleteButton && Boolean(onDelete);
+  const {
+    className: dragActivatorClassName,
+    ...safeDragActivatorProps
+  } = dragActivatorProps ?? {};
+
+  const handleDeletePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+  };
+
   return (
     <li
       ref={ref}
-      className={[styles.item, className].filter(Boolean).join(" ")}
+      {...safeDragActivatorProps}
+      className={[styles.item, dragActivatorClassName, className]
+        .filter(Boolean)
+        .join(" ")}
       data-active={entry.status.isActive}
+      data-has-delete={hasDeleteButton}
       {...props}
     >
       <div className={styles.thumbnailWrap}>
@@ -32,6 +55,7 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
           fill
           sizes="72px"
           unoptimized
+          draggable={false}
           className={styles.thumbnail}
         />
         {entry.status.isActive ? (
@@ -49,22 +73,31 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
           </div>
         </div>
       </div>
-      {showDragHandle ? (
-        <button
-          ref={dragHandleRef}
-          type="button"
-          className={[
-            styles.dragHandle,
-            dragHandleProps?.className,
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          aria-label="곡 순서 변경"
-          {...dragHandleProps}
-        >
-          <span className={styles.dragHandleIcon} aria-hidden="true" />
-        </button>
-      ) : null}
+      <div className={styles.actions}>
+        {hasDeleteButton && onDelete ? (
+          <button
+            type="button"
+            className={styles.deleteButton}
+            tabIndex={-1}
+            onClick={(event) => {
+              event.stopPropagation();
+              onDelete(entry.entryId);
+            }}
+            onPointerDown={handleDeletePointerDown}
+            disabled={isDeletePending}
+            aria-label={`${entry.track.title} 삭제`}
+          >
+            <Image
+              src="/icons/trash.svg"
+              alt=""
+              width={14}
+              height={14}
+              draggable={false}
+              className={styles.deleteIcon}
+            />
+          </button>
+        ) : null}
+      </div>
     </li>
   );
 });

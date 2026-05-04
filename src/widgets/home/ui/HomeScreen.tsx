@@ -7,16 +7,26 @@ import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
 import HomeControlPanelShell, {
+  DEFAULT_HOME_FILTERS,
   HOME_CONTROL_PANEL_IDS,
+  getNextHomeFilters,
+  type HomeFilterKey,
+  type HomeFilterOption,
+  type HomeMenuItem,
 } from "./HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
+import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./HomeScreen.module.css";
 
 type HomePanelKey = "menu" | "filter";
 
 export default function HomeScreen() {
   const [openPanel, setOpenPanel] = useState<HomePanelKey | null>(null);
+  const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
+  const [roomListFilters, setRoomListFilters] =
+    useState(DEFAULT_HOME_FILTERS);
+  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const {
@@ -31,6 +41,24 @@ export default function HomeScreen() {
 
   const togglePanel = (panel: HomePanelKey) => {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
+  };
+
+  const selectRoomListFilter = (
+    key: HomeFilterKey,
+    option: HomeFilterOption,
+  ) => {
+    setRoomListFilters((currentFilters) =>
+      getNextHomeFilters(currentFilters, key, option),
+    );
+  };
+
+  const selectMenuItem = (menuItem: HomeMenuItem) => {
+    setActiveMenuItem(menuItem);
+
+    if (menuItem === "CREATE") {
+      setOpenPanel(null);
+      setIsCreateRoomModalOpen(true);
+    }
   };
 
   if (isLoading) return <div>방 목록 로딩중...</div>;
@@ -53,7 +81,19 @@ export default function HomeScreen() {
         <div className={styles.controlWrap}>
           {openPanel ? (
             <div className={styles.panelAnchor}>
-              <HomeControlPanelShell variant={openPanel} />
+              {openPanel === "menu" ? (
+                <HomeControlPanelShell
+                  variant="menu"
+                  activeMenuItem={activeMenuItem}
+                  onSelectMenuItem={selectMenuItem}
+                />
+              ) : (
+                <HomeControlPanelShell
+                  variant="filter"
+                  activeFilters={roomListFilters}
+                  onSelectFilter={selectRoomListFilter}
+                />
+              )}
             </div>
           ) : null}
           <RadialControl
@@ -63,11 +103,24 @@ export default function HomeScreen() {
                 type="button"
                 className={styles.controlToggle}
                 onClick={() => togglePanel("menu")}
+                aria-label={
+                  openPanel === "menu" ? "메뉴 패널 닫기" : "메뉴 패널 열기"
+                }
                 aria-controls={HOME_CONTROL_PANEL_IDS.menu}
                 aria-expanded={openPanel === "menu"}
                 data-active={openPanel === "menu"}
               >
-                {openPanel === "menu" ? "X" : "MENU"}
+                {openPanel === "menu" ? (
+                  <Image
+                    className={styles.toggleIcon}
+                    src="/icons/exit.svg"
+                    alt=""
+                    width={20}
+                    height={17}
+                  />
+                ) : (
+                  "MENU"
+                )}
               </button>
             }
             left={
@@ -111,15 +164,35 @@ export default function HomeScreen() {
                 type="button"
                 className={styles.controlToggle}
                 onClick={() => togglePanel("filter")}
+                aria-label={
+                  openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
+                }
                 aria-controls={HOME_CONTROL_PANEL_IDS.filter}
                 aria-expanded={openPanel === "filter"}
                 data-active={openPanel === "filter"}
               >
-                {openPanel === "filter" ? "X" : "FILTER"}
+                {openPanel === "filter" ? (
+                  <Image
+                    className={styles.toggleIcon}
+                    src="/icons/exit.svg"
+                    alt=""
+                    width={20}
+                    height={17}
+                  />
+                ) : (
+                  "FILTER"
+                )}
               </button>
             }
           />
         </div>
+      ) : null}
+      {isCreateRoomModalOpen ? (
+        <RoomFormModal
+          open
+          mode="create"
+          onClose={() => setIsCreateRoomModalOpen(false)}
+        />
       ) : null}
     </div>
   );
