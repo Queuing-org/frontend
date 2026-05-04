@@ -2,10 +2,19 @@
 
 import { redirectToGoogleLogin } from "../api/login";
 
-export default function GoogleLogionButton() {
+type GoogleLoginButtonProps = {
+  className?: string;
+};
+
+export default function GoogleLoginButton({ className }: GoogleLoginButtonProps) {
+  const buttonClassName = ["border cursor-pointer mx-2", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <button
-      className="border cursor-pointer mx-2"
+      type="button"
+      className={buttonClassName}
       onClick={() => redirectToGoogleLogin()}
     >
       구글 로그인

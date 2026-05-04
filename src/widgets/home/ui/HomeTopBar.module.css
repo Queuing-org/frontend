@@ -1,4 +1,5 @@
 .topBar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -10,9 +11,65 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  z-index: 1;
+}
+
+.centerGroup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.loginButton {
+  min-width: 104px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid #111;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 3px 0 #111;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.loginButton:hover {
+  transform: translateY(-1px);
+  background: #f6f6f6;
+  box-shadow: 0 4px 0 #111;
+}
+
+.loginButton:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #111;
+}
+
+.loginButton:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 3px;
 }
 
 .rightGroup {
   display: flex;
   align-items: center;
+  z-index: 1;
+}
+
+@media (max-width: 720px) {
+  .topBar {
+    padding: 16px;
+  }
+
+  .loginButton {
+    min-width: 92px;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
 }

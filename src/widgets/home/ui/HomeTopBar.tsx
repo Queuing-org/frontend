@@ -1,5 +1,6 @@
 import type { Room } from "@/src/entities/room/model/types";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
+import GoogleLoginButton from "@/src/features/auth/login-with-google/ui/googleLoginButton";
 import RoomSearchButton from "@/src/features/room/search/ui/RoomSearchButton";
 import MainLogo from "./MainLogo";
 import styles from "./HomeTopBar.module.css";
@@ -14,6 +15,9 @@ export default function HomeTopBar({ currentRoom }: Props) {
       <div className={styles.leftGroup}>
         <MainLogo />
         <RoomSearchButton />
+      </div>
+      <div className={styles.centerGroup}>
+        <GoogleLoginButton className={styles.loginButton} />
       </div>
       <div className={styles.rightGroup}>
         <RoomInfo slug={currentRoom?.slug ?? null} />
