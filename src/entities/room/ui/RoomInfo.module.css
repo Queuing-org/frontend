@@ -17,6 +17,20 @@
   gap: 20px;
 }
 
+.roomInfoContainerRoom {
+  justify-content: space-between;
+}
+
+.roomInfoContainerRoom .roomInfoMain {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+
+.roomInfoContainerRoom .title,
+.roomInfoContainerRoom .tag {
+  justify-content: flex-start;
+}
+
 .title {
   display: inline-flex;
   flex: 0 1 auto;

@@ -45,9 +45,15 @@ export default function RoomInfo({
     <div className={styles.usersCount}>{activeUsersCount} 명</div>
   );
   const titleContent = <div className={styles.title}>{title}</div>;
+  const containerClassName = [
+    styles.roomInfoContainer,
+    isRoom ? styles.roomInfoContainerRoom : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div className={styles.roomInfoContainer}>
+    <div className={containerClassName}>
       <div className={styles.roomInfoMain}>
         {isRoom ? titleContent : tagsContent}
         {usersCountContent}
