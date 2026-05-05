@@ -94,7 +94,7 @@ export default function SearchPage() {
             />
           )}
         </div>
-        {!isLoading && !isError && selectedRoomSlug ? (
+        {!isLoading && !isError ? (
           <div className={styles.controlWrap}>
             {openPanel ? (
               <div className={styles.panelAnchor}>
@@ -156,10 +156,14 @@ export default function SearchPage() {
                 </button>
               }
               center={
-                <Link
-                  href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
-                  aria-label="방입장"
-                />
+                selectedRoomSlug ? (
+                  <Link
+                    href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
+                    aria-label="방입장"
+                  />
+                ) : (
+                  <button type="button" disabled aria-label="입장할 방 없음" />
+                )
               }
               right={
                 <button

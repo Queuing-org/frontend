@@ -41,6 +41,7 @@ Do not use it for API-only changes unless the UI behavior also changes.
 
 - Room floating widgets use `FloatingRoomPanelShell`; visual panel-wide changes should start there before touching each child.
 - Home and search controls share `HomeControlPanelShell`; behavior should stay consistent across both surfaces.
+- Home and search radial controls should remain visible after a successful empty room list response; disable only room-dependent actions such as previous, next, and enter.
 - Queue reordering is only for the current user's pending entries unless product requirements change.
 - CSS chip and modal sizing should be controlled in the relevant module, not by inline patching across call sites.
 - Do not introduce marketing-style landing sections for app surfaces; build the usable workflow.

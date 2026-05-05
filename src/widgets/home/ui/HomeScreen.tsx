@@ -77,116 +77,118 @@ export default function HomeScreen() {
         currentRoomSlug={selectedRoomSlug}
         onSelectRoom={setCurrentRoomSlug}
       />
-      {currentRoom ? (
-        <div className={styles.controlWrap}>
-          {openPanel ? (
-            <div className={styles.panelAnchor}>
+      <div className={styles.controlWrap}>
+        {openPanel ? (
+          <div className={styles.panelAnchor}>
+            {openPanel === "menu" ? (
+              <HomeControlPanelShell
+                variant="menu"
+                activeMenuItem={activeMenuItem}
+                onSelectMenuItem={selectMenuItem}
+              />
+            ) : (
+              <HomeControlPanelShell
+                variant="filter"
+                activeFilters={roomListFilters}
+                onSelectFilter={selectRoomListFilter}
+              />
+            )}
+          </div>
+        ) : null}
+        <RadialControl
+          ariaLabel="홈 하단 컨트롤"
+          top={
+            <button
+              type="button"
+              className={styles.controlToggle}
+              onClick={() => togglePanel("menu")}
+              aria-label={
+                openPanel === "menu" ? "메뉴 패널 닫기" : "메뉴 패널 열기"
+              }
+              aria-controls={HOME_CONTROL_PANEL_IDS.menu}
+              aria-expanded={openPanel === "menu"}
+              data-active={openPanel === "menu"}
+            >
               {openPanel === "menu" ? (
-                <HomeControlPanelShell
-                  variant="menu"
-                  activeMenuItem={activeMenuItem}
-                  onSelectMenuItem={selectMenuItem}
+                <Image
+                  className={styles.toggleIcon}
+                  src="/icons/exit.svg"
+                  alt=""
+                  width={20}
+                  height={17}
                 />
               ) : (
-                <HomeControlPanelShell
-                  variant="filter"
-                  activeFilters={roomListFilters}
-                  onSelectFilter={selectRoomListFilter}
-                />
+                "MENU"
               )}
-            </div>
-          ) : null}
-          <RadialControl
-            ariaLabel="홈 하단 컨트롤"
-            top={
-              <button
-                type="button"
-                className={styles.controlToggle}
-                onClick={() => togglePanel("menu")}
-                aria-label={
-                  openPanel === "menu" ? "메뉴 패널 닫기" : "메뉴 패널 열기"
-                }
-                aria-controls={HOME_CONTROL_PANEL_IDS.menu}
-                aria-expanded={openPanel === "menu"}
-                data-active={openPanel === "menu"}
-              >
-                {openPanel === "menu" ? (
-                  <Image
-                    className={styles.toggleIcon}
-                    src="/icons/exit.svg"
-                    alt=""
-                    width={20}
-                    height={17}
-                  />
-                ) : (
-                  "MENU"
-                )}
-              </button>
-            }
-            left={
-              <button
-                type="button"
-                onClick={goPrevious}
-                disabled={!previousRoom}
-                aria-label="이전 방 보기"
-              >
-                <Image
-                  src="/icons/left_arrow.svg"
-                  alt=""
-                  width={20}
-                  height={20}
-                />
-              </button>
-            }
-            center={
+            </button>
+          }
+          left={
+            <button
+              type="button"
+              onClick={goPrevious}
+              disabled={!previousRoom}
+              aria-label="이전 방 보기"
+            >
+              <Image
+                src="/icons/left_arrow.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+          }
+          center={
+            selectedRoomSlug ? (
               <Link
-                href={`/room/${encodeURIComponent(selectedRoomSlug ?? "")}`}
+                href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
                 aria-label="방입장"
               />
-            }
-            right={
-              <button
-                type="button"
-                onClick={goNext}
-                disabled={!nextRoom}
-                aria-label="다음 방 보기"
-              >
+            ) : (
+              <button type="button" disabled aria-label="입장할 방 없음" />
+            )
+          }
+          right={
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!nextRoom}
+              aria-label="다음 방 보기"
+            >
+              <Image
+                src="/icons/right_arrow.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+          }
+          bottom={
+            <button
+              type="button"
+              className={styles.controlToggle}
+              onClick={() => togglePanel("filter")}
+              aria-label={
+                openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
+              }
+              aria-controls={HOME_CONTROL_PANEL_IDS.filter}
+              aria-expanded={openPanel === "filter"}
+              data-active={openPanel === "filter"}
+            >
+              {openPanel === "filter" ? (
                 <Image
-                  src="/icons/right_arrow.svg"
+                  className={styles.toggleIcon}
+                  src="/icons/exit.svg"
                   alt=""
                   width={20}
-                  height={20}
+                  height={17}
                 />
-              </button>
-            }
-            bottom={
-              <button
-                type="button"
-                className={styles.controlToggle}
-                onClick={() => togglePanel("filter")}
-                aria-label={
-                  openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
-                }
-                aria-controls={HOME_CONTROL_PANEL_IDS.filter}
-                aria-expanded={openPanel === "filter"}
-                data-active={openPanel === "filter"}
-              >
-                {openPanel === "filter" ? (
-                  <Image
-                    className={styles.toggleIcon}
-                    src="/icons/exit.svg"
-                    alt=""
-                    width={20}
-                    height={17}
-                  />
-                ) : (
-                  "FILTER"
-                )}
-              </button>
-            }
-          />
-        </div>
-      ) : null}
+              ) : (
+                "FILTER"
+              )}
+            </button>
+          }
+        />
+      </div>
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open

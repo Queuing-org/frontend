@@ -76,10 +76,16 @@
 .centerSlot > * {
   width: 70px;
   aspect-ratio: 1;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid #000;
   background: #444;
   cursor: pointer;
+}
+
+.centerSlot > *:disabled {
+  cursor: default;
+  opacity: 0.35;
 }
 
 .leftSlot > *:disabled,
