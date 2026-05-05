@@ -9,6 +9,7 @@ type Props = {
   imageSrc: string;
   isSelected?: boolean;
   disabled?: boolean;
+  ariaLabel?: string;
   onClick?: () => void;
 };
 
@@ -18,6 +19,7 @@ export default function RoomStageCard({
   imageSrc,
   isSelected = false,
   disabled = false,
+  ariaLabel,
   onClick,
 }: Props) {
   return (
@@ -26,7 +28,7 @@ export default function RoomStageCard({
       onClick={onClick}
       disabled={disabled}
       data-room-slug={slug}
-      aria-label={`${title} 방 선택`}
+      aria-label={ariaLabel ?? `${title} 방 선택`}
       className={`${styles.card} ${isSelected ? styles.selected : ""}`}
     >
       <Image

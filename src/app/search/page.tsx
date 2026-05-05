@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
@@ -26,8 +26,8 @@ import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 type SearchPanelKey = "menu" | "filter";
 
 export default function SearchPage() {
+  const controlWrapRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<SearchPanelKey | null>(null);
-  const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
@@ -49,6 +49,32 @@ export default function SearchPage() {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
   };
 
+  useEffect(() => {
+    if (!openPanel) {
+      return;
+    }
+
+    function closePanelOnOutsideClick(event: PointerEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (controlWrapRef.current?.contains(target)) {
+        return;
+      }
+
+      setOpenPanel(null);
+    }
+
+    document.addEventListener("pointerdown", closePanelOnOutsideClick);
+
+    return () => {
+      document.removeEventListener("pointerdown", closePanelOnOutsideClick);
+    };
+  }, [openPanel]);
+
   const selectRoomListFilter = (
     key: HomeFilterKey,
     option: HomeFilterOption,
@@ -59,8 +85,6 @@ export default function SearchPage() {
   };
 
   const selectMenuItem = (menuItem: HomeMenuItem) => {
-    setActiveMenuItem(menuItem);
-
     if (menuItem === "CREATE") {
       setOpenPanel(null);
       setIsCreateRoomModalOpen(true);
@@ -95,13 +119,12 @@ export default function SearchPage() {
           )}
         </div>
         {!isLoading && !isError ? (
-          <div className={styles.controlWrap}>
+          <div ref={controlWrapRef} className={styles.controlWrap}>
             {openPanel ? (
               <div className={styles.panelAnchor}>
                 {openPanel === "menu" ? (
                   <HomeControlPanelShell
                     variant="menu"
-                    activeMenuItem={activeMenuItem}
                     onSelectMenuItem={selectMenuItem}
                   />
                 ) : (

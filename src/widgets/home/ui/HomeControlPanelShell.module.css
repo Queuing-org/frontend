@@ -40,6 +40,15 @@
   color: #f1f1f1;
   background: transparent;
   white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.menuItem:hover,
+.optionChip:hover {
+  background: #ffffff;
+  color: #161616;
 }
 
 /* QUE/CREATE 메뉴 옵션 버튼 영역 */

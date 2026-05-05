@@ -27,6 +27,13 @@
   width: 100%;
   height: clamp(24rem, 62vh, 38rem);
   transform-style: preserve-3d;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.rail[data-dragging="true"] {
+  cursor: grabbing;
 }
 
 .emptyState {

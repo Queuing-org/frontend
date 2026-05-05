@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
@@ -10,9 +10,9 @@ import HomeControlPanelShell, {
   DEFAULT_HOME_FILTERS,
   HOME_CONTROL_PANEL_IDS,
   getNextHomeFilters,
+  type HomeMenuItem,
   type HomeFilterKey,
   type HomeFilterOption,
-  type HomeMenuItem,
 } from "./HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
@@ -22,8 +22,8 @@ import styles from "./HomeScreen.module.css";
 type HomePanelKey = "menu" | "filter";
 
 export default function HomeScreen() {
+  const controlWrapRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<HomePanelKey | null>(null);
-  const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
@@ -43,6 +43,32 @@ export default function HomeScreen() {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
   };
 
+  useEffect(() => {
+    if (!openPanel) {
+      return;
+    }
+
+    function closePanelOnOutsideClick(event: PointerEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (controlWrapRef.current?.contains(target)) {
+        return;
+      }
+
+      setOpenPanel(null);
+    }
+
+    document.addEventListener("pointerdown", closePanelOnOutsideClick);
+
+    return () => {
+      document.removeEventListener("pointerdown", closePanelOnOutsideClick);
+    };
+  }, [openPanel]);
+
   const selectRoomListFilter = (
     key: HomeFilterKey,
     option: HomeFilterOption,
@@ -53,8 +79,6 @@ export default function HomeScreen() {
   };
 
   const selectMenuItem = (menuItem: HomeMenuItem) => {
-    setActiveMenuItem(menuItem);
-
     if (menuItem === "CREATE") {
       setOpenPanel(null);
       setIsCreateRoomModalOpen(true);
@@ -77,13 +101,12 @@ export default function HomeScreen() {
         currentRoomSlug={selectedRoomSlug}
         onSelectRoom={setCurrentRoomSlug}
       />
-      <div className={styles.controlWrap}>
+      <div ref={controlWrapRef} className={styles.controlWrap}>
         {openPanel ? (
           <div className={styles.panelAnchor}>
             {openPanel === "menu" ? (
               <HomeControlPanelShell
                 variant="menu"
-                activeMenuItem={activeMenuItem}
                 onSelectMenuItem={selectMenuItem}
               />
             ) : (

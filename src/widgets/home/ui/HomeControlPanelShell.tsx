@@ -25,7 +25,6 @@ export const HOME_CONTROL_PANEL_IDS = {
 type Props =
   | {
       variant: "menu";
-      activeMenuItem: HomeMenuItem;
       onSelectMenuItem: (menuItem: HomeMenuItem) => void;
     }
   | {
@@ -138,21 +137,16 @@ export default function HomeControlPanelShell(props: Props) {
         aria-label="홈 메뉴 패널"
       >
         <div className={styles.menuRow}>
-          {menuItems.map((item) => {
-            const isActive = item === props.activeMenuItem;
-
-            return (
-              <button
-                key={item}
-                type="button"
-                className={`${styles.menuItem} ${isActive ? styles.activeChip : ""}`}
-                aria-pressed={isActive}
-                onClick={() => props.onSelectMenuItem(item)}
-              >
-                {item}
-              </button>
-            );
-          })}
+          {menuItems.map((item) => (
+            <button
+              key={item}
+              type="button"
+              className={styles.menuItem}
+              onClick={() => props.onSelectMenuItem(item)}
+            >
+              {item}
+            </button>
+          ))}
         </div>
       </section>
     );
