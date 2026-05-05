@@ -20,6 +20,10 @@
   justify-content: center;
   color: #b0b0b5;
   text-decoration: none;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease,
+    background-color 160ms ease;
 }
 
 .topSlot {
@@ -59,9 +63,15 @@
   padding: 0;
   border: 0;
   background: transparent;
+  cursor: pointer;
   font-size: 12px;
   font-weight: var(--fw-extrabold);
   line-height: 1;
+}
+
+.topSlot > *:hover,
+.bottomSlot > *:hover {
+  color: #7c7c84;
 }
 
 .leftSlot > *,
@@ -72,6 +82,13 @@
   border: 0;
   background: transparent;
   cursor: pointer;
+}
+
+.leftSlot > *:not(:disabled):hover,
+.rightSlot > *:not(:disabled):hover {
+  border-radius: 999px;
+  background: rgba(176, 176, 181, 0.14);
+  opacity: 0.82;
 }
 
 .centerSlot > * {

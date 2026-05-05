@@ -1,13 +1,8 @@
 .logo {
+  font-family: var(--font-bebas-neue), var(--font-suit), sans-serif;
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  background: #000000;
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: var(--fw-black);
+  color: #3c3c3c;
+  font-size: 20px;
   letter-spacing: -0.04em;
   line-height: 1.4;
-  height: 30px;
 }
