@@ -34,8 +34,14 @@ export default function SearchPage() {
   const { data, isLoading, isError } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const roomListRooms = rooms;
-  const { selectedRoomSlug, previousRoom, nextRoom, goPrevious, goNext } =
-    useRoomNavigator(roomListRooms);
+  const {
+    selectedRoomSlug,
+    setCurrentRoomSlug,
+    previousRoom,
+    nextRoom,
+    goPrevious,
+    goNext,
+  } = useRoomNavigator(roomListRooms);
   const selectedRoomIndex = selectedRoomSlug
     ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
     : -1;
@@ -115,6 +121,7 @@ export default function SearchPage() {
             <SearchPageRoomList
               rooms={roomListRooms}
               selectedRoomSlug={selectedRoomSlug}
+              onSelectRoom={setCurrentRoomSlug}
             />
           )}
         </div>

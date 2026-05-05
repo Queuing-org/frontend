@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
+import { useRef, useState, type PointerEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Room } from "@/src/entities/room/model/types";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
+import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import RoomStageCard from "@/src/entities/room/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
 
@@ -24,8 +25,6 @@ type Props = {
 
 const DRAG_SELECT_THRESHOLD = 50;
 const CLICK_SUPPRESS_THRESHOLD = 8;
-const WHEEL_SELECT_THRESHOLD = 24;
-const WHEEL_COOLDOWN_MS = 50;
 
 function getRoomSlot(relativeIndex: number): RoomSlot {
   if (relativeIndex <= -3) return "off-left";
@@ -55,7 +54,17 @@ export default function HomeRoomStage({
   } | null>(null);
   const hasDragIntentRef = useRef(false);
   const suppressClickRef = useRef(false);
-  const lastWheelAtRef = useRef(0);
+
+  const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
+  const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
+  const nextRoom =
+    selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
+  const handleWheel = useRoomWheelNavigation({
+    previousRoomSlug: previousRoom?.slug,
+    nextRoomSlug: nextRoom?.slug,
+    onSelectRoom,
+  });
 
   if (rooms.length === 0) {
     return (
@@ -66,12 +75,6 @@ export default function HomeRoomStage({
       </section>
     );
   }
-
-  const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
-  const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
-  const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
-  const nextRoom =
-    selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
 
   function suppressNextClick() {
     suppressClickRef.current = true;
@@ -181,37 +184,6 @@ export default function HomeRoomStage({
 
     if (isNavigableSlot(slot)) {
       onSelectRoom(room.slug);
-    }
-  }
-
-  function handleWheel(event: WheelEvent<HTMLDivElement>) {
-    const primaryDelta =
-      Math.abs(event.deltaX) > Math.abs(event.deltaY)
-        ? event.deltaX
-        : event.deltaY;
-
-    if (Math.abs(primaryDelta) < WHEEL_SELECT_THRESHOLD) {
-      return;
-    }
-
-    const now = Date.now();
-
-    if (now - lastWheelAtRef.current < WHEEL_COOLDOWN_MS) {
-      event.preventDefault();
-      return;
-    }
-
-    if (primaryDelta > 0 && nextRoom) {
-      event.preventDefault();
-      lastWheelAtRef.current = now;
-      onSelectRoom(nextRoom.slug);
-      return;
-    }
-
-    if (primaryDelta < 0 && previousRoom) {
-      event.preventDefault();
-      lastWheelAtRef.current = now;
-      onSelectRoom(previousRoom.slug);
     }
   }
 

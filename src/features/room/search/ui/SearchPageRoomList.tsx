@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Room } from "@/src/entities/room/model/types";
+import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import SearchPageRoomCard from "@/src/entities/room/ui/SearchPageRoomCard";
 import styles from "./SearchPageRoomList.module.css";
 
 type Props = {
   rooms: Room[];
   selectedRoomSlug: string | null;
+  onSelectRoom: (roomSlug: string) => void;
 };
 
 const DEFAULT_ROOM_LIST_HEIGHT = 558;
@@ -15,7 +17,11 @@ const ROOM_CARD_HEIGHT = 77;
 const ROOM_CARD_GAP = 12;
 const ROOM_STEP = ROOM_CARD_HEIGHT + ROOM_CARD_GAP;
 
-export function SearchPageRoomList({ rooms, selectedRoomSlug }: Props) {
+export function SearchPageRoomList({
+  rooms,
+  selectedRoomSlug,
+  onSelectRoom,
+}: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [viewportHeight, setViewportHeight] = useState(DEFAULT_ROOM_LIST_HEIGHT);
 
@@ -47,6 +53,14 @@ export function SearchPageRoomList({ rooms, selectedRoomSlug }: Props) {
     (room) => room.slug === selectedRoomSlug,
   );
   const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
+  const nextRoom =
+    selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
+  const handleWheel = useRoomWheelNavigation({
+    previousRoomSlug: previousRoom?.slug,
+    nextRoomSlug: nextRoom?.slug,
+    onSelectRoom,
+  });
   const viewportPadding = Math.max(
     (viewportHeight - ROOM_CARD_HEIGHT) / 2,
     0,
@@ -77,6 +91,7 @@ export function SearchPageRoomList({ rooms, selectedRoomSlug }: Props) {
         } as CSSProperties
       }
       aria-label="검색 방 목록"
+      onWheel={handleWheel}
     >
       <div
         className={styles.track}
