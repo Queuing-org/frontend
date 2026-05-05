@@ -1,9 +1,10 @@
 .control {
   position: relative;
-  width: 180px;
+  width: 200px;
   aspect-ratio: 1;
+  border: 1px solid #d9d9d9;
   border-radius: 999px;
-  background: #1f1f1f;
+  background: #ffffff;
 }
 
 .slot {
@@ -17,7 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #d9d9d9;
+  color: #b0b0b5;
   text-decoration: none;
 }
 
@@ -74,12 +75,18 @@
 }
 
 .centerSlot > * {
-  width: 70px;
+  width: 72px;
   aspect-ratio: 1;
   padding: 0;
   border-radius: 999px;
-  border: 1px solid #000;
-  background: #444;
+  border: 1px solid #b0b0b5;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.2) 0%,
+      rgba(176, 176, 181, 0.2) 100%
+    ),
+    #f5f5f7;
   cursor: pointer;
 }
 
