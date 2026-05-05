@@ -1,6 +1,6 @@
 import type { Room } from "@/src/entities/room/model/types";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
-import GoogleLoginButton from "@/src/features/auth/login-with-google/ui/googleLoginButton";
+import SignUpButton from "@/src/features/auth/login-with-google/ui/SignUpButton";
 import RoomSearchButton from "@/src/features/room/search/ui/RoomSearchButton";
 import MainLogo from "./MainLogo";
 import styles from "./HomeTopBar.module.css";
@@ -20,7 +20,7 @@ export default function HomeTopBar({ currentRoom }: Props) {
         <RoomInfo slug={currentRoom?.slug ?? null} />
       </div>
       <div className={styles.rightGroup}>
-        <GoogleLoginButton />
+        <SignUpButton />
       </div>
     </div>
   );

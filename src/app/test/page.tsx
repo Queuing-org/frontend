@@ -1,6 +1,6 @@
 "use client";
 
-import GoogleLoginButton from "@/src/features/auth/login-with-google/ui/googleLoginButton";
+import SignUpButton from "@/src/features/auth/login-with-google/ui/SignUpButton";
 import LogoutButton from "@/src/features/auth/logout/ui/logoutButton";
 import NicknameEditForm from "@/src/features/user/profile/ui/NicknameEditForm";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ export default function TestPage() {
 
   return (
     <div className="bg-white p-4 space-y-4">
-      <GoogleLoginButton />
+      <SignUpButton />
       <LogoutButton />
       <div className="flex gap-4">
         <div className="flex-1">

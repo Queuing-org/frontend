@@ -1,0 +1,129 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.modal {
+  position: relative;
+  display: flex;
+  width: 496px;
+  height: 424px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  border-radius: 30px;
+  background: #ffffff;
+  color: #252525;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+}
+
+.modalLogo {
+  display: flex;
+  width: 80px;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #000000;
+}
+
+.modalLogoImage {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 999px;
+}
+
+.modalTitle {
+  max-width: 620px;
+  margin: 0;
+  color: #242424;
+  font-size: 28px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.modalDescription {
+  max-width: 620px;
+  margin: 20px 0 20px;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.separator {
+  display: block;
+  flex: 0 0 auto;
+  width: min(309px, 100%);
+  height: 1px;
+  margin: 20px 0 20px;
+  background: #f1f0ec;
+  border-radius: 999px;
+}
+
+.policyText {
+  max-width: 360px;
+  margin: 0;
+  color: #9a9a9a;
+  font-size: 12px;
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+  text-align: center;
+}
+
+.policyHighlight {
+  font-weight: var(--fw-semibold);
+}
+
+@media (max-width: 720px) {
+  .modalOverlay {
+    padding: 18px;
+  }
+
+  .modal {
+    min-height: auto;
+    padding: 58px 22px 38px;
+    border-radius: 24px;
+  }
+
+  .modalLogo {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 26px;
+  }
+
+  .modalLogoImage {
+    width: 72px;
+    height: 72px;
+  }
+
+  .modalTitle {
+    font-size: 29px;
+    line-height: 1.32;
+  }
+
+  .modalDescription {
+    margin: 16px 0 36px;
+    font-size: 16px;
+  }
+
+  .separator {
+    margin: 24px 0 22px;
+  }
+
+  .policyText {
+    font-size: 14px;
+  }
+}

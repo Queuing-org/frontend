@@ -1,11 +1,14 @@
-.button {
-  min-width: 87px;
-  height: 30px;
-  padding: 0 20px;
-  border: 1px solid black;
-  border-radius: 999px;
-  background: #ffffff;
-  color: black;
+.googleButton {
+  display: grid;
+  padding: 10px;
+  width: min(309px, 100%);
+  height: 44px;
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
+  align-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: #242424;
+  color: #ffffff;
   cursor: pointer;
   font-size: 14px;
   font-weight: var(--fw-semibold);
@@ -15,32 +18,40 @@
     background-color 160ms ease;
 }
 
-.button:hover:not(:disabled) {
+.googleButton:hover {
   transform: translateY(-1px);
-  background: #f6f6f6;
+  background: #111111;
 }
 
-.button:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #111111;
+.googleButton:active {
+  transform: translateY(1px);
 }
 
-.button:disabled {
-  cursor: default;
-  opacity: 0.55;
-  box-shadow: 0 3px 0 #111111;
-}
-
-.button:focus-visible {
-  outline: 3px solid #5b8cff;
+.googleButton:focus-visible {
+  outline: 3px solid #0b84ff;
   outline-offset: 3px;
 }
 
+.googleButton span:last-child {
+  min-width: 0;
+  text-align: center;
+}
+
+.googleIcon {
+  justify-self: center;
+  width: 24px;
+  height: 24px;
+}
+
 @media (max-width: 720px) {
-  .button {
-    min-width: 92px;
-    height: 34px;
-    padding: 0 12px;
-    font-size: 13px;
+  .googleButton {
+    height: 58px;
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    font-size: 17px;
+  }
+
+  .googleIcon {
+    width: 24px;
+    height: 24px;
   }
 }

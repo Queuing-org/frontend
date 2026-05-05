@@ -1,0 +1,46 @@
+.button {
+  min-width: 87px;
+  height: 30px;
+  padding: 0 20px;
+  border: 1px solid black;
+  border-radius: 999px;
+  background: #ffffff;
+  color: black;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #f6f6f6;
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #111111;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.55;
+  box-shadow: 0 3px 0 #111111;
+}
+
+.button:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 3px;
+}
+
+@media (max-width: 720px) {
+  .button {
+    min-width: 92px;
+    height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+}
