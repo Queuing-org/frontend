@@ -119,7 +119,7 @@ function getCurrentRequesterProfile(
   };
 }
 
-export default function RoomPage() {
+export default function RoomPageClient() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
   const slug = normalizeRoomSlug(params.slug ?? "");
