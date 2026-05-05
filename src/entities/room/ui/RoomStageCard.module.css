@@ -1,5 +1,6 @@
 .card {
   position: relative;
+  box-sizing: border-box;
   width: var(--card-width, var(--card-base-size, 14rem));
   height: var(--card-height, var(--card-base-size, 14rem));
   overflow: hidden;
@@ -15,6 +16,8 @@
     border-color 220ms ease,
     box-shadow 220ms ease;
   cursor: pointer;
+  border: 5px solid #ffffff;
+  border-radius: 20px;
 }
 
 .card:disabled {
@@ -43,14 +46,6 @@
   line-height: 1.2;
   color: #ffffff;
   text-shadow: 0 1px 8px rgba(0, 0, 0, 0.36);
-}
-
-.selected {
-  border-color: #0f172a;
-  box-shadow:
-    0 32px 70px rgba(37, 99, 235, 0.18),
-    0 18px 34px rgba(15, 23, 42, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .selected .image {
