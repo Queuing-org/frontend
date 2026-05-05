@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type PointerEvent } from "react";
+import { useRef, useState, type PointerEvent, type WheelEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Room } from "@/src/entities/room/model/types";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
@@ -24,6 +24,8 @@ type Props = {
 
 const DRAG_SELECT_THRESHOLD = 50;
 const CLICK_SUPPRESS_THRESHOLD = 8;
+const WHEEL_SELECT_THRESHOLD = 24;
+const WHEEL_COOLDOWN_MS = 50;
 
 function getRoomSlot(relativeIndex: number): RoomSlot {
   if (relativeIndex <= -3) return "off-left";
@@ -46,11 +48,14 @@ export default function HomeRoomStage({
 }: Props) {
   const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef<{ x: number; y: number; pointerId: number } | null>(
-    null,
-  );
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    pointerId: number;
+  } | null>(null);
   const hasDragIntentRef = useRef(false);
   const suppressClickRef = useRef(false);
+  const lastWheelAtRef = useRef(0);
 
   if (rooms.length === 0) {
     return (
@@ -179,6 +184,37 @@ export default function HomeRoomStage({
     }
   }
 
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    const primaryDelta =
+      Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY;
+
+    if (Math.abs(primaryDelta) < WHEEL_SELECT_THRESHOLD) {
+      return;
+    }
+
+    const now = Date.now();
+
+    if (now - lastWheelAtRef.current < WHEEL_COOLDOWN_MS) {
+      event.preventDefault();
+      return;
+    }
+
+    if (primaryDelta > 0 && nextRoom) {
+      event.preventDefault();
+      lastWheelAtRef.current = now;
+      onSelectRoom(nextRoom.slug);
+      return;
+    }
+
+    if (primaryDelta < 0 && previousRoom) {
+      event.preventDefault();
+      lastWheelAtRef.current = now;
+      onSelectRoom(previousRoom.slug);
+    }
+  }
+
   return (
     <section className={styles.viewport} aria-label="방 선택 스테이지">
       <div
@@ -188,6 +224,7 @@ export default function HomeRoomStage({
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
         onPointerCancel={cancelDrag}
+        onWheel={handleWheel}
       >
         {rooms.map((room, index) => {
           const slot = getRoomSlot(index - selectedIndex);
@@ -205,7 +242,9 @@ export default function HomeRoomStage({
                   isSelected={isSelected}
                   disabled={!canClick}
                   ariaLabel={
-                    isSelected ? `${room.title} 방 입장` : `${room.title} 방 선택`
+                    isSelected
+                      ? `${room.title} 방 입장`
+                      : `${room.title} 방 선택`
                   }
                   onClick={
                     canClick ? () => handleCardClick(room, slot) : undefined
