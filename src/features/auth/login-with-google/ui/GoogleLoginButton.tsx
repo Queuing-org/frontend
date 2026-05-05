@@ -25,7 +25,7 @@ const GoogleLoginButton = forwardRef<HTMLButtonElement, GoogleLoginButtonProps>(
           draggable={false}
           className={styles.googleIcon}
         />
-        <span>구글로 1초만에 큐잉하기</span>
+        <span>Google로 1초만에 큐잉하기</span>
       </button>
     );
   },
