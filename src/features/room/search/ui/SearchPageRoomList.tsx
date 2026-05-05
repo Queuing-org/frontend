@@ -53,6 +53,18 @@ export function SearchPageRoomList({ rooms, selectedRoomSlug }: Props) {
   );
   const translateY = -(selectedIndex * ROOM_STEP);
 
+  if (rooms.length === 0) {
+    return (
+      <div
+        ref={viewportRef}
+        className={styles.viewport}
+        aria-label="검색 방 목록"
+      >
+        <div className={styles.emptyState}>방이 하나도 없어요😫</div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={viewportRef}

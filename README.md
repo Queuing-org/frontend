@@ -13,14 +13,15 @@ npm install
 npm run dev
 ```
 
-http://localhost:3000
+https://local.queuing.patulus.com:3000
 
 ## Env
 
 `.env.local`
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
+NEXT_PUBLIC_API_BASE_URL=https://api.queuing.patulus.com
+NEXT_PUBLIC_WS_URL=wss://api.queuing.patulus.com/ws
 ```
 
 ## Structure (요약)

@@ -1,8 +1,8 @@
 .topBar {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   padding: 20px 24px;
 }
@@ -11,59 +11,22 @@
   display: flex;
   align-items: center;
   gap: 20px;
+  justify-self: start;
   z-index: 1;
 }
 
 .centerGroup {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.loginButton {
-  min-width: 104px;
-  height: 36px;
-  padding: 0 16px;
-  border: 1px solid #111;
-  border-radius: 999px;
-  background: #fff;
-  color: #111;
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: 0 3px 0 #111;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    background-color 160ms ease;
-}
-
-.loginButton:hover:not(:disabled) {
-  transform: translateY(-1px);
-  background: #f6f6f6;
-  box-shadow: 0 4px 0 #111;
-}
-
-.loginButton:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 1px 0 #111;
-}
-
-.loginButton:disabled {
-  cursor: default;
-  opacity: 0.55;
-  box-shadow: 0 3px 0 #111;
-}
-
-.loginButton:focus-visible {
-  outline: 3px solid #5b8cff;
-  outline-offset: 3px;
+  width: min(520px, calc(100vw - 360px));
+  display: flex;
+  justify-content: center;
+  justify-self: center;
+  min-width: 0;
 }
 
 .rightGroup {
   display: flex;
   align-items: center;
+  justify-self: end;
   z-index: 1;
 }
 
@@ -72,10 +35,8 @@
     padding: 16px;
   }
 
-  .loginButton {
-    min-width: 92px;
-    height: 34px;
-    padding: 0 12px;
-    font-size: 13px;
+  .centerGroup {
+    width: min(360px, calc(100vw - 220px));
   }
+
 }

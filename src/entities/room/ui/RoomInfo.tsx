@@ -37,7 +37,9 @@ export default function RoomInfo({
         ))}
       </div>
     ) : (
-      <div>태그 없음</div>
+      <div className={styles.tag}>
+        <span className={styles.tagItem}>태그없음</span>
+      </div>
     );
   const usersCountContent = (
     <div className={styles.usersCount}>{activeUsersCount} 명</div>

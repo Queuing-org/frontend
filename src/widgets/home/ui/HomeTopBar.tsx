@@ -17,10 +17,10 @@ export default function HomeTopBar({ currentRoom }: Props) {
         <RoomSearchButton />
       </div>
       <div className={styles.centerGroup}>
-        <GoogleLoginButton className={styles.loginButton} />
+        <RoomInfo slug={currentRoom?.slug ?? null} />
       </div>
       <div className={styles.rightGroup}>
-        <RoomInfo slug={currentRoom?.slug ?? null} />
+        <GoogleLoginButton />
       </div>
     </div>
   );

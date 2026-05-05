@@ -21,6 +21,13 @@
   transform-style: preserve-3d;
 }
 
+.emptyState {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+}
+
 .slot {
   position: absolute;
   left: var(--slot-left, 50%);
@@ -139,5 +146,9 @@
 
   .rail {
     height: clamp(18rem, 52vh, 26rem);
+  }
+
+  .emptyState {
+    top: 48%;
   }
 }

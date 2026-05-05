@@ -42,7 +42,9 @@ export default function HomeRoomStage({
   if (rooms.length === 0) {
     return (
       <section className={styles.viewport} aria-label="방 선택 스테이지">
-        <div className={styles.rail} />
+        <div className={styles.rail}>
+          <div className={styles.emptyState}>방이 하나도 없어요😫</div>
+        </div>
       </section>
     );
   }
