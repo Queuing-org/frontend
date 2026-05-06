@@ -29,7 +29,6 @@ export default function RoomPasswordInput({
 
   return (
     <form className="space-y-3" onSubmit={handleSubmit}>
-      <label className="block text-sm font-medium">비밀번호를 입력하세요</label>
       <input
         className="w-full border px-3 py-2"
         type="password"
@@ -42,7 +41,7 @@ export default function RoomPasswordInput({
         <div className="text-sm text-red-600">{validationMessage}</div>
       ) : null}
       <button className="border px-3 py-2" disabled={submitting} type="submit">
-        {submitting ? "확인 중..." : "입장하기"}
+        {submitting ? "확인 중..." : "확인"}
       </button>
     </form>
   );

@@ -21,6 +21,11 @@ import type {
 import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import {
+  clearStoredRoomJoinPassword,
+  readStoredRoomJoinPassword,
+  writeStoredRoomJoinPassword,
+} from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
@@ -125,6 +130,7 @@ export default function RoomPageClient() {
   const slug = normalizeRoomSlug(params.slug ?? "");
   const joinRequestRef = useRef<{
     slug: string;
+    password: string | null;
     promise: Promise<JoinRoomResult>;
   } | null>(null);
   const roomSubscriptionRef = useRef<{
@@ -254,6 +260,7 @@ export default function RoomPageClient() {
 
     try {
       await joinRoom(slug, { password });
+      writeStoredRoomJoinPassword(slug, password);
       setRoomPassword(password);
       ensureRoomSubscription(slug);
       setStatus("joined");
@@ -277,13 +284,18 @@ export default function RoomPageClient() {
     if (!slug) return;
 
     let isActive = true;
+    const storedPassword = readStoredRoomJoinPassword(slug);
     setRoomPassword(null);
     setJoinErrorMessage("");
 
-    if (joinRequestRef.current?.slug !== slug) {
+    if (
+      joinRequestRef.current?.slug !== slug ||
+      joinRequestRef.current.password !== storedPassword
+    ) {
       joinRequestRef.current = {
         slug,
-        promise: joinRoom(slug, { password: null }),
+        password: storedPassword,
+        promise: joinRoom(slug, { password: storedPassword }),
       };
     }
 
@@ -296,7 +308,7 @@ export default function RoomPageClient() {
         if (!isActive) return;
 
         ensureRoomSubscription(slug);
-        setRoomPassword(null);
+        setRoomPassword(storedPassword);
         setStatus("joined");
         setJoinErrorMessage("");
       } catch (error) {
@@ -304,6 +316,12 @@ export default function RoomPageClient() {
 
         const err = error as ApiError;
         setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
+
+        if (storedPassword) {
+          clearStoredRoomJoinPassword(slug);
+          setStatus("needs-password");
+          return;
+        }
 
         if (err.code === "room.password-required") {
           setStatus("needs-password");

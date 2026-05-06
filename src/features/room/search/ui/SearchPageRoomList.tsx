@@ -1,7 +1,6 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useRouter } from "next/navigation";
 import type { Room } from "@/src/entities/room/model/types";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import SearchPageRoomCard from "@/src/entities/room/ui/SearchPageRoomCard";
@@ -11,14 +10,15 @@ type Props = {
   rooms: Room[];
   selectedRoomSlug: string | null;
   onSelectRoom: (roomSlug: string) => void;
+  onRequestRoomEntry: (room: Room) => void;
 };
 
 export function SearchPageRoomList({
   rooms,
   selectedRoomSlug,
   onSelectRoom,
+  onRequestRoomEntry,
 }: Props) {
-  const router = useRouter();
   const currentIndex = rooms.findIndex(
     (room) => room.slug === selectedRoomSlug,
   );
@@ -31,15 +31,6 @@ export function SearchPageRoomList({
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
   });
-
-  function handleCardClick(room: Room) {
-    if (room.slug === selectedRoomSlug) {
-      router.push(`/room/${encodeURIComponent(room.slug)}`);
-      return;
-    }
-
-    onSelectRoom(room.slug);
-  }
 
   if (rooms.length === 0) {
     return (
@@ -69,7 +60,7 @@ export function SearchPageRoomList({
             title={room.title}
             tag={room.tags}
             isSelected={room.slug === selectedRoomSlug}
-            onClick={() => handleCardClick(room)}
+            onClick={() => onRequestRoomEntry(room)}
           />
         ))}
       </div>

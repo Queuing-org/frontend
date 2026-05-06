@@ -39,7 +39,7 @@ export default function SearchPageRoomCard({
     >
       <div className={styles.content}>
         <div className={styles.title}>{title}</div>
-        <div className={styles.meta}>
+        <div className={styles.meta} data-selected={isSelected}>
           {tagsText} · {activeUsersCount}명
         </div>
       </div>

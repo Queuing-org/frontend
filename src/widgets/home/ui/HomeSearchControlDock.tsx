@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
 import HomeControlPanelShell, {
   HOME_CONTROL_PANEL_IDS,
@@ -25,6 +24,7 @@ type Props = {
   onGoNext: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
+  onEnterSelectedRoom: () => void;
 };
 
 export default function HomeSearchControlDock({
@@ -37,6 +37,7 @@ export default function HomeSearchControlDock({
   onGoNext,
   onSelectFilter,
   onCreateRoom,
+  onEnterSelectedRoom,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
@@ -136,10 +137,7 @@ export default function HomeSearchControlDock({
         }
         center={
           selectedRoomSlug ? (
-            <Link
-              href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
-              aria-label="방입장"
-            />
+            <button type="button" onClick={onEnterSelectedRoom} aria-label="방입장" />
           ) : (
             <button type="button" disabled aria-label="입장할 방 없음" />
           )

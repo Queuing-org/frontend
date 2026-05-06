@@ -13,6 +13,8 @@ import HomeTopBar from "./HomeTopBar";
 import HomeSearchControlDock from "./HomeSearchControlDock";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
+import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
+import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 import styles from "./HomeScreen.module.css";
 
 export default function HomeScreen() {
@@ -30,6 +32,10 @@ export default function HomeScreen() {
     goPrevious,
     goNext,
   } = useRoomNavigator(rooms);
+  const roomEntry = useRoomEntry({
+    selectedRoomSlug,
+    onSelectRoom: setCurrentRoomSlug,
+  });
 
   const selectRoomListFilter = (
     key: HomeFilterKey,
@@ -54,6 +60,7 @@ export default function HomeScreen() {
         rooms={rooms}
         currentRoomSlug={selectedRoomSlug}
         onSelectRoom={setCurrentRoomSlug}
+        onRequestRoomEntry={roomEntry.requestRoomEntry}
         isLoading={isLoading}
       />
       {!isLoading ? (
@@ -67,8 +74,18 @@ export default function HomeScreen() {
           onGoNext={goNext}
           onSelectFilter={selectRoomListFilter}
           onCreateRoom={() => setIsCreateRoomModalOpen(true)}
+          onEnterSelectedRoom={() => {
+            if (currentRoom) {
+              roomEntry.requestRoomEntry(currentRoom);
+            }
+          }}
         />
       ) : null}
+      <RoomJoinPasswordModal
+        room={roomEntry.passwordRoom}
+        onClose={roomEntry.closePasswordModal}
+        onJoined={roomEntry.completePasswordEntry}
+      />
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open

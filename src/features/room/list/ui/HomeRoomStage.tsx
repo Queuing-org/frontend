@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
-import { useRouter } from "next/navigation";
 import type { Room } from "@/src/entities/room/model/types";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
@@ -21,6 +20,7 @@ type Props = {
   rooms: Room[];
   currentRoomSlug: string | null;
   onSelectRoom: (roomSlug: string) => void;
+  onRequestRoomEntry: (room: Room) => void;
   isLoading?: boolean;
 };
 
@@ -45,9 +45,9 @@ export default function HomeRoomStage({
   rooms,
   currentRoomSlug,
   onSelectRoom,
+  onRequestRoomEntry,
   isLoading = false,
 }: Props) {
-  const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{
     x: number;
@@ -201,13 +201,8 @@ export default function HomeRoomStage({
       return;
     }
 
-    if (slot === "current") {
-      router.push(`/room/${encodeURIComponent(room.slug)}`);
-      return;
-    }
-
-    if (isNavigableSlot(slot)) {
-      onSelectRoom(room.slug);
+    if (slot === "current" || isNavigableSlot(slot)) {
+      onRequestRoomEntry(room);
     }
   }
 

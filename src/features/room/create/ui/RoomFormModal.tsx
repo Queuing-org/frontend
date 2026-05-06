@@ -56,11 +56,12 @@ export default function RoomFormModal({
   const [isPasswordEnabled, setIsPasswordEnabled] = useState(
     () => initialHasPassword,
   );
-  const [selectedTagSlugs, setSelectedTagSlugs] =
-    useState<string[]>(() => initialTagSlugs.slice(0, MAX_TAGS));
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
+    initialTagSlugs.slice(0, MAX_TAGS),
+  );
   const [maxUsers, setMaxUsers] = useState(() => DEFAULT_MAX_USERS);
-  const [trackLimitMinutes, setTrackLimitMinutes] = useState(() =>
-    DEFAULT_TRACK_LIMIT_MINUTES,
+  const [trackLimitMinutes, setTrackLimitMinutes] = useState(
+    () => DEFAULT_TRACK_LIMIT_MINUTES,
   );
 
   if (!open) {
@@ -319,8 +320,8 @@ export default function RoomFormModal({
           >
             {isCreateMode
               ? isSubmitting
-                ? "큐 개설 중..."
-                : "큐 개설하기"
+                ? "방 만드는 중..."
+                : "방 만들기"
               : isSubmitting
                 ? "큐 수정 중..."
                 : "큐 수정하기"}

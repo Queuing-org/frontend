@@ -55,6 +55,13 @@
   overflow: hidden;
 }
 
+.lockIcon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 18px;
+  margin-right: 10px;
+}
+
 .tagItem {
   display: inline-flex;
   color: #3c3c3c;

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Image from "next/image";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
 import styles from "./RoomInfo.module.css";
 
@@ -27,9 +28,19 @@ export default function RoomInfo({
     : isRoomMetaLoading || isError
       ? "-"
       : (roomMeta?.title ?? "선택된 방 없음");
+  const lockContent = roomMeta?.hasPassword ? (
+    <Image
+      src="/icons/lock.svg"
+      alt="비밀번호 방"
+      width={14}
+      height={18}
+      className={styles.lockIcon}
+    />
+  ) : null;
   const tagsContent =
     tags.length > 0 ? (
       <div className={styles.tag}>
+        {lockContent}
         {tags.map((tag) => (
           <span key={tag.slug} className={styles.tagItem}>
             {tag.name}
@@ -38,6 +49,7 @@ export default function RoomInfo({
       </div>
     ) : (
       <div className={styles.tag}>
+        {lockContent}
         <span className={styles.tagItem}>태그없음</span>
       </div>
     );

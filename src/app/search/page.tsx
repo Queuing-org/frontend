@@ -18,6 +18,8 @@ import {
 } from "@/src/widgets/home/ui/HomeControlPanelShell";
 import HomeSearchControlDock from "@/src/widgets/home/ui/HomeSearchControlDock";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
+import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
+import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 
 export default function SearchPage() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
@@ -33,6 +35,10 @@ export default function SearchPage() {
     goPrevious,
     goNext,
   } = useRoomNavigator(roomListRooms);
+  const roomEntry = useRoomEntry({
+    selectedRoomSlug,
+    onSelectRoom: setCurrentRoomSlug,
+  });
   const selectedRoomIndex = selectedRoomSlug
     ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
     : -1;
@@ -74,6 +80,7 @@ export default function SearchPage() {
                 rooms={roomListRooms}
                 selectedRoomSlug={selectedRoomSlug}
                 onSelectRoom={setCurrentRoomSlug}
+                onRequestRoomEntry={roomEntry.requestRoomEntry}
               />
             )}
           </div>
@@ -106,9 +113,19 @@ export default function SearchPage() {
           onGoNext={goNext}
           onSelectFilter={selectRoomListFilter}
           onCreateRoom={() => setIsCreateRoomModalOpen(true)}
+          onEnterSelectedRoom={() => {
+            if (selectedRoom) {
+              roomEntry.requestRoomEntry(selectedRoom);
+            }
+          }}
         />
       ) : null}
 
+      <RoomJoinPasswordModal
+        room={roomEntry.passwordRoom}
+        onClose={roomEntry.closePasswordModal}
+        onJoined={roomEntry.completePasswordEntry}
+      />
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
