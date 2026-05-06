@@ -1,32 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
-import RadialControl from "@/src/shared/ui/radial-control/RadialControl";
-import HomeControlPanelShell, {
+import {
   DEFAULT_HOME_FILTERS,
-  HOME_CONTROL_PANEL_IDS,
   getNextHomeFilters,
   type HomeFilterKey,
   type HomeFilterOption,
-  type HomeMenuItem,
 } from "./HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
+import HomeSearchControlDock from "./HomeSearchControlDock";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
+import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
+import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
+import FollowModal from "@/src/features/follow/ui/FollowModal";
 import styles from "./HomeScreen.module.css";
 
-type HomePanelKey = "menu" | "filter";
-
 export default function HomeScreen() {
-  const [openPanel, setOpenPanel] = useState<HomePanelKey | null>(null);
-  const [activeMenuItem, setActiveMenuItem] = useState<HomeMenuItem>("QUE");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const {
@@ -38,10 +34,10 @@ export default function HomeScreen() {
     goPrevious,
     goNext,
   } = useRoomNavigator(rooms);
-
-  const togglePanel = (panel: HomePanelKey) => {
-    setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
-  };
+  const roomEntry = useRoomEntry({
+    selectedRoomSlug,
+    onSelectRoom: setCurrentRoomSlug,
+  });
 
   const selectRoomListFilter = (
     key: HomeFilterKey,
@@ -52,16 +48,6 @@ export default function HomeScreen() {
     );
   };
 
-  const selectMenuItem = (menuItem: HomeMenuItem) => {
-    setActiveMenuItem(menuItem);
-
-    if (menuItem === "CREATE") {
-      setOpenPanel(null);
-      setIsCreateRoomModalOpen(true);
-    }
-  };
-
-  if (isLoading) return <div>방 목록 로딩중...</div>;
   if (isError)
     return (
       <div>
@@ -76,119 +62,33 @@ export default function HomeScreen() {
         rooms={rooms}
         currentRoomSlug={selectedRoomSlug}
         onSelectRoom={setCurrentRoomSlug}
+        onRequestRoomEntry={roomEntry.requestRoomEntry}
+        isLoading={isLoading}
       />
-      <div className={styles.controlWrap}>
-        {openPanel ? (
-          <div className={styles.panelAnchor}>
-            {openPanel === "menu" ? (
-              <HomeControlPanelShell
-                variant="menu"
-                activeMenuItem={activeMenuItem}
-                onSelectMenuItem={selectMenuItem}
-              />
-            ) : (
-              <HomeControlPanelShell
-                variant="filter"
-                activeFilters={roomListFilters}
-                onSelectFilter={selectRoomListFilter}
-              />
-            )}
-          </div>
-        ) : null}
-        <RadialControl
+      {!isLoading ? (
+        <HomeSearchControlDock
           ariaLabel="홈 하단 컨트롤"
-          top={
-            <button
-              type="button"
-              className={styles.controlToggle}
-              onClick={() => togglePanel("menu")}
-              aria-label={
-                openPanel === "menu" ? "메뉴 패널 닫기" : "메뉴 패널 열기"
-              }
-              aria-controls={HOME_CONTROL_PANEL_IDS.menu}
-              aria-expanded={openPanel === "menu"}
-              data-active={openPanel === "menu"}
-            >
-              {openPanel === "menu" ? (
-                <Image
-                  className={styles.toggleIcon}
-                  src="/icons/exit.svg"
-                  alt=""
-                  width={20}
-                  height={17}
-                />
-              ) : (
-                "MENU"
-              )}
-            </button>
-          }
-          left={
-            <button
-              type="button"
-              onClick={goPrevious}
-              disabled={!previousRoom}
-              aria-label="이전 방 보기"
-            >
-              <Image
-                src="/icons/left_arrow.svg"
-                alt=""
-                width={20}
-                height={20}
-              />
-            </button>
-          }
-          center={
-            selectedRoomSlug ? (
-              <Link
-                href={`/room/${encodeURIComponent(selectedRoomSlug)}`}
-                aria-label="방입장"
-              />
-            ) : (
-              <button type="button" disabled aria-label="입장할 방 없음" />
-            )
-          }
-          right={
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={!nextRoom}
-              aria-label="다음 방 보기"
-            >
-              <Image
-                src="/icons/right_arrow.svg"
-                alt=""
-                width={20}
-                height={20}
-              />
-            </button>
-          }
-          bottom={
-            <button
-              type="button"
-              className={styles.controlToggle}
-              onClick={() => togglePanel("filter")}
-              aria-label={
-                openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
-              }
-              aria-controls={HOME_CONTROL_PANEL_IDS.filter}
-              aria-expanded={openPanel === "filter"}
-              data-active={openPanel === "filter"}
-            >
-              {openPanel === "filter" ? (
-                <Image
-                  className={styles.toggleIcon}
-                  src="/icons/exit.svg"
-                  alt=""
-                  width={20}
-                  height={17}
-                />
-              ) : (
-                "FILTER"
-              )}
-            </button>
-          }
+          selectedRoomSlug={selectedRoomSlug}
+          canGoPrevious={Boolean(previousRoom)}
+          canGoNext={Boolean(nextRoom)}
+          activeFilters={roomListFilters}
+          onGoPrevious={goPrevious}
+          onGoNext={goNext}
+          onSelectFilter={selectRoomListFilter}
+          onCreateRoom={() => setIsCreateRoomModalOpen(true)}
+          onOpenFollow={() => setIsFollowModalOpen(true)}
+          onEnterSelectedRoom={() => {
+            if (currentRoom) {
+              roomEntry.requestRoomEntry(currentRoom);
+            }
+          }}
         />
-      </div>
+      ) : null}
+      <RoomJoinPasswordModal
+        room={roomEntry.passwordRoom}
+        onClose={roomEntry.closePasswordModal}
+        onJoined={roomEntry.completePasswordEntry}
+      />
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
@@ -196,6 +96,10 @@ export default function HomeScreen() {
           onClose={() => setIsCreateRoomModalOpen(false)}
         />
       ) : null}
+      <FollowModal
+        open={isFollowModalOpen}
+        onClose={() => setIsFollowModalOpen(false)}
+      />
     </div>
   );
 }

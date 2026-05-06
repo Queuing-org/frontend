@@ -1,19 +1,22 @@
 /* 홈 메뉴/필터 패널 공통 박스 */
 .panel {
   box-sizing: border-box;
-  border-radius: 8px;
-  background: black;
+  border-radius: 9999px;
+  background: #ffffff;
   color: #f6f6f6;
+  box-shadow: 0 20px 60px rgba(176, 176, 181, 0.12);
   backdrop-filter: blur(14px);
   animation: panelEnter 180ms ease;
 }
 
 /* QUE/CREATE/FRIEND/SETTING 메뉴 패널 */
 .menuPanel {
+  display: flex;
+  align-items: center;
   width: fit-content;
   max-width: 92vw;
-  height: auto;
-  padding: 12px 16px;
+  height: 49px;
+  padding: 8px 10px;
 }
 
 /* QUE/CREATE 메뉴 옵션 배치 */
@@ -32,14 +35,24 @@
   justify-content: center;
   box-sizing: border-box;
   border: 0;
-  border-radius: 4px;
+  border-radius: 999px;
   font-family: inherit;
   font-size: 12px;
-  font-weight: var(--fw-extrabold);
+  font-weight: var(--fw-bold);
   line-height: 1.4;
-  color: #f1f1f1;
+  color: #b0b0b5;
   background: transparent;
   white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.menuItem:hover,
+.optionChip:hover {
+  background: #3c3c3c;
+  color: #f5f5f7;
+  font-weight: var(--fw-heavy);
 }
 
 /* QUE/CREATE 메뉴 옵션 버튼 영역 */
@@ -48,7 +61,7 @@
   height: auto;
   min-width: 0;
   min-height: 25px;
-  padding: 4px 12px;
+  padding: 8px 14px;
   appearance: none;
   cursor: pointer;
 }
@@ -60,29 +73,31 @@
 
 /* 현재 선택된 옵션 칩 */
 .activeChip {
-  background: #f5f5f5;
-  color: #161616;
+  background: #3c3c3c;
+  color: #f5f5f7;
 }
 
 /* Genre/Date/Participants 필터 패널 */
 .filterPanel {
   width: min(92vw, 442px);
   max-width: 92vw;
-  padding: 12px 16px;
+  padding: 28px;
+  border-radius: 28px;
+  border: 0.5px solid #d9d9d9;
 }
 
 /* 필터 섹션 간격 */
 .filterSection + .filterSection {
-  margin-top: 12px;
+  margin-top: 26px;
 }
 
 /* 필터 섹션 제목 */
 .sectionTitle {
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   font-size: 14px;
   font-weight: var(--fw-regular);
-  color: #ffffff;
+  color: #8d8d8d;
 }
 
 /* 필터 옵션 칩 줄바꿈 배치 */
@@ -99,6 +114,7 @@
   padding: 4px 12px;
   appearance: none;
   cursor: pointer;
+  border: 0.5px solid #d9d9d9;
 }
 
 .optionChip:focus-visible {

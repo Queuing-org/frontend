@@ -1,47 +1,77 @@
+import { memo, useCallback } from "react";
+import Image from "next/image";
 import { useRoomMeta } from "../hooks/useRoomMeta";
-import type { RoomTag } from "../model/types";
+import type { Room } from "../model/types";
 import styles from "./SearchPageRoomCard.module.css";
 
 type Props = {
-  slug: string;
-  title: string;
-  tag: RoomTag[];
+  room: Room;
   isSelected: boolean;
-  distance: number;
+  onRequestRoomEntry: (room: Room) => void;
 };
 
-function getOpacity(distance: number) {
-  if (distance === 0) return 1;
-  if (distance === 1) return 0.72;
-  if (distance === 2) return 0.46;
-  return 0.24;
-}
-
-export default function SearchPageRoomCard({
-  slug,
-  title,
-  tag,
+function SearchPageRoomCard({
+  room,
   isSelected,
-  distance,
+  onRequestRoomEntry,
 }: Props) {
+  const { slug, title, tags } = room;
   const { data, isLoading, isError } = useRoomMeta(slug);
   const activeUsersCount =
     isLoading || isError ? "-" : (data?.activeUsersCount ?? "-");
-  const tagsText = tag.map((roomTag) => roomTag.name).join(" · ");
+  const hasPassword = Boolean(data?.hasPassword);
+  const tagsText = tags.length
+    ? tags.map((roomTag) => roomTag.name).join("/")
+    : "태그없음";
+  const arrowSrc = isSelected
+    ? "/icons/search_arrow_w.svg"
+    : "/icons/search_arrow_g.svg";
+  const handleClick = useCallback(() => {
+    onRequestRoomEntry(room);
+  }, [onRequestRoomEntry, room]);
 
   return (
-    <div
+    <button
+      type="button"
       className={styles.card}
       data-room-slug={slug}
       data-selected={isSelected}
-      data-distance={distance}
-      style={{ opacity: getOpacity(distance) }}
+      onClick={handleClick}
+      aria-label={isSelected ? `${title} 방 입장` : `${title} 방 선택`}
     >
-      <div className={styles.header}>
+      <div className={styles.content}>
         <div className={styles.title}>{title}</div>
-        {tagsText ? <div className={styles.tags}>{tagsText}</div> : null}
+        <div className={styles.meta} data-selected={isSelected}>
+          <span className={styles.metaText}>
+            {tagsText} · {activeUsersCount}명
+          </span>
+          {hasPassword ? (
+            <>
+              <span className={styles.metaSeparator} aria-hidden="true">
+                ·
+              </span>
+              <Image
+                src="/icons/lock2.svg"
+                alt="비밀번호 방"
+                width={9}
+                height={11}
+                className={styles.lockIcon}
+                data-selected={isSelected}
+              />
+            </>
+          ) : null}
+        </div>
       </div>
-      <div className={styles.activeUsersCount}>{activeUsersCount}명</div>
-    </div>
+      <Image
+        src={arrowSrc}
+        alt=""
+        width={20}
+        height={32}
+        className={styles.arrow}
+        aria-hidden="true"
+      />
+    </button>
   );
 }
+
+export default memo(SearchPageRoomCard);

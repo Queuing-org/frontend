@@ -54,7 +54,7 @@ export default function SkipTrackButton({
       aria-label="다음 곡으로 넘기기"
       title={errorMessage || "다음 곡으로 넘기기"}
     >
-      스킵
+      SKIP
     </button>
   );
 }

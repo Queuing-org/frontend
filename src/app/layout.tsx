@@ -12,6 +12,13 @@ const suit = localFont({
   display: "swap",
 });
 
+const bebasNeue = localFont({
+  src: "./fonts/BebasNeue-Regular.ttf",
+  variable: "--font-bebas-neue",
+  weight: "400",
+  display: "swap",
+});
+
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://local.queuing.patulus.com:3000";
 
@@ -45,7 +52,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className={`${suit.className} ${suit.variable}`}>
+      <body
+        className={`${suit.className} ${suit.variable}  ${bebasNeue.variable}`}
+      >
         <SsgoiProvider>
           <div style={{ position: "relative", minHeight: "100vh" }}>
             <Providers>{children}</Providers>

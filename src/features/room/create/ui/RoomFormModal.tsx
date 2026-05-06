@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState, type FormEvent } from "react";
 import type { UpdateRoomPayload } from "@/src/entities/room/api/types";
 import { useRoomTags } from "@/src/entities/room/hooks/useRoomTags";
@@ -9,6 +8,7 @@ import { useUpdateRoom } from "@/src/features/room/update/model/useUpdateRoom";
 import styles from "./RoomFormModal.module.css";
 
 const MAX_TAGS = 5;
+const MAX_ROOM_TITLE_LENGTH = 18;
 const DEFAULT_MAX_USERS = "100";
 const DEFAULT_TRACK_LIMIT_MINUTES = "5";
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -56,11 +56,12 @@ export default function RoomFormModal({
   const [isPasswordEnabled, setIsPasswordEnabled] = useState(
     () => initialHasPassword,
   );
-  const [selectedTagSlugs, setSelectedTagSlugs] =
-    useState<string[]>(() => initialTagSlugs.slice(0, MAX_TAGS));
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
+    initialTagSlugs.slice(0, MAX_TAGS),
+  );
   const [maxUsers, setMaxUsers] = useState(() => DEFAULT_MAX_USERS);
-  const [trackLimitMinutes, setTrackLimitMinutes] = useState(() =>
-    DEFAULT_TRACK_LIMIT_MINUTES,
+  const [trackLimitMinutes, setTrackLimitMinutes] = useState(
+    () => DEFAULT_TRACK_LIMIT_MINUTES,
   );
 
   if (!open) {
@@ -173,7 +174,7 @@ export default function RoomFormModal({
           onClick={onClose}
           aria-label="모달 닫기"
         >
-          <Image src="/icons/exit.svg" alt="" width={20} height={17} />
+          <span className={styles.closeIcon} aria-hidden="true" />
         </button>
 
         <form className={styles.form} onSubmit={handleSubmit}>
@@ -195,7 +196,10 @@ export default function RoomFormModal({
             <input
               className={styles.input}
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
+              onChange={(event) =>
+                setTitle(event.target.value.slice(0, MAX_ROOM_TITLE_LENGTH))
+              }
+              maxLength={MAX_ROOM_TITLE_LENGTH}
               placeholder="작업 효율 200% 높여주는 노래"
               disabled={isSubmitting}
             />
@@ -319,8 +323,8 @@ export default function RoomFormModal({
           >
             {isCreateMode
               ? isSubmitting
-                ? "큐 개설 중..."
-                : "큐 개설하기"
+                ? "방 만드는 중..."
+                : "방 만들기"
               : isSubmitting
                 ? "큐 수정 중..."
                 : "큐 수정하기"}

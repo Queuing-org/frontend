@@ -1,6 +1,6 @@
 "use client";
 
-import SendFriendRequestButton from "@/src/features/friend/requests/ui/SendFriendRequestButton";
+import FollowRequestButton from "@/src/features/follow/requests/ui/FollowRequestButton";
 import type { SearchUser } from "../model/types";
 
 export default function UserSearchCard({ user }: { user: SearchUser }) {
@@ -20,7 +20,7 @@ export default function UserSearchCard({ user }: { user: SearchUser }) {
       </div>
 
       <div>
-        <SendFriendRequestButton targetSlug={user.slug} />
+        <FollowRequestButton targetSlug={user.slug} />
       </div>
     </div>
   );

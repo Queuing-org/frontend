@@ -1,9 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import styles from "./RoomSearchInput.module.css";
 
 export default function RoomSearchInput() {
+  const [query, setQuery] = useState("");
+
   return (
     <form
       className={styles.field}
@@ -23,10 +26,21 @@ export default function RoomSearchInput() {
         type="search"
         name="q"
         className={styles.input}
-        placeholder="찾고 싶은 큐가 있나요?"
+        placeholder="노래 혹은 방 검색..."
         aria-label="방 검색"
         autoComplete="off"
+        value={query}
+        onChange={(event) => setQuery(event.target.value)}
       />
+      {query ? (
+        <button
+          type="button"
+          className={styles.resetButton}
+          onClick={() => setQuery("")}
+        >
+          RESET
+        </button>
+      ) : null}
     </form>
   );
 }

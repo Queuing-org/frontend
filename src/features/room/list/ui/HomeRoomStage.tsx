@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef, useState, type PointerEvent } from "react";
 import type { Room } from "@/src/entities/room/model/types";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
+import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import RoomStageCard from "@/src/entities/room/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
 
@@ -18,7 +20,12 @@ type Props = {
   rooms: Room[];
   currentRoomSlug: string | null;
   onSelectRoom: (roomSlug: string) => void;
+  onRequestRoomEntry: (room: Room) => void;
+  isLoading?: boolean;
 };
+
+const DRAG_SELECT_THRESHOLD = 50;
+const CLICK_SUPPRESS_THRESHOLD = 8;
 
 function getRoomSlot(relativeIndex: number): RoomSlot {
   if (relativeIndex <= -3) return "off-left";
@@ -38,7 +45,54 @@ export default function HomeRoomStage({
   rooms,
   currentRoomSlug,
   onSelectRoom,
+  onRequestRoomEntry,
+  isLoading = false,
 }: Props) {
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartRef = useRef<{
+    x: number;
+    y: number;
+    pointerId: number;
+  } | null>(null);
+  const hasDragIntentRef = useRef(false);
+  const suppressClickRef = useRef(false);
+  const railRef = useRef<HTMLDivElement>(null);
+
+  const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
+  const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
+  const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
+  const nextRoom =
+    selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
+
+  useRoomWheelNavigation({
+    viewportRef: railRef,
+    previousRoomSlug: previousRoom?.slug,
+    nextRoomSlug: nextRoom?.slug,
+    onSelectRoom,
+  });
+
+  if (isLoading) {
+    return (
+      <section
+        className={styles.viewport}
+        aria-label="방 선택 스테이지"
+        aria-busy="true"
+      >
+        <div className={styles.rail} data-loading="true">
+          <div className={styles.slot} data-slot="current">
+            <div className={styles.slotCard}>
+              <div
+                className={styles.skeletonCard}
+                role="status"
+                aria-label="방 목록 로딩 중"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (rooms.length === 0) {
     return (
       <section className={styles.viewport} aria-label="방 선택 스테이지">
@@ -49,16 +103,128 @@ export default function HomeRoomStage({
     );
   }
 
-  const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
-  const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
+  function suppressNextClick() {
+    suppressClickRef.current = true;
+    window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 0);
+  }
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) {
+      return;
+    }
+
+    dragStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+    };
+    hasDragIntentRef.current = false;
+  }
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    const dragStart = dragStartRef.current;
+
+    if (!dragStart || hasDragIntentRef.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStart.x;
+    const deltaY = event.clientY - dragStart.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (absX <= CLICK_SUPPRESS_THRESHOLD || absX <= absY) {
+      return;
+    }
+
+    hasDragIntentRef.current = true;
+    setIsDragging(true);
+    event.currentTarget.setPointerCapture(dragStart.pointerId);
+  }
+
+  function finishDrag(event: PointerEvent<HTMLDivElement>) {
+    const dragStart = dragStartRef.current;
+    const hadDragIntent = hasDragIntentRef.current;
+    dragStartRef.current = null;
+    hasDragIntentRef.current = false;
+    setIsDragging(false);
+
+    if (!dragStart) {
+      return;
+    }
+
+    if (event.currentTarget.hasPointerCapture(dragStart.pointerId)) {
+      event.currentTarget.releasePointerCapture(dragStart.pointerId);
+    }
+
+    const deltaX = event.clientX - dragStart.x;
+    const deltaY = event.clientY - dragStart.y;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+
+    if (!hadDragIntent || absX <= CLICK_SUPPRESS_THRESHOLD || absX <= absY) {
+      return;
+    }
+
+    suppressNextClick();
+
+    if (absX < DRAG_SELECT_THRESHOLD) {
+      return;
+    }
+
+    if (deltaX < 0 && nextRoom) {
+      onSelectRoom(nextRoom.slug);
+      return;
+    }
+
+    if (deltaX > 0 && previousRoom) {
+      onSelectRoom(previousRoom.slug);
+    }
+  }
+
+  function cancelDrag(event: PointerEvent<HTMLDivElement>) {
+    const dragStart = dragStartRef.current;
+    dragStartRef.current = null;
+    hasDragIntentRef.current = false;
+    setIsDragging(false);
+
+    if (
+      dragStart &&
+      event.currentTarget.hasPointerCapture(dragStart.pointerId)
+    ) {
+      event.currentTarget.releasePointerCapture(dragStart.pointerId);
+    }
+  }
+
+  function handleCardClick(room: Room, slot: RoomSlot) {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false;
+      return;
+    }
+
+    if (slot === "current" || isNavigableSlot(slot)) {
+      onRequestRoomEntry(room);
+    }
+  }
 
   return (
     <section className={styles.viewport} aria-label="방 선택 스테이지">
-      <div className={styles.rail}>
+      <div
+        ref={railRef}
+        className={styles.rail}
+        data-dragging={isDragging}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={cancelDrag}
+      >
         {rooms.map((room, index) => {
           const slot = getRoomSlot(index - selectedIndex);
           const isSelected = slot === "current";
           const isNavigable = isNavigableSlot(slot);
+          const canClick = isSelected || isNavigable;
 
           return (
             <div key={room.id} className={styles.slot} data-slot={slot}>
@@ -68,9 +234,14 @@ export default function HomeRoomStage({
                   title={room.title}
                   imageSrc={getDefaultRoomImage(index)}
                   isSelected={isSelected}
-                  disabled={!isNavigable}
+                  disabled={!canClick}
+                  ariaLabel={
+                    isSelected
+                      ? `${room.title} 방 입장`
+                      : `${room.title} 방 선택`
+                  }
                   onClick={
-                    isNavigable ? () => onSelectRoom(room.slug) : undefined
+                    canClick ? () => handleCardClick(room, slot) : undefined
                   }
                 />
               </div>

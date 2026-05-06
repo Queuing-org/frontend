@@ -7,11 +7,11 @@
   align-items: center;
   border: 0;
   border-radius: 8px;
-  background: #242424;
+  background: #3c3c3c;
   color: #ffffff;
   cursor: pointer;
   font-size: 14px;
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-light);
   line-height: 1.4;
   transition:
     transform 160ms ease,
@@ -19,17 +19,7 @@
 }
 
 .googleButton:hover {
-  transform: translateY(-1px);
-  background: #111111;
-}
-
-.googleButton:active {
-  transform: translateY(1px);
-}
-
-.googleButton:focus-visible {
-  outline: 3px solid #0b84ff;
-  outline-offset: 3px;
+  background: #252525;
 }
 
 .googleButton span:last-child {

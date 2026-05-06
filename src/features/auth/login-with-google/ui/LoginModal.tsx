@@ -70,7 +70,7 @@ export default function LoginModal({
       >
         <div className={styles.modalLogo} aria-hidden="true">
           <Image
-            src="/Basic_Profile.png"
+            src="/qlofile_white.png"
             alt=""
             width={80}
             height={80}
@@ -90,7 +90,9 @@ export default function LoginModal({
         <GoogleLoginButton ref={googleButtonRef} onClick={onGoogleLogin} />
         <div className={styles.separator} aria-hidden="true" />
         <p className={styles.policyText}>
-          가입하면 <span className={styles.policyHighlight}>개인정보 보호정책</span>에
+          가입하면
+          <span className={styles.policyHighlight}>개인정보 보호정책</span>에
+          <br></br>
           동의하는 것으로 간주됩니다.
         </p>
       </section>
