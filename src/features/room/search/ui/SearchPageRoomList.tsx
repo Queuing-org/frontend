@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useRef, type CSSProperties } from "react";
 import type { Room } from "@/src/entities/room/model/types";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import SearchPageRoomCard from "@/src/entities/room/ui/SearchPageRoomCard";
@@ -19,6 +19,7 @@ export function SearchPageRoomList({
   onSelectRoom,
   onRequestRoomEntry,
 }: Props) {
+  const viewportRef = useRef<HTMLDivElement>(null);
   const currentIndex = rooms.findIndex(
     (room) => room.slug === selectedRoomSlug,
   );
@@ -26,7 +27,9 @@ export function SearchPageRoomList({
   const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
   const nextRoom =
     selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
-  const handleWheel = useRoomWheelNavigation({
+
+  useRoomWheelNavigation({
+    viewportRef,
     previousRoomSlug: previousRoom?.slug,
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
@@ -42,6 +45,7 @@ export function SearchPageRoomList({
 
   return (
     <div
+      ref={viewportRef}
       className={styles.viewport}
       style={
         {
@@ -49,18 +53,15 @@ export function SearchPageRoomList({
         } as CSSProperties
       }
       aria-label="검색 방 목록"
-      onWheel={handleWheel}
     >
       <div className={styles.track}>
         <div className={styles.selectionHighlight} aria-hidden="true" />
         {rooms.map((room) => (
           <SearchPageRoomCard
             key={room.id}
-            slug={room.slug}
-            title={room.title}
-            tag={room.tags}
+            room={room}
             isSelected={room.slug === selectedRoomSlug}
-            onClick={() => onRequestRoomEntry(room)}
+            onRequestRoomEntry={onRequestRoomEntry}
           />
         ))}
       </div>

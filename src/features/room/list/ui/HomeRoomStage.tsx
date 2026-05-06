@@ -56,13 +56,16 @@ export default function HomeRoomStage({
   } | null>(null);
   const hasDragIntentRef = useRef(false);
   const suppressClickRef = useRef(false);
+  const railRef = useRef<HTMLDivElement>(null);
 
   const currentIndex = rooms.findIndex((room) => room.slug === currentRoomSlug);
   const selectedIndex = currentIndex >= 0 ? currentIndex : 0;
   const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
   const nextRoom =
     selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
-  const handleWheel = useRoomWheelNavigation({
+
+  useRoomWheelNavigation({
+    viewportRef: railRef,
     previousRoomSlug: previousRoom?.slug,
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
@@ -209,13 +212,13 @@ export default function HomeRoomStage({
   return (
     <section className={styles.viewport} aria-label="방 선택 스테이지">
       <div
+        ref={railRef}
         className={styles.rail}
         data-dragging={isDragging}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishDrag}
         onPointerCancel={cancelDrag}
-        onWheel={handleWheel}
       >
         {rooms.map((room, index) => {
           const slot = getRoomSlot(index - selectedIndex);

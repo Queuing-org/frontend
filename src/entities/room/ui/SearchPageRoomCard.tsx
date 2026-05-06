@@ -1,33 +1,34 @@
+import { memo, useCallback } from "react";
 import Image from "next/image";
 import { useRoomMeta } from "../hooks/useRoomMeta";
-import type { RoomTag } from "../model/types";
+import type { Room } from "../model/types";
 import styles from "./SearchPageRoomCard.module.css";
 
 type Props = {
-  slug: string;
-  title: string;
-  tag: RoomTag[];
+  room: Room;
   isSelected: boolean;
-  onClick: () => void;
+  onRequestRoomEntry: (room: Room) => void;
 };
 
-export default function SearchPageRoomCard({
-  slug,
-  title,
-  tag,
+function SearchPageRoomCard({
+  room,
   isSelected,
-  onClick,
+  onRequestRoomEntry,
 }: Props) {
+  const { slug, title, tags } = room;
   const { data, isLoading, isError } = useRoomMeta(slug);
   const activeUsersCount =
     isLoading || isError ? "-" : (data?.activeUsersCount ?? "-");
   const hasPassword = Boolean(data?.hasPassword);
-  const tagsText = tag.length
-    ? tag.map((roomTag) => roomTag.name).join("/")
+  const tagsText = tags.length
+    ? tags.map((roomTag) => roomTag.name).join("/")
     : "태그없음";
   const arrowSrc = isSelected
     ? "/icons/search_arrow_w.svg"
     : "/icons/search_arrow_g.svg";
+  const handleClick = useCallback(() => {
+    onRequestRoomEntry(room);
+  }, [onRequestRoomEntry, room]);
 
   return (
     <button
@@ -35,7 +36,7 @@ export default function SearchPageRoomCard({
       className={styles.card}
       data-room-slug={slug}
       data-selected={isSelected}
-      onClick={onClick}
+      onClick={handleClick}
       aria-label={isSelected ? `${title} 방 입장` : `${title} 방 선택`}
     >
       <div className={styles.content}>
@@ -72,3 +73,5 @@ export default function SearchPageRoomCard({
     </button>
   );
 }
+
+export default memo(SearchPageRoomCard);
