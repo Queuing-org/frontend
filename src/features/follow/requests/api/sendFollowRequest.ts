@@ -1,13 +1,13 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
-import type { SendFriendRequestPayload } from "../model/types";
+import type { SendFollowRequestPayload } from "../model/types";
 
-export async function sendFriendRequest(
-  payload: SendFriendRequestPayload
+export async function sendFollowRequest(
+  payload: SendFollowRequestPayload,
 ): Promise<boolean> {
   const res = await axiosInstance.post<ApiResponse<boolean>>(
     "/api/v1/friend-requests",
-    payload
+    payload,
   );
   return res.data.result;
 }

@@ -1,13 +1,12 @@
 .button {
   flex-shrink: 0;
+  color: #8d8d8d;
   height: 28px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 4px;
-  background-color: #111827;
-  color: #ffffff;
+  padding: 0 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
   font-size: 14px;
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-regular);
   line-height: 1;
   cursor: pointer;
 }

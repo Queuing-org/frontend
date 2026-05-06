@@ -61,6 +61,7 @@
 .slotCard {
   --card-width: var(--card-far-size);
   --card-height: var(--card-far-size);
+  --room-stage-image-opacity: 1;
   transform-origin: center center;
   transform-style: preserve-3d;
   backface-visibility: hidden;
@@ -120,6 +121,7 @@
 .slot[data-slot="current"] .slotCard {
   --card-width: var(--card-current-size);
   --card-height: var(--card-current-size);
+  --room-stage-image-opacity: 1;
   opacity: 1;
   filter: none;
 }
@@ -159,28 +161,32 @@
 .slot[data-slot="prev"] .slotCard {
   --card-width: var(--card-near-size);
   --card-height: var(--card-near-size);
-  opacity: 0.2;
+  --room-stage-image-opacity: 0.2;
+  opacity: 1;
   filter: none;
 }
 
 .slot[data-slot="next"] .slotCard {
   --card-width: var(--card-near-size);
   --card-height: var(--card-near-size);
-  opacity: 0.2;
+  --room-stage-image-opacity: 0.2;
+  opacity: 1;
   filter: none;
 }
 
 .slot[data-slot="peek-prev"] .slotCard {
   --card-width: var(--card-far-size);
   --card-height: var(--card-far-size);
-  opacity: 0.06;
+  --room-stage-image-opacity: 0.06;
+  opacity: 1;
   filter: none;
 }
 
 .slot[data-slot="peek-next"] .slotCard {
   --card-width: var(--card-far-size);
   --card-height: var(--card-far-size);
-  opacity: 0.06;
+  --room-stage-image-opacity: 0.06;
+  opacity: 1;
   filter: none;
 }
 

@@ -2,19 +2,19 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-export type FriendRequestTargetStatus = "idle" | "pending" | "sent";
+export type FollowRequestTargetStatus = "idle" | "pending" | "sent";
 
-export function friendRequestTargetStatusQueryKey(
+export function followRequestTargetStatusQueryKey(
   targetSlug: string | null | undefined,
 ) {
-  return ["friendRequests", "targetStatus", targetSlug ?? null] as const;
+  return ["followRequests", "targetStatus", targetSlug ?? null] as const;
 }
 
-export function useFriendRequestTargetStatus(
+export function useFollowRequestTargetStatus(
   targetSlug: string | null | undefined,
 ) {
-  return useQuery<FriendRequestTargetStatus>({
-    queryKey: friendRequestTargetStatusQueryKey(targetSlug),
+  return useQuery<FollowRequestTargetStatus>({
+    queryKey: followRequestTargetStatusQueryKey(targetSlug),
     queryFn: () => "idle",
     initialData: "idle",
     enabled: !!targetSlug,

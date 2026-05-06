@@ -2,7 +2,7 @@
 
 import styles from "./HomeControlPanelShell.module.css";
 
-const menuItems = ["QUE", "CREATE", "FRIEND", "SETTING"] as const;
+const menuItems = ["RANDOM", "CREATE", "FRIEND", "SETTING"] as const;
 const genreFilterOptions = [
   "ALL",
   "POP",

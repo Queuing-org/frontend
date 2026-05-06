@@ -1,32 +1,31 @@
 "use client";
 
-import { useFetchReceivedFriendRequest } from "../hooks/useFetchReceivedFriendRequest";
-import FriendRequestCard from "./FriendRequestCard";
+import { useFetchReceivedFollowRequest } from "../hooks/useFetchReceivedFollowRequest";
+import FollowRequestCard from "./FollowRequestCard";
+import styles from "./ReceivedFollowRequestList.module.css";
 
-export default function FriendsRequestList() {
-  const { data, isLoading, isError } = useFetchReceivedFriendRequest({
+export default function ReceivedFollowRequestList() {
+  const { data, isLoading, isError } = useFetchReceivedFollowRequest({
     limit: 20,
   });
 
   if (isLoading)
-    return <div className="border p-4 text-black">받은 요청 로딩중...</div>;
+    return <div className={styles.state}>받은 친구요청 로딩중...</div>;
 
   if (isError)
-    return <div className="border p-4 text-black">받은 요청 로딩 실패</div>;
+    return <div className={styles.state}>받은 친구요청 로딩 실패</div>;
 
   const recived = data?.items ?? [];
 
   return (
-    <div className="border p-4 space-y-3 text-black w-full">
-      <div className="text-sm font-semibold">받은 친구요청 리스트</div>
-
+    <div className={styles.container}>
       {recived.length === 0 ? (
-        <div className="text-sm">받은 요청이 없습니다.</div>
+        <div className={styles.state}>받은 친구요청이 없습니다.</div>
       ) : (
-        <ul className="space-y-2">
+        <ul className={styles.list}>
           {recived.map((item) => (
             <li key={item.requestId}>
-              <FriendRequestCard item={item} />
+              <FollowRequestCard item={item} />
             </li>
           ))}
         </ul>

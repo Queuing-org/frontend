@@ -1,15 +1,15 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
 import type {
-  ReceivedFriendRequestsResponse,
-  FetchReceivedFriendRequestsParams,
+  FetchReceivedFollowRequestsParams,
+  ReceivedFollowRequestsResponse,
 } from "../model/types";
 
-export async function fetchReceivedFriendRequests(
-  params?: FetchReceivedFriendRequestsParams
-): Promise<ReceivedFriendRequestsResponse> {
+export async function fetchReceivedFollowRequests(
+  params?: FetchReceivedFollowRequestsParams,
+): Promise<ReceivedFollowRequestsResponse> {
   const res = await axiosInstance.get<
-    ApiResponse<ReceivedFriendRequestsResponse>
+    ApiResponse<ReceivedFollowRequestsResponse>
   >("/api/v1/friend-requests", { params });
 
   return res.data.result;

@@ -15,12 +15,14 @@ import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
+import FollowModal from "@/src/features/follow/ui/FollowModal";
 import styles from "./HomeScreen.module.css";
 
 export default function HomeScreen() {
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const { data, isLoading, isError, error } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const {
@@ -74,6 +76,7 @@ export default function HomeScreen() {
           onGoNext={goNext}
           onSelectFilter={selectRoomListFilter}
           onCreateRoom={() => setIsCreateRoomModalOpen(true)}
+          onOpenFollow={() => setIsFollowModalOpen(true)}
           onEnterSelectedRoom={() => {
             if (currentRoom) {
               roomEntry.requestRoomEntry(currentRoom);
@@ -93,6 +96,10 @@ export default function HomeScreen() {
           onClose={() => setIsCreateRoomModalOpen(false)}
         />
       ) : null}
+      <FollowModal
+        open={isFollowModalOpen}
+        onClose={() => setIsFollowModalOpen(false)}
+      />
     </div>
   );
 }

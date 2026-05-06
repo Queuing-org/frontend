@@ -1,11 +1,11 @@
-export type Friend = {
+export type FollowingUser = {
   id: number;
   nickname: string;
   slug: string;
   profileImageUrl: string;
 };
 
-export type FriendsListResponse = {
-  items: Friend[];
+export type FollowingListResponse = {
+  items: FollowingUser[];
   hasNext: boolean;
 };

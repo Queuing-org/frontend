@@ -2,17 +2,17 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
-import { removeFriend } from "../api/removeFriend";
-import type { RemoveFriendParams } from "../model/types";
+import { unfollow } from "../api/unfollow";
+import type { UnfollowParams } from "../model/types";
 
-export function useRemoveFriend() {
+export function useUnfollow() {
   const qc = useQueryClient();
 
-  return useMutation<boolean, ApiError, RemoveFriendParams>({
-    mutationKey: ["friends", "remove"],
-    mutationFn: (params) => removeFriend(params),
+  return useMutation<boolean, ApiError, UnfollowParams>({
+    mutationKey: ["following", "unfollow"],
+    mutationFn: (params) => unfollow(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["friends"] });
+      qc.invalidateQueries({ queryKey: ["following"] });
       qc.invalidateQueries({ queryKey: ["searchUsers"] });
     },
   });

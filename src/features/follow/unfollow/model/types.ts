@@ -1,3 +1,3 @@
-export type RemoveFriendParams = {
+export type UnfollowParams = {
   targetSlug: string;
 };

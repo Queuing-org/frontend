@@ -1,8 +1,8 @@
-export type SendFriendRequestPayload = {
+export type SendFollowRequestPayload = {
   targetSlug: string;
 };
 
-export type ReceivedFriendRequest = {
+export type ReceivedFollowRequest = {
   requestId: number;
   requesterId: number;
   requesterNickname: string;
@@ -11,16 +11,16 @@ export type ReceivedFriendRequest = {
   createdAt: string;
 };
 
-export type ReceivedFriendRequestsResponse = {
-  items: ReceivedFriendRequest[];
+export type ReceivedFollowRequestsResponse = {
+  items: ReceivedFollowRequest[];
   hasNext: boolean;
 };
 
-export type FetchReceivedFriendRequestsParams = {
+export type FetchReceivedFollowRequestsParams = {
   lastId?: number;
   limit?: number;
 };
 
-export type AcceptFriendRequestParams = {
+export type AcceptFollowRequestParams = {
   requestId: number;
 };

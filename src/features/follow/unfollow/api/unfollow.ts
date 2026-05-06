@@ -1,12 +1,12 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { RemoveFriendParams } from "../model/types";
-import { ApiResponse } from "@/src/shared/api/types";
+import type { ApiResponse } from "@/src/shared/api/types";
+import type { UnfollowParams } from "../model/types";
 
-export async function removeFriend({
+export async function unfollow({
   targetSlug,
-}: RemoveFriendParams): Promise<boolean> {
+}: UnfollowParams): Promise<boolean> {
   const res = await axiosInstance.delete<ApiResponse<boolean>>(
-    `/api/v1/friends/${targetSlug}`
+    `/api/v1/friends/${targetSlug}`,
   );
 
   return res.data.result;

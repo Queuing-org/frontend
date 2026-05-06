@@ -3,7 +3,7 @@
   left: 50%;
   bottom: 90px;
   transform: translateX(-50%);
-  z-index: 20;
+  z-index: 1100;
 }
 
 .panelAnchor {

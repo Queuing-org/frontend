@@ -1,4 +1,4 @@
-export type FetchFriendsParams = {
+export type FetchFollowingParams = {
   lastId?: number;
   size?: number;
 };

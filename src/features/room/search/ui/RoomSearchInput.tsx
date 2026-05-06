@@ -26,19 +26,21 @@ export default function RoomSearchInput() {
         type="search"
         name="q"
         className={styles.input}
-        placeholder="찾고 싶은 큐가 있나요?"
+        placeholder="노래 혹은 방 검색..."
         aria-label="방 검색"
         autoComplete="off"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
       />
-      <button
-        type="button"
-        className={styles.resetButton}
-        onClick={() => setQuery("")}
-      >
-        RESET
-      </button>
+      {query ? (
+        <button
+          type="button"
+          className={styles.resetButton}
+          onClick={() => setQuery("")}
+        >
+          RESET
+        </button>
+      ) : null}
     </form>
   );
 }

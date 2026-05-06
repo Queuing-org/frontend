@@ -45,6 +45,9 @@
 }
 
 .meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
   color: #b0b0b5;
   font-size: 12px;
@@ -52,16 +55,37 @@
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .meta[data-selected="true"] {
   color: #ffffff;
 }
 
+.metaText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metaSeparator {
+  flex: 0 0 auto;
+}
+
+.lockIcon {
+  flex: 0 0 auto;
+  width: 9px;
+  height: 11px;
+  object-fit: contain;
+}
+
+.lockIcon[data-selected="true"] {
+  filter: brightness(0) invert(1);
+}
+
 .arrow {
   flex: 0 0 auto;
-  width: 7px;
-  height: 13px;
+  width: 8px;
+  height: 11px;
   object-fit: contain;
 }

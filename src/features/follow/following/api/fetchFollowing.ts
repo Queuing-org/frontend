@@ -1,14 +1,14 @@
-import type { FriendsListResponse } from "@/src/entities/friend/model/types";
+import type { FollowingListResponse } from "@/src/entities/follow/model/types";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
-import { FetchFriendsParams } from "../model/types";
+import type { FetchFollowingParams } from "../model/types";
 
-export async function fetchFriends(
-  params?: FetchFriendsParams
-): Promise<FriendsListResponse> {
-  const res = await axiosInstance.get<ApiResponse<FriendsListResponse>>(
+export async function fetchFollowing(
+  params?: FetchFollowingParams,
+): Promise<FollowingListResponse> {
+  const res = await axiosInstance.get<ApiResponse<FollowingListResponse>>(
     "/api/v1/friends",
-    { params }
+    { params },
   );
 
   return res.data.result;

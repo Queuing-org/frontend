@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useMe } from "@/src/entities/user/hooks/useMe";
-import { useFriendRequestTargetStatus } from "@/src/features/friend/requests/hooks/useFriendRequestTargetStatus";
-import { useSendFriendRequest } from "@/src/features/friend/requests/hooks/useSendFriendRequest";
+import { useFollowRequestTargetStatus } from "@/src/features/follow/requests/hooks/useFollowRequestTargetStatus";
+import { useSendFollowRequest } from "@/src/features/follow/requests/hooks/useSendFollowRequest";
 import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
 
@@ -46,18 +46,18 @@ function isCurrentUserProfile(
 export default function RoomProfilePanel({ currentRequester }: Props) {
   const { data: me } = useMe();
   const { error, isPending, mutate, reset, variables } =
-    useSendFriendRequest();
+    useSendFollowRequest();
   const targetSlug = currentRequester?.slug ?? null;
-  const { data: friendRequestStatus } =
-    useFriendRequestTargetStatus(targetSlug);
+  const { data: followRequestStatus } =
+    useFollowRequestTargetStatus(targetSlug);
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
   const canFollow = !!currentRequester?.slug && !isSelf;
   const isCurrentMutationPending =
     isPending && variables?.targetSlug === targetSlug;
   const isRequestingFollow =
-    friendRequestStatus === "pending" || isCurrentMutationPending;
-  const hasRequestedFollow = friendRequestStatus === "sent";
+    followRequestStatus === "pending" || isCurrentMutationPending;
+  const hasRequestedFollow = followRequestStatus === "sent";
   const shouldShowError =
     !!error && !!targetSlug && variables?.targetSlug === targetSlug;
 

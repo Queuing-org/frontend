@@ -1,22 +1,38 @@
 "use client";
 
-import { ReceivedFriendRequest } from "../model/types";
-import AcceptFriendRequestButton from "./AcceptFriendRequestButton";
+import Image from "next/image";
+import type { ReceivedFollowRequest } from "../model/types";
+import AcceptFollowRequestButton from "./AcceptFollowRequestButton";
+import styles from "./FollowRequestCard.module.css";
 
-export default function FriendRequestCard({
+export default function FollowRequestCard({
   item,
 }: {
-  item: ReceivedFriendRequest;
+  item: ReceivedFollowRequest;
 }) {
+  const profileImageSrc =
+    item.requesterProfileImageUrl || "/Basic_Profile.png";
+
   return (
-    <div className="border p-3 flex items-center justify-between w-full">
-      <div className="min-w-0">
-        <div className="text-sm">보낸 사람: {item.requesterNickname}</div>
-        <div className="text-xs">요청일: {item.createdAt}</div>
+    <div className={styles.card}>
+      <span className={styles.avatarWrap}>
+        <Image
+          src={profileImageSrc}
+          alt=""
+          fill
+          sizes="40px"
+          unoptimized={Boolean(item.requesterProfileImageUrl)}
+          className={styles.avatar}
+        />
+      </span>
+
+      <div className={styles.meta}>
+        <div className={styles.nickname}>{item.requesterNickname}</div>
+        <div className={styles.status}>요청일: {item.createdAt}</div>
       </div>
 
-      <div className="border p-2 shrink-0">
-        <AcceptFriendRequestButton requestId={item.requestId} />
+      <div className={styles.action}>
+        <AcceptFollowRequestButton requestId={item.requestId} />
       </div>
     </div>
   );

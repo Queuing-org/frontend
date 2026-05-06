@@ -1,25 +1,26 @@
 "use client";
 
-import { useAcceptFriendRequest } from "../hooks/useAcceptFriendRequest";
-import { AcceptFriendRequestParams } from "../model/types";
+import { useAcceptFollowRequest } from "../hooks/useAcceptFollowRequest";
+import type { AcceptFollowRequestParams } from "../model/types";
+import styles from "./AcceptFollowRequestButton.module.css";
 
-export default function AcceptFriendRequestButton({
+export default function AcceptFollowRequestButton({
   requestId,
-}: AcceptFriendRequestParams) {
-  const { mutate, isPending, isError, error } = useAcceptFriendRequest();
+}: AcceptFollowRequestParams) {
+  const { mutate, isPending, isError, error } = useAcceptFollowRequest();
 
   return (
-    <div>
+    <div className={styles.root}>
       <button
         type="button"
-        className="cursor-pointer items-center"
+        className={styles.button}
         onClick={() => mutate({ requestId })}
         disabled={isPending}
       >
         {isPending ? "수락중..." : "수락"}
       </button>
 
-      {isError && <div className="border">{error?.message}</div>}
+      {isError && <div className={styles.error}>{error?.message}</div>}
     </div>
   );
 }

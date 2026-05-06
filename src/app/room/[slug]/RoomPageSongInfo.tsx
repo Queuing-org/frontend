@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
-import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
@@ -27,10 +26,10 @@ import {
   writeStoredRoomJoinPassword,
 } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
-import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
-import styles from "./page.module.css";
+import CurrentRequesterCard from "@/src/features/room/current-requester/ui/CurrentRequesterCard";
+import styles from "./RoomPageSongInfo.module.css";
 import RoomInfo from "@/src/entities/room/ui/RoomInfo";
 import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
@@ -124,7 +123,7 @@ function getCurrentRequesterProfile(
   };
 }
 
-export default function RoomPageClient() {
+export default function RoomPageSongInfo() {
   const params = useParams<{ slug: string }>();
   const queryClient = useQueryClient();
   const slug = normalizeRoomSlug(params.slug ?? "");
@@ -160,7 +159,13 @@ export default function RoomPageClient() {
   const isCurrentUserRoomOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const currentVideoId = getCurrentVideoId(roomState, playbackStatus);
   const currentRequester = getCurrentRequesterProfile(roomState);
-  const currentTrackTitle = roomState?.currentEntry?.track.title ?? null;
+  const currentTrack = roomState?.currentEntry?.track ?? null;
+  const currentTrackTitle = currentTrack?.title ?? null;
+  const currentTrackDurationMs = currentTrack?.durationMs ?? null;
+  const isCurrentRequesterRoomOwner = isRoomOwner(
+    roomMeta?.owner,
+    currentRequester,
+  );
 
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
@@ -384,45 +389,28 @@ export default function RoomPageClient() {
             trailingContent={
               isCurrentUserRoomOwner ? (
                 <div className={styles.roomActions}>
-                  <SkipTrackButton slug={slug} />
                   <UpdateRoomButton slug={slug} />
                 </div>
               ) : null
             }
           />
-          <YouTubePlayer
-            key={slug}
-            videoId={currentVideoId}
-            playbackStatus={playbackStatus?.status ?? null}
-            currentTimeMs={playbackStatus?.currentTime ?? null}
-          />
-          {currentRequester ? (
-            <div className={styles.requesterCard}>
-              {currentRequester.avatarUrl ? (
-                <Image
-                  src={currentRequester.avatarUrl}
-                  alt={`${currentRequester.nickname} avatar`}
-                  width={44}
-                  height={44}
-                  unoptimized
-                  className={styles.requesterAvatar}
-                />
-              ) : (
-                <div
-                  className={styles.requesterAvatarFallback}
-                  aria-hidden="true"
-                >
-                  {currentRequester.nickname.slice(0, 1)}
-                </div>
-              )}
-              <div className={styles.requesterMeta}>
-                <div className={styles.requesterLabel}>현재 신청자</div>
-                <div className={styles.requesterName}>
-                  {currentRequester.nickname}
-                </div>
-              </div>
-            </div>
-          ) : null}
+          <div className={styles.songInfoStack}>
+            <YouTubePlayer
+              key={slug}
+              videoId={currentVideoId}
+              playbackStatus={playbackStatus?.status ?? null}
+              currentTimeMs={playbackStatus?.currentTime ?? null}
+            />
+            {currentRequester ? (
+              <CurrentRequesterCard
+                durationMs={currentTrackDurationMs}
+                isOwner={isCurrentRequesterRoomOwner}
+                requester={currentRequester}
+                roomSlug={slug}
+                trackTitle={currentTrackTitle}
+              />
+            ) : null}
+          </div>
           <div className={styles.chatSection}>
             <ChatArea />
           </div>

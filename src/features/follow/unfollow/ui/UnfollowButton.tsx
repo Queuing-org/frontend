@@ -1,15 +1,16 @@
 "use client";
 
-import { useRemoveFriend } from "../hooks/useRemoveFriend";
-import { RemoveFriendParams } from "../model/types";
+import { useUnfollow } from "../hooks/useUnfollow";
+import type { UnfollowParams } from "../model/types";
+import styles from "./UnfollowButton.module.css";
 
-export default function RemoveFriendButton({ targetSlug }: RemoveFriendParams) {
-  const { mutate, isPending } = useRemoveFriend();
+export default function UnfollowButton({ targetSlug }: UnfollowParams) {
+  const { mutate, isPending } = useUnfollow();
 
   return (
     <button
       type="button"
-      className="border cursor-pointer"
+      className={styles.button}
       onClick={() => mutate({ targetSlug })}
       disabled={isPending}
     >

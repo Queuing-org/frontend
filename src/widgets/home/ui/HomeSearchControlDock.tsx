@@ -24,6 +24,7 @@ type Props = {
   onGoNext: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
+  onOpenFollow: () => void;
   onEnterSelectedRoom: () => void;
 };
 
@@ -37,6 +38,7 @@ export default function HomeSearchControlDock({
   onGoNext,
   onSelectFilter,
   onCreateRoom,
+  onOpenFollow,
   onEnterSelectedRoom,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
@@ -77,6 +79,11 @@ export default function HomeSearchControlDock({
 
     if (menuItem === "CREATE") {
       onCreateRoom();
+      return;
+    }
+
+    if (menuItem === "FRIEND") {
+      onOpenFollow();
     }
   };
 
@@ -137,7 +144,11 @@ export default function HomeSearchControlDock({
         }
         center={
           selectedRoomSlug ? (
-            <button type="button" onClick={onEnterSelectedRoom} aria-label="방입장" />
+            <button
+              type="button"
+              onClick={onEnterSelectedRoom}
+              aria-label="방입장"
+            />
           ) : (
             <button type="button" disabled aria-label="입장할 방 없음" />
           )

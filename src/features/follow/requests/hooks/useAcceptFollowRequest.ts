@@ -2,18 +2,18 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
-import { acceptFriendRequest } from "../api/acceptFriendRequest";
-import type { AcceptFriendRequestParams } from "../model/types";
+import { acceptFollowRequest } from "../api/acceptFollowRequest";
+import type { AcceptFollowRequestParams } from "../model/types";
 
-export function useAcceptFriendRequest() {
+export function useAcceptFollowRequest() {
   const qc = useQueryClient();
 
-  return useMutation<boolean, ApiError, AcceptFriendRequestParams>({
-    mutationKey: ["friendRequests", "accept"],
-    mutationFn: (params) => acceptFriendRequest(params),
+  return useMutation<boolean, ApiError, AcceptFollowRequestParams>({
+    mutationKey: ["followRequests", "accept"],
+    mutationFn: (params) => acceptFollowRequest(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["friendRequests", "received"] });
-      qc.invalidateQueries({ queryKey: ["friends"] });
+      qc.invalidateQueries({ queryKey: ["followRequests", "received"] });
+      qc.invalidateQueries({ queryKey: ["following"] });
       qc.invalidateQueries({ queryKey: ["searchUsers"] });
     },
   });

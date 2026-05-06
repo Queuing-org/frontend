@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { PlaybackStatus } from "@/src/entities/room/model/types";
+import styles from "./YouTubePlayer.module.css";
 
 type YouTubePlayerProps = {
   videoId: string | null;
@@ -201,7 +202,7 @@ export default function YouTubePlayer({
     }
 
     const host = document.createElement("div");
-    host.className = "h-full w-full";
+    host.className = styles.playerHost;
 
     // Keep React in charge of the wrapper only. The actual YouTube host node
     // lives inside this mount point and can be replaced by the iframe API.
@@ -368,30 +369,29 @@ export default function YouTubePlayer({
 
   const showEmptyState = !videoId;
   const showPlayerFrame = !!videoId;
+  const rootClassName = [
+    styles.root,
+    showPlayerFrame ? styles.rootActive : styles.rootEmpty,
+  ].join(" ");
+  const playerMountClassName = [
+    styles.playerMount,
+    showPlayerFrame ? null : styles.playerMountHidden,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <div
-      className={`overflow-hidden rounded-xl border shadow-sm ${
-        showPlayerFrame
-          ? "border-gray-200 bg-black"
-          : "border-dashed border-gray-300 bg-gray-50"
-      }`}
-    >
-      <div className="relative aspect-video w-full">
-        <div
-          ref={playerMountRef}
-          className={`h-full w-full ${showPlayerFrame ? "" : "hidden"}`}
-        />
+    <div className={rootClassName}>
+      <div className={styles.frame}>
+        <div ref={playerMountRef} className={playerMountClassName} />
         {showEmptyState ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 px-4 text-center text-sm text-gray-500">
+          <div className={styles.emptyState}>
             재생할 유튜브 영상이 아직 없습니다.
           </div>
         ) : null}
       </div>
       {videoId && playerError ? (
-        <div className="border-t border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-          {playerError}
-        </div>
+        <div className={styles.errorPanel}>{playerError}</div>
       ) : null}
     </div>
   );

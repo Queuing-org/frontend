@@ -1,21 +1,21 @@
 "use client";
 
-import { useFriendRequestTargetStatus } from "../hooks/useFriendRequestTargetStatus";
-import { useSendFriendRequest } from "../hooks/useSendFriendRequest";
-import type { SendFriendRequestPayload } from "../model/types";
+import { useFollowRequestTargetStatus } from "../hooks/useFollowRequestTargetStatus";
+import { useSendFollowRequest } from "../hooks/useSendFollowRequest";
+import type { SendFollowRequestPayload } from "../model/types";
 
-export default function SendFriendRequestButton({
+export default function FollowRequestButton({
   targetSlug,
-}: SendFriendRequestPayload) {
+}: SendFollowRequestPayload) {
   const { mutate, isPending, isError, error, variables } =
-    useSendFriendRequest();
-  const { data: friendRequestStatus } =
-    useFriendRequestTargetStatus(targetSlug);
+    useSendFollowRequest();
+  const { data: followRequestStatus } =
+    useFollowRequestTargetStatus(targetSlug);
   const isCurrentMutationPending =
     isPending && variables?.targetSlug === targetSlug;
   const isRequesting =
-    friendRequestStatus === "pending" || isCurrentMutationPending;
-  const hasRequested = friendRequestStatus === "sent";
+    followRequestStatus === "pending" || isCurrentMutationPending;
+  const hasRequested = followRequestStatus === "sent";
 
   function handleClick() {
     if (isRequesting || hasRequested) {
