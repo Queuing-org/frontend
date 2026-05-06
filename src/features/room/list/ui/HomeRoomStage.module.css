@@ -7,6 +7,7 @@
   padding: 3rem clamp(1rem, 4vw, 3rem) 15rem;
   perspective: 1400px;
   perspective-origin: center center;
+  --stage-y-offset: -20px;
   --card-current-size: 400px;
   --card-near-size: 320px;
   --card-far-size: 220px;
@@ -26,6 +27,7 @@
   position: relative;
   width: 100%;
   height: clamp(24rem, 62vh, 38rem);
+  transform: translateY(var(--stage-y-offset));
   transform-style: preserve-3d;
   cursor: grab;
   touch-action: pan-y;
@@ -34,6 +36,10 @@
 
 .rail[data-dragging="true"] {
   cursor: grabbing;
+}
+
+.rail[data-loading="true"] {
+  cursor: default;
 }
 
 .emptyState {
@@ -118,6 +124,38 @@
   filter: none;
 }
 
+.skeletonCard {
+  box-sizing: border-box;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 5px solid #ffffff;
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: #e1e1e5;
+  box-shadow:
+    0 24px 50px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.skeletonCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.18) 35%,
+      rgba(255, 255, 255, 0.72) 50%,
+      rgba(255, 255, 255, 0.18) 65%,
+      transparent 100%
+    );
+  animation: skeletonShimmer 1300ms ease-in-out infinite;
+}
+
 .slot[data-slot="prev"] .slotCard {
   --card-width: var(--card-near-size);
   --card-height: var(--card-near-size);
@@ -172,5 +210,15 @@
 
   .emptyState {
     top: 48%;
+  }
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
   }
 }

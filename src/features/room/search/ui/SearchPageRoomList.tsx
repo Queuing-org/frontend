@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import type { Room } from "@/src/entities/room/model/types";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import SearchPageRoomCard from "@/src/entities/room/ui/SearchPageRoomCard";
@@ -12,43 +13,12 @@ type Props = {
   onSelectRoom: (roomSlug: string) => void;
 };
 
-const DEFAULT_ROOM_LIST_HEIGHT = 558;
-const ROOM_CARD_HEIGHT = 77;
-const ROOM_CARD_GAP = 12;
-const ROOM_STEP = ROOM_CARD_HEIGHT + ROOM_CARD_GAP;
-
 export function SearchPageRoomList({
   rooms,
   selectedRoomSlug,
   onSelectRoom,
 }: Props) {
-  const viewportRef = useRef<HTMLDivElement>(null);
-  const [viewportHeight, setViewportHeight] = useState(DEFAULT_ROOM_LIST_HEIGHT);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-
-    if (!viewport) {
-      return;
-    }
-
-    const updateViewportHeight = () => {
-      setViewportHeight(Math.round(viewport.clientHeight));
-    };
-
-    updateViewportHeight();
-
-    const resizeObserver = new ResizeObserver(() => {
-      updateViewportHeight();
-    });
-
-    resizeObserver.observe(viewport);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
+  const router = useRouter();
   const currentIndex = rooms.findIndex(
     (room) => room.slug === selectedRoomSlug,
   );
@@ -61,19 +31,19 @@ export function SearchPageRoomList({
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
   });
-  const viewportPadding = Math.max(
-    (viewportHeight - ROOM_CARD_HEIGHT) / 2,
-    0,
-  );
-  const translateY = -(selectedIndex * ROOM_STEP);
+
+  function handleCardClick(room: Room) {
+    if (room.slug === selectedRoomSlug) {
+      router.push(`/room/${encodeURIComponent(room.slug)}`);
+      return;
+    }
+
+    onSelectRoom(room.slug);
+  }
 
   if (rooms.length === 0) {
     return (
-      <div
-        ref={viewportRef}
-        className={styles.viewport}
-        aria-label="검색 방 목록"
-      >
+      <div className={styles.viewport} aria-label="검색 방 목록">
         <div className={styles.emptyState}>방이 하나도 없어요😫</div>
       </div>
     );
@@ -81,30 +51,25 @@ export function SearchPageRoomList({
 
   return (
     <div
-      ref={viewportRef}
       className={styles.viewport}
       style={
         {
-          "--room-card-height": `${ROOM_CARD_HEIGHT}px`,
-          "--room-card-gap": `${ROOM_CARD_GAP}px`,
-          "--room-viewport-padding": `${viewportPadding}px`,
+          "--selected-index": selectedIndex,
         } as CSSProperties
       }
       aria-label="검색 방 목록"
       onWheel={handleWheel}
     >
-      <div
-        className={styles.track}
-        style={{ transform: `translateY(${translateY}px)` }}
-      >
-        {rooms.map((room, index) => (
+      <div className={styles.track}>
+        <div className={styles.selectionHighlight} aria-hidden="true" />
+        {rooms.map((room) => (
           <SearchPageRoomCard
             key={room.id}
             slug={room.slug}
             title={room.title}
             tag={room.tags}
-            isSelected={room.slug === (rooms[selectedIndex]?.slug ?? null)}
-            distance={Math.abs(index - selectedIndex)}
+            isSelected={room.slug === selectedRoomSlug}
+            onClick={() => handleCardClick(room)}
           />
         ))}
       </div>
