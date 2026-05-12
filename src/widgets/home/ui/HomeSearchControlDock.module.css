@@ -1,7 +1,7 @@
 .dock {
   position: absolute;
   left: 50%;
-  bottom: 90px;
+  bottom: 60px;
   transform: translateX(-50%);
   z-index: 1100;
 }

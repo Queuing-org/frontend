@@ -23,11 +23,13 @@ import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 import FollowModal from "@/src/features/follow/ui/FollowModal";
+import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 
 export default function SearchPage() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { data, isLoading, isError } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const roomListRooms = rooms;
@@ -169,6 +171,7 @@ export default function SearchPage() {
           onSelectFilter={selectRoomListFilter}
           onCreateRoom={() => setIsCreateRoomModalOpen(true)}
           onOpenFollow={() => setIsFollowModalOpen(true)}
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
           onEnterSelectedRoom={() => {
             if (selectedRoom) {
               roomEntry.requestRoomEntry(selectedRoom);
@@ -192,6 +195,10 @@ export default function SearchPage() {
       <FollowModal
         open={isFollowModalOpen}
         onClose={() => setIsFollowModalOpen(false)}
+      />
+      <SettingsModal
+        open={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
       />
     </div>
   );
