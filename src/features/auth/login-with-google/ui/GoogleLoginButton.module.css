@@ -5,10 +5,10 @@
   height: 44px;
   grid-template-columns: 42px minmax(0, 1fr) 42px;
   align-items: center;
-  border: 0;
+  border: 1px solid #d9d9d9;
   border-radius: 8px;
-  background: #3c3c3c;
-  color: #ffffff;
+  background: #ffffff;
+  color: #3c3c3c;
   cursor: pointer;
   font-size: 14px;
   font-weight: var(--fw-light);
@@ -19,7 +19,8 @@
 }
 
 .googleButton:hover {
-  background: #252525;
+  border-color: #3c3c3c;
+  background: #f7f7f9;
 }
 
 .googleButton span:last-child {

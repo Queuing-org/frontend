@@ -2,8 +2,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   flex-shrink: 0;
-  background: #242424;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #ffffff;
+  border-bottom: 1px solid #e9ebee;
 }
 
 .tab {
@@ -16,14 +16,14 @@
   padding: 0px 12px 8px;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.54);
+  color: #8d8d8d;
   font-size: 14px;
   font-weight: var(--fw-semibold);
   cursor: pointer;
 }
 
 .tab[data-active="true"] {
-  color: #ffffff;
+  color: #3c3c3c;
 }
 
 .tab[data-active="true"]::after {
@@ -34,15 +34,15 @@
   bottom: 0;
   height: 1px;
   border-radius: 999px;
-  background: #ffffff;
+  background: #3c3c3c;
 }
 
 .tabCount {
-  color: rgba(255, 255, 255, 0.45);
+  color: #8d8d8d;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: var(--fw-medium);
 }
 
 .tab[data-active="true"] .tabCount {
-  color: rgba(255, 255, 255, 0.82);
+  color: #8d8d8d;
 }

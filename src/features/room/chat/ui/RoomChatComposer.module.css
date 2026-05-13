@@ -3,7 +3,7 @@
   flex-direction: column;
   height: 100%;
   gap: 10px;
-  color: #ffffff;
+  color: #3c3c3c;
 }
 
 .input {
@@ -11,20 +11,20 @@
   min-height: 0;
   width: 100%;
   resize: none;
-  border: 0;
+  border: 1px solid #e9ebee;
   border-radius: 16px;
-  background: #5a5a5a;
-  color: #d9d9d9;
+  background: #ffffff;
+  color: #3c3c3c;
   font-family: inherit;
   font-size: 16px;
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-regular);
   line-height: 1.4;
   outline: none;
   padding: 10px 14px;
 }
 
 .input::placeholder {
-  color: rgba(255, 255, 255, 0.42);
+  color: #8d8d8d;
 }
 
 .input:disabled {
@@ -41,9 +41,9 @@
 }
 
 .count {
-  color: rgba(255, 255, 255, 0.46);
+  color: #8d8d8d;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: var(--fw-regular);
 }
 
 .submitButton {
@@ -52,10 +52,10 @@
   justify-content: center;
   width: 52px;
   height: 28px;
-  border: 0;
+  border: 1px solid #e9ebee;
   border-radius: 16px;
-  background: #ffffff;
-  color: #242424;
+  background: #f7f7f9;
+  color: #3c3c3c;
   cursor: pointer;
 }
 
@@ -73,12 +73,12 @@
 .error,
 .notice {
   flex-shrink: 0;
-  color: #ffb4b4;
+  color: #d24b4b;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: var(--fw-medium);
   line-height: 1.35;
 }
 
 .notice {
-  color: rgba(255, 255, 255, 0.58);
+  color: #8d8d8d;
 }

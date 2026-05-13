@@ -47,8 +47,8 @@
 
 .logoutButton:hover:not(:disabled) {
   border-color: #3c3c3c;
-  background: #3c3c3c;
-  color: #ffffff;
+  background: #f7f7f9;
+  color: #3c3c3c;
 }
 
 .logoutButton:disabled {

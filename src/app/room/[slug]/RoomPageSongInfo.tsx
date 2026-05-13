@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useParams, useRouter } from "next/navigation";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
+import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
 import {
   joinRoom,
@@ -175,6 +177,16 @@ function getCurrentVideoId(
   return null;
 }
 
+function getStableRoomImageIndex(slug: string) {
+  let hash = 0;
+
+  for (let index = 0; index < slug.length; index += 1) {
+    hash += slug.charCodeAt(index);
+  }
+
+  return hash;
+}
+
 function getCurrentRequesterProfile(
   roomState: RoomStateSnapshot | undefined,
 ): CurrentRequesterProfile | null {
@@ -204,6 +216,7 @@ export default function RoomPageSongInfo() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const slug = normalizeRoomSlug(params.slug ?? "");
+  const backgroundImageSrc = getDefaultRoomImage(getStableRoomImageIndex(slug));
   const joinRequestRef = useRef<{
     slug: string;
     password: string | null;
@@ -909,6 +922,16 @@ export default function RoomPageSongInfo() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.backgroundImageFrame} aria-hidden="true">
+        <Image
+          key={backgroundImageSrc}
+          src={backgroundImageSrc}
+          alt=""
+          fill
+          priority
+          className={styles.backgroundImage}
+        />
+      </div>
       <div className={styles.container}>
         <div className={styles.mainArea}>
           <RoomInfo
