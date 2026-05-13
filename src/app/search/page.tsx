@@ -1,11 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
+import {
+  getRoomsFromPages,
+  useRoomsQuery,
+} from "@/src/entities/room/hooks/useFetchRooms";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
 import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
+import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
 import MainLogo from "@/src/widgets/home/ui/MainLogo";
 import styles from "./page.module.css";
@@ -38,8 +42,15 @@ export default function SearchPage() {
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { data: me, refetch: refetchMe } = useMe();
-  const { data, isLoading, isError } = useRoomsQuery();
-  const rooms = data?.rooms ?? [];
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+  } = useRoomsQuery();
+  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
   const roomListRooms = rooms;
   const {
     selectedRoomSlug,
@@ -52,6 +63,14 @@ export default function SearchPage() {
   const roomEntry = useRoomEntry({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
+  });
+
+  useLoadMoreRoomsNearEnd({
+    rooms: roomListRooms,
+    selectedRoomSlug,
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage,
   });
   const selectedRoomIndex = selectedRoomSlug
     ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
@@ -150,7 +169,7 @@ export default function SearchPage() {
                 <div className={styles.statePanel}>
                   <ClipLoader color="#3c3c3c" size={36} aria-label="로딩 중" />
                 </div>
-              ) : isError ? (
+              ) : isError && roomListRooms.length === 0 ? (
                 <div className={styles.statePanel}>새로고침을 시도해주세요.</div>
               ) : (
                 <SearchPageRoomList
@@ -199,7 +218,7 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {!isLoading && !isError ? (
+      {!isLoading && (!isError || roomListRooms.length > 0) ? (
         <HomeSearchControlDock
           ariaLabel="검색 페이지 방 이동 컨트롤"
           selectedRoomSlug={selectedRoomSlug}

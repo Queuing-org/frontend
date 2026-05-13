@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
+import { useMemo, useState } from "react";
+import {
+  getRoomsFromPages,
+  useRoomsQuery,
+} from "@/src/entities/room/hooks/useFetchRooms";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
+import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import {
   DEFAULT_HOME_FILTERS,
   getNextHomeFilters,
@@ -33,8 +37,16 @@ export default function HomeScreen() {
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const { data: me, refetch: refetchMe } = useMe();
-  const { data, isLoading, isError, error } = useRoomsQuery();
-  const rooms = data?.rooms ?? [];
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = useRoomsQuery();
+  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
   const {
     currentRoom,
     selectedRoomSlug,
@@ -47,6 +59,14 @@ export default function HomeScreen() {
   const roomEntry = useRoomEntry({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
+  });
+
+  useLoadMoreRoomsNearEnd({
+    rooms,
+    selectedRoomSlug,
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage,
   });
 
   const selectRoomListFilter = (
@@ -90,7 +110,7 @@ export default function HomeScreen() {
       "친구 기능은 로그인 후 이용할 수 있어요.",
     );
 
-  if (isError)
+  if (isError && rooms.length === 0 && error)
     return (
       <div>
         방 목록 가져오기에 실패했어요: ({error.status}) {error.message}
