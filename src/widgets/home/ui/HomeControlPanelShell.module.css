@@ -150,3 +150,36 @@
     gap: 10px;
   }
 }
+
+@media (max-width: 760px) {
+  .panel {
+    box-shadow: none;
+    animation: none;
+  }
+
+  .filterPanel {
+    width: 100%;
+    max-width: 100%;
+    padding: 1rem;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .filterSection + .filterSection {
+    margin-top: 1rem;
+  }
+
+  .sectionTitle {
+    margin-bottom: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .optionGrid {
+    gap: 0.5rem;
+  }
+
+  .optionChip {
+    min-height: 2rem;
+    padding: 0.375rem 0.75rem;
+  }
+}

@@ -85,3 +85,39 @@
 .story {
   max-width: min(190px, 36vw);
 }
+
+@media (max-width: 760px) {
+  .card {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #eeeeef;
+    background: #ffffff;
+    border-radius: 0;
+  }
+
+  .skipButton {
+    top: 0.75rem;
+    right: 0.75rem;
+  }
+
+  .meta {
+    padding-right: 2.5rem;
+  }
+
+  .titleRow,
+  .descriptionRow {
+    align-items: flex-start;
+  }
+
+  .titleRow {
+    flex-wrap: wrap;
+  }
+
+  .descriptionRow {
+    margin-top: 0.125rem;
+  }
+
+  .trackTitle,
+  .story {
+    max-width: 100%;
+  }
+}

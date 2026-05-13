@@ -119,3 +119,25 @@
     gap: 10px;
   }
 }
+
+@media (max-width: 760px) {
+  .root {
+    border-radius: 0;
+  }
+
+  .messageText,
+  .nickname,
+  .content {
+    font-size: 0.9375rem;
+  }
+
+  .avatarWrap {
+    flex-basis: 2rem;
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .avatarFallback {
+    font-size: 0.9375rem;
+  }
+}

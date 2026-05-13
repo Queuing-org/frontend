@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
@@ -23,6 +24,7 @@ import type {
 import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
 import { ApiError } from "@/src/shared/api/api-error";
 import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
+import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import {
   clearStoredRoomJoinPassword,
@@ -30,6 +32,7 @@ import {
   writeStoredRoomJoinPassword,
 } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
+import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
 import CurrentRequesterCard from "@/src/features/room/current-requester/ui/CurrentRequesterCard";
@@ -39,11 +42,15 @@ import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import { useMe } from "@/src/entities/user/hooks/useMe";
+import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
+import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
+type MobileRoomTab = "playback" | "queue" | "participants";
 
 type PlaybackState = {
   roomSlug: string;
@@ -54,6 +61,15 @@ type PlaybackState = {
 };
 
 const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
+const MOBILE_ROOM_TABS: {
+  id: MobileRoomTab;
+  iconSrc: string;
+  label: string;
+}[] = [
+  { id: "playback", iconSrc: "/icons/round_arrow.svg", label: "재생" },
+  { id: "queue", iconSrc: "/icons/queue.svg", label: "큐" },
+  { id: "participants", iconSrc: "/icons/hambuger.svg", label: "참가자" },
+];
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   if (!data || typeof data !== "object") {
@@ -158,6 +174,7 @@ export default function RoomPageSongInfo() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const slug = normalizeRoomSlug(params.slug ?? "");
   const backgroundImageSrc = getDefaultRoomImage(getStableRoomImageIndex(slug));
   const joinRequestRef = useRef<{
@@ -177,6 +194,7 @@ export default function RoomPageSongInfo() {
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [livePlaybackStatus, setLivePlaybackStatus] =
     useState<PlaybackState | null>(null);
+  const [mobileTab, setMobileTab] = useState<MobileRoomTab>("playback");
   const floatingWidgets = useFloatingWidgetsState();
 
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
@@ -490,6 +508,158 @@ export default function RoomPageSongInfo() {
     return (
       <div className={styles.statusState}>
         {joinErrorMessage || "방에 입장할 수 없습니다."}
+      </div>
+    );
+  }
+
+  if (isMobileLayout) {
+    const mobileRoomTitle = roomMeta?.title ?? "방 정보";
+    const mobileActiveUsersCount = roomMeta?.activeUsersCount ?? "-";
+    const mobileTags = roomMeta?.tags ?? [];
+
+    return (
+      <div className={`${styles.page} ${styles.mobilePage}`}>
+        <div className={styles.mobileRoomShell}>
+          <header className={styles.mobileRoomHeader}>
+            <div className={styles.mobileTitleRow}>
+              <h1 className={styles.mobileRoomTitle}>{mobileRoomTitle}</h1>
+              <div className={styles.mobileRoomActions}>
+                {isCurrentUserRoomOwner ? (
+                  <UpdateRoomButton slug={slug} />
+                ) : null}
+                <Link
+                  href="/home"
+                  replace
+                  className={styles.mobileExitLink}
+                  aria-label="방 나가기"
+                >
+                  나가기
+                </Link>
+              </div>
+            </div>
+            <div className={styles.mobileMetaRow}>
+              <div className={styles.mobileMetaChips}>
+                <span className={styles.mobileUsersChip}>
+                  {mobileActiveUsersCount}명
+                </span>
+                {roomMeta?.hasPassword ? (
+                  <span className={styles.mobileLockChip}>비공개</span>
+                ) : null}
+                {mobileTags.length > 0 ? (
+                  mobileTags.map((tag) => (
+                    <span key={tag.slug} className={styles.mobileTagChip}>
+                      {tag.name}
+                    </span>
+                  ))
+                ) : (
+                  <span className={styles.mobileTagChip}>태그없음</span>
+                )}
+              </div>
+              <AddTrackAction
+                className={styles.mobileHeaderAddTrack}
+                label="노래 신청"
+                loginLabel="로그인"
+                slug={slug}
+                variant="queueDock"
+              />
+            </div>
+          </header>
+          <main className={styles.mobileRoomContent}>
+            {mobileTab === "playback" ? (
+              <section
+                className={styles.mobilePlaybackPanel}
+                aria-label="재생 화면"
+              >
+                <YouTubePlayer
+                  key={slug}
+                  videoId={currentVideoId}
+                  playbackStatus={playbackStatus?.status ?? null}
+                  currentTimeMs={playbackStatus?.currentTime ?? null}
+                />
+                {currentRequester ? (
+                  <CurrentRequesterCard
+                    durationMs={currentTrackDurationMs}
+                    isOwner={isCurrentRequesterRoomOwner}
+                    requester={currentRequester}
+                    roomSlug={slug}
+                    trackTitle={currentTrackTitle}
+                  />
+                ) : null}
+                <div className={styles.mobileInlineChat} aria-label="채팅">
+                  <div className={styles.mobileChatList}>
+                    <ChatArea
+                      errorMessage={chatHistoryErrorMessage}
+                      hasOlderMessages={
+                        Boolean(currentUser) && hasOlderChatMessages
+                      }
+                      isLoadingOlderMessages={isLoadingOlderMessages}
+                      messages={chatMessages}
+                      onLoadOlderMessages={handleLoadOlderChatMessages}
+                      scrollToLatestKey={chatScrollToLatestKey}
+                    />
+                  </div>
+                  <div className={styles.mobileChatComposer}>
+                    <RoomChatComposer
+                      disabledReason={chatDisabledReason}
+                      errorMessage={chatSendErrorMessage}
+                      isSending={isChatSending}
+                      onSendMessage={handleSendChatMessage}
+                    />
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {mobileTab === "queue" ? (
+              <section className={styles.mobilePanel} aria-label="큐">
+                <RoomQueuePanel
+                  currentUser={currentUser ?? null}
+                  isCurrentUserLoading={isCurrentUserLoading}
+                  roomMeta={roomMeta ?? null}
+                  roomPassword={roomPassword}
+                  roomSlug={slug}
+                />
+              </section>
+            ) : null}
+
+            {mobileTab === "participants" ? (
+              <section className={styles.mobilePanel} aria-label="참가자">
+                <RoomParticipantsPanel
+                  currentUser={currentUser ?? null}
+                  participants={roomState?.participants ?? []}
+                  roomMeta={roomMeta ?? null}
+                  roomPassword={roomPassword}
+                  roomSlug={slug}
+                />
+              </section>
+            ) : null}
+          </main>
+          <nav className={styles.mobileTabBar} aria-label="방 기능 탭">
+            {MOBILE_ROOM_TABS.map((tab) => {
+              const isActive = mobileTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={styles.mobileTabButton}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => setMobileTab(tab.id)}
+                  data-active={isActive}
+                >
+                  <Image
+                    src={tab.iconSrc}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className={styles.mobileTabIcon}
+                  />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
     );
   }

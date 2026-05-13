@@ -128,3 +128,15 @@
   font-weight: var(--fw-regular);
   line-height: 1.5;
 }
+
+@media (max-width: 760px) {
+  .root {
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  .grid {
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+}

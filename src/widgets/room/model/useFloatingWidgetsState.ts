@@ -55,6 +55,7 @@ export type FloatingWidgetViewState = {
 export type FloatingWidgetsView = Record<WidgetId, FloatingWidgetViewState>;
 
 const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
+const MOBILE_WIDGET_QUERY = "(max-width: 760px)";
 
 const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
   chat: {
@@ -91,8 +92,20 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
   },
 };
 
+function isMobileWidgetViewport() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.matchMedia(MOBILE_WIDGET_QUERY).matches;
+}
+
 function getStoredBoolean(key: string) {
   if (typeof window === "undefined") {
+    return false;
+  }
+
+  if (isMobileWidgetViewport()) {
     return false;
   }
 
@@ -170,6 +183,10 @@ function clampWidgetOffset(
 
 function getStoredWidgetOffset(key: string, widgetId: WidgetId): WidgetOffset {
   if (typeof window === "undefined") {
+    return { x: 0, y: 0 };
+  }
+
+  if (isMobileWidgetViewport()) {
     return { x: 0, y: 0 };
   }
 
@@ -335,10 +352,12 @@ export function useFloatingWidgetsState() {
       setActiveWidget(widgetId);
     }
 
-    window.localStorage.setItem(
-      WIDGET_CONFIG[widgetId].openStorageKey,
-      String(nextValue),
-    );
+    if (!isMobileWidgetViewport()) {
+      window.localStorage.setItem(
+        WIDGET_CONFIG[widgetId].openStorageKey,
+        String(nextValue),
+      );
+    }
   }
 
   function activateWidget(widgetId: WidgetId) {
@@ -353,10 +372,12 @@ export function useFloatingWidgetsState() {
     );
 
     setWidgetOffset(widgetId, nextOffset);
-    window.localStorage.setItem(
-      WIDGET_CONFIG[widgetId].offsetStorageKey,
-      JSON.stringify(nextOffset),
-    );
+    if (!isMobileWidgetViewport()) {
+      window.localStorage.setItem(
+        WIDGET_CONFIG[widgetId].offsetStorageKey,
+        JSON.stringify(nextOffset),
+      );
+    }
   }
 
   const widgets: FloatingWidgetsView = {
