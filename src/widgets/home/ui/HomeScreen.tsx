@@ -7,6 +7,7 @@ import {
 } from "@/src/entities/room/hooks/useFetchRooms";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
+import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
 import {
   DEFAULT_HOME_FILTERS,
   getNextHomeFilters,
@@ -22,7 +23,6 @@ import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
-import { useMe } from "@/src/entities/user/hooks/useMe";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import styles from "./HomeScreen.module.css";
 
@@ -30,13 +30,14 @@ export default function HomeScreen() {
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
-  const [isAuthRequiredModalOpen, setIsAuthRequiredModalOpen] = useState(false);
-  const [authRequiredDescription, setAuthRequiredDescription] = useState(
-    "방 만들기는 로그인 후 이용할 수 있어요.",
-  );
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const { data: me, refetch: refetchMe } = useMe();
+  const {
+    authRequiredDescription,
+    closeAuthRequiredModal,
+    isAuthRequiredModalOpen,
+    requestAuthenticatedAction,
+  } = useAuthenticatedAction("방 만들기는 로그인 후 이용할 수 있어요.");
   const {
     data,
     fetchNextPage,
@@ -78,37 +79,23 @@ export default function HomeScreen() {
     );
   };
 
-  const requestAuthenticatedAction = async (
-    onAuthenticated: () => void,
-    description: string,
-  ) => {
-    if (me) {
-      onAuthenticated();
-      return;
-    }
-
-    const result = await refetchMe();
-
-    if (result.data) {
-      onAuthenticated();
-      return;
-    }
-
-    setAuthRequiredDescription(description);
-    setIsAuthRequiredModalOpen(true);
-  };
-
   const requestCreateRoom = () =>
-    requestAuthenticatedAction(
-      () => setIsCreateRoomModalOpen(true),
-      "방 만들기는 로그인 후 이용할 수 있어요.",
-    );
+    requestAuthenticatedAction({
+      description: "방 만들기는 로그인 후 이용할 수 있어요.",
+      onAuthenticated: () => setIsCreateRoomModalOpen(true),
+    });
 
   const requestOpenFollow = () =>
-    requestAuthenticatedAction(
-      () => setIsFollowModalOpen(true),
-      "친구 기능은 로그인 후 이용할 수 있어요.",
-    );
+    requestAuthenticatedAction({
+      description: "친구 기능은 로그인 후 이용할 수 있어요.",
+      onAuthenticated: () => setIsFollowModalOpen(true),
+    });
+
+  const requestOpenSettings = () =>
+    requestAuthenticatedAction({
+      description: "설정은 로그인 후 이용할 수 있어요.",
+      onAuthenticated: () => setIsSettingsModalOpen(true),
+    });
 
   if (isError && rooms.length === 0 && error)
     return (
@@ -139,7 +126,7 @@ export default function HomeScreen() {
           onSelectFilter={selectRoomListFilter}
           onCreateRoom={requestCreateRoom}
           onOpenFollow={requestOpenFollow}
-          onOpenSettings={() => setIsSettingsModalOpen(true)}
+          onOpenSettings={requestOpenSettings}
           onEnterSelectedRoom={() => {
             if (currentRoom) {
               roomEntry.requestRoomEntry(currentRoom);
@@ -170,7 +157,7 @@ export default function HomeScreen() {
       <AuthRequiredModal
         open={isAuthRequiredModalOpen}
         description={authRequiredDescription}
-        onClose={() => setIsAuthRequiredModalOpen(false)}
+        onClose={closeAuthRequiredModal}
         onLogin={redirectToGoogleLogin}
       />
     </div>

@@ -13,14 +13,8 @@ import {
   joinRoom,
   type JoinRoomResult,
 } from "@/src/entities/room/api/joinRoom";
-import { publishChatMessage } from "@/src/entities/room/api/websocket/publishChatMessage";
-import { subscribeRoomChatEvents } from "@/src/entities/room/api/websocket/subscribeRoomChatEvents";
 import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
-import { subscribeUserRoomEvents } from "@/src/entities/room/api/websocket/subscribeUserRoomEvents";
-import { useRoomChats } from "@/src/entities/room/hooks/useRoomChats";
 import type {
-  ChatMessage,
-  ChatMessageEventData,
   PlaybackSyncData,
   PlaybackStatus,
   WsErrorData,
@@ -45,9 +39,9 @@ import RoomButtonControlBar from "@/src/widgets/room/ui/RoomControlBar";
 import { useFloatingWidgetsState } from "@/src/widgets/room/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/widgets/room/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import { useMe } from "@/src/entities/user/hooks/useMe";
-import type { User } from "@/src/entities/user/model/types";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
@@ -59,8 +53,6 @@ type PlaybackState = {
   serverTimestamp: number;
 };
 
-const CHAT_HISTORY_PAGE_SIZE = 100;
-const MAX_CHAT_CONTENT_LENGTH = 200;
 const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
@@ -80,25 +72,6 @@ function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   );
 }
 
-function isChatMessageData(data: unknown): data is ChatMessageEventData {
-  if (!data || typeof data !== "object") {
-    return false;
-  }
-
-  const candidate = data as Partial<ChatMessageEventData>;
-
-  return (
-    typeof candidate.messageId === "number" &&
-    typeof candidate.messageType === "string" &&
-    typeof candidate.content === "string" &&
-    typeof candidate.senderId === "number" &&
-    typeof candidate.senderNickname === "string" &&
-    (candidate.senderProfileImageUrl === null ||
-      typeof candidate.senderProfileImageUrl === "string") &&
-    typeof candidate.sentAt === "number"
-  );
-}
-
 function isWsErrorData(data: unknown): data is WsErrorData {
   if (!data || typeof data !== "object") {
     return false;
@@ -111,36 +84,6 @@ function isWsErrorData(data: unknown): data is WsErrorData {
     typeof candidate.code === "string" &&
     typeof candidate.message === "string"
   );
-}
-
-function getRecentChatMessages(
-  data: JoinRoomResult["data"],
-): ChatMessage[] {
-  if (!Array.isArray(data?.recentChatMessages)) {
-    return [];
-  }
-
-  return data.recentChatMessages.filter(isChatMessageData);
-}
-
-function mergeUniqueChatMessages(messages: ChatMessage[]) {
-  const seenMessageIds = new Set<number>();
-  const uniqueMessages: ChatMessage[] = [];
-
-  for (const message of messages) {
-    if (seenMessageIds.has(message.messageId)) {
-      continue;
-    }
-
-    seenMessageIds.add(message.messageId);
-    uniqueMessages.push(message);
-  }
-
-  return uniqueMessages;
-}
-
-function getOldestMessageId(messages: ChatMessage[]) {
-  return messages[0]?.messageId ?? null;
 }
 
 function getLatestPlaybackState(
@@ -226,17 +169,6 @@ export default function RoomPageSongInfo() {
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
-  const chatSubscriptionRef = useRef<{
-    slug: string;
-    subscription: StompSubscription;
-  } | null>(null);
-  const userEventSubscriptionRef = useRef<{
-    slug: string;
-    subscription: StompSubscription;
-  } | null>(null);
-  const initialChatHistorySlugRef = useRef<string | null>(null);
-  const currentUserRef = useRef<User | null>(null);
-  const pendingChatSendCountRef = useRef(0);
   const hasRedirectedAfterKickRef = useRef(false);
 
   const [status, setStatus] = useState<JoinStatus>("joining");
@@ -245,17 +177,6 @@ export default function RoomPageSongInfo() {
   const [roomPassword, setRoomPassword] = useState<string | null>(null);
   const [livePlaybackStatus, setLivePlaybackStatus] =
     useState<PlaybackState | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatHistoryCursor, setChatHistoryCursor] = useState<number | null>(
-    null,
-  );
-  const [hasOlderChatMessages, setHasOlderChatMessages] = useState(false);
-  const [chatHistoryErrorMessage, setChatHistoryErrorMessage] = useState("");
-  const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
-  const [chatScrollToLatestKey, setChatScrollToLatestKey] = useState(0);
-  const [isInitializingChatHistory, setIsInitializingChatHistory] =
-    useState(false);
-  const [isChatSending, setIsChatSending] = useState(false);
   const floatingWidgets = useFloatingWidgetsState();
 
   const { data: roomState, refetch: refetchRoomState } = useRoomState(
@@ -266,9 +187,23 @@ export default function RoomPageSongInfo() {
   const { data: roomMeta } = useRoomMeta(status === "joined" ? slug : null);
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const {
-    mutateAsync: loadRoomChats,
-    isPending: isLoadingOlderChatMessages,
-  } = useRoomChats();
+    cleanupSubscriptions: cleanupChatSubscriptions,
+    hasOlderMessages: hasOlderChatMessages,
+    historyErrorMessage: chatHistoryErrorMessage,
+    initializeFromJoinData: initializeChatStateFromJoinData,
+    isLoadingOlderMessages,
+    isSending: isChatSending,
+    loadOlderMessages: handleLoadOlderChatMessages,
+    messages: chatMessages,
+    reset: resetChatState,
+    scrollToLatestKey: chatScrollToLatestKey,
+    sendErrorMessage: chatSendErrorMessage,
+    sendMessage: handleSendChatMessage,
+  } = useRoomChat({
+    currentUser: currentUser ?? null,
+    isEnabled: status === "joined",
+    slug,
+  });
   const playbackStatus = getLatestPlaybackState(
     roomState?.playbackStatus,
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
@@ -284,32 +219,6 @@ export default function RoomPageSongInfo() {
     currentRequester,
   );
 
-  const resetChatState = useCallback(() => {
-    initialChatHistorySlugRef.current = null;
-    pendingChatSendCountRef.current = 0;
-    setChatMessages([]);
-    setChatHistoryCursor(null);
-    setHasOlderChatMessages(false);
-    setChatHistoryErrorMessage("");
-    setChatSendErrorMessage("");
-    setIsInitializingChatHistory(false);
-    setIsChatSending(false);
-  }, []);
-
-  const initializeChatState = useCallback((messages: ChatMessage[]) => {
-    const recentMessages = mergeUniqueChatMessages(messages);
-
-    pendingChatSendCountRef.current = 0;
-    setChatMessages(recentMessages);
-    setChatHistoryCursor(getOldestMessageId(recentMessages));
-    setHasOlderChatMessages(recentMessages.length > 0);
-    setChatHistoryErrorMessage("");
-    setChatSendErrorMessage("");
-    setChatScrollToLatestKey((currentKey) => currentKey + 1);
-    setIsInitializingChatHistory(false);
-    setIsChatSending(false);
-  }, []);
-
   const cleanupRoomSubscription = useCallback(() => {
     if (!roomSubscriptionRef.current) {
       return;
@@ -322,34 +231,6 @@ export default function RoomPageSongInfo() {
     }
 
     roomSubscriptionRef.current = null;
-  }, []);
-
-  const cleanupChatSubscription = useCallback(() => {
-    if (!chatSubscriptionRef.current) {
-      return;
-    }
-
-    try {
-      chatSubscriptionRef.current.subscription.unsubscribe();
-    } catch {
-      // The socket may already be closing while the page is leaving.
-    }
-
-    chatSubscriptionRef.current = null;
-  }, []);
-
-  const cleanupUserEventSubscription = useCallback(() => {
-    if (!userEventSubscriptionRef.current) {
-      return;
-    }
-
-    try {
-      userEventSubscriptionRef.current.subscription.unsubscribe();
-    } catch {
-      // The socket may already be closing while the page is leaving.
-    }
-
-    userEventSubscriptionRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -379,8 +260,7 @@ export default function RoomPageSongInfo() {
 
         hasRedirectedAfterKickRef.current = true;
         cleanupRoomSubscription();
-        cleanupChatSubscription();
-        cleanupUserEventSubscription();
+        cleanupChatSubscriptions();
         clearStoredRoomJoinPassword(slug);
         resetChatState();
         setStatus("error");
@@ -392,9 +272,8 @@ export default function RoomPageSongInfo() {
       },
     });
   }, [
-    cleanupChatSubscription,
+    cleanupChatSubscriptions,
     cleanupRoomSubscription,
-    cleanupUserEventSubscription,
     queryClient,
     resetChatState,
     router,
@@ -477,269 +356,6 @@ export default function RoomPageSongInfo() {
     [cleanupRoomSubscription, queryClient, refetchRoomState],
   );
 
-  const ensureChatSubscription = useCallback(
-    (roomSlug: string) => {
-      if (chatSubscriptionRef.current?.slug === roomSlug) {
-        return;
-      }
-
-      cleanupChatSubscription();
-
-      chatSubscriptionRef.current = {
-        slug: roomSlug,
-        subscription: subscribeRoomChatEvents(roomSlug, ({ body }) => {
-          if (!body) return;
-
-          let event: WsEvent;
-          try {
-            event = JSON.parse(body) as WsEvent;
-          } catch {
-            return;
-          }
-
-          if (
-            event.roomSlug !== roomSlug ||
-            event.type !== "CHAT_MESSAGE" ||
-            !isChatMessageData(event.data)
-          ) {
-            return;
-          }
-
-          const chatMessage = event.data;
-          setChatMessages((currentMessages) =>
-            mergeUniqueChatMessages([...currentMessages, chatMessage]),
-          );
-
-          const currentUserValue = currentUserRef.current;
-          if (
-            currentUserValue?.userId != null &&
-            currentUserValue.userId === chatMessage.senderId
-          ) {
-            setChatSendErrorMessage("");
-            pendingChatSendCountRef.current = Math.max(
-              0,
-              pendingChatSendCountRef.current - 1,
-            );
-          }
-        }),
-      };
-    },
-    [cleanupChatSubscription],
-  );
-
-  const ensureUserEventSubscription = useCallback(
-    (roomSlug: string) => {
-      if (userEventSubscriptionRef.current?.slug === roomSlug) {
-        return;
-      }
-
-      cleanupUserEventSubscription();
-
-      userEventSubscriptionRef.current = {
-        slug: roomSlug,
-        subscription: subscribeUserRoomEvents(({ body }) => {
-          if (!body) return;
-
-          let event: WsEvent;
-          try {
-            event = JSON.parse(body) as WsEvent;
-          } catch {
-            return;
-          }
-
-          if (
-            event.roomSlug !== roomSlug ||
-            event.type !== "ERROR" ||
-            pendingChatSendCountRef.current <= 0 ||
-            !isWsErrorData(event.data)
-          ) {
-            return;
-          }
-
-          pendingChatSendCountRef.current = Math.max(
-            0,
-            pendingChatSendCountRef.current - 1,
-          );
-          setIsChatSending(false);
-          setChatSendErrorMessage(
-            event.data.message || "채팅을 전송하지 못했습니다.",
-          );
-        }),
-      };
-    },
-    [cleanupUserEventSubscription],
-  );
-
-  const loadInitialChatHistory = useCallback(() => {
-    if (!slug || !currentUser) {
-      return;
-    }
-
-    setIsInitializingChatHistory(true);
-    setChatHistoryErrorMessage("");
-
-    void (async () => {
-      const loadedOlderMessages: ChatMessage[] = [];
-      const visitedCursors = new Set<number>();
-      let cursor: number | null = getOldestMessageId(chatMessages);
-      let isFirstRequest = chatMessages.length === 0;
-      let shouldFetch =
-        isFirstRequest ||
-        (hasOlderChatMessages && typeof cursor === "number");
-
-      try {
-        while (shouldFetch) {
-          if (typeof cursor === "number") {
-            visitedCursors.add(cursor);
-          }
-
-          const result = await loadRoomChats({
-            cursorId: isFirstRequest ? undefined : cursor,
-            size: CHAT_HISTORY_PAGE_SIZE,
-            slug,
-          });
-          const pageMessages = result.items
-            .filter(isChatMessageData)
-            .reverse();
-
-          loadedOlderMessages.unshift(...pageMessages);
-
-          cursor = result.nextCursor;
-          isFirstRequest = false;
-          shouldFetch =
-            result.hasNext &&
-            typeof cursor === "number" &&
-            !visitedCursors.has(cursor);
-        }
-
-        setChatMessages((currentMessages) =>
-          mergeUniqueChatMessages([...loadedOlderMessages, ...currentMessages]),
-        );
-        setChatHistoryCursor(cursor);
-        setHasOlderChatMessages(false);
-        setChatScrollToLatestKey((currentKey) => currentKey + 1);
-      } catch (error) {
-        const err = error as ApiError;
-        setChatHistoryErrorMessage(
-          err.message || "채팅 기록을 불러오지 못했습니다.",
-        );
-      } finally {
-        setIsInitializingChatHistory(false);
-      }
-    })();
-  }, [
-    chatMessages,
-    currentUser,
-    hasOlderChatMessages,
-    loadRoomChats,
-    slug,
-  ]);
-
-  const handleLoadOlderChatMessages = useCallback(() => {
-    if (
-      !slug ||
-      !currentUser ||
-      !hasOlderChatMessages ||
-      isLoadingOlderChatMessages ||
-      isInitializingChatHistory
-    ) {
-      return;
-    }
-
-    if (typeof chatHistoryCursor !== "number") {
-      setHasOlderChatMessages(false);
-      return;
-    }
-
-    setChatHistoryErrorMessage("");
-
-    void (async () => {
-      try {
-        const result = await loadRoomChats({
-          cursorId: chatHistoryCursor,
-          size: CHAT_HISTORY_PAGE_SIZE,
-          slug,
-        });
-        const olderMessages = result.items
-          .filter(isChatMessageData)
-          .reverse();
-
-        setChatMessages((currentMessages) =>
-          mergeUniqueChatMessages([...olderMessages, ...currentMessages]),
-        );
-        setChatHistoryCursor(result.nextCursor);
-        setHasOlderChatMessages(
-          result.hasNext && typeof result.nextCursor === "number",
-        );
-      } catch (error) {
-        const err = error as ApiError;
-        setChatHistoryErrorMessage(
-          err.message || "이전 채팅을 불러오지 못했습니다.",
-        );
-      }
-    })();
-  }, [
-    chatHistoryCursor,
-    currentUser,
-    hasOlderChatMessages,
-    isInitializingChatHistory,
-    isLoadingOlderChatMessages,
-    loadRoomChats,
-    slug,
-  ]);
-
-  const handleSendChatMessage = useCallback(
-    (message: string) => {
-      const trimmedMessage = message.trim();
-
-      if (!slug || status !== "joined") {
-        setChatSendErrorMessage("방 입장 후 채팅할 수 있습니다.");
-        return false;
-      }
-
-      if (!currentUser) {
-        setChatSendErrorMessage("로그인 후 채팅할 수 있습니다.");
-        return false;
-      }
-
-      if (!trimmedMessage) {
-        setChatSendErrorMessage("채팅 내용을 입력해주세요.");
-        return false;
-      }
-
-      if (trimmedMessage.length > MAX_CHAT_CONTENT_LENGTH) {
-        setChatSendErrorMessage("채팅은 200자 이하로 입력해주세요.");
-        return false;
-      }
-
-      setChatSendErrorMessage("");
-      setIsChatSending(true);
-      pendingChatSendCountRef.current += 1;
-
-      try {
-        publishChatMessage(slug, {
-          content: trimmedMessage,
-          messageType: "TEXT",
-        });
-        setIsChatSending(false);
-        return true;
-      } catch (error) {
-        pendingChatSendCountRef.current = Math.max(
-          0,
-          pendingChatSendCountRef.current - 1,
-        );
-        setIsChatSending(false);
-        setChatSendErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "채팅 전송 요청을 보내지 못했습니다.",
-        );
-        return false;
-      }
-    },
-    [currentUser, slug, status],
-  );
-
   async function handlePasswordSubmit(password: string) {
     if (!slug) return;
 
@@ -749,7 +365,7 @@ export default function RoomPageSongInfo() {
     try {
       const joinResult = await joinRoom(slug, { password });
       writeStoredRoomJoinPassword(slug, password);
-      initializeChatState(getRecentChatMessages(joinResult.data));
+      initializeChatStateFromJoinData(joinResult.data);
       setRoomPassword(password);
       ensureRoomSubscription(slug);
       setStatus("joined");
@@ -798,7 +414,7 @@ export default function RoomPageSongInfo() {
         const joinResult = await currentJoinRequest.promise;
         if (!isActive) return;
 
-        initializeChatState(getRecentChatMessages(joinResult.data));
+        initializeChatStateFromJoinData(joinResult.data);
         ensureRoomSubscription(slug);
         setRoomPassword(storedPassword);
         setStatus("joined");
@@ -831,51 +447,9 @@ export default function RoomPageSongInfo() {
   }, [
     cleanupRoomSubscription,
     ensureRoomSubscription,
-    initializeChatState,
+    initializeChatStateFromJoinData,
     resetChatState,
     slug,
-  ]);
-
-  useEffect(() => {
-    currentUserRef.current = currentUser ?? null;
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (
-      status !== "joined" ||
-      !slug ||
-      !currentUser ||
-      initialChatHistorySlugRef.current === slug
-    ) {
-      return;
-    }
-
-    initialChatHistorySlugRef.current = slug;
-    loadInitialChatHistory();
-  }, [currentUser, loadInitialChatHistory, slug, status]);
-
-  useEffect(() => {
-    if (status !== "joined" || !slug || !currentUser) {
-      cleanupChatSubscription();
-      cleanupUserEventSubscription();
-      return;
-    }
-
-    ensureChatSubscription(slug);
-    ensureUserEventSubscription(slug);
-
-    return () => {
-      cleanupChatSubscription();
-      cleanupUserEventSubscription();
-    };
-  }, [
-    cleanupChatSubscription,
-    cleanupUserEventSubscription,
-    currentUser,
-    ensureChatSubscription,
-    ensureUserEventSubscription,
-    slug,
-    status,
   ]);
 
   useEffect(() => {
@@ -966,9 +540,7 @@ export default function RoomPageSongInfo() {
             <ChatArea
               errorMessage={chatHistoryErrorMessage}
               hasOlderMessages={Boolean(currentUser) && hasOlderChatMessages}
-              isLoadingOlderMessages={
-                isLoadingOlderChatMessages || isInitializingChatHistory
-              }
+              isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
               scrollToLatestKey={chatScrollToLatestKey}
