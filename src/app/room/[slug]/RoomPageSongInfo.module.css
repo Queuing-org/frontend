@@ -52,6 +52,7 @@
   backdrop-filter: blur(8px);
   box-sizing: border-box;
   padding: var(--panel-horizontal-padding);
+  padding-top: 60px;
   padding-bottom: var(--control-bar-reserved-space);
   overflow: hidden;
 }

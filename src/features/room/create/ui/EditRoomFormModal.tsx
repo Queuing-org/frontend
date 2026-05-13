@@ -88,6 +88,14 @@ export default function EditRoomFormModal({
     });
   };
 
+  const updatePasswordEnabled = (enabled: boolean) => {
+    setIsPasswordEnabled(enabled);
+
+    if (!enabled) {
+      setPassword("");
+    }
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -97,16 +105,19 @@ export default function EditRoomFormModal({
 
     const updatePayload: UpdateRoomPayload = {};
 
-    if (trimmedTitle !== initialTitle.trim()) {
-      updatePayload.title = trimmedTitle;
-    }
-
     if (!haveSameItems(selectedTagSlugs, initialTagSlugs)) {
       updatePayload.tags = selectedTagSlugs;
     }
 
     if (isPasswordEnabled && trimmedPassword) {
       updatePayload.password = trimmedPassword;
+    }
+
+    if (
+      trimmedTitle !== initialTitle.trim() ||
+      Object.keys(updatePayload).length > 0
+    ) {
+      updatePayload.title = trimmedTitle;
     }
 
     if (Object.keys(updatePayload).length === 0) {
@@ -172,22 +183,21 @@ export default function EditRoomFormModal({
           </label>
 
           <div className={styles.field}>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={isPasswordEnabled}
-                onChange={(event) => {
-                  setIsPasswordEnabled(event.target.checked);
-
-                  if (!event.target.checked) {
-                    setPassword("");
-                  }
-                }}
-                disabled={isSubmitting}
+            <button
+              type="button"
+              className={styles.checkboxRow}
+              role="checkbox"
+              aria-checked={isPasswordEnabled}
+              onClick={() => updatePasswordEnabled(!isPasswordEnabled)}
+              disabled={isSubmitting}
+            >
+              <span
+                className={styles.checkboxBox}
+                data-checked={isPasswordEnabled}
+                aria-hidden="true"
               />
               <span className={styles.label}>비밀번호 설정</span>
-            </label>
+            </button>
 
             {isPasswordEnabled ? (
               <input
