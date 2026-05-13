@@ -1,6 +1,10 @@
 import type { StompSubscription } from "@stomp/stompjs";
 import { ApiError } from "@/src/shared/api/api-error";
-import type { WsErrorData, WsEvent } from "@/src/entities/room/model/types";
+import type {
+  RoomJoinedData,
+  WsErrorData,
+  WsEvent,
+} from "@/src/entities/room/model/types";
 import type { JoinRoomResult } from "../joinRoom.types";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
 
@@ -12,6 +16,14 @@ export type JoinHandlers = {
 };
 
 const USER_EVENTS_DESTINATION = "/user/playlist/events";
+
+function getRoomJoinedData(data: unknown): RoomJoinedData | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  return data as RoomJoinedData;
+}
 
 // 유저 전용 토픽에서 현재 방 join 결과만 골라서 전달한다.
 export function subscribeUserJoinEvents(
@@ -39,7 +51,7 @@ export function subscribeUserJoinEvents(
       handlers.onJoined({
         roomSlug: eventRoomSlug,
         timestamp: event.timestamp ?? Date.now(),
-        data: event.data ?? null,
+        data: getRoomJoinedData(event.data),
       });
       return;
     }

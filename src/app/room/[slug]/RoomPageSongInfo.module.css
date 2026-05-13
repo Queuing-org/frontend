@@ -1,7 +1,27 @@
 .page {
-  background-color: lightgray;
+  position: relative;
+  overflow: hidden;
+  background-color: #d9d9d9;
   height: 100vh;
   display: flow-root;
+}
+
+.backgroundImageFrame {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  width: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.backgroundImage {
+  object-fit: cover;
 }
 
 .container {
@@ -86,6 +106,8 @@
   display: flex;
   flex: 1;
   min-height: 0;
+  margin-right: -16px;
+  margin-left: -16px;
   overflow: hidden;
 }
 

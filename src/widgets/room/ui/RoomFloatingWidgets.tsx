@@ -14,14 +14,19 @@ import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/
 import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
+import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
+  chatDisabledReason?: string;
+  chatErrorMessage?: string;
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
   currentUser: User | null;
+  isChatSending: boolean;
   isCurrentUserLoading: boolean;
+  onSendChatMessage: (message: string) => boolean;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
   participants: PlaylistParticipant[];
@@ -32,10 +37,14 @@ type Props = {
 };
 
 export default function RoomFloatingWidgets({
+  chatDisabledReason,
+  chatErrorMessage,
   currentRequester,
   currentTrackTitle,
   currentUser,
+  isChatSending,
   isCurrentUserLoading,
+  onSendChatMessage,
   onActivateWidget,
   onWidgetStop,
   participants,
@@ -168,12 +177,17 @@ export default function RoomFloatingWidgets({
           >
             <div ref={chatWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                compactHeader
+                contentClassName={styles.chatPanelContent}
                 height={widgets.chat.height}
                 width={widgets.chat.width}
               >
-                <div className={styles.widgetPlaceholder}>
-                  채팅 모달입니다. (개발중)
-                </div>
+                <RoomChatComposer
+                  disabledReason={chatDisabledReason}
+                  errorMessage={chatErrorMessage}
+                  isSending={isChatSending}
+                  onSendMessage={onSendChatMessage}
+                />
               </FloatingRoomPanelShell>
             </div>
           </Draggable>

@@ -3,7 +3,10 @@
 import JoinRoomButton from "@/src/features/room/join/ui/JoinRoomButton";
 import DeleteRoomButton from "@/src/features/room/delete/ui/DeleteRoomButton";
 import RoomCardTemp from "@/src/entities/room/ui/RoomCardTemp";
-import { useRoomsQuery } from "@/src/entities/room/hooks/useFetchRooms";
+import {
+  getRoomsFromPages,
+  useRoomsQuery,
+} from "@/src/entities/room/hooks/useFetchRooms";
 
 export default function RoomsListTest() {
   const { data, isLoading, isError, error } = useRoomsQuery();
@@ -19,7 +22,7 @@ export default function RoomsListTest() {
     );
   }
 
-  const rooms = data?.rooms ?? [];
+  const rooms = getRoomsFromPages(data);
 
   return (
     <div className="border p-4 space-y-3 text-black">

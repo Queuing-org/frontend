@@ -1,0 +1,121 @@
+.root {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  padding: 14px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.avatarWrap {
+  position: relative;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f4f4f4;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.avatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #3c3c3c;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.messageText {
+  flex: 1;
+  min-width: 0;
+  margin: 6px 0 0;
+  color: #4f4f4f;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.34;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.nickname {
+  margin-right: 12px;
+  color: #8d8d8d;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: inherit;
+}
+
+.content {
+  color: inherit;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: inherit;
+}
+
+.state,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  color: rgba(0, 0, 0, 0.48);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.error {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(146, 45, 45, 0.12);
+  color: #8a2f2f;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 520px) {
+  .list {
+    padding: 12px;
+  }
+
+  .message {
+    gap: 10px;
+  }
+}

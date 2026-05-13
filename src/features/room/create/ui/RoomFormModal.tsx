@@ -1,27 +1,19 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { UpdateRoomPayload } from "@/src/entities/room/api/types";
 import { useRoomTags } from "@/src/entities/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
-import { useUpdateRoom } from "@/src/features/room/update/model/useUpdateRoom";
+import CreateBasicInfoStep from "./CreateBasicInfoStep";
+import CreateGenreStep from "./CreateGenreStep";
+import CreateSettingsStep, {
+  type ParticipationMode,
+} from "./CreateSettingsStep";
+import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
 const MAX_TAGS = 5;
 const MAX_ROOM_TITLE_LENGTH = 18;
-const DEFAULT_MAX_USERS = "100";
-const DEFAULT_TRACK_LIMIT_MINUTES = "5";
 const EMPTY_TAG_SLUGS: string[] = [];
-
-function haveSameItems(left: string[], right: string[]) {
-  if (left.length !== right.length) {
-    return false;
-  }
-
-  const rightItems = new Set(right);
-
-  return left.every((item) => rightItems.has(item));
-}
 
 type RoomFormModalMode = "create" | "edit";
 
@@ -35,6 +27,12 @@ type RoomFormModalProps = {
   onClose: () => void;
 };
 
+const createSteps = [
+  { label: "기본 정보", title: "기본 정보" },
+  { label: "장르 선택", title: "장르 선택" },
+  { label: "세부 설정", title: "세부 설정" },
+] as const;
+
 export default function RoomFormModal({
   open,
   mode,
@@ -44,49 +42,54 @@ export default function RoomFormModal({
   initialHasPassword = false,
   onClose,
 }: RoomFormModalProps) {
+  if (!open) {
+    return null;
+  }
+
+  if (mode === "edit") {
+    return (
+      <EditRoomFormModal
+        open={open}
+        roomSlug={roomSlug}
+        initialTitle={initialTitle}
+        initialTagSlugs={initialTagSlugs}
+        initialHasPassword={initialHasPassword}
+        onClose={onClose}
+      />
+    );
+  }
+
+  return <CreateRoomFormModal onClose={onClose} />;
+}
+
+type CreateRoomFormModalProps = {
+  onClose: () => void;
+};
+
+function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const createRoomMutation = useCreateRoom();
-  const updateRoomMutation = useUpdateRoom();
   const {
     data: roomTags,
     isLoading: tagsLoading,
     isError: tagsError,
   } = useRoomTags();
-  const [title, setTitle] = useState(() => initialTitle);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
-  const [isPasswordEnabled, setIsPasswordEnabled] = useState(
-    () => initialHasPassword,
-  );
-  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
-    initialTagSlugs.slice(0, MAX_TAGS),
-  );
-  const [maxUsers, setMaxUsers] = useState(() => DEFAULT_MAX_USERS);
-  const [trackLimitMinutes, setTrackLimitMinutes] = useState(
-    () => DEFAULT_TRACK_LIMIT_MINUTES,
-  );
+  const [participationMode, setParticipationMode] =
+    useState<ParticipationMode>("public");
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+  const [didTryFinish, setDidTryFinish] = useState(false);
 
-  if (!open) {
-    return null;
-  }
-
-  const isCreateMode = mode === "create";
-  const isSubmitting = isCreateMode
-    ? createRoomMutation.isPending
-    : updateRoomMutation.isPending;
-  const submitError = isCreateMode
-    ? createRoomMutation.error
-    : updateRoomMutation.error;
   const tags = roomTags ?? [];
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
-  const isPasswordRequired =
-    isPasswordEnabled &&
-    trimmedPassword.length === 0 &&
-    (isCreateMode || !initialHasPassword);
-  const canSubmit =
-    trimmedTitle.length > 0 &&
-    !isPasswordRequired &&
-    !isSubmitting &&
-    (isCreateMode || !!roomSlug);
+  const isSubmitting = createRoomMutation.isPending;
+  const needsPassword =
+    participationMode === "password" && trimmedPassword.length === 0;
+  const canGoNext =
+    currentStep === 0 ? trimmedTitle.length > 0 && !isSubmitting : !isSubmitting;
+  const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
     setSelectedTagSlugs((previousSlugs) => {
@@ -104,233 +107,201 @@ export default function RoomFormModal({
     });
   };
 
+  const goToPreviousStep = () => {
+    setCurrentStep((step) => Math.max(step - 1, 0));
+  };
+
+  const goToNextStep = () => {
+    if (!canGoNext) {
+      return;
+    }
+
+    setCurrentStep((step) => Math.min(step + 1, createSteps.length - 1));
+  };
+
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (currentStep < createSteps.length - 1) {
+      goToNextStep();
+      return;
+    }
+
+    setDidTryFinish(true);
+
     if (!trimmedTitle) {
+      setCurrentStep(0);
       return;
     }
 
-    if (isPasswordRequired) {
+    if (needsPassword || isSubmitting) {
       return;
     }
 
-    if (isCreateMode) {
-      createRoomMutation.mutate({
-        title: trimmedTitle,
-        password:
-          isPasswordEnabled && trimmedPassword ? trimmedPassword : undefined,
-        tags: selectedTagSlugs,
-      });
-      return;
+    createRoomMutation.mutate({
+      title: trimmedTitle,
+      password:
+        participationMode === "password" && trimmedPassword
+          ? trimmedPassword
+          : undefined,
+      tags: selectedTagSlugs,
+    });
+  };
+
+  const renderStepContent = () => {
+    if (currentStep === 0) {
+      return (
+        <CreateBasicInfoStep
+          title={title}
+          maxTitleLength={MAX_ROOM_TITLE_LENGTH}
+          disabled={isSubmitting}
+          onTitleChange={(nextTitle) =>
+            setTitle(nextTitle.slice(0, MAX_ROOM_TITLE_LENGTH))
+          }
+        />
+      );
     }
 
-    if (!roomSlug) {
-      return;
+    if (currentStep === 1) {
+      return (
+        <CreateGenreStep
+          tags={tags}
+          selectedTagSlugs={selectedTagSlugs}
+          maxTags={MAX_TAGS}
+          tagsLoading={tagsLoading}
+          tagsError={tagsError}
+          disabled={isSubmitting}
+          onToggleTag={toggleTag}
+        />
+      );
     }
 
-    const updatePayload: UpdateRoomPayload = {};
+    return (
+      <CreateSettingsStep
+        participationMode={participationMode}
+        password={password}
+        disabled={isSubmitting}
+        showPasswordError={didTryFinish && needsPassword}
+        onParticipationModeChange={(mode) => {
+          setParticipationMode(mode);
+          setDidTryFinish(false);
 
-    if (trimmedTitle !== initialTitle.trim()) {
-      updatePayload.title = trimmedTitle;
-    }
-
-    if (!haveSameItems(selectedTagSlugs, initialTagSlugs)) {
-      updatePayload.tags = selectedTagSlugs;
-    }
-
-    if (isPasswordEnabled && trimmedPassword) {
-      updatePayload.password = trimmedPassword;
-    }
-
-    if (Object.keys(updatePayload).length === 0) {
-      onClose();
-      return;
-    }
-
-    updateRoomMutation.mutate(
-      {
-        slug: roomSlug,
-        payload: updatePayload,
-      },
-      {
-        onSuccess: onClose,
-      },
+          if (mode === "public") {
+            setPassword("");
+          }
+        }}
+        onPasswordChange={(nextPassword) => {
+          setPassword(nextPassword);
+          setDidTryFinish(false);
+        }}
+      />
     );
   };
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
-      <div
+      <section
         className={styles.modal}
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="room-form-modal-title"
+        aria-labelledby="room-create-modal-title"
       >
-        <button
-          type="button"
-          className={styles.closeButton}
-          onClick={onClose}
-          aria-label="모달 닫기"
-        >
-          <span className={styles.closeIcon} aria-hidden="true" />
-        </button>
-
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <h2 id="room-form-modal-title" className={styles.modeBadge}>
-            {isCreateMode ? "CREATE" : "EDIT"}
+        <header className={styles.header}>
+          <h2 id="room-create-modal-title" className={styles.modalTitle}>
+            CREATE
           </h2>
+        </header>
 
-          <button
-            type="button"
-            className={styles.thumbnailButton}
-            aria-label="방 썸네일 선택"
-          >
-            <span className={styles.cameraIcon} aria-hidden="true" />
-            <span className={styles.thumbnailText}>THUMBNAIL</span>
-          </button>
+        <form className={styles.content} onSubmit={handleSubmit}>
+          <aside className={styles.sidebar} aria-label="방 만들기 단계">
+            <ol className={styles.stepList}>
+              {createSteps.map((step, index) => {
+                const isCurrent = index === currentStep;
+                const isCompleted = index < currentStep;
+                const isReachable = index <= currentStep;
 
-          <label className={styles.field}>
-            <span className={styles.label}>큐 이름</span>
-            <input
-              className={styles.input}
-              value={title}
-              onChange={(event) =>
-                setTitle(event.target.value.slice(0, MAX_ROOM_TITLE_LENGTH))
-              }
-              maxLength={MAX_ROOM_TITLE_LENGTH}
-              placeholder="작업 효율 200% 높여주는 노래"
-              disabled={isSubmitting}
-            />
-          </label>
+                return (
+                  <li
+                    key={step.label}
+                    className={styles.stepItem}
+                    data-state={
+                      isCurrent
+                        ? "current"
+                        : isCompleted
+                          ? "completed"
+                          : "upcoming"
+                    }
+                  >
+                    <button
+                      type="button"
+                      className={styles.stepButton}
+                      disabled={!isReachable || isSubmitting}
+                      onClick={() => setCurrentStep(index)}
+                      aria-current={isCurrent ? "step" : undefined}
+                    >
+                      <span className={styles.stepNumber}>{index + 1}</span>
+                      <span className={styles.stepLabel}>{step.label}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </aside>
 
-          <div className={styles.field}>
-            <label className={styles.checkboxRow}>
-              <input
-                type="checkbox"
-                className={styles.checkbox}
-                checked={isPasswordEnabled}
-                onChange={(event) => {
-                  setIsPasswordEnabled(event.target.checked);
-
-                  if (!event.target.checked) {
-                    setPassword("");
-                  }
-                }}
-                disabled={isSubmitting}
-              />
-              <span className={styles.label}>비밀번호 설정</span>
-            </label>
-
-            {isPasswordEnabled ? (
-              <input
-                className={styles.input}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder={
-                  isCreateMode
-                    ? "비밀번호를 입력하세요"
-                    : "새 비밀번호 입력 시 변경됩니다"
-                }
-                disabled={isSubmitting}
-              />
-            ) : null}
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.labelRow}>
-              <span className={styles.label}>큐 장르</span>
-              <span className={styles.helperText}>
-                {selectedTagSlugs.length}/{MAX_TAGS}
-              </span>
+          <main className={styles.main}>
+            <div className={styles.stepHeader}>
+              <h3 className={styles.stepTitle}>{stepTitle}</h3>
+              {currentStep === 1 ? (
+                <span className={styles.stepMeta}>
+                  {selectedTagSlugs.length}/{MAX_TAGS}
+                </span>
+              ) : null}
             </div>
 
-            {tagsLoading ? (
-              <div className={styles.helperText}>장르 불러오는 중...</div>
+            <div className={styles.stepBody}>{renderStepContent()}</div>
+
+            {createRoomMutation.error ? (
+              <p className={styles.errorText}>
+                생성 실패: ({createRoomMutation.error.status}){" "}
+                {createRoomMutation.error.message}
+              </p>
             ) : null}
-            {tagsError ? (
-              <div className={styles.errorText}>장르를 불러오지 못했어요.</div>
-            ) : null}
-            {!tagsLoading && !tagsError ? (
-              <div className={styles.tagGrid}>
-                {tags.map((tag) => {
-                  const selected = selectedTagSlugs.includes(tag.slug);
-                  const disabled =
-                    !selected && selectedTagSlugs.length >= MAX_TAGS;
 
-                  return (
-                    <button
-                      key={tag.slug}
-                      type="button"
-                      className={styles.tagChip}
-                      data-selected={selected}
-                      disabled={isSubmitting || disabled}
-                      onClick={() => toggleTag(tag.slug)}
-                    >
-                      {tag.name}
-                    </button>
-                  );
-                })}
-                {tags.length === 0 ? (
-                  <span className={styles.helperText}>장르가 없습니다.</span>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+            <div className={styles.actions}>
+              {currentStep > 0 ? (
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={goToPreviousStep}
+                  disabled={isSubmitting}
+                >
+                  이전
+                </button>
+              ) : null}
 
-          <div className={styles.twoColumn}>
-            <label className={styles.field}>
-              <span className={styles.label}>최대 인원 수</span>
-              <select
-                className={styles.select}
-                value={maxUsers}
-                onChange={(event) => setMaxUsers(event.target.value)}
-              >
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200">200</option>
-              </select>
-            </label>
-
-            <label className={styles.field}>
-              <span className={styles.label}>곡 당 제한 시간 (분)</span>
-              <select
-                className={styles.select}
-                value={trackLimitMinutes}
-                onChange={(event) => setTrackLimitMinutes(event.target.value)}
-              >
-                <option value="3">3</option>
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-              </select>
-            </label>
-          </div>
-
-          {submitError ? (
-            <p className={styles.errorText}>
-              {isCreateMode ? "생성" : "수정"} 실패: ({submitError.status}){" "}
-              {submitError.message}
-            </p>
-          ) : null}
-
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={!canSubmit}
-          >
-            {isCreateMode
-              ? isSubmitting
-                ? "방 만드는 중..."
-                : "방 만들기"
-              : isSubmitting
-                ? "큐 수정 중..."
-                : "큐 수정하기"}
-          </button>
+              {currentStep < createSteps.length - 1 ? (
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={goToNextStep}
+                  disabled={!canGoNext}
+                >
+                  다음
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  className={styles.primaryButton}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "완료 중" : "완료"}
+                </button>
+              )}
+            </div>
+          </main>
         </form>
-      </div>
+      </section>
     </div>
   );
 }

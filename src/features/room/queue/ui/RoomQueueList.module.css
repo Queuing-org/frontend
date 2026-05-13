@@ -10,9 +10,9 @@
   justify-content: center;
   min-height: 100%;
   padding: 32px 20px;
-  color: rgba(255, 255, 255, 0.72);
+  color: #8d8d8d;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: var(--fw-regular);
   line-height: 1.5;
   text-align: center;
 }

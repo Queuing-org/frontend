@@ -40,7 +40,7 @@ export default function RoomParticipantCard({
           <div className={styles.nickname}>{participant.nickname}</div>
           {isOwner ? (
             <Image
-              src="/icons/owner.svg"
+              src="/icons/onwer_black.svg"
               alt="방장"
               width={18}
               height={18}

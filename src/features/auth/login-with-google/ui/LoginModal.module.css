@@ -1,7 +1,7 @@
 .modalOverlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: 1200;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -17,10 +17,11 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  border-radius: 30px;
+  border: 0.5px solid #d9d9d9;
+  border-radius: 20px;
   background: #ffffff;
-  color: #252525;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26);
+  color: #3c3c3c;
+  box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
 }
 
 .modalLogo {
@@ -31,9 +32,9 @@
   justify-content: center;
   margin-bottom: 20px;
   overflow: hidden;
-  border: 1px solid #b0b0b5;
+  border: 1px solid #e9ebee;
   border-radius: 999px;
-  background: #000000;
+  background: #ffffff;
 }
 
 .modalLogoImage {
@@ -56,9 +57,9 @@
 .modalDescription {
   max-width: 620px;
   margin: 5px 0 34px;
-  color: #b0b0b5;
+  color: #8d8d8d;
   font-size: 14px;
-  font-weight: 300;
+  font-weight: var(--fw-regular);
   line-height: 1.4;
   text-align: center;
 }
@@ -69,14 +70,14 @@
   width: min(333px, 100%);
   height: 1px;
   margin: 20px 0 20px;
-  background: #f1f0ec;
+  background: #e9ebee;
   border-radius: 999px;
 }
 
 .policyText {
   max-width: 360px;
   margin: 0;
-  color: #b0b0b5;
+  color: #8d8d8d;
   font-size: 12px;
   font-weight: var(--fw-regular);
   line-height: 1.4;
@@ -95,7 +96,7 @@
   .modal {
     min-height: auto;
     padding: 58px 22px 38px;
-    border-radius: 24px;
+    border-radius: 20px;
   }
 
   .modalLogo {

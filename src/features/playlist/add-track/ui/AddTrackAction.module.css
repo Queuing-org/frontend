@@ -5,13 +5,13 @@
   gap: 18px;
   min-width: 107px;
   height: 44px;
-  padding: 12 14px;
-  border: 1px solid rgba(241, 240, 236, 0.42);
+  padding: 12px 14px;
+  border: 1px solid #d9d9d9;
   border-radius: 999px;
-  background: transparent;
-  color: #f1f0ec;
+  background: #ffffff;
+  color: #3c3c3c;
   font-size: 14px;
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   cursor: pointer;
   transition:
@@ -22,8 +22,8 @@
 }
 
 .queueDockButton:hover:not(:disabled) {
-  background: rgba(241, 240, 236, 0.08);
-  border-color: rgba(241, 240, 236, 0.72);
+  background: #f7f7f9;
+  border-color: #b0b0b5;
 }
 
 .queueDockButton:active:not(:disabled) {

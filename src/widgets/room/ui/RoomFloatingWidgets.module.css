@@ -21,7 +21,12 @@
   height: 100%;
   font-size: 1.5rem;
   font-weight: 700;
-  color: rgba(255, 255, 255, 0.92);
+  color: #3c3c3c;
+}
+
+.chatPanelContent {
+  padding: 0px 16px 14px;
+  overflow: hidden;
 }
 
 .queuePanelContent {

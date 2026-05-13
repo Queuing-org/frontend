@@ -21,7 +21,7 @@
 }
 
 .item:hover {
-  background: #555555;
+  background: #f7f7f9;
 }
 
 .item[data-drag-disabled="false"]:hover {
@@ -43,7 +43,7 @@
   height: 46px;
   overflow: hidden;
   border-radius: 2px;
-  background: #171717;
+  background: #e9ebee;
 }
 
 .thumbnail {
@@ -70,9 +70,9 @@
 
 .title {
   overflow: hidden;
-  color: #f1f0ec;
+  color: #3c3c3c;
   font-size: 14px;
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   text-overflow: clip;
   white-space: nowrap;
@@ -89,8 +89,9 @@
 .story {
   min-width: 0;
   overflow: hidden;
-  color: #d9d9d9;
+  color: #8d8d8d;
   font-size: 12px;
+  font-weight: var(--fw-regular);
   line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -98,8 +99,9 @@
 
 .duration {
   flex-shrink: 0;
-  color: #d9d9d9;
+  color: #8d8d8d;
   font-size: 12px;
+  font-weight: var(--fw-regular);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -150,7 +152,7 @@
 }
 
 .deleteButton:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: #e9ebee;
 }
 
 .deleteButton:active {

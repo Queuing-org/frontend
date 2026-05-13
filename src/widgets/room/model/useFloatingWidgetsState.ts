@@ -74,7 +74,7 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
     width: 300,
   },
   participants: {
-    height: 380,
+    height: 400,
     offsetStorageKey: "participantsWidgetOffset",
     openStorageKey: "isParticipantsOpen",
     right: 24,
@@ -123,7 +123,7 @@ function getWidgetBasePosition(
     ? (viewportSize.width - widget.width) / 2
     : typeof widget.right === "number"
       ? viewportSize.width - widget.width - widget.right
-    : (widget.left ?? 0);
+      : (widget.left ?? 0);
   const y =
     typeof widget.top === "number"
       ? widget.top

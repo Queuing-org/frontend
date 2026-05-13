@@ -1,0 +1,365 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.48);
+}
+
+.modal {
+  position: relative;
+  width: min(664px, 100%);
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 0.5px solid #d9d9d9;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #3c3c3c;
+  box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
+}
+
+.closeButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #3c3c3c;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.closeButton:hover,
+.closeButton:focus-visible {
+  background: #f7f7f9;
+  color: #3c3c3c;
+}
+
+.closeButton:focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
+}
+
+.closeIcon {
+  display: block;
+  width: 20px;
+  height: 17px;
+  background-color: currentColor;
+  mask: url("/icons/exit.svg") center / contain no-repeat;
+  -webkit-mask: url("/icons/exit.svg") center / contain no-repeat;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 64px 30px 36px;
+}
+
+.modeBadge {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 12px;
+  margin: 0;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  line-height: 1.4;
+}
+
+.thumbnailButton {
+  display: inline-flex;
+  flex-direction: column;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  width: 152px;
+  aspect-ratio: 1;
+  gap: 8px;
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #8d8d8d;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.thumbnailButton:hover,
+.thumbnailButton:focus-visible {
+  border-color: #b0b0b5;
+  color: #3c3c3c;
+  box-shadow: 0 10px 30px rgba(176, 176, 181, 0.24);
+}
+
+.thumbnailButton:focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 3px;
+}
+
+.cameraIcon {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 32px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+.cameraIcon::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 12px;
+  width: 16px;
+  height: 8px;
+  border-radius: 4px 4px 0 0;
+  background: currentColor;
+}
+
+.cameraIcon::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 11px;
+  width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  border: 4px solid #ffffff;
+  border-radius: 999px;
+}
+
+.thumbnailText {
+  font-size: 18px;
+  font-weight: var(--fw-regular);
+  line-height: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  color: #8d8d8d;
+  font-size: 16px;
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+}
+
+.input,
+.select {
+  width: 100%;
+  height: 53px;
+  box-sizing: border-box;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: var(--fw-medium);
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.input {
+  padding: 0 20px;
+}
+
+.input::placeholder {
+  color: #b0b0b5;
+}
+
+.select {
+  padding: 0 50px 0 20px;
+  cursor: pointer;
+}
+
+.input:focus,
+.select:focus {
+  border-color: #b0b0b5;
+  box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #3c3c3c;
+  cursor: pointer;
+}
+
+.checkbox:disabled,
+.checkbox:disabled + .label {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 4px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #8d8d8d;
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.tagChip:hover:not(:disabled) {
+  border-color: #3c3c3c;
+  color: #3c3c3c;
+}
+
+.tagChip[data-selected="true"] {
+  border-color: #3c3c3c;
+  background: #f7f7f9;
+  color: #3c3c3c;
+}
+
+.tagChip:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.helperText,
+.errorText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.helperText {
+  color: #8d8d8d;
+}
+
+.errorText {
+  color: #d94b4b;
+}
+
+.submitButton {
+  width: 100%;
+  height: 68px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 20px;
+  font-weight: var(--fw-regular);
+  cursor: pointer;
+  margin-top: 24px;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.submitButton:hover:not(:disabled),
+.submitButton:focus-visible:not(:disabled) {
+  border-color: #3c3c3c;
+  background: #f7f7f9;
+}
+
+.submitButton:disabled {
+  border-color: #e9ebee;
+  background: #f7f7f9;
+  color: #8d8d8d;
+  cursor: default;
+}
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 12px;
+  }
+
+  .form {
+    gap: 20px;
+    padding: 64px 18px 24px;
+  }
+
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .label {
+    font-size: 16px;
+  }
+
+  .input,
+  .select,
+  .submitButton {
+    height: 52px;
+    font-size: 16px;
+  }
+
+  .tagChip {
+    min-height: 34px;
+    font-size: 16px;
+  }
+
+  .submitButton {
+    margin-top: 24px;
+  }
+}

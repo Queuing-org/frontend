@@ -2,9 +2,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 8px;
-  background-color: #242424;
-  color: #ffffff;
+  border: 0.5px solid #d9d9d9;
+  border-radius: 20px;
+  background-color: #ffffff;
+  color: #3c3c3c;
+  box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
 }
 
 .header {
@@ -13,15 +15,23 @@
   justify-content: center;
   flex-shrink: 0;
   height: 40px;
-  background-color: #242424;
+  background-color: #ffffff;
+}
+
+.headerCompact {
+  height: 24px;
 }
 
 .handle {
   width: 32px;
   height: 3px;
   border-radius: 999px;
-  background: #d9d9d9;
+  background: #e9ebee;
   margin-top: -15px;
+}
+
+.headerCompact .handle {
+  margin-top: -6px;
 }
 
 .content {

@@ -25,6 +25,7 @@ type Props = {
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
   onOpenFollow: () => void;
+  onOpenSettings: () => void;
   onEnterSelectedRoom: () => void;
 };
 
@@ -39,6 +40,7 @@ export default function HomeSearchControlDock({
   onSelectFilter,
   onCreateRoom,
   onOpenFollow,
+  onOpenSettings,
   onEnterSelectedRoom,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
@@ -84,6 +86,11 @@ export default function HomeSearchControlDock({
 
     if (menuItem === "FRIEND") {
       onOpenFollow();
+      return;
+    }
+
+    if (menuItem === "SETTING") {
+      onOpenSettings();
     }
   };
 
