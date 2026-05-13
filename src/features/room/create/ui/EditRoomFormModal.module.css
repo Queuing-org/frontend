@@ -218,20 +218,62 @@
   align-items: center;
   align-self: flex-start;
   gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 
-.checkbox {
+.checkboxBox {
+  position: relative;
+  flex: 0 0 auto;
   width: 20px;
   height: 20px;
-  margin: 0;
-  accent-color: #3c3c3c;
-  cursor: pointer;
+  box-sizing: border-box;
+  border: 1px solid #b0b0b5;
+  border-radius: 4px;
+  background: #ffffff;
 }
 
-.checkbox:disabled,
-.checkbox:disabled + .label {
+.checkboxBox::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  width: 5px;
+  height: 9px;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  opacity: 0;
+  transform: rotate(45deg);
+}
+
+.checkboxBox[data-checked="true"] {
+  border-color: #3c3c3c;
+  background: #3c3c3c;
+}
+
+.checkboxBox[data-checked="true"]::after {
+  opacity: 1;
+}
+
+.checkboxRow:focus-visible {
+  outline: none;
+}
+
+.checkboxRow:focus-visible .checkboxBox {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
+}
+
+.checkboxRow:disabled {
   cursor: default;
+}
+
+.checkboxRow:disabled .checkboxBox,
+.checkboxRow:disabled .label {
   opacity: 0.5;
 }
 

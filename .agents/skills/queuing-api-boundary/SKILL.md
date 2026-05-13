@@ -41,7 +41,8 @@ Do not use it for purely visual CSS changes with no data flow.
 
 ## Project-Specific Rules
 
-- Room update payloads should be partial: `title`, `tags`, and `password` only when changed or intentionally set.
+- Room update payloads should avoid unknown existing secrets: never send `password: ""` to mean "keep password".
+- Room update `PATCH /api/v1/rooms/{slug}` currently rejects password-only payloads with `400 invalid-input`; when any room update is sent, include the current non-empty `title` alongside changed `tags` or `password`.
 - Empty password strings are ambiguous unless the API explicitly documents them as "clear password".
 - Queue mutations must refresh `roomQueue`; changes that affect current playback or participants should also consider `roomState`.
 - Playlist item operations use `entryId`, not track video id.

@@ -124,9 +124,10 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
     if (currentStep < createSteps.length - 1) {
       goToNextStep();
-      return;
     }
+  };
 
+  const finishCreateRoom = () => {
     setDidTryFinish(true);
 
     if (!trimmedTitle) {
@@ -291,8 +292,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                 </button>
               ) : (
                 <button
-                  type="submit"
+                  type="button"
                   className={styles.primaryButton}
+                  onClick={finishCreateRoom}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "완료 중" : "완료"}
