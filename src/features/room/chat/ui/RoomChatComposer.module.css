@@ -82,3 +82,20 @@
 .notice {
   color: #8d8d8d;
 }
+
+@media (max-width: 760px) {
+  .root {
+    gap: 0.5rem;
+  }
+
+  .input {
+    min-height: 4.25rem;
+    border-radius: 0.875rem;
+    font-size: 1rem;
+  }
+
+  .submitButton {
+    width: 3.25rem;
+    height: 2rem;
+  }
+}

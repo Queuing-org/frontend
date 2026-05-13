@@ -94,3 +94,33 @@
   line-height: 1;
   box-shadow: inset 0 2px 0 rgba(176, 176, 181, 0.4);
 }
+
+@media (max-width: 760px) {
+  .roomInfoContainerRoom {
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .roomInfoContainerRoom .roomInfoMain {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .roomInfoContainerRoom .title {
+    flex: 1 1 100%;
+    font-size: 1rem;
+  }
+
+  .tag {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 0.375rem;
+  }
+
+  .tagItem,
+  .usersCount {
+    height: 1.75rem;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+}

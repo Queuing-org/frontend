@@ -15,6 +15,14 @@
   z-index: 1;
 }
 
+.desktopSearchButton {
+  display: inline-flex;
+}
+
+.mobileSearchForm {
+  display: none;
+}
+
 .centerGroup {
   width: min(520px, calc(100vw - 360px));
   display: flex;
@@ -30,13 +38,117 @@
   z-index: 1;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 760px) {
   .topBar {
-    padding: 16px;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 1rem;
+  }
+
+  .leftGroup {
+    width: 100%;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .leftGroup > :first-child {
+    display: none;
+  }
+
+  .desktopSearchButton {
+    display: none;
+  }
+
+  .mobileSearchForm {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.5rem;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mobileSearchField {
+    display: flex;
+    min-width: 0;
+    height: 2.5rem;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0 0.75rem;
+    border: 0.0625rem solid #e5e5e8;
+    border-radius: 999rem;
+    background: #ffffff;
+  }
+
+  .mobileSearchIcon,
+  .mobileSearchResetIcon {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    color: #8d8d8d;
+  }
+
+  .mobileSearchButton {
+    display: inline-flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0.0625rem solid #e5e5e8;
+    border-radius: 999rem;
+    background: #ffffff;
+    color: #3c3c3c;
+    cursor: pointer;
+  }
+
+  .mobileSearchButton .mobileSearchIcon {
+    color: currentColor;
+  }
+
+  .mobileSearchInput {
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #3c3c3c;
+    font-family: inherit;
+    font-size: 0.9375rem;
+    font-weight: var(--fw-medium);
+  }
+
+  .mobileSearchInput::placeholder {
+    color: #b0b0b5;
+  }
+
+  .mobileSearchInput::-webkit-search-decoration,
+  .mobileSearchInput::-webkit-search-cancel-button,
+  .mobileSearchInput::-webkit-search-results-button,
+  .mobileSearchInput::-webkit-search-results-decoration {
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .mobileSearchReset {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 999rem;
+    background: transparent;
+    cursor: pointer;
   }
 
   .centerGroup {
-    width: min(360px, calc(100vw - 220px));
+    display: none;
   }
 
+  .rightGroup {
+    display: none;
+  }
 }

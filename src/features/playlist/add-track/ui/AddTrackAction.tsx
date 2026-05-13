@@ -11,12 +11,16 @@ import styles from "./AddTrackAction.module.css";
 
 type AddTrackActionProps = {
   className?: string;
+  label?: string;
+  loginLabel?: string;
   slug: string;
   variant?: "default" | "queueDock";
 };
 
 export default function AddTrackAction({
   className,
+  label: labelOverride,
+  loginLabel,
   slug,
   variant = "default",
 }: AddTrackActionProps) {
@@ -83,7 +87,7 @@ export default function AddTrackAction({
   }
 
   function renderQueueDockButton() {
-    let label = "큐잉하기";
+    let label = labelOverride ?? "큐잉하기";
     let disabled = false;
     let onClick = handleOpenModal;
 
@@ -91,7 +95,7 @@ export default function AddTrackAction({
       label = "확인 중";
       disabled = true;
     } else if (!isLoggedIn) {
-      label = "로그인 후 큐잉";
+      label = loginLabel ?? "로그인 후 큐잉";
       onClick = redirectToGoogleLogin;
     }
 

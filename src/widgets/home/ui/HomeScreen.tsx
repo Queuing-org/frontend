@@ -5,6 +5,7 @@ import {
   getRoomsFromPages,
   useRoomsQuery,
 } from "@/src/entities/room/hooks/useFetchRooms";
+import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
@@ -16,6 +17,7 @@ import {
 } from "./HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
 import HomeSearchControlDock from "./HomeSearchControlDock";
+import MobileHomeRoomFeed from "./MobileHomeRoomFeed";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
@@ -27,8 +29,10 @@ import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import styles from "./HomeScreen.module.css";
 
 export default function HomeScreen() {
+  const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -106,33 +110,60 @@ export default function HomeScreen() {
 
   return (
     <div className={styles.screen}>
-      <HomeTopBar currentRoom={currentRoom} />
-      <HomeRoomStage
-        rooms={rooms}
-        currentRoomSlug={selectedRoomSlug}
-        onSelectRoom={setCurrentRoomSlug}
-        onRequestRoomEntry={roomEntry.requestRoomEntry}
-        isLoading={isLoading}
+      <HomeTopBar
+        currentRoom={currentRoom}
+        mobileSearchQuery={mobileSearchQuery}
+        onMobileSearchQueryChange={setMobileSearchQuery}
       />
-      {!isLoading ? (
-        <HomeSearchControlDock
-          ariaLabel="홈 하단 컨트롤"
-          selectedRoomSlug={selectedRoomSlug}
-          canGoPrevious={Boolean(previousRoom)}
-          canGoNext={Boolean(nextRoom)}
+      {isMobileLayout ? (
+        <MobileHomeRoomFeed
           activeFilters={roomListFilters}
-          onGoPrevious={goPrevious}
-          onGoNext={goNext}
-          onSelectFilter={selectRoomListFilter}
+          hasNextPage={Boolean(hasNextPage)}
+          isFetchingNextPage={isFetchingNextPage}
+          isLoading={isLoading}
           onCreateRoom={requestCreateRoom}
+          onLoadMoreRooms={() => {
+            void fetchNextPage();
+          }}
           onOpenFollow={requestOpenFollow}
           onOpenSettings={requestOpenSettings}
-          onEnterSelectedRoom={() => {
-            if (currentRoom) {
-              roomEntry.requestRoomEntry(currentRoom);
-            }
-          }}
+          onRequestRoomEntry={roomEntry.requestRoomEntry}
+          onSelectFilter={selectRoomListFilter}
+          onSelectRoom={setCurrentRoomSlug}
+          rooms={rooms}
+          selectedRoomSlug={selectedRoomSlug}
         />
+      ) : null}
+      {!isMobileLayout ? (
+        <>
+          <HomeRoomStage
+            rooms={rooms}
+            currentRoomSlug={selectedRoomSlug}
+            onSelectRoom={setCurrentRoomSlug}
+            onRequestRoomEntry={roomEntry.requestRoomEntry}
+            isLoading={isLoading}
+          />
+          {!isLoading ? (
+            <HomeSearchControlDock
+              ariaLabel="홈 하단 컨트롤"
+              selectedRoomSlug={selectedRoomSlug}
+              canGoPrevious={Boolean(previousRoom)}
+              canGoNext={Boolean(nextRoom)}
+              activeFilters={roomListFilters}
+              onGoPrevious={goPrevious}
+              onGoNext={goNext}
+              onSelectFilter={selectRoomListFilter}
+              onCreateRoom={requestCreateRoom}
+              onOpenFollow={requestOpenFollow}
+              onOpenSettings={requestOpenSettings}
+              onEnterSelectedRoom={() => {
+                if (currentRoom) {
+                  roomEntry.requestRoomEntry(currentRoom);
+                }
+              }}
+            />
+          ) : null}
+        </>
       ) : null}
       <RoomJoinPasswordModal
         room={roomEntry.passwordRoom}
