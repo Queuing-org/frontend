@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import type { ChatMessage } from "@/src/entities/room/model/types";
 import styles from "./ChatArea.module.css";
 
@@ -11,6 +11,7 @@ type Props = {
   isLoadingOlderMessages: boolean;
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
+  scrollToLatestKey: number;
 };
 
 const LOAD_OLDER_THRESHOLD_PX = 72;
@@ -26,6 +27,7 @@ export default function ChatArea({
   isLoadingOlderMessages,
   messages,
   onLoadOlderMessages,
+  scrollToLatestKey,
 }: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottomRef = useRef(true);
@@ -81,14 +83,16 @@ export default function ChatArea({
     }
   }, [isLoadingOlderMessages, messages.length]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const list = listRef.current;
-    if (!list || list.scrollHeight > list.clientHeight) {
+    if (!list) {
       return;
     }
 
-    requestOlderMessages();
-  }, [messages.length, requestOlderMessages]);
+    restoreScrollRef.current = null;
+    shouldStickToBottomRef.current = true;
+    list.scrollTop = list.scrollHeight;
+  }, [scrollToLatestKey]);
 
   return (
     <div className={styles.root}>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useRoomState } from "@/src/entities/playlist/model/useRoomState";
 import type { RoomStateSnapshot } from "@/src/entities/playlist/model/types";
 import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
@@ -26,6 +26,7 @@ import type {
 } from "@/src/entities/room/model/types";
 import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
 import { ApiError } from "@/src/shared/api/api-error";
+import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import {
   clearStoredRoomJoinPassword,
@@ -56,8 +57,9 @@ type PlaybackState = {
   serverTimestamp: number;
 };
 
-const CHAT_HISTORY_PAGE_SIZE = 30;
+const CHAT_HISTORY_PAGE_SIZE = 100;
 const MAX_CHAT_CONTENT_LENGTH = 200;
+const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   if (!data || typeof data !== "object") {
@@ -199,6 +201,7 @@ function getCurrentRequesterProfile(
 
 export default function RoomPageSongInfo() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const queryClient = useQueryClient();
   const slug = normalizeRoomSlug(params.slug ?? "");
   const joinRequestRef = useRef<{
@@ -218,8 +221,10 @@ export default function RoomPageSongInfo() {
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
+  const initialChatHistorySlugRef = useRef<string | null>(null);
   const currentUserRef = useRef<User | null>(null);
   const pendingChatSendCountRef = useRef(0);
+  const hasRedirectedAfterKickRef = useRef(false);
 
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
@@ -234,6 +239,9 @@ export default function RoomPageSongInfo() {
   const [hasOlderChatMessages, setHasOlderChatMessages] = useState(false);
   const [chatHistoryErrorMessage, setChatHistoryErrorMessage] = useState("");
   const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
+  const [chatScrollToLatestKey, setChatScrollToLatestKey] = useState(0);
+  const [isInitializingChatHistory, setIsInitializingChatHistory] =
+    useState(false);
   const [isChatSending, setIsChatSending] = useState(false);
   const floatingWidgets = useFloatingWidgetsState();
 
@@ -264,12 +272,14 @@ export default function RoomPageSongInfo() {
   );
 
   const resetChatState = useCallback(() => {
+    initialChatHistorySlugRef.current = null;
     pendingChatSendCountRef.current = 0;
     setChatMessages([]);
     setChatHistoryCursor(null);
     setHasOlderChatMessages(false);
     setChatHistoryErrorMessage("");
     setChatSendErrorMessage("");
+    setIsInitializingChatHistory(false);
     setIsChatSending(false);
   }, []);
 
@@ -282,6 +292,8 @@ export default function RoomPageSongInfo() {
     setHasOlderChatMessages(recentMessages.length > 0);
     setChatHistoryErrorMessage("");
     setChatSendErrorMessage("");
+    setChatScrollToLatestKey((currentKey) => currentKey + 1);
+    setIsInitializingChatHistory(false);
     setIsChatSending(false);
   }, []);
 
@@ -326,6 +338,55 @@ export default function RoomPageSongInfo() {
 
     userEventSubscriptionRef.current = null;
   }, []);
+
+  useEffect(() => {
+    if (!slug) {
+      return;
+    }
+
+    return addSocketListener({
+      onStompError: (frame) => {
+        if (hasRedirectedAfterKickRef.current || !frame.body) {
+          return;
+        }
+
+        let errorData: unknown;
+        try {
+          errorData = JSON.parse(frame.body);
+        } catch {
+          return;
+        }
+
+        if (
+          !isWsErrorData(errorData) ||
+          errorData.code !== PARTICIPANT_KICKED_ERROR_CODE
+        ) {
+          return;
+        }
+
+        hasRedirectedAfterKickRef.current = true;
+        cleanupRoomSubscription();
+        cleanupChatSubscription();
+        cleanupUserEventSubscription();
+        clearStoredRoomJoinPassword(slug);
+        resetChatState();
+        setStatus("error");
+        setJoinErrorMessage(errorData.message);
+        void queryClient.removeQueries({ queryKey: ["roomState", slug] });
+        void queryClient.removeQueries({ queryKey: ["roomQueue", slug] });
+        void queryClient.invalidateQueries({ queryKey: ["roomMeta", slug] });
+        router.replace("/home");
+      },
+    });
+  }, [
+    cleanupChatSubscription,
+    cleanupRoomSubscription,
+    cleanupUserEventSubscription,
+    queryClient,
+    resetChatState,
+    router,
+    slug,
+  ]);
 
   const ensureRoomSubscription = useCallback(
     (roomSlug: string) => {
@@ -496,12 +557,78 @@ export default function RoomPageSongInfo() {
     [cleanupUserEventSubscription],
   );
 
+  const loadInitialChatHistory = useCallback(() => {
+    if (!slug || !currentUser) {
+      return;
+    }
+
+    setIsInitializingChatHistory(true);
+    setChatHistoryErrorMessage("");
+
+    void (async () => {
+      const loadedOlderMessages: ChatMessage[] = [];
+      const visitedCursors = new Set<number>();
+      let cursor: number | null = getOldestMessageId(chatMessages);
+      let isFirstRequest = chatMessages.length === 0;
+      let shouldFetch =
+        isFirstRequest ||
+        (hasOlderChatMessages && typeof cursor === "number");
+
+      try {
+        while (shouldFetch) {
+          if (typeof cursor === "number") {
+            visitedCursors.add(cursor);
+          }
+
+          const result = await loadRoomChats({
+            cursorId: isFirstRequest ? undefined : cursor,
+            size: CHAT_HISTORY_PAGE_SIZE,
+            slug,
+          });
+          const pageMessages = result.items
+            .filter(isChatMessageData)
+            .reverse();
+
+          loadedOlderMessages.unshift(...pageMessages);
+
+          cursor = result.nextCursor;
+          isFirstRequest = false;
+          shouldFetch =
+            result.hasNext &&
+            typeof cursor === "number" &&
+            !visitedCursors.has(cursor);
+        }
+
+        setChatMessages((currentMessages) =>
+          mergeUniqueChatMessages([...loadedOlderMessages, ...currentMessages]),
+        );
+        setChatHistoryCursor(cursor);
+        setHasOlderChatMessages(false);
+        setChatScrollToLatestKey((currentKey) => currentKey + 1);
+      } catch (error) {
+        const err = error as ApiError;
+        setChatHistoryErrorMessage(
+          err.message || "채팅 기록을 불러오지 못했습니다.",
+        );
+      } finally {
+        setIsInitializingChatHistory(false);
+      }
+    })();
+  }, [
+    chatMessages,
+    currentUser,
+    hasOlderChatMessages,
+    loadRoomChats,
+    slug,
+  ]);
+
   const handleLoadOlderChatMessages = useCallback(() => {
     if (
       !slug ||
       !currentUser ||
       !hasOlderChatMessages ||
-      isLoadingOlderChatMessages
+      isLoadingOlderChatMessages ||
+      isInitializingChatHistory
     ) {
       return;
     }
@@ -542,6 +669,7 @@ export default function RoomPageSongInfo() {
     chatHistoryCursor,
     currentUser,
     hasOlderChatMessages,
+    isInitializingChatHistory,
     isLoadingOlderChatMessages,
     loadRoomChats,
     slug,
@@ -631,6 +759,7 @@ export default function RoomPageSongInfo() {
   useEffect(() => {
     if (!slug) return;
 
+    hasRedirectedAfterKickRef.current = false;
     let isActive = true;
     const storedPassword = readStoredRoomJoinPassword(slug);
     setRoomPassword(null);
@@ -697,6 +826,20 @@ export default function RoomPageSongInfo() {
   useEffect(() => {
     currentUserRef.current = currentUser ?? null;
   }, [currentUser]);
+
+  useEffect(() => {
+    if (
+      status !== "joined" ||
+      !slug ||
+      !currentUser ||
+      initialChatHistorySlugRef.current === slug
+    ) {
+      return;
+    }
+
+    initialChatHistorySlugRef.current = slug;
+    loadInitialChatHistory();
+  }, [currentUser, loadInitialChatHistory, slug, status]);
 
   useEffect(() => {
     if (status !== "joined" || !slug || !currentUser) {
@@ -800,9 +943,12 @@ export default function RoomPageSongInfo() {
             <ChatArea
               errorMessage={chatHistoryErrorMessage}
               hasOlderMessages={Boolean(currentUser) && hasOlderChatMessages}
-              isLoadingOlderMessages={isLoadingOlderChatMessages}
+              isLoadingOlderMessages={
+                isLoadingOlderChatMessages || isInitializingChatHistory
+              }
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              scrollToLatestKey={chatScrollToLatestKey}
             />
           </div>
           <div className={styles.controlBarDock}>

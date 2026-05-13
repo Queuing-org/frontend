@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styles from "./RoomChatComposer.module.css";
 
 type Props = {
@@ -19,6 +19,7 @@ export default function RoomChatComposer({
   onSendMessage,
 }: Props) {
   const [message, setMessage] = useState("");
+  const isComposingRef = useRef(false);
   const trimmedMessage = message.trim();
   const isDisabled = Boolean(disabledReason) || isSending;
   const isSubmitDisabled =
@@ -51,8 +52,22 @@ export default function RoomChatComposer({
         placeholder={disabledReason ?? "채팅을 입력하세요"}
         value={message}
         onChange={(event) => setMessage(event.target.value)}
+        onCompositionStart={() => {
+          isComposingRef.current = true;
+        }}
+        onCompositionEnd={() => {
+          isComposingRef.current = false;
+        }}
         onKeyDown={(event) => {
           if (event.key !== "Enter" || event.shiftKey) {
+            return;
+          }
+
+          if (
+            event.nativeEvent.isComposing ||
+            event.keyCode === 229 ||
+            isComposingRef.current
+          ) {
             return;
           }
 
