@@ -16,12 +16,20 @@
   background-color: #242424;
 }
 
+.headerCompact {
+  height: 24px;
+}
+
 .handle {
   width: 32px;
   height: 3px;
   border-radius: 999px;
   background: #d9d9d9;
   margin-top: -15px;
+}
+
+.headerCompact .handle {
+  margin-top: -6px;
 }
 
 .content {

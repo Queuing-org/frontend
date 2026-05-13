@@ -5,6 +5,7 @@ import styles from "./FloatingRoomPanelShell.module.css";
 
 type Props = {
   children: ReactNode;
+  compactHeader?: boolean;
   contentClassName?: string;
   height: number;
   width: number;
@@ -12,6 +13,7 @@ type Props = {
 
 export default function FloatingRoomPanelShell({
   children,
+  compactHeader = false,
   contentClassName,
   height,
   width,
@@ -19,7 +21,9 @@ export default function FloatingRoomPanelShell({
   return (
     <div className={styles.panel} style={{ width, height }}>
       <div
-        className={styles.header}
+        className={[styles.header, compactHeader ? styles.headerCompact : null]
+          .filter(Boolean)
+          .join(" ")}
         aria-hidden="true"
         data-drag-handle="true"
       >

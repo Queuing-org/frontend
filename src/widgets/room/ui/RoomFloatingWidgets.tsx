@@ -177,6 +177,7 @@ export default function RoomFloatingWidgets({
           >
             <div ref={chatWidgetRef} className={styles.widgetFrame}>
               <FloatingRoomPanelShell
+                compactHeader
                 contentClassName={styles.chatPanelContent}
                 height={widgets.chat.height}
                 width={widgets.chat.width}

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import styles from "./RoomChatComposer.module.css";
 
@@ -85,7 +86,14 @@ export default function RoomChatComposer({
           disabled={isSubmitDisabled}
           aria-label="채팅 전송"
         >
-          <span className={styles.submitIcon} aria-hidden="true" />
+          <Image
+            src="/icons/send.svg"
+            alt=""
+            width={18}
+            height={16}
+            className={styles.submitIcon}
+            aria-hidden="true"
+          />
         </button>
       </div>
       {errorMessage || disabledReason ? (
