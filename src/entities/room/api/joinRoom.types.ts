@@ -1,3 +1,5 @@
+import type { RoomJoinedData } from "../model/types";
+
 export type JoinRoomPayload = {
   password?: string | null;
 };
@@ -5,5 +7,5 @@ export type JoinRoomPayload = {
 export type JoinRoomResult = {
   roomSlug: string;
   timestamp: number;
-  data: unknown;
+  data: RoomJoinedData | null;
 };

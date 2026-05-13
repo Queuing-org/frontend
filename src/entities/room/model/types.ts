@@ -56,3 +56,25 @@ export type PlaybackSyncData = {
   currentTime: number;
   serverTimestamp: number;
 }; // 문서 5-1 (PLAYBACK_SYNC data)
+
+export type ChatMessage = {
+  messageId: number;
+  messageType: "TEXT" | string;
+  content: string;
+  senderId: number;
+  senderNickname: string;
+  senderProfileImageUrl: string | null;
+  sentAt: number;
+};
+
+export type ChatHistoryResponse = {
+  items: ChatMessage[];
+  hasNext: boolean;
+  nextCursor: number | null;
+};
+
+export type RoomJoinedData = {
+  recentChatMessages?: ChatMessage[];
+};
+
+export type ChatMessageEventData = ChatMessage;

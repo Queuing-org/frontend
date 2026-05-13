@@ -1,0 +1,74 @@
+.tagGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 10px;
+  align-content: flex-start;
+  max-width: 760px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 38px;
+  padding: 8px 20px;
+  border: 0.5px solid #b0b0b5;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #5d5d5d;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.tagChip:hover:not(:disabled) {
+  border-color: #4285f4;
+  background: #eef5ff;
+  color: #2f73e6;
+}
+
+.tagChip[data-selected="true"] {
+  border-color: #4285f4;
+  background: #4285f4;
+  color: #ffffff;
+}
+
+.tagChip[data-selected="true"]:hover:not(:disabled) {
+  border-color: #2f73e6;
+  background: #2f73e6;
+  color: #ffffff;
+}
+
+.tagChip:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
+.tagChip:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.stateText,
+.errorText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+}
+
+.stateText {
+  color: #8d8d8d;
+}
+
+.errorText {
+  color: #ff2f2f;
+}

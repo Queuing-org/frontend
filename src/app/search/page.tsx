@@ -24,12 +24,20 @@ import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
+import { useMe } from "@/src/entities/user/hooks/useMe";
+import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
+import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 
 export default function SearchPage() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
+  const [isAuthRequiredModalOpen, setIsAuthRequiredModalOpen] = useState(false);
+  const [authRequiredDescription, setAuthRequiredDescription] = useState(
+    "방 만들기는 로그인 후 이용할 수 있어요.",
+  );
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const { data: me, refetch: refetchMe } = useMe();
   const { data, isLoading, isError } = useRoomsQuery();
   const rooms = data?.rooms ?? [];
   const roomListRooms = rooms;
@@ -67,6 +75,38 @@ export default function SearchPage() {
       getNextHomeFilters(currentFilters, key, option),
     );
   };
+
+  const requestAuthenticatedAction = async (
+    onAuthenticated: () => void,
+    description: string,
+  ) => {
+    if (me) {
+      onAuthenticated();
+      return;
+    }
+
+    const result = await refetchMe();
+
+    if (result.data) {
+      onAuthenticated();
+      return;
+    }
+
+    setAuthRequiredDescription(description);
+    setIsAuthRequiredModalOpen(true);
+  };
+
+  const requestCreateRoom = () =>
+    requestAuthenticatedAction(
+      () => setIsCreateRoomModalOpen(true),
+      "방 만들기는 로그인 후 이용할 수 있어요.",
+    );
+
+  const requestOpenFollow = () =>
+    requestAuthenticatedAction(
+      () => setIsFollowModalOpen(true),
+      "친구 기능은 로그인 후 이용할 수 있어요.",
+    );
 
   return (
     <div className={styles.container}>
@@ -169,8 +209,8 @@ export default function SearchPage() {
           onGoPrevious={goPrevious}
           onGoNext={goNext}
           onSelectFilter={selectRoomListFilter}
-          onCreateRoom={() => setIsCreateRoomModalOpen(true)}
-          onOpenFollow={() => setIsFollowModalOpen(true)}
+          onCreateRoom={requestCreateRoom}
+          onOpenFollow={requestOpenFollow}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
           onEnterSelectedRoom={() => {
             if (selectedRoom) {
@@ -199,6 +239,12 @@ export default function SearchPage() {
       <SettingsModal
         open={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+      <AuthRequiredModal
+        open={isAuthRequiredModalOpen}
+        description={authRequiredDescription}
+        onClose={() => setIsAuthRequiredModalOpen(false)}
+        onLogin={redirectToGoogleLogin}
       />
     </div>
   );
