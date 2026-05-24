@@ -1,0 +1,14 @@
+<svg width="112" height="32" viewBox="0 0 112 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="힙찔이">
+  <rect x="0.5" y="0.5" width="111" height="31" rx="15.5" fill="#E7FFF8"/>
+  <rect x="0.5" y="0.5" width="111" height="31" rx="15.5" stroke="#00E5B0"/>
+  <rect x="4" y="4" width="104" height="24" rx="12" fill="#17151F"/>
+  <path d="M5.5 23.5L20.5 4H31L16 23.5H5.5Z" fill="#00E5B0" fill-opacity="0.7"/>
+  <path d="M78 28L94 4H106L90 28H78Z" fill="#FF4FD8" fill-opacity="0.72"/>
+  <path d="M17.2 18.9C16.18 18.9 15.35 18.07 15.35 17.05V14.95C15.35 13.93 16.18 13.1 17.2 13.1V18.9Z" fill="#00E5B0"/>
+  <path d="M30.8 13.1C31.82 13.1 32.65 13.93 32.65 14.95V17.05C32.65 18.07 31.82 18.9 30.8 18.9V13.1Z" fill="#00E5B0"/>
+  <path d="M18.7 13C18.7 10.07 21.07 7.7 24 7.7C26.93 7.7 29.3 10.07 29.3 13V18.65C29.3 19.2 28.85 19.65 28.3 19.65H27.1V13C27.1 11.29 25.71 9.9 24 9.9C22.29 9.9 20.9 11.29 20.9 13V19.65H19.7C19.15 19.65 18.7 19.2 18.7 18.65V13Z" fill="#FF4FD8"/>
+  <path d="M22.1 18.45H25.9L27.55 24.05H20.45L22.1 18.45Z" fill="#F5FF00"/>
+  <path d="M21.35 23.95H26.65" stroke="#17151F" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M91.4 11.95L93.4 8.8L95.4 11.95L99.05 12.85L96.65 15.72L96.9 19.45L93.4 18.05L89.9 19.45L90.15 15.72L87.75 12.85L91.4 11.95Z" fill="#F5FF00"/>
+  <text x="58" y="21" text-anchor="middle" fill="#FFFFFF" font-family="Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" font-weight="800" letter-spacing="0">힙찔이</text>
+</svg>
