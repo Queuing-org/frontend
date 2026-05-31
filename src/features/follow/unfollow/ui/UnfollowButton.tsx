@@ -14,7 +14,7 @@ export default function UnfollowButton({ targetSlug }: UnfollowParams) {
       onClick={() => mutate({ targetSlug })}
       disabled={isPending}
     >
-      {isPending ? "삭제중..." : "친구 삭제"}
+      {isPending ? "언팔로우 중..." : "언팔로우"}
     </button>
   );
 }

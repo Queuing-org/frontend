@@ -6,7 +6,7 @@ export async function unfollow({
   targetSlug,
 }: UnfollowParams): Promise<boolean> {
   const res = await axiosInstance.delete<ApiResponse<boolean>>(
-    `/api/v1/friends/${targetSlug}`,
+    `/api/v1/follows/${encodeURIComponent(targetSlug)}`,
   );
 
   return res.data.result;

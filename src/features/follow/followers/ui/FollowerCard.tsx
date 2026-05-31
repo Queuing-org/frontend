@@ -1,11 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import type { FollowingUser } from "@/src/entities/follow/model/types";
-import UnfollowButton from "../../unfollow/ui/UnfollowButton";
-import styles from "./FollowingCard.module.css";
+import type { FollowerUser } from "@/src/entities/follow/model/types";
+import styles from "./FollowerCard.module.css";
 
-export default function FollowingCard({ user }: { user: FollowingUser }) {
+export default function FollowerCard({ user }: { user: FollowerUser }) {
   const profileImageSrc = user.profileImageUrl || "/Basic_Profile.png";
 
   return (
@@ -23,11 +22,7 @@ export default function FollowingCard({ user }: { user: FollowingUser }) {
 
       <div className={styles.meta}>
         <div className={styles.nickname}>{user.nickname}</div>
-        <div className={styles.status}>팔로잉</div>
-      </div>
-
-      <div className={styles.action}>
-        <UnfollowButton targetSlug={user.slug} />
+        <div className={styles.status}>나를 팔로우함</div>
       </div>
     </li>
   );

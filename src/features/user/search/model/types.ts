@@ -1,6 +1,11 @@
 import { User } from "@/src/entities/user/model/types";
 
-export type UserRelationship = "NONE" | "FRIEND";
+export type UserRelationship =
+  | "ME"
+  | "FRIEND"
+  | "FOLLOWING"
+  | "FOLLOWER"
+  | "NONE";
 
 export type SearchUser = User & {
   id: number;

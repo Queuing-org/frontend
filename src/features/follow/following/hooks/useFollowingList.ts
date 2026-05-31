@@ -4,10 +4,19 @@ import type { FollowingListResponse } from "@/src/entities/follow/model/types";
 import { fetchFollowing } from "../api/fetchFollowing";
 import type { FetchFollowingParams } from "../model/types";
 
-export function useFollowingList(params?: FetchFollowingParams) {
+export function useFollowingList(
+  params?: FetchFollowingParams,
+  options: { enabled?: boolean } = {},
+) {
   return useQuery<FollowingListResponse, ApiError>({
-    queryKey: ["following", params?.lastId ?? null, params?.size ?? null],
+    queryKey: [
+      "follows",
+      "followings",
+      params?.lastId ?? null,
+      params?.size ?? null,
+    ],
     queryFn: () => fetchFollowing(params),
+    enabled: options.enabled ?? true,
     retry: false,
   });
 }

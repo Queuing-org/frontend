@@ -192,6 +192,21 @@
   cursor: pointer;
 }
 
+.tabLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tabCount {
+  margin-left: auto;
+  color: inherit;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+}
+
 .tabIcon {
   flex: 0 0 auto;
   width: 16px;

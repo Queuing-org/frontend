@@ -4,8 +4,10 @@ import Image from "next/image";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import BlockedUsersPanel from "@/src/features/follow/blocked/ui/BlockedUsersPanel";
 import FollowersPanel from "@/src/features/follow/followers/ui/FollowersPanel";
+import { useFollowersList } from "@/src/features/follow/followers/hooks/useFollowersList";
 import FollowingPanel from "@/src/features/follow/following/ui/FollowingPanel";
-import FollowRequestButton from "@/src/features/follow/requests/ui/FollowRequestButton";
+import { useFollowingList } from "@/src/features/follow/following/hooks/useFollowingList";
+import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers";
 import type { SearchUser } from "@/src/features/user/search/model/types";
 import styles from "./FollowModal.module.css";
@@ -17,21 +19,57 @@ type FollowModalProps = {
 
 type FollowTab = "following" | "followers" | "blocked";
 
-// TODO: 현재는 친구목록/친구요청 API를 임시 매핑 중.
-// 추후 실제 팔로잉/팔로워 API가 생기면 라벨과 패널 연결을 팔로우 도메인 기준으로 교체해야 함.
 const followTabs: Array<{ key: FollowTab; label: string; iconSrc: string }> = [
-  { key: "following", label: "친구목록", iconSrc: "/icons/follwer.svg" },
-  { key: "followers", label: "받은 친구요청", iconSrc: "/icons/follwer.svg" },
+  { key: "following", label: "팔로잉", iconSrc: "/icons/follwer.svg" },
+  { key: "followers", label: "팔로워", iconSrc: "/icons/follwer.svg" },
   { key: "blocked", label: "차단", iconSrc: "/icons/block.svg" },
 ];
+
+const FOLLOW_LIST_SIZE = 100;
+
+function formatFollowCount(data?: { items: unknown[]; hasNext: boolean }) {
+  if (!data) {
+    return "-";
+  }
+
+  return `${data.items.length}${data.hasNext ? "+" : ""}`;
+}
+
+function getRelationshipLabel(relationship: SearchUser["relationship"]) {
+  switch (relationship) {
+    case "ME":
+      return "나";
+    case "FRIEND":
+      return "맞팔로우";
+    case "FOLLOWING":
+      return "팔로잉";
+    case "FOLLOWER":
+      return "팔로워";
+    case "NONE":
+    default:
+      return "미팔로우";
+  }
+}
 
 export default function FollowModal({ open, onClose }: FollowModalProps) {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
   const [activeTab, setActiveTab] = useState<FollowTab>("following");
   const { data, isLoading, isError } = useSearchUsers({ query });
+  const { data: followingData } = useFollowingList(
+    { size: FOLLOW_LIST_SIZE },
+    { enabled: open },
+  );
+  const { data: followersData } = useFollowersList(
+    { size: FOLLOW_LIST_SIZE },
+    { enabled: open },
+  );
   const users = data?.items ?? [];
   const hasSearchQuery = query.trim().length > 0;
+  const tabCounts: Partial<Record<FollowTab, string>> = {
+    following: formatFollowCount(followingData),
+    followers: formatFollowCount(followersData),
+  };
   const tabPanels: Record<FollowTab, ReactNode> = {
     following: <FollowingPanel />,
     followers: <FollowersPanel />,
@@ -60,7 +98,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
       >
         <header className={styles.header}>
           <h2 id="follow-modal-title" className={styles.title}>
-            FRIEND
+            FOLLOW
           </h2>
           <form
             className={styles.searchForm}
@@ -122,7 +160,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
                               <span className={styles.slug}>{user.slug}</span>
                             </span>
                             <span className={styles.relationship}>
-                              {user.relationship}
+                              {getRelationshipLabel(user.relationship)}
                             </span>
                           </button>
                         </li>
@@ -135,10 +173,15 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
           </form>
           <div className={styles.addAction}>
             {selectedUser ? (
-              <FollowRequestButton targetSlug={selectedUser.slug} />
+              <FollowToggleButton
+                disabled={selectedUser.relationship === "ME"}
+                disabledLabel="나"
+                initialRelationship={selectedUser.relationship}
+                targetSlug={selectedUser.slug}
+              />
             ) : (
               <button type="button" className={styles.addButton} disabled>
-                친구추가
+                팔로우
               </button>
             )}
           </div>
@@ -162,7 +205,12 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
                   }
                   aria-hidden="true"
                 />
-                {tab.label}
+                <span className={styles.tabLabel}>{tab.label}</span>
+                {tabCounts[tab.key] ? (
+                  <span className={styles.tabCount}>
+                    ({tabCounts[tab.key]})
+                  </span>
+                ) : null}
               </button>
             ))}
           </aside>

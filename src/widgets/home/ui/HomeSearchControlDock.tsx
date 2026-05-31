@@ -84,7 +84,7 @@ export default function HomeSearchControlDock({
       return;
     }
 
-    if (menuItem === "FRIEND") {
+    if (menuItem === "FOLLOW") {
       onOpenFollow();
       return;
     }

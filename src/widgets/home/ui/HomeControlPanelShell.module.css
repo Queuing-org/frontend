@@ -9,7 +9,7 @@
   animation: panelEnter 180ms ease;
 }
 
-/* QUE/CREATE/FRIEND/SETTING 메뉴 패널 */
+/* RANDOM/CREATE/FOLLOW/SETTING 메뉴 패널 */
 .menuPanel {
   display: flex;
   align-items: center;
@@ -19,7 +19,7 @@
   padding: 8px 10px;
 }
 
-/* QUE/CREATE 메뉴 옵션 배치 */
+/* 메뉴 옵션 배치 */
 .menuRow {
   display: flex;
   align-items: center;
@@ -55,7 +55,7 @@
   font-weight: var(--fw-heavy);
 }
 
-/* QUE/CREATE 메뉴 옵션 버튼 영역 */
+/* 메뉴 옵션 버튼 영역 */
 .menuItem {
   width: fit-content;
   height: auto;

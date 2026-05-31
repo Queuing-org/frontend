@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useMe } from "@/src/entities/user/hooks/useMe";
-import { useFollowRequestTargetStatus } from "@/src/features/follow/requests/hooks/useFollowRequestTargetStatus";
-import { useSendFollowRequest } from "@/src/features/follow/requests/hooks/useSendFollowRequest";
+import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
+import { useFollowingList } from "@/src/features/follow/following/hooks/useFollowingList";
 import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
 
@@ -19,6 +19,7 @@ const PLACEHOLDER_PROFILE_FIELDS = [
   "이용 시간",
   "음악력",
 ] as const;
+const PROFILE_FOLLOWING_CHECK_SIZE = 200;
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -45,44 +46,23 @@ function isCurrentUserProfile(
 
 export default function RoomProfilePanel({ currentRequester }: Props) {
   const { data: me } = useMe();
-  const { error, isPending, mutate, reset, variables } =
-    useSendFollowRequest();
   const targetSlug = currentRequester?.slug ?? null;
-  const { data: followRequestStatus } =
-    useFollowRequestTargetStatus(targetSlug);
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
   const canFollow = !!currentRequester?.slug && !isSelf;
-  const isCurrentMutationPending =
-    isPending && variables?.targetSlug === targetSlug;
-  const isRequestingFollow =
-    followRequestStatus === "pending" || isCurrentMutationPending;
-  const hasRequestedFollow = followRequestStatus === "sent";
-  const shouldShowError =
-    !!error && !!targetSlug && variables?.targetSlug === targetSlug;
-
-  function handleFollow() {
-    if (
-      !currentRequester?.slug ||
-      isRequestingFollow ||
-      hasRequestedFollow
-    ) {
-      return;
-    }
-
-    reset();
-    mutate({ targetSlug: currentRequester.slug });
-  }
+  const { data: followingData } = useFollowingList(
+    { size: PROFILE_FOLLOWING_CHECK_SIZE },
+    { enabled: canFollow },
+  );
+  const isFollowingCurrentRequester = followingData?.items.some(
+    (user) => user.slug === targetSlug,
+  );
 
   let buttonLabel = "팔로우";
   if (!currentRequester) {
     buttonLabel = "대상 없음";
   } else if (isSelf) {
     buttonLabel = "나";
-  } else if (hasRequestedFollow) {
-    buttonLabel = "팔로잉";
-  } else if (isRequestingFollow) {
-    buttonLabel = "요청 중...";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
   }
@@ -111,18 +91,16 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
             <div className={styles.nameBlock}>
               <div className={styles.name}>{currentRequester.nickname}</div>
             </div>
-            <button
-              type="button"
+            <FollowToggleButton
               className={styles.followButton}
-              onClick={handleFollow}
-              disabled={!canFollow || isRequestingFollow || hasRequestedFollow}
-            >
-              {buttonLabel}
-            </button>
+              disabled={!canFollow}
+              disabledLabel={buttonLabel}
+              initialRelationship={
+                isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
+              }
+              targetSlug={targetSlug}
+            />
           </div>
-          {shouldShowError ? (
-            <div className={styles.error}>{error.message}</div>
-          ) : null}
           <div className={styles.grid}>
             {PLACEHOLDER_PROFILE_FIELDS.map((field) => (
               <div key={field} className={styles.card}>

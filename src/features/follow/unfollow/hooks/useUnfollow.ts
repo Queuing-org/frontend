@@ -9,11 +9,11 @@ export function useUnfollow() {
   const qc = useQueryClient();
 
   return useMutation<boolean, ApiError, UnfollowParams>({
-    mutationKey: ["following", "unfollow"],
+    mutationKey: ["follows", "unfollow"],
     mutationFn: (params) => unfollow(params),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["following"] });
-      qc.invalidateQueries({ queryKey: ["searchUsers"] });
+      void qc.invalidateQueries({ queryKey: ["follows"] });
+      void qc.invalidateQueries({ queryKey: ["searchUsers"] });
     },
   });
 }

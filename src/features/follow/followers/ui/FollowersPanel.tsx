@@ -1,7 +1,7 @@
 "use client";
 
-import ReceivedFollowRequestList from "../../requests/ui/ReceivedFollowRequestList";
+import FollowersList from "./FollowersList";
 
 export default function FollowersPanel() {
-  return <ReceivedFollowRequestList />;
+  return <FollowersList />;
 }

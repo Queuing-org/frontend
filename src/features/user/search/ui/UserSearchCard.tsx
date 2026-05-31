@@ -1,6 +1,6 @@
 "use client";
 
-import FollowRequestButton from "@/src/features/follow/requests/ui/FollowRequestButton";
+import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import type { SearchUser } from "../model/types";
 
 export default function UserSearchCard({ user }: { user: SearchUser }) {
@@ -20,7 +20,12 @@ export default function UserSearchCard({ user }: { user: SearchUser }) {
       </div>
 
       <div>
-        <FollowRequestButton targetSlug={user.slug} />
+        <FollowToggleButton
+          disabled={user.relationship === "ME"}
+          disabledLabel="나"
+          initialRelationship={user.relationship}
+          targetSlug={user.slug}
+        />
       </div>
     </div>
   );

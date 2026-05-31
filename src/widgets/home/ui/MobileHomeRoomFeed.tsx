@@ -135,7 +135,7 @@ export default function MobileHomeRoomFeed({
           type="button"
           className={styles.secondaryAction}
           onClick={onOpenFollow}
-          aria-label="친구"
+          aria-label="팔로우"
         >
           <UsersRound className={styles.actionIcon} aria-hidden="true" />
         </button>

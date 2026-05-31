@@ -91,7 +91,7 @@ export default function HomeScreen() {
 
   const requestOpenFollow = () =>
     requestAuthenticatedAction({
-      description: "친구 기능은 로그인 후 이용할 수 있어요.",
+      description: "팔로우 기능은 로그인 후 이용할 수 있어요.",
       onAuthenticated: () => setIsFollowModalOpen(true),
     });
 
