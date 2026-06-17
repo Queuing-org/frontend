@@ -1,5 +1,9 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import type { OnboardingPayload } from "../model/types";
+import type { OnboardingPayload } from "@/src/features/user/model/types";
+import {
+  assertApiBooleanResult,
+  unwrapApiResponse,
+} from "@/src/shared/api/api-response";
 import { ApiResponse } from "@/src/shared/api/types";
 
 export async function completeOnboarding(
@@ -10,5 +14,8 @@ export async function completeOnboarding(
     payload
   );
 
-  return data.result;
+  return assertApiBooleanResult(
+    unwrapApiResponse(data),
+    "온보딩을 완료하지 못했습니다.",
+  );
 }

@@ -2,21 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
-import { publishChatMessage } from "@/src/entities/room/api/websocket/publishChatMessage";
-import { subscribeRoomChatEvents } from "@/src/entities/room/api/websocket/subscribeRoomChatEvents";
-import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
-import { subscribeUserRoomEvents } from "@/src/entities/room/api/websocket/subscribeUserRoomEvents";
-import type {
-  ChatMessage,
-  WsErrorData,
-  WsEvent,
-} from "@/src/entities/room/model/types";
-import type { User } from "@/src/entities/user/model/types";
+import { publishChatMessage } from "@/src/features/room/api/websocket/publishChatMessage";
+import { subscribeRoomChatEvents } from "@/src/features/room/api/websocket/subscribeRoomChatEvents";
+import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
+import { subscribeUserRoomEvents } from "@/src/features/room/api/websocket/subscribeUserRoomEvents";
+import type { ChatMessage, WsEvent } from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import { isChatMessageFromUser } from "../model/chatMessages";
 import {
-  isChatMessageData,
-  isChatMessageFromUser,
-} from "../model/chatMessages";
+  isWsErrorData,
+  parseChatMessageEvent,
+} from "../model/chatRealtimeEvents";
+import { CHAT_MAX_LENGTH } from "../constants/chat";
 
 type UseRoomChatRealtimeParams = {
   currentUser: User | null;
@@ -27,7 +25,6 @@ type UseRoomChatRealtimeParams = {
   slug: string;
 };
 
-const MAX_CHAT_CONTENT_LENGTH = 200;
 const CHAT_SEND_BACKFILL_DELAY_MS = 2000;
 const CHAT_SEND_CONFIRM_TIMEOUT_MS = 8000;
 
@@ -37,57 +34,6 @@ type PendingChatSend = {
   id: number;
   timeoutId: ReturnType<typeof setTimeout>;
 };
-
-function isWsErrorData(data: unknown): data is WsErrorData {
-  if (!data || typeof data !== "object") {
-    return false;
-  }
-
-  const candidate = data as Partial<WsErrorData>;
-
-  return (
-    typeof candidate.statusCode === "number" &&
-    typeof candidate.code === "string" &&
-    typeof candidate.message === "string"
-  );
-}
-
-function parseChatMessageEvent(
-  body: string,
-  roomSlug: string,
-): ChatMessage | null {
-  let parsedBody: unknown;
-  try {
-    parsedBody = JSON.parse(body);
-  } catch {
-    return null;
-  }
-
-  if (isChatMessageData(parsedBody)) {
-    return parsedBody;
-  }
-
-  if (!parsedBody || typeof parsedBody !== "object") {
-    return null;
-  }
-
-  const event = parsedBody as Partial<WsEvent>;
-  const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
-  const eventRoomSlug =
-    typeof event.roomSlug === "string"
-      ? normalizeRoomSlug(event.roomSlug)
-      : normalizedRoomSlug;
-
-  if (
-    eventRoomSlug !== normalizedRoomSlug ||
-    event.type !== "CHAT_MESSAGE" ||
-    !isChatMessageData(event.data)
-  ) {
-    return null;
-  }
-
-  return event.data;
-}
 
 export function useRoomChatRealtime({
   currentUser,
@@ -435,7 +381,7 @@ export function useRoomChatRealtime({
         return false;
       }
 
-      if (trimmedMessage.length > MAX_CHAT_CONTENT_LENGTH) {
+      if (trimmedMessage.length > CHAT_MAX_LENGTH) {
         setChatSendErrorMessage("채팅은 200자 이하로 입력해주세요.");
         return false;
       }

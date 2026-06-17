@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Room } from "@/src/entities/room/model/types";
+import type { Room } from "@/src/features/room/model/types";
 
 export function useRoomNavigator(rooms: Room[]) {
   const [currentRoomSlug, setCurrentRoomSlug] = useState<string | null>(null);

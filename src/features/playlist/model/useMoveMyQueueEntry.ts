@@ -8,6 +8,7 @@ import {
   applyPendingEntryOrder,
   type QueueOrderSnapshot,
 } from "./queueOrderOptimistic";
+import { playlistKeys } from "./queryKeys";
 
 type MoveMyQueueEntryVariables = MoveMyQueueEntryParams & {
   orderedPendingEntryIds: string[];
@@ -27,15 +28,17 @@ export function useMoveMyQueueEntry() {
         slug,
       }),
     onMutate: async ({ orderedPendingEntryIds, slug }) => {
-      await queryClient.cancelQueries({ queryKey: ["roomQueue", slug] });
+      await queryClient.cancelQueries({
+        queryKey: playlistKeys.roomQueuePrefix(slug),
+      });
 
       const previousRoomQueueSnapshots =
         queryClient.getQueriesData<RoomQueueResult>({
-          queryKey: ["roomQueue", slug],
+          queryKey: playlistKeys.roomQueuePrefix(slug),
         });
 
       queryClient.setQueriesData<RoomQueueResult>(
-        { queryKey: ["roomQueue", slug] },
+        { queryKey: playlistKeys.roomQueuePrefix(slug) },
         (currentEntries) =>
           applyPendingEntryOrder(currentEntries, orderedPendingEntryIds),
       );
@@ -47,14 +50,16 @@ export function useMoveMyQueueEntry() {
         queryClient.setQueryData(queryKey, previousData);
       });
 
-      queryClient.invalidateQueries({ queryKey: ["roomQueue", variables.slug] });
+      queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
+      });
     },
     onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ["roomQueue", variables.slug],
+        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: ["roomState", variables.slug],
+        queryKey: playlistKeys.roomStatePrefix(variables.slug),
       });
     },
   });

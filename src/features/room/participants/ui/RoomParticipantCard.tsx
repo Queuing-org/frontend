@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { PlaylistParticipant } from "@/src/entities/playlist/model/types";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import styles from "./RoomParticipantsPanel.module.css";
 
 type Props = {

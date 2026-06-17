@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { GetPlaylistParams, PlaylistResult } from "../model/types";
@@ -10,5 +11,5 @@ export async function getPlaylist({
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/playlist`,
   );
 
-  return res.data.result;
+  return unwrapApiResponse(res.data);
 }

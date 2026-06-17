@@ -1,6 +1,6 @@
 "use client";
 
-import { checkNickname } from "@/src/entities/user/api/checkNickName";
+import { checkNickname } from "@/src/features/user/profile/api/checkNickname";
 
 export default function CheckNicknameButton({
   nickname,

@@ -1,5 +1,5 @@
-import type { Room } from "@/src/entities/room/model/types";
-import RoomInfo from "@/src/entities/room/ui/RoomInfo";
+import type { Room } from "@/src/features/room/model/types";
+import RoomInfo from "@/src/features/room/info/ui/RoomInfo";
 import SignUpButton from "@/src/features/auth/login-with-google/ui/SignUpButton";
 import RoomSearchButton from "@/src/features/room/search/ui/RoomSearchButton";
 import { Search, X } from "lucide-react";

@@ -1,20 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import type { FollowersListResponse } from "@/src/entities/follow/model/types";
+import type { FollowersListResponse } from "@/src/features/follow/model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { fetchFollowers } from "../api/fetchFollowers";
 import type { FetchFollowersParams } from "../model/types";
+import { followKeys } from "@/src/features/follow/model/queryKeys";
 
 export function useFollowersList(
   params?: FetchFollowersParams,
   options: { enabled?: boolean } = {},
 ) {
   return useQuery<FollowersListResponse, ApiError>({
-    queryKey: [
-      "follows",
-      "followers",
-      params?.lastId ?? null,
-      params?.size ?? null,
-    ],
+    queryKey: followKeys.followers(params?.lastId, params?.size),
     queryFn: () => fetchFollowers(params),
     enabled: options.enabled ?? true,
     retry: false,

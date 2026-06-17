@@ -1,9 +1,9 @@
 "use client";
 
 import { useRef, type CSSProperties } from "react";
-import type { Room } from "@/src/entities/room/model/types";
+import type { Room } from "@/src/features/room/model/types";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
-import SearchPageRoomCard from "@/src/entities/room/ui/SearchPageRoomCard";
+import SearchPageRoomCard from "@/src/features/room/search/ui/SearchPageRoomCard";
 import styles from "./SearchPageRoomList.module.css";
 
 type Props = {

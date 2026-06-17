@@ -1,5 +1,6 @@
 import type { IMessage, StompSubscription } from "@stomp/stompjs";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
+import { buildRoomPasswordSubscriptionHeaders } from "@/src/shared/api/websocket/roomPasswordSubscriptionHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 
 export function subscribeRoomChatEvents(
@@ -15,6 +16,6 @@ export function subscribeRoomChatEvents(
   return client.subscribe(
     destination,
     onMessage,
-    password ? { "X-Room-Password": password } : undefined,
+    buildRoomPasswordSubscriptionHeaders(password),
   );
 }

@@ -1,15 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
-import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import styles from "./CurrentRequesterCard.module.css";
 
 type CurrentRequesterCardProps = {
   durationMs: number | null;
   isOwner: boolean;
   requester: CurrentRequesterProfile;
-  roomSlug: string | null;
+  skipAction?: ReactNode;
   trackTitle: string | null;
 };
 
@@ -29,14 +29,16 @@ export default function CurrentRequesterCard({
   durationMs,
   isOwner,
   requester,
-  roomSlug,
+  skipAction,
   trackTitle,
 }: CurrentRequesterCardProps) {
   const durationText = formatDurationMs(durationMs);
 
   return (
     <div className={styles.card}>
-      <SkipTrackButton className={styles.skipButton} slug={roomSlug} />
+      {skipAction ? (
+        <div className={styles.skipButton}>{skipAction}</div>
+      ) : null}
       {requester.avatarUrl ? (
         <Image
           src={requester.avatarUrl}

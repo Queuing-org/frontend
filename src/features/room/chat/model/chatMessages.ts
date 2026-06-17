@@ -1,9 +1,9 @@
-import type { JoinRoomResult } from "@/src/entities/room/api/joinRoom";
+import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
 import type {
   ChatMessage,
   ChatMessageEventData,
-} from "@/src/entities/room/model/types";
-import type { User } from "@/src/entities/user/model/types";
+} from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 
 export function isChatMessageData(data: unknown): data is ChatMessageEventData {
   if (!data || typeof data !== "object") {

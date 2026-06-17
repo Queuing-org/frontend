@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMe } from "@/src/entities/user/hooks/useMe";
+import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { redirectToGoogleLogin } from "../api/login";
 import LoginModal from "./LoginModal";
 import styles from "./SignUpButton.module.css";

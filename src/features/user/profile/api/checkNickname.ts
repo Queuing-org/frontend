@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 
 export async function checkNickname(nickname: string): Promise<boolean> {
@@ -9,5 +10,5 @@ export async function checkNickname(nickname: string): Promise<boolean> {
     }
   );
 
-  return res.data.result;
+  return unwrapApiResponse(res.data);
 }

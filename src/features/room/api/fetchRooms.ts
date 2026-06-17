@@ -1,5 +1,6 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { RoomsResponse } from "../model/types";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import { ApiResponse } from "@/src/shared/api/types";
 
 export type FetchRoomsParams = {
@@ -21,5 +22,5 @@ export async function fetchRooms({
     },
   );
 
-  return res.data.result;
+  return unwrapApiResponse(res.data);
 }

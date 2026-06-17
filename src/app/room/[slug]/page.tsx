@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
-import RoomPageSongInfo from "./RoomPageSongInfo";
+import RoomPlaybackScreen from "@/src/features/room/page/ui/RoomPlaybackScreen";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -43,5 +43,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function RoomPage() {
-  return <RoomPageSongInfo />;
+  return <RoomPlaybackScreen />;
 }

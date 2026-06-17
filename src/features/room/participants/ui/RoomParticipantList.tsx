@@ -1,6 +1,6 @@
-import type { PlaylistParticipant } from "@/src/entities/playlist/model/types";
-import type { RoomOwner } from "@/src/entities/room/model/types";
-import type { User } from "@/src/entities/user/model/types";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type { RoomOwner } from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 import RoomParticipantCard from "./RoomParticipantCard";
 import { isRoomOwner, isSameUser } from "../model/participantIdentity";
 import styles from "./RoomParticipantsPanel.module.css";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Room } from "@/src/entities/room/model/types";
+import type { Room } from "@/src/features/room/model/types";
 
 const DEFAULT_LOAD_MORE_THRESHOLD = 3;
 

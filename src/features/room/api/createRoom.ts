@@ -1,4 +1,5 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 import type { CreateRoomPayload, CreateRoomResult } from "./types";
 
@@ -12,7 +13,7 @@ export async function createRoom(
     payload
   );
 
-  const slug = res.data.result.slug;
+  const slug = unwrapApiResponse(res.data).slug;
 
   return { slug };
 }

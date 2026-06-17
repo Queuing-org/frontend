@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import type { User } from "@/src/entities/user/model/types";
+import type { User } from "@/src/features/user/model/types";
 import { useRoomChatHistory } from "./useRoomChatHistory";
 import { useRoomChatRealtime } from "./useRoomChatRealtime";
 

@@ -1,5 +1,9 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { ApiError } from "@/src/shared/api/api-error";
+import {
+  assertApiBooleanResult,
+  unwrapApiResponse,
+} from "@/src/shared/api/api-response";
+import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { MoveRoomQueueEntryParams } from "../model/types";
@@ -19,20 +23,12 @@ export async function moveRoomQueueEntry({
       movedEntryId,
     },
     {
-      headers: password
-        ? {
-            "X-Room-Password": password,
-          }
-        : undefined,
+      headers: buildRoomPasswordHeaders(password),
     },
   );
 
-  if (!res.data.result) {
-    throw new ApiError({
-      message: "큐 순서를 변경하지 못했습니다.",
-      status: 500,
-    });
-  }
-
-  return res.data.result;
+  return assertApiBooleanResult(
+    unwrapApiResponse(res.data),
+    "큐 순서를 변경하지 못했습니다.",
+  );
 }

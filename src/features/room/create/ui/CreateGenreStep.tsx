@@ -1,6 +1,6 @@
 "use client";
 
-import type { RoomTag } from "@/src/entities/room/model/types";
+import type { RoomTag } from "@/src/features/room/model/types";
 import styles from "./CreateGenreStep.module.css";
 
 type CreateGenreStepProps = {

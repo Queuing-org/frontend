@@ -1,6 +1,6 @@
 "use client";
 
-import { useMe } from "@/src/entities/user/hooks/useMe";
+import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import styles from "./PreferencesSettingsTab.module.css";
 

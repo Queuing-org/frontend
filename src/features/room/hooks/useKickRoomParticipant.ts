@@ -6,6 +6,8 @@ import {
   type KickRoomParticipantParams,
 } from "../api/kickRoomParticipant";
 import type { ApiError } from "@/src/shared/api/api-error";
+import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
+import { roomKeys } from "../model/queryKeys";
 
 export function useKickRoomParticipant() {
   const queryClient = useQueryClient();
@@ -14,10 +16,10 @@ export function useKickRoomParticipant() {
     mutationFn: kickRoomParticipant,
     onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ["roomState", variables.slug],
+        queryKey: playlistKeys.roomStatePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: ["roomMeta", variables.slug],
+        queryKey: roomKeys.meta(variables.slug),
       });
     },
   });

@@ -1,4 +1,4 @@
-import { User } from "@/src/entities/user/model/types";
+import { User } from "@/src/features/user/model/types";
 
 export type UserRelationship =
   | "ME"

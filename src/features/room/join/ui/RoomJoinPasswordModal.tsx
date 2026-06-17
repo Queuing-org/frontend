@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import type { Room } from "@/src/entities/room/model/types";
-import { joinRoom } from "@/src/entities/room/api/joinRoom";
+import type { Room } from "@/src/features/room/model/types";
+import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { writeStoredRoomJoinPassword } from "../lib/roomJoinPasswordStorage";
 import styles from "./RoomJoinPasswordModal.module.css";
 

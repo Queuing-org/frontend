@@ -6,10 +6,10 @@ import type { DraggableData } from "react-draggable";
 import type {
   FloatingWidgetsView,
   WidgetId,
-} from "@/src/widgets/room/model/useFloatingWidgetsState";
-import type { PlaylistParticipant } from "@/src/entities/playlist/model/types";
-import type { RoomMeta } from "@/src/entities/room/model/types";
-import type { User } from "@/src/entities/user/model/types";
+} from "@/src/features/room/floating/model/useFloatingWidgetsState";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type { RoomMeta } from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";

@@ -7,6 +7,7 @@ import type {
   RoomQueueResult,
 } from "./types";
 import type { ApiError } from "@/src/shared/api/api-error";
+import { playlistKeys } from "./queryKeys";
 
 type RoomQueueSnapshot = [readonly unknown[], RoomQueueResult | undefined];
 
@@ -18,16 +19,18 @@ export function useDeleteRoomQueueEntries() {
   }>({
     mutationFn: deleteRoomQueueEntries,
     onMutate: async ({ entryIds, slug }) => {
-      await queryClient.cancelQueries({ queryKey: ["roomQueue", slug] });
+      await queryClient.cancelQueries({
+        queryKey: playlistKeys.roomQueuePrefix(slug),
+      });
 
       const previousRoomQueueSnapshots =
         queryClient.getQueriesData<RoomQueueResult>({
-          queryKey: ["roomQueue", slug],
+          queryKey: playlistKeys.roomQueuePrefix(slug),
         });
 
       const entryIdSet = new Set(entryIds);
       queryClient.setQueriesData<RoomQueueResult>(
-        { queryKey: ["roomQueue", slug] },
+        { queryKey: playlistKeys.roomQueuePrefix(slug) },
         (currentEntries) =>
           currentEntries?.filter((entry) => !entryIdSet.has(entry.entryId)),
       );
@@ -39,14 +42,16 @@ export function useDeleteRoomQueueEntries() {
         queryClient.setQueryData(queryKey, previousData);
       });
 
-      queryClient.invalidateQueries({ queryKey: ["roomQueue", variables.slug] });
+      queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
+      });
     },
     onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ["roomQueue", variables.slug],
+        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: ["roomState", variables.slug],
+        queryKey: playlistKeys.roomStatePrefix(variables.slug),
       });
     },
   });

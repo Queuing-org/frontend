@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import HomeScreen from "@/src/widgets/home/ui/HomeScreen";
+import HomeScreen from "@/src/features/home/ui/HomeScreen";
 
 export const metadata: Metadata = {
   title: "큐잉",

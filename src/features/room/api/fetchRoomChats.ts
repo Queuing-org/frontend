@@ -1,4 +1,6 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
+import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { ChatHistoryResponse } from "../model/types";
@@ -23,13 +25,9 @@ export async function fetchRoomChats({
         ...(typeof cursorId === "number" ? { cursorId } : {}),
         size,
       },
-      headers: password
-        ? {
-            "X-Room-Password": password,
-          }
-        : undefined,
+      headers: buildRoomPasswordHeaders(password),
     },
   );
 
-  return res.data.result;
+  return unwrapApiResponse(res.data);
 }

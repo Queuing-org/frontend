@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { fetchRoomQueue } from "../api/fetchRoomQueue";
 import type { RoomQueueResult } from "./types";
+import { playlistKeys } from "./queryKeys";
 
 export function useRoomQueue(
   slug: string | null,
@@ -13,7 +14,7 @@ export function useRoomQueue(
   enabled = true,
 ) {
   return useQuery<RoomQueueResult, ApiError>({
-    queryKey: ["roomQueue", slug, password ?? null, offset, size],
+    queryKey: playlistKeys.roomQueue(slug, password, offset, size),
     queryFn: () =>
       fetchRoomQueue({
         slug: slug!,

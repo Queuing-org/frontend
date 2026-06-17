@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { FollowingUser } from "@/src/entities/follow/model/types";
+import type { FollowingUser } from "@/src/features/follow/model/types";
 import UnfollowButton from "../../unfollow/ui/UnfollowButton";
 import styles from "./FollowingCard.module.css";
 

@@ -1,10 +1,10 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
-import type { Room } from "@/src/entities/room/model/types";
-import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
+import type { Room } from "@/src/features/room/model/types";
+import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
-import RoomStageCard from "@/src/entities/room/ui/RoomStageCard";
+import RoomStageCard from "@/src/features/room/list/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
 
 type RoomSlot =

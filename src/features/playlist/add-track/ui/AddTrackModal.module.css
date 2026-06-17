@@ -11,7 +11,7 @@
 
 .dialog {
   width: 496px;
-  min-height: 460px;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -44,10 +44,6 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-}
-
-.fieldGroup + .fieldGroup {
-  margin-top: 20px;
 }
 
 .labelRow {

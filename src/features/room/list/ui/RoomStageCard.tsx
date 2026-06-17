@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRoomMeta } from "../hooks/useRoomMeta";
+import { useRoomMeta } from "../../hooks/useRoomMeta";
 import styles from "./RoomStageCard.module.css";
 
 type Props = {

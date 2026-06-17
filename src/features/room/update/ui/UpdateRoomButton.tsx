@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
-import { isRoomOwner } from "@/src/entities/room/lib/isRoomOwner";
-import { useMe } from "@/src/entities/user/hooks/useMe";
+import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
+import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
+import { useMe } from "@/src/features/user/session/hooks/useMe";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./UpdateRoomButton.module.css";
 

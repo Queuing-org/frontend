@@ -1,4 +1,8 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import {
+  assertApiBooleanResult,
+  unwrapApiResponse,
+} from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { UpdateRoomParams, UpdateRoomResult } from "./types";
@@ -15,5 +19,10 @@ export async function updateRoom({
     payload,
   );
 
-  return { success: res.data.result };
+  return {
+    success: assertApiBooleanResult(
+      unwrapApiResponse(res.data),
+      "방 정보를 수정하지 못했습니다.",
+    ),
+  };
 }

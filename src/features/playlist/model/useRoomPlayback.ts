@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { fetchRoomPlayback } from "../api/fetchRoomPlayback";
 import type { PlaybackSnapshot } from "./types";
+import { playlistKeys } from "./queryKeys";
 
 export function useRoomPlayback(
   slug: string | null,
@@ -11,7 +12,7 @@ export function useRoomPlayback(
   enabled = true,
 ) {
   return useQuery<PlaybackSnapshot | null, ApiError>({
-    queryKey: ["roomPlayback", slug, password ?? null],
+    queryKey: playlistKeys.roomPlayback(slug, password),
     queryFn: () => fetchRoomPlayback({ slug: slug!, password }),
     enabled: enabled && !!slug,
     retry: false,

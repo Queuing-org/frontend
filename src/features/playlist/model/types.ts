@@ -1,4 +1,4 @@
-import type { PlaybackStatus } from "@/src/entities/room/model/types";
+import type { PlaybackStatus } from "@/src/features/room/model/types";
 
 export type GetPlaylistParams = {
   slug: string;

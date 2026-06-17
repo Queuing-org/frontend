@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { FollowerUser } from "@/src/entities/follow/model/types";
+import type { FollowerUser } from "@/src/features/follow/model/types";
 import styles from "./FollowerCard.module.css";
 
 export default function FollowerCard({ user }: { user: FollowerUser }) {

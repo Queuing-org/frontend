@@ -1,4 +1,4 @@
-import { useRoomTags } from "../hooks/useRoomTags";
+import { useRoomTags } from "../../hooks/useRoomTags";
 
 export default function RoomTags() {
   const { data, isLoading, isError } = useRoomTags();

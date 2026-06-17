@@ -3,7 +3,7 @@
 import type { ComponentPropsWithoutRef, PointerEvent } from "react";
 import { forwardRef } from "react";
 import Image from "next/image";
-import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import { formatQueueDuration } from "../model/roomQueue";
 import styles from "./RoomQueueCard.module.css";
 

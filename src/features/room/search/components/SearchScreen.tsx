@@ -5,15 +5,15 @@ import Link from "next/link";
 import {
   getRoomsFromPages,
   useRoomsQuery,
-} from "@/src/entities/room/hooks/useFetchRooms";
-import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
-import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
+} from "@/src/features/room/hooks/useFetchRooms";
+import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
+import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
-import MainLogo from "@/src/widgets/home/ui/MainLogo";
-import styles from "./page.module.css";
+import MainLogo from "@/src/features/home/ui/MainLogo";
+import styles from "./SearchScreen.module.css";
 import Image from "next/image";
 import RoomSearchInput from "@/src/features/room/search/ui/RoomSearchInput";
 import { ClipLoader } from "react-spinners";
@@ -22,8 +22,8 @@ import {
   getNextHomeFilters,
   type HomeFilterKey,
   type HomeFilterOption,
-} from "@/src/widgets/home/ui/HomeControlPanelShell";
-import HomeSearchControlDock from "@/src/widgets/home/ui/HomeSearchControlDock";
+} from "@/src/features/home/ui/HomeControlPanelShell";
+import HomeSearchControlDock from "@/src/features/home/ui/HomeSearchControlDock";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
@@ -32,7 +32,7 @@ import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 
-export default function SearchPage() {
+export default function SearchScreen() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);

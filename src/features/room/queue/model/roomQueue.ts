@@ -1,5 +1,5 @@
-import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
-import type { User } from "@/src/entities/user/model/types";
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
+import type { User } from "@/src/features/user/model/types";
 
 export type QueueTab = "all" | "mine";
 export type QueueEntryStatusTone = "active" | "played" | "queued" | "skipped";

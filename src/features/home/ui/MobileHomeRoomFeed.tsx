@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Settings, UsersRound } from "lucide-react";
-import type { Room } from "@/src/entities/room/model/types";
-import { getDefaultRoomImage } from "@/src/entities/room/lib/getDefaultRoomImage";
+import type { Room } from "@/src/features/room/model/types";
+import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
 import HomeControlPanelShell, {
   type HomeFilterKey,
   type HomeFilterOption,

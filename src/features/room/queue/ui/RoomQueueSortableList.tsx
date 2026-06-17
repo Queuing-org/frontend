@@ -20,7 +20,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import { isPendingQueueEntry } from "../model/roomQueue";
 import RoomQueueCard from "./RoomQueueCard";
 import listStyles from "./RoomQueueList.module.css";

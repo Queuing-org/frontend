@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { OnboardingPayload } from "@/src/entities/user/model/types";
-import { useCompleteOnboarding } from "@/src/entities/user/hooks/useCompleteOnboarding";
+import type { OnboardingPayload } from "@/src/features/user/model/types";
+import { useCompleteOnboarding } from "@/src/features/onboarding/hooks/useCompleteOnboarding";
 import { isSafeInternalPath } from "@/src/shared/lib/isSafeInternalPath";
 import NicknameStep from "./steps/NicknameStep";
 

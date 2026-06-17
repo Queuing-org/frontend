@@ -1,26 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import type { UpdateRoomPayload } from "@/src/entities/room/api/types";
-import { useRoomTags } from "@/src/entities/room/hooks/useRoomTags";
-import { useUpdateRoom } from "@/src/features/room/update/model/useUpdateRoom";
+import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
 import styles from "./EditRoomFormModal.module.css";
 
-const MAX_TAGS = 5;
-const MAX_ROOM_TITLE_LENGTH = 18;
-const DEFAULT_MAX_USERS = "100";
-const DEFAULT_TRACK_LIMIT_MINUTES = "5";
 const EMPTY_TAG_SLUGS: string[] = [];
-
-function haveSameItems(left: string[], right: string[]) {
-  if (left.length !== right.length) {
-    return false;
-  }
-
-  const rightItems = new Set(right);
-
-  return left.every((item) => rightItems.has(item));
-}
 
 type EditRoomFormModalProps = {
   open: boolean;
@@ -39,102 +22,16 @@ export default function EditRoomFormModal({
   initialHasPassword = false,
   onClose,
 }: EditRoomFormModalProps) {
-  const updateRoomMutation = useUpdateRoom();
-  const {
-    data: roomTags,
-    isLoading: tagsLoading,
-    isError: tagsError,
-  } = useRoomTags();
-  const [title, setTitle] = useState(() => initialTitle);
-  const [password, setPassword] = useState("");
-  const [isPasswordEnabled, setIsPasswordEnabled] = useState(
-    () => initialHasPassword,
-  );
-  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
-    initialTagSlugs.slice(0, MAX_TAGS),
-  );
-  const [maxUsers, setMaxUsers] = useState(() => DEFAULT_MAX_USERS);
-  const [trackLimitMinutes, setTrackLimitMinutes] = useState(
-    () => DEFAULT_TRACK_LIMIT_MINUTES,
-  );
+  const form = useEditRoomForm({
+    initialTagSlugs,
+    initialTitle,
+    onClose,
+    roomSlug,
+  });
 
   if (!open) {
     return null;
   }
-
-  const isSubmitting = updateRoomMutation.isPending;
-  const submitError = updateRoomMutation.error;
-  const tags = roomTags ?? [];
-  const trimmedTitle = title.trim();
-  const trimmedPassword = password.trim();
-  const isPasswordRequired =
-    isPasswordEnabled && trimmedPassword.length === 0 && !initialHasPassword;
-  const canSubmit =
-    trimmedTitle.length > 0 && !isPasswordRequired && !isSubmitting && !!roomSlug;
-
-  const toggleTag = (slug: string) => {
-    setSelectedTagSlugs((previousSlugs) => {
-      const exists = previousSlugs.includes(slug);
-
-      if (exists) {
-        return previousSlugs.filter((selectedSlug) => selectedSlug !== slug);
-      }
-
-      if (previousSlugs.length >= MAX_TAGS) {
-        return previousSlugs;
-      }
-
-      return [...previousSlugs, slug];
-    });
-  };
-
-  const updatePasswordEnabled = (enabled: boolean) => {
-    setIsPasswordEnabled(enabled);
-
-    if (!enabled) {
-      setPassword("");
-    }
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    if (!trimmedTitle || isPasswordRequired || !roomSlug) {
-      return;
-    }
-
-    const updatePayload: UpdateRoomPayload = {};
-
-    if (!haveSameItems(selectedTagSlugs, initialTagSlugs)) {
-      updatePayload.tags = selectedTagSlugs;
-    }
-
-    if (isPasswordEnabled && trimmedPassword) {
-      updatePayload.password = trimmedPassword;
-    }
-
-    if (
-      trimmedTitle !== initialTitle.trim() ||
-      Object.keys(updatePayload).length > 0
-    ) {
-      updatePayload.title = trimmedTitle;
-    }
-
-    if (Object.keys(updatePayload).length === 0) {
-      onClose();
-      return;
-    }
-
-    updateRoomMutation.mutate(
-      {
-        slug: roomSlug,
-        payload: updatePayload,
-      },
-      {
-        onSuccess: onClose,
-      },
-    );
-  };
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -154,7 +51,7 @@ export default function EditRoomFormModal({
           <span className={styles.closeIcon} aria-hidden="true" />
         </button>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
+        <form className={styles.form} onSubmit={form.handleSubmit}>
           <h2 id="room-edit-modal-title" className={styles.modeBadge}>
             EDIT
           </h2>
@@ -172,13 +69,11 @@ export default function EditRoomFormModal({
             <span className={styles.label}>큐 이름</span>
             <input
               className={styles.input}
-              value={title}
-              onChange={(event) =>
-                setTitle(event.target.value.slice(0, MAX_ROOM_TITLE_LENGTH))
-              }
-              maxLength={MAX_ROOM_TITLE_LENGTH}
+              value={form.title}
+              onChange={(event) => form.updateTitle(event.target.value)}
+              maxLength={form.maxRoomTitleLength}
               placeholder="작업 효율 200% 높여주는 노래"
-              disabled={isSubmitting}
+              disabled={form.isSubmitting}
             />
           </label>
 
@@ -187,26 +82,44 @@ export default function EditRoomFormModal({
               type="button"
               className={styles.checkboxRow}
               role="checkbox"
-              aria-checked={isPasswordEnabled}
-              onClick={() => updatePasswordEnabled(!isPasswordEnabled)}
-              disabled={isSubmitting}
+              aria-checked={form.isPasswordChangeEnabled}
+              onClick={() =>
+                form.updatePasswordChangeEnabled(!form.isPasswordChangeEnabled)
+              }
+              disabled={form.isSubmitting}
             >
               <span
                 className={styles.checkboxBox}
-                data-checked={isPasswordEnabled}
+                data-checked={form.isPasswordChangeEnabled}
                 aria-hidden="true"
               />
-              <span className={styles.label}>비밀번호 설정</span>
+              <span className={styles.label}>
+                {initialHasPassword ? "새 비밀번호로 변경" : "비밀번호 설정"}
+              </span>
             </button>
 
-            {isPasswordEnabled ? (
+            {form.isPasswordChangeEnabled ? (
               <input
                 className={styles.input}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="새 비밀번호 입력 시 변경됩니다"
-                disabled={isSubmitting}
+                value={form.password}
+                onChange={(event) => form.setPassword(event.target.value)}
+                placeholder={
+                  initialHasPassword
+                    ? "새 비밀번호를 입력하세요"
+                    : "비밀번호를 입력하세요"
+                }
+                disabled={form.isSubmitting}
               />
+            ) : null}
+            {initialHasPassword ? (
+              <span className={styles.helperText}>
+                변경하지 않으면 기존 비밀번호가 유지됩니다.
+              </span>
+            ) : null}
+            {form.isPasswordRequired ? (
+              <span className={styles.errorText}>
+                새 비밀번호를 입력해주세요.
+              </span>
             ) : null}
           </div>
 
@@ -214,22 +127,22 @@ export default function EditRoomFormModal({
             <div className={styles.labelRow}>
               <span className={styles.label}>큐 장르</span>
               <span className={styles.helperText}>
-                {selectedTagSlugs.length}/{MAX_TAGS}
+                {form.selectedTagSlugs.length}/{form.maxTags}
               </span>
             </div>
 
-            {tagsLoading ? (
+            {form.tagsLoading ? (
               <div className={styles.helperText}>장르 불러오는 중...</div>
             ) : null}
-            {tagsError ? (
+            {form.tagsError ? (
               <div className={styles.errorText}>장르를 불러오지 못했어요.</div>
             ) : null}
-            {!tagsLoading && !tagsError ? (
+            {!form.tagsLoading && !form.tagsError ? (
               <div className={styles.tagGrid}>
-                {tags.map((tag) => {
-                  const selected = selectedTagSlugs.includes(tag.slug);
+                {form.roomTags.map((tag) => {
+                  const selected = form.selectedTagSlugs.includes(tag.slug);
                   const disabled =
-                    !selected && selectedTagSlugs.length >= MAX_TAGS;
+                    !selected && form.selectedTagSlugs.length >= form.maxTags;
 
                   return (
                     <button
@@ -237,62 +150,32 @@ export default function EditRoomFormModal({
                       type="button"
                       className={styles.tagChip}
                       data-selected={selected}
-                      disabled={isSubmitting || disabled}
-                      onClick={() => toggleTag(tag.slug)}
+                      disabled={form.isSubmitting || disabled}
+                      onClick={() => form.toggleTag(tag.slug)}
                     >
                       {tag.name}
                     </button>
                   );
                 })}
-                {tags.length === 0 ? (
+                {form.roomTags.length === 0 ? (
                   <span className={styles.helperText}>장르가 없습니다.</span>
                 ) : null}
               </div>
             ) : null}
           </div>
 
-          <div className={styles.twoColumn}>
-            <label className={styles.field}>
-              <span className={styles.label}>최대 인원 수</span>
-              <select
-                className={styles.select}
-                value={maxUsers}
-                onChange={(event) => setMaxUsers(event.target.value)}
-              >
-                <option value="20">20</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-                <option value="200">200</option>
-              </select>
-            </label>
-
-            <label className={styles.field}>
-              <span className={styles.label}>곡 당 제한 시간 (분)</span>
-              <select
-                className={styles.select}
-                value={trackLimitMinutes}
-                onChange={(event) => setTrackLimitMinutes(event.target.value)}
-              >
-                <option value="3">3</option>
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="15">15</option>
-              </select>
-            </label>
-          </div>
-
-          {submitError ? (
+          {form.submitError ? (
             <p className={styles.errorText}>
-              수정 실패: ({submitError.status}) {submitError.message}
+              수정 실패: ({form.submitError.status}) {form.submitError.message}
             </p>
           ) : null}
 
           <button
             type="submit"
             className={styles.submitButton}
-            disabled={!canSubmit}
+            disabled={!form.canSubmit}
           >
-            {isSubmitting ? "큐 수정 중..." : "큐 수정하기"}
+            {form.isSubmitting ? "큐 수정 중..." : "큐 수정하기"}
           </button>
         </form>
       </div>

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRoomChats } from "@/src/entities/room/hooks/useRoomChats";
-import type { JoinRoomResult } from "@/src/entities/room/api/joinRoom";
-import type { ChatMessage } from "@/src/entities/room/model/types";
-import type { User } from "@/src/entities/user/model/types";
+import { useRoomChats } from "@/src/features/room/hooks/useRoomChats";
+import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
+import type { ChatMessage } from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import {
   getChatMessageRenderKey,

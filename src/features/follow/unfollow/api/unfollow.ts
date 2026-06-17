@@ -1,4 +1,8 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import {
+  assertApiBooleanResult,
+  unwrapApiResponse,
+} from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 import type { UnfollowParams } from "../model/types";
 
@@ -9,5 +13,8 @@ export async function unfollow({
     `/api/v1/follows/${encodeURIComponent(targetSlug)}`,
   );
 
-  return res.data.result;
+  return assertApiBooleanResult(
+    unwrapApiResponse(res.data),
+    "언팔로우하지 못했습니다.",
+  );
 }

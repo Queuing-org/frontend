@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Room } from "@/src/entities/room/model/types";
+import type { Room } from "@/src/features/room/model/types";
 
 type UseRoomEntryParams = {
   selectedRoomSlug: string | null;

@@ -4,7 +4,7 @@ import type {
   RoomJoinedData,
   WsErrorData,
   WsEvent,
-} from "@/src/entities/room/model/types";
+} from "@/src/features/room/model/types";
 import type { JoinRoomResult } from "../joinRoom.types";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
 

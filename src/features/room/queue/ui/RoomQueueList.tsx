@@ -1,6 +1,6 @@
 "use client";
 
-import type { PlaylistEntry } from "@/src/entities/playlist/model/types";
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import RoomQueueCard from "./RoomQueueCard";
 import styles from "./RoomQueueList.module.css";
 

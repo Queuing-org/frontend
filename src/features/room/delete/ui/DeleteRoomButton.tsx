@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeleteRoom } from "@/src/entities/room/hooks/useDeleteRoom";
+import { useDeleteRoom } from "@/src/features/room/hooks/useDeleteRoom";
 
 type Props = {
   slug: string;

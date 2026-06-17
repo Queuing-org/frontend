@@ -1,6 +1,7 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import type { User } from "@/src/entities/user/model/types";
+import type { User } from "@/src/features/user/model/types";
 import type { UpdateMePayload } from "../model/types";
+import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import { ApiResponse } from "@/src/shared/api/types";
 
 export async function updateMe(payload: UpdateMePayload): Promise<User> {
@@ -8,5 +9,5 @@ export async function updateMe(payload: UpdateMePayload): Promise<User> {
     "/api/v1/user-profiles/me",
     payload
   );
-  return data.result;
+  return unwrapApiResponse(data);
 }

@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { useRoomMeta } from "@/src/entities/room/hooks/useRoomMeta";
+import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
 import styles from "./RoomInfo.module.css";
 
 type Props = {

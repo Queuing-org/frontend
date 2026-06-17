@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { completeOnboarding } from "../api/onboarding";
+import { userKeys } from "@/src/features/user/model/queryKeys";
 
 export function useCompleteOnboarding() {
   const qc = useQueryClient();
@@ -7,7 +8,7 @@ export function useCompleteOnboarding() {
   return useMutation({
     mutationFn: completeOnboarding,
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["me"] });
+      await qc.invalidateQueries({ queryKey: userKeys.me() });
     },
   });
 }

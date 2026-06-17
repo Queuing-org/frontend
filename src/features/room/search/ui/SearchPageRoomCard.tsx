@@ -1,7 +1,7 @@
 import { memo, useCallback } from "react";
 import Image from "next/image";
-import { useRoomMeta } from "../hooks/useRoomMeta";
-import type { Room } from "../model/types";
+import { useRoomMeta } from "../../hooks/useRoomMeta";
+import type { Room } from "../../model/types";
 import styles from "./SearchPageRoomCard.module.css";
 
 type Props = {

@@ -4,9 +4,10 @@ import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
 import { fetchRooms } from "../api/fetchRooms";
 import type { Room, RoomsResponse } from "../model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
+import { roomKeys } from "../model/queryKeys";
 
 const ROOMS_PAGE_SIZE = 30;
-const ROOMS_QUERY_KEY = ["rooms"] as const;
+const ROOMS_QUERY_KEY = roomKeys.all();
 
 export function getRoomsFromPages(data?: InfiniteData<RoomsResponse>): Room[] {
   const seenRoomIds = new Set<number>();

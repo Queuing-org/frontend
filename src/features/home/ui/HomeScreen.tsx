@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
   getRoomsFromPages,
   useRoomsQuery,
-} from "@/src/entities/room/hooks/useFetchRooms";
+} from "@/src/features/room/hooks/useFetchRooms";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";

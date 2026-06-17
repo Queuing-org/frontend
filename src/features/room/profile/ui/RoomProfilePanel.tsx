@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMe } from "@/src/entities/user/hooks/useMe";
+import { useMe } from "@/src/features/user/session/hooks/useMe";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useFollowingList } from "@/src/features/follow/following/hooks/useFollowingList";
 import type { CurrentRequesterProfile } from "../model/types";
