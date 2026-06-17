@@ -26,6 +26,7 @@ type Props = {
   currentUser: User | null;
   isChatSending: boolean;
   isCurrentUserLoading: boolean;
+  onChatLoginClick?: () => void;
   onSendChatMessage: (message: string) => boolean;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
@@ -44,6 +45,7 @@ export default function RoomFloatingWidgets({
   currentUser,
   isChatSending,
   isCurrentUserLoading,
+  onChatLoginClick,
   onSendChatMessage,
   onActivateWidget,
   onWidgetStop,
@@ -186,7 +188,9 @@ export default function RoomFloatingWidgets({
                   disabledReason={chatDisabledReason}
                   errorMessage={chatErrorMessage}
                   isSending={isChatSending}
+                  onLoginClick={onChatLoginClick}
                   onSendMessage={onSendChatMessage}
+                  showLoginAction={Boolean(onChatLoginClick)}
                 />
               </FloatingRoomPanelShell>
             </div>

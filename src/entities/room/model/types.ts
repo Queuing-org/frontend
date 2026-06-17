@@ -58,10 +58,13 @@ export type PlaybackSyncData = {
 }; // 문서 5-1 (PLAYBACK_SYNC data)
 
 export type ChatMessage = {
-  messageId: number;
+  messageId: number | null;
+  messageKey?: string | null;
   messageType: "TEXT" | string;
   content: string;
-  senderId: number;
+  senderSlug: string | null;
+  // Legacy compatibility: current public chat contract uses senderSlug.
+  senderId?: number | null;
   senderNickname: string;
   senderProfileImageUrl: string | null;
   sentAt: number;
@@ -74,7 +77,13 @@ export type ChatHistoryResponse = {
 };
 
 export type RoomJoinedData = {
-  recentChatMessages?: ChatMessage[];
+  participant: {
+    slug: string;
+    userId: number | null;
+    nickname: string;
+    profileImageUrl?: string | null;
+  };
+  recentChatMessages: ChatMessage[];
 };
 
 export type ChatMessageEventData = ChatMessage;

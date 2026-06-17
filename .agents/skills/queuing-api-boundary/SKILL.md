@@ -46,6 +46,8 @@ Do not use it for purely visual CSS changes with no data flow.
 - Empty password strings are ambiguous unless the API explicitly documents them as "clear password".
 - Queue mutations must refresh `roomQueue`; changes that affect current playback or participants should also consider `roomState`.
 - Playlist item operations use `entryId`, not track video id.
+- Room chat messages may identify senders by `senderId` or `senderSlug` depending on API surface/version. Chat parsers and send-confirm logic must tolerate both and must not silently drop otherwise valid messages.
+- Chat send confirmation is driven by `CHAT_MESSAGE`, but if that real-time event is missed, backfill the latest chat history before requiring a manual refresh.
 - Public room card images are currently frontend defaults. Do not assume the backend provides a representative image until the API adds it.
 
 ## Outputs

@@ -8,16 +8,19 @@ import { useRoomChatRealtime } from "./useRoomChatRealtime";
 type UseRoomChatParams = {
   currentUser: User | null;
   isEnabled: boolean;
+  roomPassword?: string | null;
   slug: string;
 };
 
 export function useRoomChat({
   currentUser,
   isEnabled,
+  roomPassword,
   slug,
 }: UseRoomChatParams) {
   const {
     appendMessage,
+    backfillLatestMessage,
     hasOlderMessages,
     historyErrorMessage,
     initializeFromJoinData,
@@ -29,6 +32,7 @@ export function useRoomChat({
   } = useRoomChatHistory({
     currentUser,
     isEnabled,
+    roomPassword,
     slug,
   });
   const {
@@ -41,6 +45,8 @@ export function useRoomChat({
     currentUser,
     isEnabled,
     onMessage: appendMessage,
+    onPendingMessageBackfill: backfillLatestMessage,
+    roomPassword,
     slug,
   });
 

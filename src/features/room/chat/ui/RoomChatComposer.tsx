@@ -8,7 +8,9 @@ type Props = {
   disabledReason?: string;
   errorMessage?: string;
   isSending: boolean;
+  onLoginClick?: () => void;
   onSendMessage: (message: string) => boolean;
+  showLoginAction?: boolean;
 };
 
 const MAX_CHAT_LENGTH = 200;
@@ -17,7 +19,9 @@ export default function RoomChatComposer({
   disabledReason,
   errorMessage,
   isSending,
+  onLoginClick,
   onSendMessage,
+  showLoginAction = false,
 }: Props) {
   const [message, setMessage] = useState("");
   const isComposingRef = useRef(false);
@@ -98,7 +102,18 @@ export default function RoomChatComposer({
       </div>
       {errorMessage || disabledReason ? (
         <div className={errorMessage ? styles.error : styles.notice}>
-          {errorMessage || disabledReason}
+          <span className={styles.feedbackText}>
+            {errorMessage || disabledReason}
+          </span>
+          {!errorMessage && showLoginAction && onLoginClick ? (
+            <button
+              type="button"
+              className={styles.loginAction}
+              onClick={onLoginClick}
+            >
+              로그인하기
+            </button>
+          ) : null}
         </div>
       ) : null}
     </form>

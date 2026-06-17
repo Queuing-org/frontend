@@ -6,11 +6,16 @@ import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 export function subscribeRoomEvents(
   safeSlug: string,
   onMessage: (message: IMessage) => void,
+  password?: string | null,
 ): StompSubscription {
   const client = getSocketClient();
   const destination = `/topic/room/${encodeURIComponent(
     normalizeRoomSlug(safeSlug),
   )}/events`;
 
-  return client.subscribe(destination, onMessage);
+  return client.subscribe(
+    destination,
+    onMessage,
+    password ? { "X-Room-Password": password } : undefined,
+  );
 }

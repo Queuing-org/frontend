@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useCallback, useLayoutEffect, useRef } from "react";
 import type { ChatMessage } from "@/src/entities/room/model/types";
+import { getChatMessageRenderKey } from "../model/chatMessages";
 import styles from "./ChatArea.module.css";
 
 type Props = {
@@ -114,7 +115,10 @@ export default function ChatArea({
         ) : (
           <ol className={styles.messages}>
             {messages.map((message) => (
-              <li key={message.messageId} className={styles.message}>
+              <li
+                key={getChatMessageRenderKey(message)}
+                className={styles.message}
+              >
                 <div className={styles.avatarWrap}>
                   {message.senderProfileImageUrl ? (
                     <Image

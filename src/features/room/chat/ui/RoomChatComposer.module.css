@@ -80,7 +80,39 @@
 }
 
 .notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   color: #8d8d8d;
+}
+
+.feedbackText {
+  min-width: 0;
+}
+
+.loginAction {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: #3b6eea;
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.loginAction:hover,
+.loginAction:focus-visible {
+  color: #214fc8;
+}
+
+.loginAction:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid rgba(59, 110, 234, 0.35);
+  outline-offset: 2px;
 }
 
 @media (max-width: 760px) {

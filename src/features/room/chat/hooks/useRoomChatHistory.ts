@@ -7,8 +7,10 @@ import type { ChatMessage } from "@/src/entities/room/model/types";
 import type { User } from "@/src/entities/user/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import {
+  getChatMessageRenderKey,
   getOldestMessageId,
   getRecentChatMessages,
+  isChatMessageFromUser,
   isChatMessageData,
   mergeUniqueChatMessages,
 } from "../model/chatMessages";
@@ -16,6 +18,7 @@ import {
 type UseRoomChatHistoryParams = {
   currentUser: User | null;
   isEnabled: boolean;
+  roomPassword?: string | null;
   slug: string;
 };
 
@@ -24,6 +27,7 @@ const CHAT_HISTORY_PAGE_SIZE = 100;
 export function useRoomChatHistory({
   currentUser,
   isEnabled,
+  roomPassword,
   slug,
 }: UseRoomChatHistoryParams) {
   const initialChatHistorySlugRef = useRef<string | null>(null);
@@ -40,6 +44,7 @@ export function useRoomChatHistory({
     mutateAsync: loadRoomChats,
     isPending: isLoadingOlderChatMessages,
   } = useRoomChats();
+  const { mutateAsync: backfillRoomChats } = useRoomChats();
 
   const reset = useCallback(() => {
     initialChatHistorySlugRef.current = null;
@@ -75,7 +80,7 @@ export function useRoomChatHistory({
   }, []);
 
   const loadInitialChatHistory = useCallback(() => {
-    if (!slug || !currentUser) {
+    if (!slug) {
       return;
     }
 
@@ -89,6 +94,7 @@ export function useRoomChatHistory({
     void (async () => {
       try {
         const result = await loadRoomChats({
+          password: roomPassword,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
         });
@@ -111,13 +117,12 @@ export function useRoomChatHistory({
         setIsInitializingChatHistory(false);
       }
     })();
-  }, [chatMessages.length, currentUser, loadRoomChats, slug]);
+  }, [chatMessages.length, loadRoomChats, roomPassword, slug]);
 
   const loadOlderMessages = useCallback(() => {
     if (
       !slug ||
       !isEnabled ||
-      !currentUser ||
       !hasOlderChatMessages ||
       isLoadingOlderChatMessages ||
       isInitializingChatHistory
@@ -136,6 +141,7 @@ export function useRoomChatHistory({
       try {
         const result = await loadRoomChats({
           cursorId: chatHistoryCursor,
+          password: roomPassword,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
         });
@@ -159,31 +165,82 @@ export function useRoomChatHistory({
     })();
   }, [
     chatHistoryCursor,
-    currentUser,
     hasOlderChatMessages,
     isEnabled,
     isInitializingChatHistory,
     isLoadingOlderChatMessages,
     loadRoomChats,
+    roomPassword,
     slug,
   ]);
 
+  const backfillLatestMessage = useCallback(
+    async (expectedContent: string) => {
+      if (!slug || !currentUser) {
+        return false;
+      }
+
+      try {
+        const result = await backfillRoomChats({
+          password: roomPassword,
+          size: CHAT_HISTORY_PAGE_SIZE,
+          slug,
+        });
+        const latestMessages = result.items
+          .filter(isChatMessageData)
+          .reverse();
+        const currentMessageKeys = new Set(
+          chatMessages.map(getChatMessageRenderKey),
+        );
+        const foundExpectedMessage = latestMessages.some(
+          (message) =>
+            !currentMessageKeys.has(getChatMessageRenderKey(message)) &&
+            message.content === expectedContent &&
+            isChatMessageFromUser(message, currentUser),
+        );
+
+        setChatMessages((currentMessages) =>
+          mergeUniqueChatMessages([...currentMessages, ...latestMessages]),
+        );
+
+        if (chatMessages.length === 0) {
+          setChatHistoryCursor(result.nextCursor);
+          setHasOlderChatMessages(
+            result.hasNext && typeof result.nextCursor === "number",
+          );
+        }
+
+        if (foundExpectedMessage) {
+          setChatHistoryErrorMessage("");
+          setChatScrollToLatestKey((currentKey) => currentKey + 1);
+        }
+
+        return foundExpectedMessage;
+      } catch {
+        return false;
+      }
+    },
+    [backfillRoomChats, chatMessages, currentUser, roomPassword, slug],
+  );
+
   useEffect(() => {
+    const historyKey = `${slug}:${roomPassword ?? ""}`;
+
     if (
       !isEnabled ||
       !slug ||
-      !currentUser ||
-      initialChatHistorySlugRef.current === slug
+      initialChatHistorySlugRef.current === historyKey
     ) {
       return;
     }
 
-    initialChatHistorySlugRef.current = slug;
+    initialChatHistorySlugRef.current = historyKey;
     loadInitialChatHistory();
-  }, [currentUser, isEnabled, loadInitialChatHistory, slug]);
+  }, [isEnabled, loadInitialChatHistory, roomPassword, slug]);
 
   return {
     appendMessage,
+    backfillLatestMessage,
     hasOlderMessages: hasOlderChatMessages,
     historyErrorMessage: chatHistoryErrorMessage,
     initializeFromJoinData,

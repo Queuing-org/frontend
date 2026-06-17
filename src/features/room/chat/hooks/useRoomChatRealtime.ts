@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import { publishChatMessage } from "@/src/entities/room/api/websocket/publishChatMessage";
 import { subscribeRoomChatEvents } from "@/src/entities/room/api/websocket/subscribeRoomChatEvents";
+import { subscribeRoomEvents } from "@/src/entities/room/api/websocket/subscribeRoomEvents";
 import { subscribeUserRoomEvents } from "@/src/entities/room/api/websocket/subscribeUserRoomEvents";
 import type {
   ChatMessage,
@@ -11,17 +12,31 @@ import type {
   WsEvent,
 } from "@/src/entities/room/model/types";
 import type { User } from "@/src/entities/user/model/types";
-import { isChatMessageData } from "../model/chatMessages";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import {
+  isChatMessageData,
+  isChatMessageFromUser,
+} from "../model/chatMessages";
 
 type UseRoomChatRealtimeParams = {
   currentUser: User | null;
   isEnabled: boolean;
   onMessage: (message: ChatMessage) => void;
+  onPendingMessageBackfill: (content: string) => Promise<boolean>;
+  roomPassword?: string | null;
   slug: string;
 };
 
 const MAX_CHAT_CONTENT_LENGTH = 200;
+const CHAT_SEND_BACKFILL_DELAY_MS = 2000;
 const CHAT_SEND_CONFIRM_TIMEOUT_MS = 8000;
+
+type PendingChatSend = {
+  backfillTimeoutId: ReturnType<typeof setTimeout>;
+  content: string;
+  id: number;
+  timeoutId: ReturnType<typeof setTimeout>;
+};
 
 function isWsErrorData(data: unknown): data is WsErrorData {
   if (!data || typeof data !== "object") {
@@ -37,13 +52,58 @@ function isWsErrorData(data: unknown): data is WsErrorData {
   );
 }
 
+function parseChatMessageEvent(
+  body: string,
+  roomSlug: string,
+): ChatMessage | null {
+  let parsedBody: unknown;
+  try {
+    parsedBody = JSON.parse(body);
+  } catch {
+    return null;
+  }
+
+  if (isChatMessageData(parsedBody)) {
+    return parsedBody;
+  }
+
+  if (!parsedBody || typeof parsedBody !== "object") {
+    return null;
+  }
+
+  const event = parsedBody as Partial<WsEvent>;
+  const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
+  const eventRoomSlug =
+    typeof event.roomSlug === "string"
+      ? normalizeRoomSlug(event.roomSlug)
+      : normalizedRoomSlug;
+
+  if (
+    eventRoomSlug !== normalizedRoomSlug ||
+    event.type !== "CHAT_MESSAGE" ||
+    !isChatMessageData(event.data)
+  ) {
+    return null;
+  }
+
+  return event.data;
+}
+
 export function useRoomChatRealtime({
   currentUser,
   isEnabled,
   onMessage,
+  onPendingMessageBackfill,
+  roomPassword,
   slug,
 }: UseRoomChatRealtimeParams) {
   const chatSubscriptionRef = useRef<{
+    password: string | null;
+    slug: string;
+    subscription: StompSubscription;
+  } | null>(null);
+  const roomEventChatSubscriptionRef = useRef<{
+    password: string | null;
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
@@ -52,40 +112,51 @@ export function useRoomChatRealtime({
     subscription: StompSubscription;
   } | null>(null);
   const currentUserRef = useRef<User | null>(null);
-  const pendingChatSendCountRef = useRef(0);
-  const pendingChatSendTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>(
-    [],
-  );
+  const pendingChatSendIdRef = useRef(0);
+  const pendingChatSendsRef = useRef<PendingChatSend[]>([]);
   const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
   const [isChatSending, setIsChatSending] = useState(false);
 
-  const clearOldestPendingChatSendTimeout = useCallback(() => {
-    const timeoutId = pendingChatSendTimeoutsRef.current.shift();
-
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
+  const clearPendingChatSendTimers = useCallback((pending: PendingChatSend) => {
+    clearTimeout(pending.backfillTimeoutId);
+    clearTimeout(pending.timeoutId);
   }, []);
 
-  const clearAllPendingChatSendTimeouts = useCallback(() => {
-    for (const timeoutId of pendingChatSendTimeoutsRef.current) {
-      clearTimeout(timeoutId);
+  const clearAllPendingChatSends = useCallback(() => {
+    for (const pending of pendingChatSendsRef.current) {
+      clearPendingChatSendTimers(pending);
     }
 
-    pendingChatSendTimeoutsRef.current = [];
-  }, []);
+    pendingChatSendsRef.current = [];
+  }, [clearPendingChatSendTimers]);
 
-  const resolveOldestPendingChatSend = useCallback(
-    (errorMessage?: string) => {
-      if (pendingChatSendCountRef.current <= 0) {
-        return;
+  const resolvePendingChatSend = useCallback(
+    ({
+      content,
+      errorMessage,
+      id,
+    }: {
+      content?: string;
+      errorMessage?: string;
+      id?: number;
+    } = {}) => {
+      const pendingIndex =
+        typeof id === "number"
+          ? pendingChatSendsRef.current.findIndex(
+              (pending) => pending.id === id,
+            )
+          : content
+            ? pendingChatSendsRef.current.findIndex(
+                (pending) => pending.content === content,
+              )
+            : 0;
+
+      if (pendingIndex < 0) {
+        return false;
       }
 
-      clearOldestPendingChatSendTimeout();
-      pendingChatSendCountRef.current = Math.max(
-        0,
-        pendingChatSendCountRef.current - 1,
-      );
+      const [pending] = pendingChatSendsRef.current.splice(pendingIndex, 1);
+      clearPendingChatSendTimers(pending);
       setIsChatSending(false);
 
       if (errorMessage) {
@@ -93,33 +164,72 @@ export function useRoomChatRealtime({
       } else {
         setChatSendErrorMessage("");
       }
+
+      return true;
     },
-    [clearOldestPendingChatSendTimeout],
+    [clearPendingChatSendTimers],
   );
 
-  const registerPendingChatSendTimeout = useCallback(() => {
-    const timeoutId = setTimeout(() => {
-      pendingChatSendTimeoutsRef.current =
-        pendingChatSendTimeoutsRef.current.filter(
-          (currentTimeoutId) => currentTimeoutId !== timeoutId,
-        );
+  const backfillPendingChatSend = useCallback(
+    async (id: number, content: string, shouldShowError: boolean) => {
+      const isStillPending = pendingChatSendsRef.current.some(
+        (pending) => pending.id === id,
+      );
 
-      if (pendingChatSendCountRef.current <= 0) {
-        return;
+      if (!isStillPending) {
+        return false;
       }
 
-      pendingChatSendCountRef.current = Math.max(
-        0,
-        pendingChatSendCountRef.current - 1,
-      );
-      setIsChatSending(false);
-      setChatSendErrorMessage(
-        "채팅 전송 확인이 지연되었습니다. 다시 시도해주세요.",
-      );
-    }, CHAT_SEND_CONFIRM_TIMEOUT_MS);
+      let foundPersistedMessage = false;
+      try {
+        foundPersistedMessage = await onPendingMessageBackfill(content);
+      } catch {
+        foundPersistedMessage = false;
+      }
 
-    pendingChatSendTimeoutsRef.current.push(timeoutId);
-  }, []);
+      if (!pendingChatSendsRef.current.some((pending) => pending.id === id)) {
+        return foundPersistedMessage;
+      }
+
+      if (foundPersistedMessage) {
+        resolvePendingChatSend({ id });
+        return true;
+      }
+
+      if (shouldShowError) {
+        resolvePendingChatSend({
+          errorMessage:
+            "채팅 전송 확인이 지연되었습니다. 네트워크 상태를 확인해주세요.",
+          id,
+        });
+      }
+
+      return false;
+    },
+    [onPendingMessageBackfill, resolvePendingChatSend],
+  );
+
+  const registerPendingChatSend = useCallback(
+    (content: string) => {
+      const id = (pendingChatSendIdRef.current += 1);
+      const backfillTimeoutId = setTimeout(() => {
+        void backfillPendingChatSend(id, content, false);
+      }, CHAT_SEND_BACKFILL_DELAY_MS);
+      const timeoutId = setTimeout(() => {
+        void backfillPendingChatSend(id, content, true);
+      }, CHAT_SEND_CONFIRM_TIMEOUT_MS);
+
+      pendingChatSendsRef.current.push({
+        backfillTimeoutId,
+        content,
+        id,
+        timeoutId,
+      });
+
+      return id;
+    },
+    [backfillPendingChatSend],
+  );
 
   const cleanupChatSubscription = useCallback(() => {
     if (!chatSubscriptionRef.current) {
@@ -133,6 +243,20 @@ export function useRoomChatRealtime({
     }
 
     chatSubscriptionRef.current = null;
+  }, []);
+
+  const cleanupRoomEventChatSubscription = useCallback(() => {
+    if (!roomEventChatSubscriptionRef.current) {
+      return;
+    }
+
+    try {
+      roomEventChatSubscriptionRef.current.subscription.unsubscribe();
+    } catch {
+      // The socket may already be closing while the page is leaving.
+    }
+
+    roomEventChatSubscriptionRef.current = null;
   }, []);
 
   const cleanupUserEventSubscription = useCallback(() => {
@@ -151,68 +275,101 @@ export function useRoomChatRealtime({
 
   const cleanupSubscriptions = useCallback(() => {
     cleanupChatSubscription();
+    cleanupRoomEventChatSubscription();
     cleanupUserEventSubscription();
-    clearAllPendingChatSendTimeouts();
-    pendingChatSendCountRef.current = 0;
+    clearAllPendingChatSends();
   }, [
     cleanupChatSubscription,
+    cleanupRoomEventChatSubscription,
     cleanupUserEventSubscription,
-    clearAllPendingChatSendTimeouts,
+    clearAllPendingChatSends,
   ]);
 
   const reset = useCallback(() => {
-    clearAllPendingChatSendTimeouts();
-    pendingChatSendCountRef.current = 0;
+    clearAllPendingChatSends();
     setChatSendErrorMessage("");
     setIsChatSending(false);
-  }, [clearAllPendingChatSendTimeouts]);
+  }, [clearAllPendingChatSends]);
 
   useEffect(() => {
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
+  const handleChatMessageBody = useCallback(
+    (roomSlug: string, body: string) => {
+      const chatMessage = parseChatMessageEvent(body, roomSlug);
+
+      if (!chatMessage) {
+        return;
+      }
+
+      onMessage(chatMessage);
+
+      if (isChatMessageFromUser(chatMessage, currentUserRef.current)) {
+        resolvePendingChatSend({ content: chatMessage.content });
+      }
+    },
+    [onMessage, resolvePendingChatSend],
+  );
+
   const ensureChatSubscription = useCallback(
-    (roomSlug: string) => {
-      if (chatSubscriptionRef.current?.slug === roomSlug) {
+    (roomSlug: string, password?: string | null) => {
+      const subscriptionPassword = password ?? null;
+
+      if (
+        chatSubscriptionRef.current?.slug === roomSlug &&
+        chatSubscriptionRef.current.password === subscriptionPassword
+      ) {
         return;
       }
 
       cleanupChatSubscription();
 
       chatSubscriptionRef.current = {
+        password: subscriptionPassword,
         slug: roomSlug,
-        subscription: subscribeRoomChatEvents(roomSlug, ({ body }) => {
-          if (!body) return;
+        subscription: subscribeRoomChatEvents(
+          roomSlug,
+          ({ body }) => {
+            if (!body) return;
 
-          let event: WsEvent;
-          try {
-            event = JSON.parse(body) as WsEvent;
-          } catch {
-            return;
-          }
-
-          if (
-            event.roomSlug !== roomSlug ||
-            event.type !== "CHAT_MESSAGE" ||
-            !isChatMessageData(event.data)
-          ) {
-            return;
-          }
-
-          const chatMessage = event.data;
-          onMessage(chatMessage);
-
-          const currentUserValue = currentUserRef.current;
-          if (
-            currentUserValue?.userId != null &&
-            currentUserValue.userId === chatMessage.senderId
-          ) {
-            resolveOldestPendingChatSend();
-          }
-        }),
+            handleChatMessageBody(roomSlug, body);
+          },
+          subscriptionPassword,
+        ),
       };
     },
-    [cleanupChatSubscription, onMessage, resolveOldestPendingChatSend],
+    [cleanupChatSubscription, handleChatMessageBody],
+  );
+
+  const ensureRoomEventChatSubscription = useCallback(
+    (roomSlug: string, password?: string | null) => {
+      const subscriptionPassword = password ?? null;
+
+      if (
+        roomEventChatSubscriptionRef.current?.slug === roomSlug &&
+        roomEventChatSubscriptionRef.current.password === subscriptionPassword
+      ) {
+        return;
+      }
+
+      cleanupRoomEventChatSubscription();
+
+      roomEventChatSubscriptionRef.current = {
+        password: subscriptionPassword,
+        slug: roomSlug,
+        subscription: subscribeRoomEvents(
+          roomSlug,
+          ({ body }) => {
+            if (!body) return;
+
+            handleChatMessageBody(roomSlug, body);
+          },
+          subscriptionPassword,
+        ),
+      };
+    },
+    [cleanupRoomEventChatSubscription, handleChatMessageBody],
   );
 
   const ensureUserEventSubscription = useCallback(
@@ -235,22 +392,28 @@ export function useRoomChatRealtime({
             return;
           }
 
+          const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
+          const eventRoomSlug =
+            typeof event.roomSlug === "string"
+              ? normalizeRoomSlug(event.roomSlug)
+              : normalizedRoomSlug;
+
           if (
-            event.roomSlug !== roomSlug ||
+            eventRoomSlug !== normalizedRoomSlug ||
             event.type !== "ERROR" ||
-            pendingChatSendCountRef.current <= 0 ||
+            pendingChatSendsRef.current.length <= 0 ||
             !isWsErrorData(event.data)
           ) {
             return;
           }
 
-          resolveOldestPendingChatSend(
-            event.data.message || "채팅을 전송하지 못했습니다.",
-          );
+          resolvePendingChatSend({
+            errorMessage: event.data.message || "채팅을 전송하지 못했습니다.",
+          });
         }),
       };
     },
-    [cleanupUserEventSubscription, resolveOldestPendingChatSend],
+    [cleanupUserEventSubscription, resolvePendingChatSend],
   );
 
   const sendMessage = useCallback(
@@ -279,49 +442,60 @@ export function useRoomChatRealtime({
 
       setChatSendErrorMessage("");
       setIsChatSending(true);
-      pendingChatSendCountRef.current += 1;
+      const pendingChatSendId = registerPendingChatSend(trimmedMessage);
 
       try {
         publishChatMessage(slug, {
           content: trimmedMessage,
           messageType: "TEXT",
         });
-        registerPendingChatSendTimeout();
         setIsChatSending(false);
         return true;
       } catch (error) {
-        pendingChatSendCountRef.current = Math.max(
-          0,
-          pendingChatSendCountRef.current - 1,
-        );
-        setIsChatSending(false);
-        setChatSendErrorMessage(
-          error instanceof Error
-            ? error.message
-            : "채팅 전송 요청을 보내지 못했습니다.",
-        );
+        resolvePendingChatSend({
+          errorMessage:
+            error instanceof Error
+              ? error.message
+              : "채팅 전송 요청을 보내지 못했습니다.",
+          id: pendingChatSendId,
+        });
         return false;
       }
     },
-    [currentUser, isEnabled, registerPendingChatSendTimeout, slug],
+    [
+      currentUser,
+      isEnabled,
+      registerPendingChatSend,
+      resolvePendingChatSend,
+      slug,
+    ],
   );
 
   useEffect(() => {
-    if (!isEnabled || !slug || !currentUser) {
+    if (!isEnabled || !slug) {
       cleanupSubscriptions();
       return;
     }
 
-    ensureChatSubscription(slug);
-    ensureUserEventSubscription(slug);
+    ensureChatSubscription(slug, roomPassword);
+    ensureRoomEventChatSubscription(slug, roomPassword);
+
+    if (currentUser) {
+      ensureUserEventSubscription(slug);
+    } else {
+      cleanupUserEventSubscription();
+    }
 
     return cleanupSubscriptions;
   }, [
     cleanupSubscriptions,
+    cleanupUserEventSubscription,
     currentUser,
     ensureChatSubscription,
+    ensureRoomEventChatSubscription,
     ensureUserEventSubscription,
     isEnabled,
+    roomPassword,
     slug,
   ]);
 

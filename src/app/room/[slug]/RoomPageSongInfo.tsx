@@ -48,6 +48,7 @@ import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/
 import { useMe } from "@/src/entities/user/hooks/useMe";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
+import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -183,6 +184,7 @@ export default function RoomPageSongInfo() {
     promise: Promise<JoinRoomResult>;
   } | null>(null);
   const roomSubscriptionRef = useRef<{
+    password: string | null;
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
@@ -220,6 +222,7 @@ export default function RoomPageSongInfo() {
   } = useRoomChat({
     currentUser: currentUser ?? null,
     isEnabled: status === "joined",
+    roomPassword,
     slug,
   });
   const playbackStatus = getLatestPlaybackState(
@@ -299,76 +302,91 @@ export default function RoomPageSongInfo() {
   ]);
 
   const ensureRoomSubscription = useCallback(
-    (roomSlug: string) => {
-      if (roomSubscriptionRef.current?.slug === roomSlug) {
+    (roomSlug: string, password?: string | null) => {
+      const subscriptionPassword = password ?? null;
+
+      if (
+        roomSubscriptionRef.current?.slug === roomSlug &&
+        roomSubscriptionRef.current.password === subscriptionPassword
+      ) {
         return;
       }
 
       cleanupRoomSubscription();
 
       roomSubscriptionRef.current = {
+        password: subscriptionPassword,
         slug: roomSlug,
-        subscription: subscribeRoomEvents(roomSlug, ({ body }) => {
-          if (!body) return;
+        subscription: subscribeRoomEvents(
+          roomSlug,
+          ({ body }) => {
+            if (!body) return;
 
-          let event: WsEvent;
-          try {
-            event = JSON.parse(body) as WsEvent;
-          } catch {
-            return;
-          }
+            let event: WsEvent;
+            try {
+              event = JSON.parse(body) as WsEvent;
+            } catch {
+              return;
+            }
 
-          if (event.roomSlug !== roomSlug) {
-            return;
-          }
+            const eventRoomSlug =
+              typeof event.roomSlug === "string"
+                ? normalizeRoomSlug(event.roomSlug)
+                : roomSlug;
 
-          if (
-            event.type === "PLAYBACK_SYNC" &&
-            isPlaybackSyncData(event.data)
-          ) {
-            const syncedPlayback: PlaybackState = {
-              roomSlug,
-              videoId: event.data.videoId,
-              status: event.data.status,
-              currentTime: event.data.currentTime,
-              serverTimestamp: event.data.serverTimestamp,
-            };
+            if (eventRoomSlug !== roomSlug) {
+              return;
+            }
 
-            setLivePlaybackStatus((previous) => {
-              if (
-                previous &&
-                previous.roomSlug === syncedPlayback.roomSlug &&
-                previous.serverTimestamp > syncedPlayback.serverTimestamp
-              ) {
-                return previous;
-              }
+            if (
+              event.type === "PLAYBACK_SYNC" &&
+              isPlaybackSyncData(event.data)
+            ) {
+              const syncedPlayback: PlaybackState = {
+                roomSlug,
+                videoId: event.data.videoId,
+                status: event.data.status,
+                currentTime: event.data.currentTime,
+                serverTimestamp: event.data.serverTimestamp,
+              };
 
-              return syncedPlayback;
-            });
-            return;
-          }
+              setLivePlaybackStatus((previous) => {
+                if (
+                  previous &&
+                  previous.roomSlug === syncedPlayback.roomSlug &&
+                  previous.serverTimestamp > syncedPlayback.serverTimestamp
+                ) {
+                  return previous;
+                }
 
-          if (
-            event.type === "QUEUE_ADDED" ||
-            event.type === "QUEUE_REMOVED" ||
-            event.type === "QUEUE_REORDERED" ||
-            event.type === "TRACK_STARTED" ||
-            event.type === "TRACK_ENDED"
-          ) {
-            void queryClient.invalidateQueries({
-              queryKey: ["roomQueue", roomSlug],
-            });
-            void refetchRoomState();
-            return;
-          }
+                return syncedPlayback;
+              });
+              return;
+            }
 
-          if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
-            void queryClient.invalidateQueries({
-              queryKey: ["roomMeta", roomSlug],
-            });
-            void refetchRoomState();
-          }
-        }),
+            if (
+              event.type === "QUEUE_ADDED" ||
+              event.type === "QUEUE_REMOVED" ||
+              event.type === "QUEUE_REORDERED" ||
+              event.type === "TRACK_STARTED" ||
+              event.type === "TRACK_ENDED"
+            ) {
+              void queryClient.invalidateQueries({
+                queryKey: ["roomQueue", roomSlug],
+              });
+              void refetchRoomState();
+              return;
+            }
+
+            if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
+              void queryClient.invalidateQueries({
+                queryKey: ["roomMeta", roomSlug],
+              });
+              void refetchRoomState();
+            }
+          },
+          subscriptionPassword,
+        ),
       };
     },
     [cleanupRoomSubscription, queryClient, refetchRoomState],
@@ -385,7 +403,7 @@ export default function RoomPageSongInfo() {
       writeStoredRoomJoinPassword(slug, password);
       initializeChatStateFromJoinData(joinResult.data);
       setRoomPassword(password);
-      ensureRoomSubscription(slug);
+      ensureRoomSubscription(slug, password);
       setStatus("joined");
       setJoinErrorMessage("");
     } catch (error) {
@@ -433,7 +451,7 @@ export default function RoomPageSongInfo() {
         if (!isActive) return;
 
         initializeChatStateFromJoinData(joinResult.data);
-        ensureRoomSubscription(slug);
+        ensureRoomSubscription(slug, storedPassword);
         setRoomPassword(storedPassword);
         setStatus("joined");
         setJoinErrorMessage("");
@@ -487,6 +505,7 @@ export default function RoomPageSongInfo() {
     : currentUser
       ? undefined
       : "로그인 후 채팅할 수 있습니다.";
+  const showChatLoginAction = !isCurrentUserLoading && !currentUser;
 
   if (status === "needs-password") {
     return (
@@ -589,9 +608,7 @@ export default function RoomPageSongInfo() {
                   <div className={styles.mobileChatList}>
                     <ChatArea
                       errorMessage={chatHistoryErrorMessage}
-                      hasOlderMessages={
-                        Boolean(currentUser) && hasOlderChatMessages
-                      }
+                      hasOlderMessages={hasOlderChatMessages}
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
@@ -603,7 +620,9 @@ export default function RoomPageSongInfo() {
                       disabledReason={chatDisabledReason}
                       errorMessage={chatSendErrorMessage}
                       isSending={isChatSending}
+                      onLoginClick={redirectToGoogleLogin}
                       onSendMessage={handleSendChatMessage}
+                      showLoginAction={showChatLoginAction}
                     />
                   </div>
                 </div>
@@ -709,7 +728,7 @@ export default function RoomPageSongInfo() {
           <div className={styles.chatSection}>
             <ChatArea
               errorMessage={chatHistoryErrorMessage}
-              hasOlderMessages={Boolean(currentUser) && hasOlderChatMessages}
+              hasOlderMessages={hasOlderChatMessages}
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
@@ -740,6 +759,9 @@ export default function RoomPageSongInfo() {
         currentUser={currentUser ?? null}
         isChatSending={isChatSending}
         isCurrentUserLoading={isCurrentUserLoading}
+        onChatLoginClick={
+          showChatLoginAction ? redirectToGoogleLogin : undefined
+        }
         onSendChatMessage={handleSendChatMessage}
         participants={roomState?.participants ?? []}
         roomMeta={roomMeta ?? null}

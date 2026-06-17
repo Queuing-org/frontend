@@ -5,12 +5,14 @@ import type { ChatHistoryResponse } from "../model/types";
 
 export type FetchRoomChatsParams = {
   cursorId?: number | null;
+  password?: string | null;
   size?: number;
   slug: string;
 };
 
 export async function fetchRoomChats({
   cursorId,
+  password,
   size = 30,
   slug,
 }: FetchRoomChatsParams): Promise<ChatHistoryResponse> {
@@ -21,6 +23,11 @@ export async function fetchRoomChats({
         ...(typeof cursorId === "number" ? { cursorId } : {}),
         size,
       },
+      headers: password
+        ? {
+            "X-Room-Password": password,
+          }
+        : undefined,
     },
   );
 
