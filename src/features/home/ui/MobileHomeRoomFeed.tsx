@@ -16,7 +16,6 @@ type Props = {
   activeFilters: HomeFilterState;
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
-  isLoading: boolean;
   onCreateRoom: () => void;
   onLoadMoreRooms: () => void;
   onOpenFollow: () => void;
@@ -35,8 +34,6 @@ type MobileHomeRoomCardProps = {
   onSelectRoom: (roomSlug: string) => void;
   room: Room;
 };
-
-const skeletonItems = [0, 1, 2] as const;
 
 function MobileHomeRoomCard({
   imageSrc,
@@ -102,7 +99,6 @@ export default function MobileHomeRoomFeed({
   activeFilters,
   hasNextPage,
   isFetchingNextPage,
-  isLoading,
   onCreateRoom,
   onLoadMoreRooms,
   onOpenFollow,
@@ -114,7 +110,7 @@ export default function MobileHomeRoomFeed({
   selectedRoomSlug,
 }: Props) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const showEmptyState = !isLoading && rooms.length === 0;
+  const showEmptyState = rooms.length === 0;
   const activeFilterSummary = [
     activeFilters.genre.join(", "),
     activeFilters.date,
@@ -169,14 +165,6 @@ export default function MobileHomeRoomFeed({
       </section>
 
       <section className={styles.listSection} aria-label="방 목록">
-        {isLoading ? (
-          <div className={styles.skeletonList} aria-label="방 목록 로딩 중">
-            {skeletonItems.map((item) => (
-              <div key={item} className={styles.skeletonCard} />
-            ))}
-          </div>
-        ) : null}
-
         {showEmptyState ? (
           <div className={styles.emptyState}>
             <strong>방이 하나도 없어요.</strong>
@@ -184,7 +172,7 @@ export default function MobileHomeRoomFeed({
           </div>
         ) : null}
 
-        {!isLoading && rooms.length > 0 ? (
+        {rooms.length > 0 ? (
           <div className={styles.roomList}>
             {rooms.map((room, index) => (
               <MobileHomeRoomCard

@@ -40,23 +40,22 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const [moveErrorMessage, setMoveErrorMessage] = useState("");
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
-  const {
-    data: entries,
-    error,
-    isLoading,
-    isRefetching,
-  } = useRoomQueue(roomSlug, roomPassword, 0, 200);
+  const { data: entries, isRefetching } = useRoomQueue(
+    roomSlug,
+    roomPassword,
+    0,
+    200,
+  );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
   const deleteMyQueueEntry = useDeleteMyQueueEntry();
   const deleteRoomQueueEntries = useDeleteRoomQueueEntries();
 
-  const allEntries = entries ?? [];
+  const allEntries = entries;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const myEntries = allEntries.filter((entry) =>
     isEntryRequestedByUser(entry, currentUser),
   );
-  const errorMessage = error?.message || "플레이리스트를 불러오지 못했습니다.";
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -166,13 +165,10 @@ export function useRoomQueuePanel({
     deleteMyQueueEntry,
     deleteRoomQueueEntries,
     emptyMessage,
-    error,
-    errorMessage,
     handleDeleteMyEntry,
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
-    isLoading,
     isOwner,
     isRefetching,
     moveErrorMessage,

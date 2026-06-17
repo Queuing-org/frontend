@@ -13,6 +13,20 @@
   overflow-y: auto;
 }
 
+.state {
+  display: flex;
+  min-height: 100%;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 24px 16px;
+  color: #8d8d8d;
+  font-size: 0.78rem;
+  font-weight: var(--fw-medium);
+  line-height: 1.45;
+  text-align: center;
+}
+
 .addTrackDock {
   display: flex;
   flex-shrink: 0;

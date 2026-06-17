@@ -1,5 +1,7 @@
 import type { Room } from "@/src/features/room/model/types";
-import RoomInfo from "@/src/features/room/info/ui/RoomInfo";
+import RoomInfo, {
+  type RoomInfoDisplay,
+} from "@/src/features/room/info/ui/RoomInfo";
 import SignUpButton from "@/src/features/auth/login-with-google/ui/SignUpButton";
 import RoomSearchButton from "@/src/features/room/search/ui/RoomSearchButton";
 import { Search, X } from "lucide-react";
@@ -17,6 +19,15 @@ export default function HomeTopBar({
   mobileSearchQuery = "",
   onMobileSearchQueryChange,
 }: Props) {
+  const roomInfo: RoomInfoDisplay | null = currentRoom
+    ? {
+        activeUsersCount: null,
+        hasPassword: currentRoom.isPrivate,
+        tags: currentRoom.tags,
+        title: currentRoom.title,
+      }
+    : null;
+
   return (
     <div className={styles.topBar}>
       <div className={styles.leftGroup}>
@@ -65,7 +76,7 @@ export default function HomeTopBar({
         </form>
       </div>
       <div className={styles.centerGroup}>
-        <RoomInfo slug={currentRoom?.slug ?? null} />
+        <RoomInfo roomInfo={roomInfo} />
       </div>
       <div className={styles.rightGroup}>
         <SignUpButton />

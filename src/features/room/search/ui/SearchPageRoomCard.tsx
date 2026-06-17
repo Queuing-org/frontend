@@ -1,6 +1,5 @@
 import { memo, useCallback } from "react";
 import Image from "next/image";
-import { useRoomMeta } from "../../hooks/useRoomMeta";
 import type { Room } from "../../model/types";
 import styles from "./SearchPageRoomCard.module.css";
 
@@ -15,11 +14,7 @@ function SearchPageRoomCard({
   isSelected,
   onRequestRoomEntry,
 }: Props) {
-  const { slug, title, tags } = room;
-  const { data, isLoading, isError } = useRoomMeta(slug);
-  const activeUsersCount =
-    isLoading || isError ? "-" : (data?.activeUsersCount ?? "-");
-  const hasPassword = Boolean(data?.hasPassword);
+  const { isPrivate, slug, title, tags } = room;
   const tagsText = tags.length
     ? tags.map((roomTag) => roomTag.name).join("/")
     : "태그없음";
@@ -43,9 +38,9 @@ function SearchPageRoomCard({
         <div className={styles.title}>{title}</div>
         <div className={styles.meta} data-selected={isSelected}>
           <span className={styles.metaText}>
-            {tagsText} · {activeUsersCount}명
+            {tagsText}
           </span>
-          {hasPassword ? (
+          {isPrivate ? (
             <>
               <span className={styles.metaSeparator} aria-hidden="true">
                 ·

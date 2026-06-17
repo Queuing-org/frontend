@@ -5,15 +5,8 @@ import FollowerCard from "./FollowerCard";
 import styles from "./FollowersList.module.css";
 
 export default function FollowersList() {
-  const { data, isLoading, isError } = useFollowersList({ size: 100 });
-
-  if (isLoading)
-    return <div className={styles.state}>팔로워 목록 로딩중...</div>;
-
-  if (isError)
-    return <div className={styles.state}>팔로워 목록 로딩 실패</div>;
-
-  const followers = data?.items ?? [];
+  const { data } = useFollowersList({ size: 100 });
+  const followers = data.items;
 
   return (
     <div className={styles.container}>

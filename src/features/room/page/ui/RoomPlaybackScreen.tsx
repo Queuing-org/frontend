@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useParams } from "next/navigation";
 import { useRoomState } from "@/src/features/playlist/model/useRoomState";
 import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
@@ -32,6 +38,8 @@ import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
+import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
+import type { User } from "@/src/features/user/model/types";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
@@ -41,6 +49,7 @@ import {
   type LivePlaybackState,
 } from "../hooks/useRoomPlaybackViewModel";
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -78,34 +87,18 @@ export default function RoomPlaybackScreen() {
     roomPassword,
     status === "joined",
   );
-  const { data: roomMeta } = useRoomMeta(status === "joined" ? slug : null);
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
-  const {
-    cleanupSubscriptions: cleanupChatSubscriptions,
-    hasOlderMessages: hasOlderChatMessages,
-    historyErrorMessage: chatHistoryErrorMessage,
-    initializeFromJoinData: initializeChatStateFromJoinData,
-    isLoadingOlderMessages,
-    isSending: isChatSending,
-    loadOlderMessages: handleLoadOlderChatMessages,
-    messages: chatMessages,
-    reset: resetChatState,
-    scrollToLatestKey: chatScrollToLatestKey,
-    sendErrorMessage: chatSendErrorMessage,
-    sendMessage: handleSendChatMessage,
-  } = useRoomChat({
+  const roomChat = useRoomChat({
     currentUser: currentUser ?? null,
     isEnabled: status === "joined",
     roomPassword,
     slug,
   });
-  const playback = useRoomPlaybackViewModel({
-    currentUser,
-    livePlaybackStatus,
-    roomMeta,
-    roomState,
-    slug,
-  });
+  const {
+    cleanupSubscriptions: cleanupChatSubscriptions,
+    initializeFromJoinData: initializeChatStateFromJoinData,
+    reset: resetChatState,
+  } = roomChat;
   const { cleanupRoomSubscription, ensureRoomSubscription } =
     useRoomRealtimeEvents({
       cleanupChatSubscriptions,
@@ -224,13 +217,6 @@ export default function RoomPlaybackScreen() {
     setLivePlaybackStatus(null);
   }, [slug]);
 
-  const chatDisabledReason = isCurrentUserLoading
-    ? "로그인 상태 확인 중입니다."
-    : currentUser
-      ? undefined
-      : "로그인 후 채팅할 수 있습니다.";
-  const showChatLoginAction = !isCurrentUserLoading && !currentUser;
-
   if (status === "needs-password") {
     return (
       <div className={styles.passwordState}>
@@ -255,10 +241,86 @@ export default function RoomPlaybackScreen() {
     );
   }
 
+  return (
+    <QueryBoundary
+      fallback={<div className={styles.statusState}>방 정보를 불러오는 중...</div>}
+      errorTitle="방 정보를 불러오지 못했습니다."
+      resetKeys={[slug]}
+    >
+      <RoomPlaybackJoinedContent
+        currentUser={currentUser ?? null}
+        floatingWidgets={floatingWidgets}
+        isCurrentUserLoading={isCurrentUserLoading}
+        isMobileLayout={isMobileLayout}
+        livePlaybackStatus={livePlaybackStatus}
+        mobileTab={mobileTab}
+        roomChat={roomChat}
+        roomPassword={roomPassword}
+        roomState={roomState}
+        setMobileTab={setMobileTab}
+        slug={slug}
+      />
+    </QueryBoundary>
+  );
+}
+
+type RoomPlaybackJoinedContentProps = {
+  currentUser: User | null;
+  floatingWidgets: ReturnType<typeof useFloatingWidgetsState>;
+  isCurrentUserLoading: boolean;
+  isMobileLayout: boolean;
+  livePlaybackStatus: LivePlaybackState | null;
+  mobileTab: MobileRoomTab;
+  roomChat: ReturnType<typeof useRoomChat>;
+  roomPassword: string | null;
+  roomState?: RoomStateSnapshot;
+  setMobileTab: Dispatch<SetStateAction<MobileRoomTab>>;
+  slug: string;
+};
+
+function RoomPlaybackJoinedContent({
+  currentUser,
+  floatingWidgets,
+  isCurrentUserLoading,
+  isMobileLayout,
+  livePlaybackStatus,
+  mobileTab,
+  roomChat,
+  roomPassword,
+  roomState,
+  setMobileTab,
+  slug,
+}: RoomPlaybackJoinedContentProps) {
+  const { data: roomMeta } = useRoomMeta(slug);
+  const playback = useRoomPlaybackViewModel({
+    currentUser,
+    livePlaybackStatus,
+    roomMeta,
+    roomState,
+    slug,
+  });
+  const chatDisabledReason = isCurrentUserLoading
+    ? "로그인 상태 확인 중입니다."
+    : currentUser
+      ? undefined
+      : "로그인 후 채팅할 수 있습니다.";
+  const showChatLoginAction = !isCurrentUserLoading && !currentUser;
+  const {
+    hasOlderMessages: hasOlderChatMessages,
+    historyErrorMessage: chatHistoryErrorMessage,
+    isLoadingOlderMessages,
+    isSending: isChatSending,
+    loadOlderMessages: handleLoadOlderChatMessages,
+    messages: chatMessages,
+    scrollToLatestKey: chatScrollToLatestKey,
+    sendErrorMessage: chatSendErrorMessage,
+    sendMessage: handleSendChatMessage,
+  } = roomChat;
+
   if (isMobileLayout) {
-    const mobileRoomTitle = roomMeta?.title ?? "방 정보";
-    const mobileActiveUsersCount = roomMeta?.activeUsersCount ?? "-";
-    const mobileTags = roomMeta?.tags ?? [];
+    const mobileRoomTitle = roomMeta.title;
+    const mobileActiveUsersCount = roomMeta.activeUsersCount;
+    const mobileTags = roomMeta.tags;
 
     return (
       <div className={`${styles.page} ${styles.mobilePage}`}>
@@ -268,7 +330,10 @@ export default function RoomPlaybackScreen() {
               <h1 className={styles.mobileRoomTitle}>{mobileRoomTitle}</h1>
               <div className={styles.mobileRoomActions}>
                 {playback.isCurrentUserRoomOwner ? (
-                  <UpdateRoomButton slug={slug} />
+                  <UpdateRoomButton
+                    currentUser={currentUser}
+                    roomMeta={roomMeta}
+                  />
                 ) : null}
                 <Link
                   href="/home"
@@ -285,7 +350,7 @@ export default function RoomPlaybackScreen() {
                 <span className={styles.mobileUsersChip}>
                   {mobileActiveUsersCount}명
                 </span>
-                {roomMeta?.hasPassword ? (
+                {roomMeta.hasPassword ? (
                   <span className={styles.mobileLockChip}>비공개</span>
                 ) : null}
                 {mobileTags.length > 0 ? (
@@ -324,7 +389,12 @@ export default function RoomPlaybackScreen() {
                     durationMs={playback.currentTrackDurationMs}
                     isOwner={playback.isCurrentRequesterRoomOwner}
                     requester={playback.currentRequester}
-                    skipAction={<SkipTrackButton slug={slug} />}
+                    skipAction={
+                      <SkipTrackButton
+                        isVisible={playback.isCurrentUserRoomOwner}
+                        slug={slug}
+                      />
+                    }
                     trackTitle={playback.currentTrackTitle}
                   />
                 ) : null}
@@ -358,7 +428,7 @@ export default function RoomPlaybackScreen() {
                 <RoomQueuePanel
                   currentUser={currentUser ?? null}
                   isCurrentUserLoading={isCurrentUserLoading}
-                  roomMeta={roomMeta ?? null}
+                  roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={slug}
                 />
@@ -370,7 +440,7 @@ export default function RoomPlaybackScreen() {
                 <RoomParticipantsPanel
                   currentUser={currentUser ?? null}
                   participants={roomState?.participants ?? []}
-                  roomMeta={roomMeta ?? null}
+                  roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={slug}
                 />
@@ -422,12 +492,15 @@ export default function RoomPlaybackScreen() {
       <div className={styles.container}>
         <div className={styles.mainArea}>
           <RoomInfo
-            slug={slug}
+            roomInfo={roomMeta}
             isRoom
             trailingContent={
               playback.isCurrentUserRoomOwner ? (
                 <div className={styles.roomActions}>
-                  <UpdateRoomButton slug={slug} />
+                  <UpdateRoomButton
+                    currentUser={currentUser}
+                    roomMeta={roomMeta}
+                  />
                 </div>
               ) : null
             }
@@ -444,7 +517,12 @@ export default function RoomPlaybackScreen() {
                 durationMs={playback.currentTrackDurationMs}
                 isOwner={playback.isCurrentRequesterRoomOwner}
                 requester={playback.currentRequester}
-                skipAction={<SkipTrackButton slug={slug} />}
+                skipAction={
+                  <SkipTrackButton
+                    isVisible={playback.isCurrentUserRoomOwner}
+                    slug={slug}
+                  />
+                }
                 trackTitle={playback.currentTrackTitle}
               />
             ) : null}
@@ -480,7 +558,7 @@ export default function RoomPlaybackScreen() {
         chatErrorMessage={chatSendErrorMessage}
         currentRequester={playback.currentRequester}
         currentTrackTitle={playback.currentTrackTitle}
-        currentUser={currentUser ?? null}
+        currentUser={currentUser}
         isChatSending={isChatSending}
         isCurrentUserLoading={isCurrentUserLoading}
         onChatLoginClick={
@@ -488,7 +566,7 @@ export default function RoomPlaybackScreen() {
         }
         onSendChatMessage={handleSendChatMessage}
         participants={roomState?.participants ?? []}
-        roomMeta={roomMeta ?? null}
+        roomMeta={roomMeta}
         roomPassword={roomPassword}
         roomSlug={slug}
         widgets={floatingWidgets.widgets}

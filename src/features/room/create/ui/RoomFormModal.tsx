@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
 import CreateGenreStep from "./CreateGenreStep";
 import CreateSettingsStep, {
@@ -68,11 +69,6 @@ type CreateRoomFormModalProps = {
 
 function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const createRoomMutation = useCreateRoom();
-  const {
-    data: roomTags,
-    isLoading: tagsLoading,
-    isError: tagsError,
-  } = useRoomTags();
   const [currentStep, setCurrentStep] = useState(0);
   const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
@@ -81,7 +77,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [didTryFinish, setDidTryFinish] = useState(false);
 
-  const tags = roomTags ?? [];
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
   const isSubmitting = createRoomMutation.isPending;
@@ -165,15 +160,18 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
     if (currentStep === 1) {
       return (
-        <CreateGenreStep
-          tags={tags}
-          selectedTagSlugs={selectedTagSlugs}
-          maxTags={MAX_TAGS}
-          tagsLoading={tagsLoading}
-          tagsError={tagsError}
-          disabled={isSubmitting}
-          onToggleTag={toggleTag}
-        />
+        <QueryBoundary
+          fallback={<div className={styles.stepState}>장르 불러오는 중...</div>}
+          errorTitle="장르를 불러오지 못했어요."
+          errorDescription="다시 시도해 주세요."
+        >
+          <CreateGenreStepContent
+            selectedTagSlugs={selectedTagSlugs}
+            maxTags={MAX_TAGS}
+            disabled={isSubmitting}
+            onToggleTag={toggleTag}
+          />
+        </QueryBoundary>
       );
     }
 
@@ -305,5 +303,31 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         </form>
       </section>
     </div>
+  );
+}
+
+type CreateGenreStepContentProps = {
+  disabled: boolean;
+  maxTags: number;
+  selectedTagSlugs: string[];
+  onToggleTag: (slug: string) => void;
+};
+
+function CreateGenreStepContent({
+  disabled,
+  maxTags,
+  selectedTagSlugs,
+  onToggleTag,
+}: CreateGenreStepContentProps) {
+  const { data: tags } = useRoomTags();
+
+  return (
+    <CreateGenreStep
+      tags={tags}
+      selectedTagSlugs={selectedTagSlugs}
+      maxTags={maxTags}
+      disabled={disabled}
+      onToggleTag={onToggleTag}
+    />
   );
 }

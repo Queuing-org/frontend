@@ -5,6 +5,7 @@ import {
   getRoomsFromPages,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
@@ -42,38 +43,6 @@ export default function HomeScreen() {
     isAuthRequiredModalOpen,
     requestAuthenticatedAction,
   } = useAuthenticatedAction("방 만들기는 로그인 후 이용할 수 있어요.");
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = useRoomsQuery();
-  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
-  const {
-    currentRoom,
-    selectedRoomSlug,
-    setCurrentRoomSlug,
-    previousRoom,
-    nextRoom,
-    goPrevious,
-    goNext,
-  } = useRoomNavigator(rooms);
-  const roomEntry = useRoomEntry({
-    selectedRoomSlug,
-    onSelectRoom: setCurrentRoomSlug,
-  });
-
-  useLoadMoreRoomsNearEnd({
-    rooms,
-    selectedRoomSlug,
-    hasNextPage: Boolean(hasNextPage),
-    isFetchingNextPage,
-    fetchNextPage,
-  });
-
   const selectRoomListFilter = (
     key: HomeFilterKey,
     option: HomeFilterOption,
@@ -101,75 +70,24 @@ export default function HomeScreen() {
       onAuthenticated: () => setIsSettingsModalOpen(true),
     });
 
-  if (isError && rooms.length === 0 && error)
-    return (
-      <div>
-        방 목록 가져오기에 실패했어요: ({error.status}) {error.message}
-      </div>
-    );
-
   return (
     <div className={styles.screen}>
-      <HomeTopBar
-        currentRoom={currentRoom}
-        mobileSearchQuery={mobileSearchQuery}
-        onMobileSearchQueryChange={setMobileSearchQuery}
-      />
-      {isMobileLayout ? (
-        <MobileHomeRoomFeed
+      <QueryBoundary
+        fallback={<div className={styles.statePanel}>방 목록 로딩 중...</div>}
+        errorTitle="방 목록을 불러오지 못했어요."
+        resetKeys={[isMobileLayout]}
+      >
+        <HomeRoomsContent
           activeFilters={roomListFilters}
-          hasNextPage={Boolean(hasNextPage)}
-          isFetchingNextPage={isFetchingNextPage}
-          isLoading={isLoading}
+          isMobileLayout={isMobileLayout}
+          mobileSearchQuery={mobileSearchQuery}
           onCreateRoom={requestCreateRoom}
-          onLoadMoreRooms={() => {
-            void fetchNextPage();
-          }}
+          onMobileSearchQueryChange={setMobileSearchQuery}
           onOpenFollow={requestOpenFollow}
           onOpenSettings={requestOpenSettings}
-          onRequestRoomEntry={roomEntry.requestRoomEntry}
           onSelectFilter={selectRoomListFilter}
-          onSelectRoom={setCurrentRoomSlug}
-          rooms={rooms}
-          selectedRoomSlug={selectedRoomSlug}
         />
-      ) : null}
-      {!isMobileLayout ? (
-        <>
-          <HomeRoomStage
-            rooms={rooms}
-            currentRoomSlug={selectedRoomSlug}
-            onSelectRoom={setCurrentRoomSlug}
-            onRequestRoomEntry={roomEntry.requestRoomEntry}
-            isLoading={isLoading}
-          />
-          {!isLoading ? (
-            <HomeSearchControlDock
-              ariaLabel="홈 하단 컨트롤"
-              selectedRoomSlug={selectedRoomSlug}
-              canGoPrevious={Boolean(previousRoom)}
-              canGoNext={Boolean(nextRoom)}
-              activeFilters={roomListFilters}
-              onGoPrevious={goPrevious}
-              onGoNext={goNext}
-              onSelectFilter={selectRoomListFilter}
-              onCreateRoom={requestCreateRoom}
-              onOpenFollow={requestOpenFollow}
-              onOpenSettings={requestOpenSettings}
-              onEnterSelectedRoom={() => {
-                if (currentRoom) {
-                  roomEntry.requestRoomEntry(currentRoom);
-                }
-              }}
-            />
-          ) : null}
-        </>
-      ) : null}
-      <RoomJoinPasswordModal
-        room={roomEntry.passwordRoom}
-        onClose={roomEntry.closePasswordModal}
-        onJoined={roomEntry.completePasswordEntry}
-      />
+      </QueryBoundary>
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
@@ -192,5 +110,113 @@ export default function HomeScreen() {
         onLogin={redirectToGoogleLogin}
       />
     </div>
+  );
+}
+
+type HomeRoomsContentProps = {
+  activeFilters: typeof DEFAULT_HOME_FILTERS;
+  isMobileLayout: boolean;
+  mobileSearchQuery: string;
+  onCreateRoom: () => void;
+  onMobileSearchQueryChange: (query: string) => void;
+  onOpenFollow: () => void;
+  onOpenSettings: () => void;
+  onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
+};
+
+function HomeRoomsContent({
+  activeFilters,
+  isMobileLayout,
+  mobileSearchQuery,
+  onCreateRoom,
+  onMobileSearchQueryChange,
+  onOpenFollow,
+  onOpenSettings,
+  onSelectFilter,
+}: HomeRoomsContentProps) {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useRoomsQuery();
+  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
+  const {
+    currentRoom,
+    selectedRoomSlug,
+    setCurrentRoomSlug,
+    previousRoom,
+    nextRoom,
+    goPrevious,
+    goNext,
+  } = useRoomNavigator(rooms);
+  const roomEntry = useRoomEntry({
+    selectedRoomSlug,
+    onSelectRoom: setCurrentRoomSlug,
+  });
+
+  useLoadMoreRoomsNearEnd({
+    rooms,
+    selectedRoomSlug,
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage,
+  });
+
+  return (
+    <>
+      <HomeTopBar
+        currentRoom={currentRoom}
+        mobileSearchQuery={mobileSearchQuery}
+        onMobileSearchQueryChange={onMobileSearchQueryChange}
+      />
+      {isMobileLayout ? (
+        <MobileHomeRoomFeed
+          activeFilters={activeFilters}
+          hasNextPage={Boolean(hasNextPage)}
+          isFetchingNextPage={isFetchingNextPage}
+          onCreateRoom={onCreateRoom}
+          onLoadMoreRooms={() => {
+            void fetchNextPage();
+          }}
+          onOpenFollow={onOpenFollow}
+          onOpenSettings={onOpenSettings}
+          onRequestRoomEntry={roomEntry.requestRoomEntry}
+          onSelectFilter={onSelectFilter}
+          onSelectRoom={setCurrentRoomSlug}
+          rooms={rooms}
+          selectedRoomSlug={selectedRoomSlug}
+        />
+      ) : null}
+      {!isMobileLayout ? (
+        <>
+          <HomeRoomStage
+            rooms={rooms}
+            currentRoomSlug={selectedRoomSlug}
+            onSelectRoom={setCurrentRoomSlug}
+            onRequestRoomEntry={roomEntry.requestRoomEntry}
+          />
+          <HomeSearchControlDock
+            ariaLabel="홈 하단 컨트롤"
+            selectedRoomSlug={selectedRoomSlug}
+            canGoPrevious={Boolean(previousRoom)}
+            canGoNext={Boolean(nextRoom)}
+            activeFilters={activeFilters}
+            onGoPrevious={goPrevious}
+            onGoNext={goNext}
+            onSelectFilter={onSelectFilter}
+            onCreateRoom={onCreateRoom}
+            onOpenFollow={onOpenFollow}
+            onOpenSettings={onOpenSettings}
+            onEnterSelectedRoom={() => {
+              if (currentRoom) {
+                roomEntry.requestRoomEntry(currentRoom);
+              }
+            }}
+          />
+        </>
+      ) : null}
+      <RoomJoinPasswordModal
+        room={roomEntry.passwordRoom}
+        onClose={roomEntry.closePasswordModal}
+        onJoined={roomEntry.completePasswordEntry}
+      />
+    </>
   );
 }

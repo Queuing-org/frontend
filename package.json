@@ -21,6 +21,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-draggable": "^4.5.0",
+    "react-error-boundary": "^6.1.2",
     "react-spinners": "^0.17.0"
   },
   "devDependencies": {

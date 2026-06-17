@@ -1,6 +1,8 @@
 "use client";
 
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
+import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -131,37 +133,20 @@ export default function EditRoomFormModal({
               </span>
             </div>
 
-            {form.tagsLoading ? (
-              <div className={styles.helperText}>장르 불러오는 중...</div>
-            ) : null}
-            {form.tagsError ? (
-              <div className={styles.errorText}>장르를 불러오지 못했어요.</div>
-            ) : null}
-            {!form.tagsLoading && !form.tagsError ? (
-              <div className={styles.tagGrid}>
-                {form.roomTags.map((tag) => {
-                  const selected = form.selectedTagSlugs.includes(tag.slug);
-                  const disabled =
-                    !selected && form.selectedTagSlugs.length >= form.maxTags;
-
-                  return (
-                    <button
-                      key={tag.slug}
-                      type="button"
-                      className={styles.tagChip}
-                      data-selected={selected}
-                      disabled={form.isSubmitting || disabled}
-                      onClick={() => form.toggleTag(tag.slug)}
-                    >
-                      {tag.name}
-                    </button>
-                  );
-                })}
-                {form.roomTags.length === 0 ? (
-                  <span className={styles.helperText}>장르가 없습니다.</span>
-                ) : null}
-              </div>
-            ) : null}
+            <QueryBoundary
+              fallback={
+                <div className={styles.helperText}>장르 불러오는 중...</div>
+              }
+              errorTitle="장르를 불러오지 못했어요."
+              errorDescription="다시 시도해 주세요."
+            >
+              <EditRoomTagsField
+                disabled={form.isSubmitting}
+                maxTags={form.maxTags}
+                selectedTagSlugs={form.selectedTagSlugs}
+                onToggleTag={form.toggleTag}
+              />
+            </QueryBoundary>
           </div>
 
           {form.submitError ? (
@@ -179,6 +164,47 @@ export default function EditRoomFormModal({
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+type EditRoomTagsFieldProps = {
+  disabled: boolean;
+  maxTags: number;
+  selectedTagSlugs: string[];
+  onToggleTag: (slug: string) => void;
+};
+
+function EditRoomTagsField({
+  disabled,
+  maxTags,
+  selectedTagSlugs,
+  onToggleTag,
+}: EditRoomTagsFieldProps) {
+  const { data: roomTags } = useRoomTags();
+
+  return (
+    <div className={styles.tagGrid}>
+      {roomTags.map((tag) => {
+        const selected = selectedTagSlugs.includes(tag.slug);
+        const tagDisabled = !selected && selectedTagSlugs.length >= maxTags;
+
+        return (
+          <button
+            key={tag.slug}
+            type="button"
+            className={styles.tagChip}
+            data-selected={selected}
+            disabled={disabled || tagDisabled}
+            onClick={() => onToggleTag(tag.slug)}
+          >
+            {tag.name}
+          </button>
+        );
+      })}
+      {roomTags.length === 0 ? (
+        <span className={styles.helperText}>장르가 없습니다.</span>
+      ) : null}
     </div>
   );
 }

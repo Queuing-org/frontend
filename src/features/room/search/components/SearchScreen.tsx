@@ -6,17 +6,16 @@ import {
   getRoomsFromPages,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
-import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
 import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
 import MainLogo from "@/src/features/home/ui/MainLogo";
 import styles from "./SearchScreen.module.css";
 import Image from "next/image";
 import RoomSearchInput from "@/src/features/room/search/ui/RoomSearchInput";
-import { ClipLoader } from "react-spinners";
 import {
   DEFAULT_HOME_FILTERS,
   getNextHomeFilters,
@@ -43,49 +42,6 @@ export default function SearchScreen() {
     isAuthRequiredModalOpen,
     requestAuthenticatedAction,
   } = useAuthenticatedAction("방 만들기는 로그인 후 이용할 수 있어요.");
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-  } = useRoomsQuery();
-  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
-  const roomListRooms = rooms;
-  const {
-    selectedRoomSlug,
-    setCurrentRoomSlug,
-    previousRoom,
-    nextRoom,
-    goPrevious,
-    goNext,
-  } = useRoomNavigator(roomListRooms);
-  const roomEntry = useRoomEntry({
-    selectedRoomSlug,
-    onSelectRoom: setCurrentRoomSlug,
-  });
-
-  useLoadMoreRoomsNearEnd({
-    rooms: roomListRooms,
-    selectedRoomSlug,
-    hasNextPage: Boolean(hasNextPage),
-    isFetchingNextPage,
-    fetchNextPage,
-  });
-  const selectedRoomIndex = selectedRoomSlug
-    ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
-    : -1;
-  const selectedRoom =
-    selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
-  const { data: selectedRoomMeta } = useRoomMeta(selectedRoom?.slug ?? null);
-  const selectedOwner = selectedRoomMeta?.owner ?? null;
-  const selectedOwnerName = selectedOwner?.nickname?.trim() ?? "";
-  const selectedOwnerImageSrc =
-    selectedOwner?.profileImageUrl || "/Basic_Profile.png";
-  const backgroundImageSrc = getDefaultRoomImage(
-    selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
-  );
 
   const selectRoomListFilter = (
     key: HomeFilterKey,
@@ -120,117 +76,22 @@ export default function SearchScreen() {
         <MainLogo />
       </div>
 
-      <div className={styles.list_container}>
-        <div className={styles.searchHeader}>
-          <Link
-            href="/home"
-            className={styles.backButton}
-            aria-label="홈으로 돌아가기"
-          >
-            <Image
-              src="/icons/room_left_arrow.svg"
-              alt=""
-              width={10}
-              height={17}
-              className={`${styles.backIcon} ${styles.backIconDefault}`}
-              aria-hidden="true"
-            />
-            <Image
-              src="/icons/hover_left_arrow.svg"
-              alt=""
-              width={10}
-              height={17}
-              className={`${styles.backIcon} ${styles.backIconHover}`}
-              aria-hidden="true"
-            />
-          </Link>
-          <div className={styles.search_input}>
-            <RoomSearchInput />
-          </div>
-        </div>
-
-        <div className={styles.contentGrid}>
-          <div className={styles.listContent}>
-            <div className={styles.room_list}>
-              {isLoading ? (
-                <div className={styles.statePanel}>
-                  <ClipLoader color="#3c3c3c" size={36} aria-label="로딩 중" />
-                </div>
-              ) : isError && roomListRooms.length === 0 ? (
-                <div className={styles.statePanel}>새로고침을 시도해주세요.</div>
-              ) : (
-                <SearchPageRoomList
-                  rooms={roomListRooms}
-                  selectedRoomSlug={selectedRoomSlug}
-                  onSelectRoom={setCurrentRoomSlug}
-                  onRequestRoomEntry={roomEntry.requestRoomEntry}
-                />
-              )}
-            </div>
-          </div>
-
-          <div className={styles.thumbnail_container}>
-            <div className={styles.thumbnailImageFrame}>
-              <Image
-                key={backgroundImageSrc}
-                src={backgroundImageSrc}
-                alt={
-                  selectedRoom
-                    ? `${selectedRoom.title} 대표 이미지`
-                    : "방 대표 이미지"
-                }
-                fill
-                className={styles.thumbnail}
-                priority
-              />
-            </div>
-            {selectedOwnerName ? (
-              <div className={styles.thumbnailOwnerBar}>
-                <span className={styles.thumbnailOwnerAvatarWrap}>
-                  <Image
-                    src={selectedOwnerImageSrc}
-                    alt=""
-                    fill
-                    sizes="44px"
-                    unoptimized={Boolean(selectedOwner?.profileImageUrl)}
-                    className={styles.thumbnailOwnerAvatar}
-                  />
-                </span>
-                <span className={styles.thumbnailOwnerName}>
-                  {selectedOwnerName}
-                </span>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
-      {!isLoading && (!isError || roomListRooms.length > 0) ? (
-        <HomeSearchControlDock
-          ariaLabel="검색 페이지 방 이동 컨트롤"
-          selectedRoomSlug={selectedRoomSlug}
-          canGoPrevious={Boolean(previousRoom)}
-          canGoNext={Boolean(nextRoom)}
+      <QueryBoundary
+        fallback={<SearchRoomsFallback />}
+        errorFallback={({ resetErrorBoundary }) => (
+          <SearchRoomsErrorFallback onRetry={resetErrorBoundary} />
+        )}
+        errorTitle="방 목록을 불러오지 못했어요."
+        errorDescription="새로고침을 시도해주세요."
+      >
+        <SearchRoomsContent
           activeFilters={roomListFilters}
-          onGoPrevious={goPrevious}
-          onGoNext={goNext}
-          onSelectFilter={selectRoomListFilter}
           onCreateRoom={requestCreateRoom}
           onOpenFollow={requestOpenFollow}
           onOpenSettings={requestOpenSettings}
-          onEnterSelectedRoom={() => {
-            if (selectedRoom) {
-              roomEntry.requestRoomEntry(selectedRoom);
-            }
-          }}
+          onSelectFilter={selectRoomListFilter}
         />
-      ) : null}
-
-      <RoomJoinPasswordModal
-        room={roomEntry.passwordRoom}
-        onClose={roomEntry.closePasswordModal}
-        onJoined={roomEntry.completePasswordEntry}
-      />
+      </QueryBoundary>
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
@@ -253,5 +114,194 @@ export default function SearchScreen() {
         onLogin={redirectToGoogleLogin}
       />
     </div>
+  );
+}
+
+function SearchPanelHeader() {
+  return (
+    <div className={styles.searchHeader}>
+      <Link
+        href="/home"
+        className={styles.backButton}
+        aria-label="홈으로 돌아가기"
+      >
+        <Image
+          src="/icons/room_left_arrow.svg"
+          alt=""
+          width={10}
+          height={17}
+          className={`${styles.backIcon} ${styles.backIconDefault}`}
+          aria-hidden="true"
+        />
+        <Image
+          src="/icons/hover_left_arrow.svg"
+          alt=""
+          width={10}
+          height={17}
+          className={`${styles.backIcon} ${styles.backIconHover}`}
+          aria-hidden="true"
+        />
+      </Link>
+      <div className={styles.search_input}>
+        <RoomSearchInput />
+      </div>
+    </div>
+  );
+}
+
+function SearchRoomsFallback() {
+  return (
+    <div className={styles.list_container}>
+      <SearchPanelHeader />
+      <div className={styles.contentGrid}>
+        <div className={styles.listContent}>
+          <div className={styles.room_list}>
+            <div className={styles.statePanel}>방 목록 로딩 중...</div>
+          </div>
+        </div>
+        <div className={styles.thumbnail_container} aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+type SearchRoomsErrorFallbackProps = {
+  onRetry: () => void;
+};
+
+function SearchRoomsErrorFallback({ onRetry }: SearchRoomsErrorFallbackProps) {
+  return (
+    <div className={styles.list_container}>
+      <SearchPanelHeader />
+      <div className={styles.contentGrid}>
+        <div className={styles.listContent}>
+          <div className={styles.room_list}>
+            <div className={styles.statePanel} role="alert">
+              <span>방 목록을 불러오지 못했어요.</span>
+              <button
+                type="button"
+                className={styles.stateButton}
+                onClick={onRetry}
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className={styles.thumbnail_container} aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+type SearchRoomsContentProps = {
+  activeFilters: typeof DEFAULT_HOME_FILTERS;
+  onCreateRoom: () => void;
+  onOpenFollow: () => void;
+  onOpenSettings: () => void;
+  onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
+};
+
+function SearchRoomsContent({
+  activeFilters,
+  onCreateRoom,
+  onOpenFollow,
+  onOpenSettings,
+  onSelectFilter,
+}: SearchRoomsContentProps) {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useRoomsQuery();
+  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
+  const roomListRooms = rooms;
+  const {
+    selectedRoomSlug,
+    setCurrentRoomSlug,
+    previousRoom,
+    nextRoom,
+    goPrevious,
+    goNext,
+  } = useRoomNavigator(roomListRooms);
+  const roomEntry = useRoomEntry({
+    selectedRoomSlug,
+    onSelectRoom: setCurrentRoomSlug,
+  });
+
+  useLoadMoreRoomsNearEnd({
+    rooms: roomListRooms,
+    selectedRoomSlug,
+    hasNextPage: Boolean(hasNextPage),
+    isFetchingNextPage,
+    fetchNextPage,
+  });
+
+  const selectedRoomIndex = selectedRoomSlug
+    ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
+    : -1;
+  const selectedRoom =
+    selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
+  const backgroundImageSrc = getDefaultRoomImage(
+    selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
+  );
+
+  return (
+    <>
+      <div className={styles.list_container}>
+        <SearchPanelHeader />
+        <div className={styles.contentGrid}>
+          <div className={styles.listContent}>
+            <div className={styles.room_list}>
+              <SearchPageRoomList
+                rooms={roomListRooms}
+                selectedRoomSlug={selectedRoomSlug}
+                onSelectRoom={setCurrentRoomSlug}
+                onRequestRoomEntry={roomEntry.requestRoomEntry}
+              />
+            </div>
+          </div>
+
+          <div className={styles.thumbnail_container}>
+            <div className={styles.thumbnailImageFrame}>
+              <Image
+                key={backgroundImageSrc}
+                src={backgroundImageSrc}
+                alt={
+                  selectedRoom
+                    ? `${selectedRoom.title} 대표 이미지`
+                    : "방 대표 이미지"
+                }
+                fill
+                className={styles.thumbnail}
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <HomeSearchControlDock
+        ariaLabel="검색 페이지 방 이동 컨트롤"
+        selectedRoomSlug={selectedRoomSlug}
+        canGoPrevious={Boolean(previousRoom)}
+        canGoNext={Boolean(nextRoom)}
+        activeFilters={activeFilters}
+        onGoPrevious={goPrevious}
+        onGoNext={goNext}
+        onSelectFilter={onSelectFilter}
+        onCreateRoom={onCreateRoom}
+        onOpenFollow={onOpenFollow}
+        onOpenSettings={onOpenSettings}
+        onEnterSelectedRoom={() => {
+          if (selectedRoom) {
+            roomEntry.requestRoomEntry(selectedRoom);
+          }
+        }}
+      />
+
+      <RoomJoinPasswordModal
+        room={roomEntry.passwordRoom}
+        onClose={roomEntry.closePasswordModal}
+        onJoined={roomEntry.completePasswordEntry}
+      />
+    </>
   );
 }

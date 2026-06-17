@@ -2,33 +2,34 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
+import type { RoomTag } from "@/src/features/room/model/types";
 import styles from "./RoomInfo.module.css";
 
+export type RoomInfoDisplay = {
+  activeUsersCount?: number | null;
+  hasPassword: boolean;
+  tags: RoomTag[];
+  title: string;
+};
+
 type Props = {
-  slug: string | null;
+  roomInfo: RoomInfoDisplay | null;
   isRoom?: boolean;
   trailingContent?: ReactNode;
 };
 
 export default function RoomInfo({
-  slug,
+  roomInfo,
   isRoom = false,
   trailingContent,
 }: Props) {
-  const { data: roomMeta, isLoading: isRoomMetaLoading, isError } =
-    useRoomMeta(slug);
-  const tags = roomMeta?.tags ?? [];
+  const tags = roomInfo?.tags ?? [];
   const activeUsersCount =
-    !slug || isRoomMetaLoading || isError
-      ? "-"
-      : (roomMeta?.activeUsersCount ?? "-");
-  const title = !slug
-    ? "선택된 방 없음"
-    : isRoomMetaLoading || isError
-      ? "-"
-      : (roomMeta?.title ?? "선택된 방 없음");
-  const lockContent = roomMeta?.hasPassword ? (
+    typeof roomInfo?.activeUsersCount === "number"
+      ? roomInfo.activeUsersCount
+      : "-";
+  const title = roomInfo?.title ?? "선택된 방 없음";
+  const lockContent = roomInfo?.hasPassword ? (
     <Image
       src="/icons/lock.svg"
       alt="비밀번호 방"

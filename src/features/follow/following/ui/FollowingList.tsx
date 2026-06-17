@@ -5,14 +5,8 @@ import FollowingCard from "./FollowingCard";
 import styles from "./FollowingList.module.css";
 
 export default function FollowingList() {
-  const { data, isLoading, isError } = useFollowingList({ size: 100 });
-
-  if (isLoading)
-    return <div className={styles.state}>팔로잉 목록 로딩중...</div>;
-  if (isError)
-    return <div className={styles.state}>팔로잉 목록 로딩 실패</div>;
-
-  const followingUsers = data?.items ?? [];
+  const { data } = useFollowingList({ size: 100 });
+  const followingUsers = data.items;
 
   return (
     <div className={styles.container}>

@@ -8,9 +8,7 @@ type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
-  errorMessage?: string;
   isDeletePending?: boolean;
-  isLoading?: boolean;
   listClassName?: string;
   onDeleteEntry?: (entryId: string) => void;
 };
@@ -19,20 +17,10 @@ export default function RoomQueueList({
   canDeleteEntry,
   emptyMessage,
   entries,
-  errorMessage,
   isDeletePending = false,
-  isLoading = false,
   listClassName,
   onDeleteEntry,
 }: Props) {
-  if (isLoading) {
-    return <div className={styles.state}>플레이리스트를 불러오는 중입니다.</div>;
-  }
-
-  if (errorMessage) {
-    return <div className={styles.state}>{errorMessage}</div>;
-  }
-
   if (entries.length === 0) {
     return <div className={styles.state}>{emptyMessage}</div>;
   }

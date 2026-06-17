@@ -20,10 +20,8 @@ type RoomQueuePanelViewProps = {
   canDeleteEntryAsOwner: (entry: PlaylistEntry) => boolean;
   deleteErrorMessage: string;
   emptyMessage: string;
-  errorMessage?: string;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
-  isLoading: boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
@@ -45,10 +43,8 @@ export default function RoomQueuePanelView({
   canDeleteEntryAsOwner,
   deleteErrorMessage,
   emptyMessage,
-  errorMessage,
   isDeleteMyPending,
   isDeleteRoomPending,
-  isLoading,
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
@@ -77,10 +73,8 @@ export default function RoomQueuePanelView({
           canDeleteEntry={canDeleteEntry}
           canDeleteEntryAsOwner={canDeleteEntryAsOwner}
           emptyMessage={emptyMessage}
-          errorMessage={errorMessage}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}
-          isLoading={isLoading}
           isMoveMyPending={isMoveMyPending}
           isMoveRoomPending={isMoveRoomPending}
           isOwner={isOwner}

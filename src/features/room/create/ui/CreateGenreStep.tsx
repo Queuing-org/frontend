@@ -7,8 +7,6 @@ type CreateGenreStepProps = {
   tags: RoomTag[];
   selectedTagSlugs: string[];
   maxTags: number;
-  tagsLoading: boolean;
-  tagsError: boolean;
   disabled: boolean;
   onToggleTag: (slug: string) => void;
 };
@@ -17,19 +15,9 @@ export default function CreateGenreStep({
   tags,
   selectedTagSlugs,
   maxTags,
-  tagsLoading,
-  tagsError,
   disabled,
   onToggleTag,
 }: CreateGenreStepProps) {
-  if (tagsLoading) {
-    return <div className={styles.stateText}>장르 불러오는 중...</div>;
-  }
-
-  if (tagsError) {
-    return <div className={styles.errorText}>장르를 불러오지 못했어요.</div>;
-  }
-
   if (tags.length === 0) {
     return <div className={styles.stateText}>장르가 없습니다.</div>;
   }

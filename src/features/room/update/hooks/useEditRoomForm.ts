@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useUpdateRoom } from "../model/useUpdateRoom";
 import { buildUpdateRoomPayload } from "../model/buildUpdateRoomPayload";
 
@@ -22,11 +21,6 @@ export function useEditRoomForm({
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
-  const {
-    data: roomTags,
-    isLoading: tagsLoading,
-    isError: tagsError,
-  } = useRoomTags();
   const [title, setTitle] = useState(() => initialTitle);
   const [password, setPassword] = useState("");
   const [isPasswordChangeEnabled, setIsPasswordChangeEnabled] =
@@ -112,12 +106,9 @@ export function useEditRoomForm({
     maxRoomTitleLength: MAX_ROOM_TITLE_LENGTH,
     maxTags: MAX_TAGS,
     password,
-    roomTags: roomTags ?? [],
     selectedTagSlugs,
     setPassword,
     submitError: updateRoomMutation.error,
-    tagsError,
-    tagsLoading,
     title,
     toggleTag,
     updatePasswordChangeEnabled,

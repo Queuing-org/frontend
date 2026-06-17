@@ -186,12 +186,41 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.92);
+  gap: 12px;
+  color: #3c3c3c;
   font-size: 16px;
   line-height: 1.4;
   text-align: center;
+}
+
+.stateButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.stateButton:hover,
+.stateButton:focus-visible {
+  background: #f7f7f9;
+}
+
+.stateButton:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
 }
 
 @media (max-width: 820px) {

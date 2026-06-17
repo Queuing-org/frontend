@@ -17,10 +17,8 @@ type RoomQueueListSectionProps = {
   canDeleteEntry: (entry: PlaylistEntry) => boolean;
   canDeleteEntryAsOwner: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
-  errorMessage?: string;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
-  isLoading: boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
@@ -37,10 +35,8 @@ export default function RoomQueueListSection({
   canDeleteEntry,
   canDeleteEntryAsOwner,
   emptyMessage,
-  errorMessage,
   isDeleteMyPending,
   isDeleteRoomPending,
-  isLoading,
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
@@ -56,9 +52,7 @@ export default function RoomQueueListSection({
         canDeleteEntry={canDeleteEntry}
         emptyMessage={emptyMessage}
         entries={myEntries}
-        errorMessage={errorMessage}
         isDeletePending={isDeleteMyPending}
-        isLoading={isLoading}
         isMovePending={isMoveMyPending}
         onDelete={onDeleteMyEntry}
         onMove={onMoveMyEntry}
@@ -72,9 +66,7 @@ export default function RoomQueueListSection({
         canDeleteEntry={canDeleteEntryAsOwner}
         emptyMessage={emptyMessage}
         entries={allEntries}
-        errorMessage={errorMessage}
         isDeletePending={isDeleteRoomPending}
-        isLoading={isLoading}
         isMovePending={isMoveRoomPending}
         onDelete={onDeleteRoomEntry}
         onMove={onMoveRoomEntry}
@@ -87,9 +79,7 @@ export default function RoomQueueListSection({
       canDeleteEntry={canDeleteEntry}
       emptyMessage={emptyMessage}
       entries={allEntries}
-      errorMessage={errorMessage}
       isDeletePending={isDeleteMyPending}
-      isLoading={isLoading}
       onDeleteEntry={onDeleteMyEntry}
     />
   );

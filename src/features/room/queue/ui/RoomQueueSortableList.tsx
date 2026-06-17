@@ -37,9 +37,7 @@ type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
-  errorMessage?: string;
   isDeletePending?: boolean;
-  isLoading?: boolean;
   isMovePending?: boolean;
   onDelete?: (entryId: string) => void;
   onMove?: (payload: MovePayload) => void;
@@ -98,9 +96,7 @@ export default function RoomQueueSortableList({
   canDeleteEntry,
   emptyMessage,
   entries,
-  errorMessage,
   isDeletePending = false,
-  isLoading = false,
   isMovePending = false,
   onDelete,
   onMove,
@@ -171,16 +167,6 @@ export default function RoomQueueSortableList({
       movedEntryId: activeEntryId,
       orderedPendingEntryIds: reorderedEntries.map((entry) => entry.entryId),
     });
-  }
-
-  if (isLoading) {
-    return (
-      <div className={listStyles.state}>플레이리스트를 불러오는 중입니다.</div>
-    );
-  }
-
-  if (errorMessage) {
-    return <div className={listStyles.state}>{errorMessage}</div>;
   }
 
   if (entries.length === 0) {

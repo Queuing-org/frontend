@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
-import { useFollowingList } from "@/src/features/follow/following/hooks/useFollowingList";
+import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
 
@@ -19,7 +19,6 @@ const PLACEHOLDER_PROFILE_FIELDS = [
   "이용 시간",
   "음악력",
 ] as const;
-const PROFILE_FOLLOWING_CHECK_SIZE = 200;
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -50,12 +49,8 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
   const canFollow = !!currentRequester?.slug && !isSelf;
-  const { data: followingData } = useFollowingList(
-    { size: PROFILE_FOLLOWING_CHECK_SIZE },
-    { enabled: canFollow },
-  );
-  const isFollowingCurrentRequester = followingData?.items.some(
-    (user) => user.slug === targetSlug,
+  const { data: isFollowingCurrentRequester } = useFollowingRelationship(
+    canFollow ? targetSlug : null,
   );
 
   let buttonLabel = "팔로우";

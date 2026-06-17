@@ -2,8 +2,10 @@
 
 import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import { useRoomQueuePanel } from "../hooks/useRoomQueuePanel";
 import RoomQueuePanelView from "./RoomQueuePanelView";
+import styles from "./RoomQueuePanel.module.css";
 
 type Props = {
   currentUser: User | null;
@@ -14,6 +16,38 @@ type Props = {
 };
 
 export default function RoomQueuePanel({
+  currentUser,
+  isCurrentUserLoading,
+  roomMeta,
+  roomPassword,
+  roomSlug,
+}: Props) {
+  return (
+    <QueryBoundary
+      fallback={
+        <div className={styles.root}>
+          <div className={styles.listArea}>
+            <div className={styles.state}>
+              플레이리스트를 불러오는 중입니다.
+            </div>
+          </div>
+        </div>
+      }
+      errorTitle="플레이리스트를 불러오지 못했습니다."
+      resetKeys={[roomSlug, roomPassword ?? null]}
+    >
+      <RoomQueuePanelContent
+        currentUser={currentUser}
+        isCurrentUserLoading={isCurrentUserLoading}
+        roomMeta={roomMeta}
+        roomPassword={roomPassword}
+        roomSlug={roomSlug}
+      />
+    </QueryBoundary>
+  );
+}
+
+function RoomQueuePanelContent({
   currentUser,
   isCurrentUserLoading,
   roomMeta,
@@ -36,10 +70,8 @@ export default function RoomQueuePanel({
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
       deleteErrorMessage={queuePanel.deleteErrorMessage}
       emptyMessage={queuePanel.emptyMessage}
-      errorMessage={queuePanel.error ? queuePanel.errorMessage : undefined}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
-      isLoading={queuePanel.isLoading}
       isMoveMyPending={queuePanel.moveMyQueueEntry.isPending}
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}

@@ -1,14 +1,8 @@
 import { useRoomTags } from "../../hooks/useRoomTags";
+import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 
-export default function RoomTags() {
-  const { data, isLoading, isError } = useRoomTags();
-
-  if (isLoading) return <div>태그 로딩중...</div>;
-  if (isError) return <div>태그 로딩 실패</div>;
-
-  const tags = data ?? [];
-
-  console.log("roomTags data:", data);
+function RoomTagsContent() {
+  const { data: tags } = useRoomTags();
 
   return (
     <div className="flex flex-wrap gap-2 text-black">
@@ -18,5 +12,17 @@ export default function RoomTags() {
         </span>
       ))}
     </div>
+  );
+}
+
+export default function RoomTags() {
+  return (
+    <QueryBoundary
+      fallback={<div>태그 로딩중...</div>}
+      errorTitle="태그 로딩 실패"
+      errorDescription="다시 시도해 주세요."
+    >
+      <RoomTagsContent />
+    </QueryBoundary>
   );
 }

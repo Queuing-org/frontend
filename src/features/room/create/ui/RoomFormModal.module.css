@@ -197,6 +197,18 @@
   padding-right: 2px;
 }
 
+.stepState {
+  display: flex;
+  min-height: 160px;
+  align-items: center;
+  justify-content: center;
+  color: #8d8d8d;
+  font-size: 14px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  text-align: center;
+}
+
 .errorText {
   flex: 0 0 auto;
   margin: 12px 0 0;

@@ -1,26 +1,25 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
-import { useMe } from "@/src/features/user/session/hooks/useMe";
+import type { RoomMeta } from "@/src/features/room/model/types";
+import type { User } from "@/src/features/user/model/types";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./UpdateRoomButton.module.css";
 
 type Props = {
-  slug: string | null;
+  currentUser: User | null;
+  roomMeta: RoomMeta | null;
 };
 
-export default function UpdateRoomButton({ slug }: Props) {
+export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: roomMeta } = useRoomMeta(slug);
-  const { data: me } = useMe();
   const initialTagSlugs = useMemo(
     () => roomMeta?.tags.map((tag) => tag.slug) ?? [],
     [roomMeta?.tags],
   );
 
-  if (!isRoomOwner(roomMeta?.owner, me)) {
+  if (!roomMeta || !isRoomOwner(roomMeta.owner, currentUser)) {
     return null;
   }
 
@@ -37,10 +36,10 @@ export default function UpdateRoomButton({ slug }: Props) {
         <RoomFormModal
           open
           mode="edit"
-          roomSlug={slug ?? undefined}
-          initialTitle={roomMeta?.title ?? ""}
+          roomSlug={roomMeta.slug}
+          initialTitle={roomMeta.title}
           initialTagSlugs={initialTagSlugs}
-          initialHasPassword={roomMeta?.hasPassword ?? false}
+          initialHasPassword={roomMeta.hasPassword}
           onClose={() => setIsModalOpen(false)}
         />
       ) : null}

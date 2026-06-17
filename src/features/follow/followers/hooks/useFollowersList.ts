@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import type { FollowersListResponse } from "@/src/features/follow/model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { fetchFollowers } from "../api/fetchFollowers";
@@ -7,12 +7,10 @@ import { followKeys } from "@/src/features/follow/model/queryKeys";
 
 export function useFollowersList(
   params?: FetchFollowersParams,
-  options: { enabled?: boolean } = {},
 ) {
-  return useQuery<FollowersListResponse, ApiError>({
+  return useSuspenseQuery<FollowersListResponse, ApiError>({
     queryKey: followKeys.followers(params?.lastId, params?.size),
     queryFn: () => fetchFollowers(params),
-    enabled: options.enabled ?? true,
     retry: false,
   });
 }

@@ -1,6 +1,9 @@
 "use client";
 
-import { useInfiniteQuery, type InfiniteData } from "@tanstack/react-query";
+import {
+  useSuspenseInfiniteQuery,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import { fetchRooms } from "../api/fetchRooms";
 import type { Room, RoomsResponse } from "../model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
@@ -27,7 +30,7 @@ export function getRoomsFromPages(data?: InfiniteData<RoomsResponse>): Room[] {
 }
 
 export function useRoomsQuery() {
-  return useInfiniteQuery<
+  return useSuspenseInfiniteQuery<
     RoomsResponse,
     ApiError,
     InfiniteData<RoomsResponse>,

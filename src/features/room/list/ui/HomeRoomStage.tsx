@@ -21,7 +21,6 @@ type Props = {
   currentRoomSlug: string | null;
   onSelectRoom: (roomSlug: string) => void;
   onRequestRoomEntry: (room: Room) => void;
-  isLoading?: boolean;
 };
 
 const DRAG_SELECT_THRESHOLD = 50;
@@ -46,7 +45,6 @@ export default function HomeRoomStage({
   currentRoomSlug,
   onSelectRoom,
   onRequestRoomEntry,
-  isLoading = false,
 }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{
@@ -70,28 +68,6 @@ export default function HomeRoomStage({
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
   });
-
-  if (isLoading) {
-    return (
-      <section
-        className={styles.viewport}
-        aria-label="방 선택 스테이지"
-        aria-busy="true"
-      >
-        <div className={styles.rail} data-loading="true">
-          <div className={styles.slot} data-slot="current">
-            <div className={styles.slotCard}>
-              <div
-                className={styles.skeletonCard}
-                role="status"
-                aria-label="방 목록 로딩 중"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   if (rooms.length === 0) {
     return (
