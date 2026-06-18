@@ -88,11 +88,17 @@ export default function HomeScreen() {
       description: "설정은 로그인 후 이용할 수 있어요.",
       onAuthenticated: () => setIsSettingsModalOpen(true),
     });
+  const hasPageModalOpen =
+    isCreateRoomModalOpen ||
+    isFollowModalOpen ||
+    isSettingsModalOpen ||
+    isAuthRequiredModalOpen;
 
   return (
     <div className={styles.screen}>
       <HomeRoomsContent
         activeFilters={roomListFilters}
+        hasPageModalOpen={hasPageModalOpen}
         isMobileLayout={isMobileLayout}
         mobileSearchQuery={mobileSearchQuery}
         onCreateRoom={requestCreateRoom}
@@ -129,6 +135,7 @@ export default function HomeScreen() {
 
 type HomeRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
+  hasPageModalOpen: boolean;
   isMobileLayout: boolean;
   mobileSearchQuery: string;
   onCreateRoom: () => void;
@@ -141,6 +148,7 @@ type HomeRoomsContentProps = {
 
 function HomeRoomsContent({
   activeFilters,
+  hasPageModalOpen,
   isMobileLayout,
   mobileSearchQuery,
   onCreateRoom,
@@ -180,6 +188,7 @@ function HomeRoomsContent({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
   });
+  const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
 
   useLoadMoreRoomsNearEnd({
     rooms,
@@ -193,10 +202,11 @@ function HomeRoomsContent({
     <>
       <HomeTopBar
         currentRoom={currentRoom}
+        isChromeReduced={isChromeReduced}
         mobileSearchQuery={mobileSearchQuery}
         onMobileSearchQueryChange={onMobileSearchQueryChange}
       />
-      {isMobileLayout ? (
+      {isMobileLayout && !isChromeReduced ? (
         <MobileHomeRoomFeed
           activeFilters={activeFilters}
           errorMessage={roomListErrorMessage}
@@ -220,7 +230,7 @@ function HomeRoomsContent({
           selectedRoomSlug={selectedRoomSlug}
         />
       ) : null}
-      {!isMobileLayout ? (
+      {!isMobileLayout && !isChromeReduced ? (
         <>
           <HomeRoomStage
             rooms={rooms}

@@ -10,16 +10,18 @@ import styles from "./HomeTopBar.module.css";
 
 type Props = {
   currentRoom: Room | null;
+  isChromeReduced?: boolean;
   mobileSearchQuery?: string;
   onMobileSearchQueryChange?: (query: string) => void;
 };
 
 export default function HomeTopBar({
   currentRoom,
+  isChromeReduced = false,
   mobileSearchQuery = "",
   onMobileSearchQueryChange,
 }: Props) {
-  const roomInfo: RoomInfoDisplay | null = currentRoom
+  const roomInfo: RoomInfoDisplay | null = !isChromeReduced && currentRoom
     ? {
         activeUsersCount: null,
         hasPassword: currentRoom.isPrivate,
@@ -75,12 +77,16 @@ export default function HomeTopBar({
           </button>
         </form>
       </div>
-      <div className={styles.centerGroup}>
-        <RoomInfo roomInfo={roomInfo} />
-      </div>
-      <div className={styles.rightGroup}>
-        <SignUpButton />
-      </div>
+      {!isChromeReduced ? (
+        <div className={styles.centerGroup}>
+          <RoomInfo roomInfo={roomInfo} />
+        </div>
+      ) : null}
+      {!isChromeReduced ? (
+        <div className={styles.rightGroup}>
+          <SignUpButton />
+        </div>
+      ) : null}
     </div>
   );
 }

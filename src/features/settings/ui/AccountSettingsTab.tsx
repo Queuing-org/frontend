@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { MessageCircle } from "lucide-react";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import styles from "./AccountSettingsTab.module.css";
@@ -35,7 +34,7 @@ export default function AccountSettingsTab({
         <div className={styles.contactCopy}>
           <div className={styles.contactTitleRow}>
             <span className={styles.contactIcon} aria-hidden="true">
-              <MessageCircle size={17} strokeWidth={2.4} />
+              <Image src="/icons/errorchat.svg" alt="" width={30} height={30} />
             </span>
             <h3 className={styles.contactTitle}>오류 제보 및 건의 사항</h3>
           </div>
@@ -73,9 +72,7 @@ export default function AccountSettingsTab({
             />
           </span>
           <span className={styles.qrLabel}>QR SCAN</span>
-          <span className={styles.openHint}>
-            클릭해서 오픈카톡 열기
-          </span>
+          <span className={styles.openHint}>클릭해서 오픈카톡 열기</span>
           <span className={styles.visuallyHidden}>
             QR 코드는 {OPEN_KAKAO_URL} 주소로 연결됩니다.
           </span>
@@ -97,7 +94,7 @@ export default function AccountSettingsTab({
           className={`${styles.actionButton} ${styles.withdrawButton}`}
           disabled
         >
-          회원탈퇴
+          회원탈퇴 (개발 중)
         </button>
       </div>
 
