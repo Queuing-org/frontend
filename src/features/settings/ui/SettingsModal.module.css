@@ -64,8 +64,8 @@
   top: 18px;
   left: 50%;
   display: grid;
-  width: min(306px, calc(100% - 36px));
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: min(220px, calc(100% - 36px));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
   border: 0.75px solid #d9d9d9;
   border-radius: 4px;
@@ -150,7 +150,7 @@
 
   .tabBar {
     top: 16px;
-    width: min(288px, calc(100% - 28px));
+    width: min(220px, calc(100% - 28px));
   }
 
   .tabButton {

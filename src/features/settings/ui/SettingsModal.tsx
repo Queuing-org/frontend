@@ -2,7 +2,6 @@
 
 import { type ReactNode, useState } from "react";
 import AccountSettingsTab from "./AccountSettingsTab";
-import PreferencesSettingsTab from "./PreferencesSettingsTab";
 import ProfileSettingsTab from "./ProfileSettingsTab";
 import styles from "./SettingsModal.module.css";
 
@@ -11,14 +10,13 @@ type SettingsModalProps = {
   onClose: () => void;
 };
 
-type SettingsTab = "profile" | "preferences" | "account";
+type SettingsTab = "profile" | "account";
 
 const settingsTabs: Array<{
   key: SettingsTab;
   label: string;
 }> = [
   { key: "profile", label: "프로필" },
-  { key: "preferences", label: "환경 설정" },
   { key: "account", label: "계정 관리" },
 ];
 
@@ -31,7 +29,6 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
 
   const tabPanels: Record<SettingsTab, ReactNode> = {
     profile: <ProfileSettingsTab />,
-    preferences: <PreferencesSettingsTab onLoggedOut={closeModal} />,
     account: <AccountSettingsTab />,
   };
 
