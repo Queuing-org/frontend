@@ -5,24 +5,313 @@
   min-height: 0;
   box-sizing: border-box;
   flex-direction: column;
+  gap: 26px;
+  overflow: hidden;
 }
 
-.placeholderCard {
+.contactCard {
   display: grid;
   flex: 1 1 auto;
   min-height: 0;
-  place-items: center;
+  grid-template-columns: minmax(0, 1fr) 210px;
+  align-items: center;
+  gap: 42px;
   box-sizing: border-box;
-  border: 1px solid #dddddf;
-  border-radius: 10px;
+  padding: 58px 46px;
+  border: 1px solid #dedee1;
+  border-radius: 8px;
   background: #f8f8fa;
-  color: #8d8d8d;
+  color: inherit;
+}
+
+.contactCopy {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.contactTitleRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.contactIcon {
+  display: inline-flex;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #4f86ed;
+}
+
+.contactTitle {
+  margin: 0;
+  color: #3c3c3c;
   font-size: 20px;
+  font-weight: var(--fw-extrabold);
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.contactDescription {
+  max-width: 560px;
+  margin: 30px 0 0;
+  color: #8d8d8d;
+  font-size: 16px;
+  font-weight: var(--fw-medium);
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.policyText {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 24px;
+  color: #8d8d8d;
+  font-size: 16px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 160ms ease;
+}
+
+.policyText:hover,
+.policyText:focus-visible {
+  color: #3c3c3c;
+}
+
+.policyText:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 3px;
+}
+
+.qrCard {
+  display: flex;
+  width: 160px;
+  min-width: 0;
+  min-height: 182px;
+  align-items: center;
+  justify-self: center;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  padding: 12px 12px 14px;
+  border: 1px solid #dedee1;
+  border-radius: 16px;
+  background: #ffffff;
+  color: inherit;
+  box-shadow: 0 2px 4px rgba(60, 60, 60, 0.08);
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.qrCard:hover,
+.qrCard:focus-visible {
+  border-color: #d2d2d6;
+  box-shadow: 0 4px 10px rgba(60, 60, 60, 0.12);
+}
+
+.qrCard:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 3px;
+}
+
+.qrLabel {
+  color: #b0b0b5;
+  font-size: 13px;
+  font-weight: var(--fw-extrabold);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.qrImageFrame {
+  display: flex;
+  width: 132px;
+  height: 132px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 0;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.qrImage {
+  width: 124px;
+  height: 124px;
+  object-fit: contain;
+}
+
+.openHint {
+  display: block;
+  color: #b0b0b5;
+  font-size: 11px;
   font-weight: var(--fw-bold);
+  line-height: 1.3;
+  text-align: center;
+}
+
+.qrCard:hover .openHint,
+.qrCard:focus-visible .openHint {
+  color: #8d8d8d;
+}
+
+.accountActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.actionButton {
+  display: inline-flex;
+  min-width: 0;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8d8d8d;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: var(--fw-medium);
+  line-height: 1.3;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.actionButton:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 2px;
+}
+
+.logoutButton:hover:not(:disabled) {
+  color: #3c3c3c;
+}
+
+.actionButton:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.actionDivider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: #dddddf;
+}
+
+.withdrawButton,
+.withdrawButton:disabled {
+  background: transparent;
+  color: #8d8d8d;
+  opacity: 1;
+}
+
+.errorText {
+  flex: 0 0 auto;
+  margin: -6px 0 0;
+  color: #d94b4b;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1100px) {
+  .contactCard {
+    grid-template-columns: minmax(0, 1fr) 178px;
+    gap: 24px;
+    padding: 48px 30px;
+  }
+
+  .contactTitle {
+    font-size: 18px;
+  }
+
+  .contactDescription {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 760px) {
-  .placeholderCard {
-    border-radius: 8px;
+  .accountPanel {
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .contactCard {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px;
+  }
+
+  .contactTitleRow {
+    gap: 10px;
+  }
+
+  .contactIcon {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .contactTitle {
+    font-size: 16px;
+  }
+
+  .contactDescription {
+    margin-top: 18px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .policyText {
+    margin-top: 14px;
+    font-size: 13px;
+  }
+
+  .qrCard {
+    width: 160px;
+    justify-self: center;
+  }
+
+  .accountActions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .actionButton {
+    font-size: 14px;
+  }
+
+  .errorText {
+    text-align: left;
   }
 }

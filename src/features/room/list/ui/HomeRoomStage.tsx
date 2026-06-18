@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
+import { ClipLoader } from "react-spinners";
 import type { Room } from "@/src/features/room/model/types";
 import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
@@ -19,8 +20,11 @@ type RoomSlot =
 type Props = {
   rooms: Room[];
   currentRoomSlug: string | null;
+  errorMessage?: string | null;
+  isLoading?: boolean;
   onSelectRoom: (roomSlug: string) => void;
   onRequestRoomEntry: (room: Room) => void;
+  onRetry?: () => void;
 };
 
 const DRAG_SELECT_THRESHOLD = 50;
@@ -43,8 +47,11 @@ function isNavigableSlot(slot: RoomSlot) {
 export default function HomeRoomStage({
   rooms,
   currentRoomSlug,
+  errorMessage,
+  isLoading = false,
   onSelectRoom,
   onRequestRoomEntry,
+  onRetry,
 }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const dragStartRef = useRef<{
@@ -68,6 +75,39 @@ export default function HomeRoomStage({
     nextRoomSlug: nextRoom?.slug,
     onSelectRoom,
   });
+
+  if (isLoading) {
+    return (
+      <section className={styles.viewport} aria-label="방 선택 스테이지">
+        <div className={styles.rail} data-loading="true">
+          <div className={styles.loadingState}>
+            <ClipLoader color="#3c3c3c" size={32} aria-label="방 목록 로딩 중" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <section className={styles.viewport} aria-label="방 선택 스테이지">
+        <div className={styles.rail} data-loading="true">
+          <div className={styles.errorState} role="alert">
+            <span>{errorMessage}</span>
+            {onRetry ? (
+              <button
+                type="button"
+                className={styles.retryButton}
+                onClick={onRetry}
+              >
+                다시 시도
+              </button>
+            ) : null}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   if (rooms.length === 0) {
     return (

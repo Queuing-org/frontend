@@ -3,17 +3,9 @@
 import styles from "./HomeControlPanelShell.module.css";
 
 const menuItems = ["RANDOM", "CREATE", "FOLLOW", "SETTING"] as const;
-const genreFilterOptions = [
-  "ALL",
-  "POP",
-  "K-POP",
-  "J-POP",
-  "ANIMATION",
-  "BAND",
-  "HIP-HOP",
-] as const;
 const dateFilterOptions = ["RANDOM", "OLD", "NEW"] as const;
 const participantsFilterOptions = ["RANDOM", "HIGH", "LOW"] as const;
+export const ALL_GENRE_FILTER_OPTION = "ALL";
 
 export type HomeMenuItem = (typeof menuItems)[number];
 
@@ -30,29 +22,12 @@ type Props =
   | {
       variant: "filter";
       activeFilters: HomeFilterState;
+      genreOptions: HomeGenreFilterOptionDescriptor[];
       onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
     };
 
-const filterSections = [
-  {
-    key: "genre",
-    title: "Genre",
-    options: genreFilterOptions,
-  },
-  {
-    key: "date",
-    title: "Date",
-    options: dateFilterOptions,
-  },
-  {
-    key: "participants",
-    title: "Participants",
-    options: participantsFilterOptions,
-  },
-] as const;
-
-export type HomeFilterKey = (typeof filterSections)[number]["key"];
-export type HomeGenreFilterOption = (typeof genreFilterOptions)[number];
+export type HomeFilterKey = "genre" | "date" | "participants";
+export type HomeGenreFilterOption = string;
 export type HomeDateFilterOption = (typeof dateFilterOptions)[number];
 export type HomeParticipantsFilterOption =
   (typeof participantsFilterOptions)[number];
@@ -65,12 +40,73 @@ export type HomeFilterState = {
   date: HomeDateFilterOption;
   participants: HomeParticipantsFilterOption;
 };
+export type HomeFilterOptionDescriptor<Option extends string = string> = {
+  disabled?: boolean;
+  disabledReason?: string;
+  label: string;
+  statusLabel?: string;
+  value: Option;
+};
+export type HomeGenreFilterOptionDescriptor =
+  HomeFilterOptionDescriptor<HomeGenreFilterOption>;
+type HomeGenreTag = {
+  name: string;
+  slug: string;
+};
 
 export const DEFAULT_HOME_FILTERS: HomeFilterState = {
-  genre: ["ALL"],
+  genre: [ALL_GENRE_FILTER_OPTION],
   date: "RANDOM",
   participants: "RANDOM",
 };
+
+export function getHomeGenreFilterOptions({
+  isError = false,
+  isLoading = false,
+  tags = [],
+}: {
+  isError?: boolean;
+  isLoading?: boolean;
+  tags?: readonly HomeGenreTag[];
+}): HomeGenreFilterOptionDescriptor[] {
+  const allOption: HomeGenreFilterOptionDescriptor = {
+    label: ALL_GENRE_FILTER_OPTION,
+    value: ALL_GENRE_FILTER_OPTION,
+  };
+
+  if (isLoading) {
+    return [
+      allOption,
+      {
+        disabled: true,
+        label: "불러오는 중",
+        value: "__GENRE_FILTER_LOADING__",
+      },
+    ];
+  }
+
+  if (isError) {
+    return [
+      allOption,
+      {
+        disabled: true,
+        label: "장르 로딩 실패",
+        value: "__GENRE_FILTER_ERROR__",
+      },
+    ];
+  }
+
+  return [
+    allOption,
+    ...tags.map((tag) => ({
+      disabled: true,
+      disabledReason: "장르 필터는 준비 중입니다.",
+      label: tag.name,
+      statusLabel: "준비 중",
+      value: tag.slug,
+    })),
+  ];
+}
 
 export function getNextHomeFilters(
   currentFilters: HomeFilterState,
@@ -80,15 +116,15 @@ export function getNextHomeFilters(
   if (key === "genre") {
     const genreOption = option as HomeGenreFilterOption;
 
-    if (genreOption === "ALL") {
+    if (genreOption === ALL_GENRE_FILTER_OPTION) {
       return {
         ...currentFilters,
-        genre: ["ALL"],
+        genre: [ALL_GENRE_FILTER_OPTION],
       };
     }
 
     const selectedGenres = currentFilters.genre.filter(
-      (genre) => genre !== "ALL",
+      (genre) => genre !== ALL_GENRE_FILTER_OPTION,
     );
     const nextGenres = selectedGenres.includes(genreOption)
       ? selectedGenres.filter((genre) => genre !== genreOption)
@@ -96,7 +132,8 @@ export function getNextHomeFilters(
 
     return {
       ...currentFilters,
-      genre: nextGenres.length > 0 ? nextGenres : ["ALL"],
+      genre:
+        nextGenres.length > 0 ? nextGenres : [ALL_GENRE_FILTER_OPTION],
     };
   }
 
@@ -123,6 +160,35 @@ function isFilterOptionActive(
   }
 
   return filters[key] === option;
+}
+
+function toFilterOptionDescriptor<Option extends string>(
+  option: Option,
+): HomeFilterOptionDescriptor<Option> {
+  return {
+    label: option,
+    value: option,
+  };
+}
+
+function getFilterSections(genreOptions: HomeGenreFilterOptionDescriptor[]) {
+  return [
+    {
+      key: "genre" as const,
+      title: "Genre",
+      options: genreOptions,
+    },
+    {
+      key: "date" as const,
+      title: "Date",
+      options: dateFilterOptions.map(toFilterOptionDescriptor),
+    },
+    {
+      key: "participants" as const,
+      title: "Participants",
+      options: participantsFilterOptions.map(toFilterOptionDescriptor),
+    },
+  ];
 }
 
 export default function HomeControlPanelShell(props: Props) {
@@ -152,6 +218,8 @@ export default function HomeControlPanelShell(props: Props) {
     );
   }
 
+  const filterSections = getFilterSections(props.genreOptions);
+
   return (
     <section
       id={panelId}
@@ -166,20 +234,33 @@ export default function HomeControlPanelShell(props: Props) {
               const isActive = isFilterOptionActive(
                 props.activeFilters,
                 section.key,
-                option,
+                option.value,
               );
 
               return (
                 <button
-                  key={option}
+                  key={option.value}
                   type="button"
                   className={`${styles.optionChip} ${
                     isActive ? styles.activeChip : ""
                   }`}
                   aria-pressed={isActive}
-                  onClick={() => props.onSelectFilter(section.key, option)}
+                  disabled={option.disabled}
+                  title={option.disabledReason}
+                  onClick={() => {
+                    if (option.disabled) {
+                      return;
+                    }
+
+                    props.onSelectFilter(section.key, option.value);
+                  }}
                 >
-                  {option}
+                  <span>{option.label}</span>
+                  {option.statusLabel ? (
+                    <span className={styles.optionStatus}>
+                      {option.statusLabel}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}

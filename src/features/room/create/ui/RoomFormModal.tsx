@@ -101,9 +101,19 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
+  const thumbnailUploadErrorMessage = uploadRoomThumbnailMutation.error
+    ? [
+        "썸네일 업로드 실패:",
+        `(${uploadRoomThumbnailMutation.error.status})`,
+        uploadRoomThumbnailMutation.error.message,
+      ].join(" ")
+    : null;
+  const hasThumbnailBlockingError = Boolean(
+    thumbnailSelection.errorMessage || thumbnailUploadErrorMessage,
+  );
   const canGoNext =
     currentStep === 0
-      ? trimmedTitle.length > 0 && !isSubmitting
+      ? trimmedTitle.length > 0 && !isSubmitting && !hasThumbnailBlockingError
       : !isSubmitting;
   const stepTitle = createSteps[currentStep].title;
 
@@ -162,6 +172,8 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       });
       navigateToRoom(slug);
     } catch {
+      setCurrentStep(0);
+
       try {
         await deleteCreatedRoomMutation.mutateAsync(slug);
       } catch {
@@ -178,7 +190,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    if (needsPassword || isSubmitting || thumbnailSelection.errorMessage) {
+    if (needsPassword || isSubmitting || hasThumbnailBlockingError) {
       return;
     }
 
@@ -217,7 +229,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           title={title}
           maxTitleLength={MAX_ROOM_TITLE_LENGTH}
           disabled={isSubmitting}
-          thumbnailErrorMessage={thumbnailSelection.errorMessage}
+          thumbnailErrorMessage={
+            thumbnailSelection.errorMessage ?? thumbnailUploadErrorMessage
+          }
           thumbnailFileName={thumbnailSelection.fileName}
           thumbnailPreviewUrl={thumbnailSelection.previewUrl}
           isThumbnailPreviewUnavailable={
@@ -313,7 +327,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                       disabled={
                         !isReachable ||
                         isSubmitting ||
-                        Boolean(thumbnailSelection.errorMessage)
+                        hasThumbnailBlockingError
                       }
                       onClick={() => setCurrentStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
@@ -345,15 +359,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                 {createRoomMutation.error.message}
               </p>
             ) : null}
-            {uploadRoomThumbnailMutation.error ? (
-              <div className={styles.errorBlock} role="alert">
-                <p className={styles.errorText}>
-                  썸네일 업로드에 실패해서 방 생성을 취소했습니다: (
-                  {uploadRoomThumbnailMutation.error.status}){" "}
-                  {uploadRoomThumbnailMutation.error.message}
-                </p>
-              </div>
-            ) : null}
             {deleteCreatedRoomMutation.error ? (
               <p className={styles.errorText} role="alert">
                 썸네일 업로드 실패 후 생성된 방 정리에 실패했습니다: (
@@ -379,7 +384,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   type="button"
                   className={styles.primaryButton}
                   onClick={goToNextStep}
-                  disabled={!canGoNext || Boolean(thumbnailSelection.errorMessage)}
+                  disabled={!canGoNext}
                 >
                   다음
                 </button>

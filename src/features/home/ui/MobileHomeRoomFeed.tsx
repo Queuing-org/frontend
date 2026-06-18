@@ -3,23 +3,29 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Settings, UsersRound } from "lucide-react";
+import { ClipLoader } from "react-spinners";
 import type { Room } from "@/src/features/room/model/types";
 import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import HomeControlPanelShell, {
   type HomeFilterKey,
   type HomeFilterOption,
   type HomeFilterState,
+  type HomeGenreFilterOptionDescriptor,
 } from "./HomeControlPanelShell";
 import styles from "./MobileHomeRoomFeed.module.css";
 
 type Props = {
   activeFilters: HomeFilterState;
+  errorMessage?: string | null;
+  genreOptions: HomeGenreFilterOptionDescriptor[];
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
+  isLoading?: boolean;
   onCreateRoom: () => void;
   onLoadMoreRooms: () => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
+  onRetry?: () => void;
   onRequestRoomEntry: (room: Room) => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onSelectRoom: (roomSlug: string) => void;
@@ -97,12 +103,16 @@ function MobileHomeRoomCard({
 
 export default function MobileHomeRoomFeed({
   activeFilters,
+  errorMessage,
+  genreOptions,
   hasNextPage,
   isFetchingNextPage,
+  isLoading = false,
   onCreateRoom,
   onLoadMoreRooms,
   onOpenFollow,
   onOpenSettings,
+  onRetry,
   onRequestRoomEntry,
   onSelectFilter,
   onSelectRoom,
@@ -111,8 +121,13 @@ export default function MobileHomeRoomFeed({
 }: Props) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const showEmptyState = rooms.length === 0;
+  const genreOptionLabelByValue = new Map(
+    genreOptions.map((option) => [option.value, option.label]),
+  );
   const activeFilterSummary = [
-    activeFilters.genre.join(", "),
+    activeFilters.genre
+      .map((genre) => genreOptionLabelByValue.get(genre) ?? genre)
+      .join(", "),
     activeFilters.date,
     activeFilters.participants,
   ].join(" / ");
@@ -159,20 +174,43 @@ export default function MobileHomeRoomFeed({
           <HomeControlPanelShell
             variant="filter"
             activeFilters={activeFilters}
+            genreOptions={genreOptions}
             onSelectFilter={onSelectFilter}
           />
         ) : null}
       </section>
 
       <section className={styles.listSection} aria-label="방 목록">
-        {showEmptyState ? (
+        {isLoading ? (
+          <div className={styles.loadingState}>
+            <ClipLoader color="#3c3c3c" size={28} aria-label="방 목록 로딩 중" />
+          </div>
+        ) : null}
+
+        {!isLoading && errorMessage ? (
+          <div className={styles.emptyState} role="alert">
+            <strong>방 목록을 불러오지 못했어요.</strong>
+            <span>{errorMessage}</span>
+            {onRetry ? (
+              <button
+                type="button"
+                className={styles.retryButton}
+                onClick={onRetry}
+              >
+                다시 시도
+              </button>
+            ) : null}
+          </div>
+        ) : null}
+
+        {!isLoading && !errorMessage && showEmptyState ? (
           <div className={styles.emptyState}>
             <strong>방이 하나도 없어요.</strong>
             <span>새 방을 만들거나 잠시 후 다시 확인해 주세요.</span>
           </div>
         ) : null}
 
-        {rooms.length > 0 ? (
+        {!isLoading && !errorMessage && rooms.length > 0 ? (
           <div className={styles.roomList}>
             {rooms.map((room, index) => (
               <MobileHomeRoomCard
@@ -187,7 +225,7 @@ export default function MobileHomeRoomFeed({
           </div>
         ) : null}
 
-        {hasNextPage ? (
+        {!isLoading && !errorMessage && hasNextPage ? (
           <button
             type="button"
             className={styles.loadMoreButton}

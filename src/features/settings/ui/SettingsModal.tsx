@@ -29,7 +29,7 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
 
   const tabPanels: Record<SettingsTab, ReactNode> = {
     profile: <ProfileSettingsTab />,
-    account: <AccountSettingsTab />,
+    account: <AccountSettingsTab onLoggedOut={closeModal} />,
   };
 
   function closeModal() {

@@ -4,13 +4,16 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   getRoomsFromPages,
+  normalizeRoomsQueryParams,
+  type RoomsQueryParams,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
+import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
 import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
-import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
 import MainLogo from "@/src/features/home/ui/MainLogo";
 import styles from "./SearchScreen.module.css";
@@ -18,6 +21,7 @@ import Image from "next/image";
 import RoomSearchInput from "@/src/features/room/search/ui/RoomSearchInput";
 import {
   DEFAULT_HOME_FILTERS,
+  getHomeGenreFilterOptions,
   getNextHomeFilters,
   type HomeFilterKey,
   type HomeFilterOption,
@@ -33,6 +37,8 @@ import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 
 export default function SearchScreen() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -51,6 +57,19 @@ export default function SearchScreen() {
       getNextHomeFilters(currentFilters, key, option),
     );
   };
+  const roomListQueryParams = useMemo(
+    () =>
+      normalizeRoomsQueryParams({
+        createdOrder: roomListFilters.date,
+        keyword: debouncedSearchQuery,
+        participantOrder: roomListFilters.participants,
+      }),
+    [
+      debouncedSearchQuery,
+      roomListFilters.date,
+      roomListFilters.participants,
+    ],
+  );
 
   const requestCreateRoom = () =>
     requestAuthenticatedAction({
@@ -76,22 +95,16 @@ export default function SearchScreen() {
         <MainLogo />
       </div>
 
-      <QueryBoundary
-        fallback={<SearchRoomsFallback />}
-        errorFallback={({ resetErrorBoundary }) => (
-          <SearchRoomsErrorFallback onRetry={resetErrorBoundary} />
-        )}
-        errorTitle="방 목록을 불러오지 못했어요."
-        errorDescription="새로고침을 시도해주세요."
-      >
-        <SearchRoomsContent
-          activeFilters={roomListFilters}
-          onCreateRoom={requestCreateRoom}
-          onOpenFollow={requestOpenFollow}
-          onOpenSettings={requestOpenSettings}
-          onSelectFilter={selectRoomListFilter}
-        />
-      </QueryBoundary>
+      <SearchRoomsContent
+        activeFilters={roomListFilters}
+        onCreateRoom={requestCreateRoom}
+        onOpenFollow={requestOpenFollow}
+        onOpenSettings={requestOpenSettings}
+        onSelectFilter={selectRoomListFilter}
+        onSearchQueryChange={setSearchQuery}
+        roomsQueryParams={roomListQueryParams}
+        searchQuery={searchQuery}
+      />
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
@@ -117,7 +130,15 @@ export default function SearchScreen() {
   );
 }
 
-function SearchPanelHeader() {
+type SearchPanelHeaderProps = {
+  onSearchQueryChange: (query: string) => void;
+  searchQuery: string;
+};
+
+function SearchPanelHeader({
+  onSearchQueryChange,
+  searchQuery,
+}: SearchPanelHeaderProps) {
   return (
     <div className={styles.searchHeader}>
       <Link
@@ -143,52 +164,10 @@ function SearchPanelHeader() {
         />
       </Link>
       <div className={styles.search_input}>
-        <RoomSearchInput />
-      </div>
-    </div>
-  );
-}
-
-function SearchRoomsFallback() {
-  return (
-    <div className={styles.list_container}>
-      <SearchPanelHeader />
-      <div className={styles.contentGrid}>
-        <div className={styles.listContent}>
-          <div className={styles.room_list}>
-            <div className={styles.statePanel}>방 목록 로딩 중...</div>
-          </div>
-        </div>
-        <div className={styles.thumbnail_container} aria-hidden="true" />
-      </div>
-    </div>
-  );
-}
-
-type SearchRoomsErrorFallbackProps = {
-  onRetry: () => void;
-};
-
-function SearchRoomsErrorFallback({ onRetry }: SearchRoomsErrorFallbackProps) {
-  return (
-    <div className={styles.list_container}>
-      <SearchPanelHeader />
-      <div className={styles.contentGrid}>
-        <div className={styles.listContent}>
-          <div className={styles.room_list}>
-            <div className={styles.statePanel} role="alert">
-              <span>방 목록을 불러오지 못했어요.</span>
-              <button
-                type="button"
-                className={styles.stateButton}
-                onClick={onRetry}
-              >
-                다시 시도
-              </button>
-            </div>
-          </div>
-        </div>
-        <div className={styles.thumbnail_container} aria-hidden="true" />
+        <RoomSearchInput
+          value={searchQuery}
+          onChange={onSearchQueryChange}
+        />
       </div>
     </div>
   );
@@ -200,6 +179,9 @@ type SearchRoomsContentProps = {
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
+  onSearchQueryChange: (query: string) => void;
+  roomsQueryParams: RoomsQueryParams;
+  searchQuery: string;
 };
 
 function SearchRoomsContent({
@@ -208,10 +190,27 @@ function SearchRoomsContent({
   onOpenFollow,
   onOpenSettings,
   onSelectFilter,
+  onSearchQueryChange,
+  roomsQueryParams,
+  searchQuery,
 }: SearchRoomsContentProps) {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useRoomsQuery();
-  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
+  const roomTagsQuery = useRoomTagsQuery();
+  const genreOptions = useMemo(
+    () =>
+      getHomeGenreFilterOptions({
+        isError: roomTagsQuery.isError,
+        isLoading: roomTagsQuery.isLoading,
+        tags: roomTagsQuery.data,
+      }),
+    [roomTagsQuery.data, roomTagsQuery.isError, roomTagsQuery.isLoading],
+  );
+  const roomsQuery = useRoomsQuery(roomsQueryParams);
+  const rooms = useMemo(() => getRoomsFromPages(roomsQuery.data), [
+    roomsQuery.data,
+  ]);
+  const roomListErrorMessage = roomsQuery.isError
+    ? roomsQuery.error.message || "잠시 후 다시 시도해 주세요."
+    : null;
   const roomListRooms = rooms;
   const {
     selectedRoomSlug,
@@ -229,9 +228,9 @@ function SearchRoomsContent({
   useLoadMoreRoomsNearEnd({
     rooms: roomListRooms,
     selectedRoomSlug,
-    hasNextPage: Boolean(hasNextPage),
-    isFetchingNextPage,
-    fetchNextPage,
+    hasNextPage: Boolean(roomsQuery.hasNextPage),
+    isFetchingNextPage: roomsQuery.isFetchingNextPage,
+    fetchNextPage: roomsQuery.fetchNextPage,
   });
 
   const selectedRoomIndex = selectedRoomSlug
@@ -247,11 +246,19 @@ function SearchRoomsContent({
   return (
     <>
       <div className={styles.list_container}>
-        <SearchPanelHeader />
+        <SearchPanelHeader
+          searchQuery={searchQuery}
+          onSearchQueryChange={onSearchQueryChange}
+        />
         <div className={styles.contentGrid}>
           <div className={styles.listContent}>
             <div className={styles.room_list}>
               <SearchPageRoomList
+                errorMessage={roomListErrorMessage}
+                isLoading={roomsQuery.isPending}
+                onRetry={() => {
+                  void roomsQuery.refetch();
+                }}
                 rooms={roomListRooms}
                 selectedRoomSlug={selectedRoomSlug}
                 onSelectRoom={setCurrentRoomSlug}
@@ -285,6 +292,7 @@ function SearchRoomsContent({
         canGoPrevious={Boolean(previousRoom)}
         canGoNext={Boolean(nextRoom)}
         activeFilters={activeFilters}
+        genreOptions={genreOptions}
         onGoPrevious={goPrevious}
         onGoNext={goNext}
         onSelectFilter={onSelectFilter}

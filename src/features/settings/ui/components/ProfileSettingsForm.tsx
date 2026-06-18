@@ -29,6 +29,12 @@ export default function ProfileSettingsForm({
   onNicknameChange,
   onSubmit,
 }: ProfileSettingsFormProps) {
+  const nicknameInputValue = isMeLoading
+    ? "프로필 확인 중"
+    : hasProfile
+      ? nickname
+      : "로그인이 필요합니다";
+
   return (
     <form className={styles.profileForm} onSubmit={onSubmit}>
       <div className={styles.formRow}>
@@ -39,9 +45,7 @@ export default function ProfileSettingsForm({
           <input
             id="settings-nickname"
             className={styles.textInput}
-            value={
-              isMeLoading ? "프로필 확인 중" : nickname || "로그인이 필요합니다"
-            }
+            value={nicknameInputValue}
             onChange={(event) => onNicknameChange(event.target.value)}
             placeholder="사용자 이름"
             disabled={!hasProfile || isUpdatingProfile || isMeLoading}

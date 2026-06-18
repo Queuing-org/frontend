@@ -23,6 +23,18 @@ export default function ProfileSettingsTab() {
               className={styles.profileImage}
             />
           </span>
+          <p className={styles.profileImageCredit}>
+            프로필 사진은{" "}
+            <a
+              className={styles.profileImageCreditLink}
+              href="https://gravatar.com/profile/avatars"
+              rel="noreferrer"
+              target="_blank"
+            >
+              Gravatar
+            </a>
+            가 제공합니다.
+          </p>
         </div>
         <ProfileSettingsForm
           canUpdateNickname={form.canUpdateNickname}

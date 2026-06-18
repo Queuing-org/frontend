@@ -3,15 +3,19 @@
 import { useMemo, useState } from "react";
 import {
   getRoomsFromPages,
+  normalizeRoomsQueryParams,
+  type RoomsQueryParams,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
-import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
+import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
 import {
   DEFAULT_HOME_FILTERS,
+  getHomeGenreFilterOptions,
   getNextHomeFilters,
   type HomeFilterKey,
   type HomeFilterOption,
@@ -34,6 +38,7 @@ export default function HomeScreen() {
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const debouncedMobileSearchQuery = useDebouncedValue(mobileSearchQuery, 300);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -51,6 +56,20 @@ export default function HomeScreen() {
       getNextHomeFilters(currentFilters, key, option),
     );
   };
+  const roomListQueryParams = useMemo(
+    () =>
+      normalizeRoomsQueryParams({
+        createdOrder: roomListFilters.date,
+        keyword: isMobileLayout ? debouncedMobileSearchQuery : undefined,
+        participantOrder: roomListFilters.participants,
+      }),
+    [
+      debouncedMobileSearchQuery,
+      isMobileLayout,
+      roomListFilters.date,
+      roomListFilters.participants,
+    ],
+  );
 
   const requestCreateRoom = () =>
     requestAuthenticatedAction({
@@ -72,22 +91,17 @@ export default function HomeScreen() {
 
   return (
     <div className={styles.screen}>
-      <QueryBoundary
-        fallback={<div className={styles.statePanel}>방 목록 로딩 중...</div>}
-        errorTitle="방 목록을 불러오지 못했어요."
-        resetKeys={[isMobileLayout]}
-      >
-        <HomeRoomsContent
-          activeFilters={roomListFilters}
-          isMobileLayout={isMobileLayout}
-          mobileSearchQuery={mobileSearchQuery}
-          onCreateRoom={requestCreateRoom}
-          onMobileSearchQueryChange={setMobileSearchQuery}
-          onOpenFollow={requestOpenFollow}
-          onOpenSettings={requestOpenSettings}
-          onSelectFilter={selectRoomListFilter}
-        />
-      </QueryBoundary>
+      <HomeRoomsContent
+        activeFilters={roomListFilters}
+        isMobileLayout={isMobileLayout}
+        mobileSearchQuery={mobileSearchQuery}
+        onCreateRoom={requestCreateRoom}
+        onMobileSearchQueryChange={setMobileSearchQuery}
+        onOpenFollow={requestOpenFollow}
+        onOpenSettings={requestOpenSettings}
+        onSelectFilter={selectRoomListFilter}
+        roomsQueryParams={roomListQueryParams}
+      />
       {isCreateRoomModalOpen ? (
         <RoomFormModal
           open
@@ -122,6 +136,7 @@ type HomeRoomsContentProps = {
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
+  roomsQueryParams: RoomsQueryParams;
 };
 
 function HomeRoomsContent({
@@ -133,10 +148,25 @@ function HomeRoomsContent({
   onOpenFollow,
   onOpenSettings,
   onSelectFilter,
+  roomsQueryParams,
 }: HomeRoomsContentProps) {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useRoomsQuery();
-  const rooms = useMemo(() => getRoomsFromPages(data), [data]);
+  const roomTagsQuery = useRoomTagsQuery();
+  const genreOptions = useMemo(
+    () =>
+      getHomeGenreFilterOptions({
+        isError: roomTagsQuery.isError,
+        isLoading: roomTagsQuery.isLoading,
+        tags: roomTagsQuery.data,
+      }),
+    [roomTagsQuery.data, roomTagsQuery.isError, roomTagsQuery.isLoading],
+  );
+  const roomsQuery = useRoomsQuery(roomsQueryParams);
+  const rooms = useMemo(() => getRoomsFromPages(roomsQuery.data), [
+    roomsQuery.data,
+  ]);
+  const roomListErrorMessage = roomsQuery.isError
+    ? roomsQuery.error.message || "잠시 후 다시 시도해 주세요."
+    : null;
   const {
     currentRoom,
     selectedRoomSlug,
@@ -154,9 +184,9 @@ function HomeRoomsContent({
   useLoadMoreRoomsNearEnd({
     rooms,
     selectedRoomSlug,
-    hasNextPage: Boolean(hasNextPage),
-    isFetchingNextPage,
-    fetchNextPage,
+    hasNextPage: Boolean(roomsQuery.hasNextPage),
+    isFetchingNextPage: roomsQuery.isFetchingNextPage,
+    fetchNextPage: roomsQuery.fetchNextPage,
   });
 
   return (
@@ -169,14 +199,20 @@ function HomeRoomsContent({
       {isMobileLayout ? (
         <MobileHomeRoomFeed
           activeFilters={activeFilters}
-          hasNextPage={Boolean(hasNextPage)}
-          isFetchingNextPage={isFetchingNextPage}
+          errorMessage={roomListErrorMessage}
+          genreOptions={genreOptions}
+          hasNextPage={Boolean(roomsQuery.hasNextPage)}
+          isFetchingNextPage={roomsQuery.isFetchingNextPage}
+          isLoading={roomsQuery.isPending}
           onCreateRoom={onCreateRoom}
           onLoadMoreRooms={() => {
-            void fetchNextPage();
+            void roomsQuery.fetchNextPage();
           }}
           onOpenFollow={onOpenFollow}
           onOpenSettings={onOpenSettings}
+          onRetry={() => {
+            void roomsQuery.refetch();
+          }}
           onRequestRoomEntry={roomEntry.requestRoomEntry}
           onSelectFilter={onSelectFilter}
           onSelectRoom={setCurrentRoomSlug}
@@ -189,8 +225,13 @@ function HomeRoomsContent({
           <HomeRoomStage
             rooms={rooms}
             currentRoomSlug={selectedRoomSlug}
+            errorMessage={roomListErrorMessage}
+            isLoading={roomsQuery.isPending}
             onSelectRoom={setCurrentRoomSlug}
             onRequestRoomEntry={roomEntry.requestRoomEntry}
+            onRetry={() => {
+              void roomsQuery.refetch();
+            }}
           />
           <HomeSearchControlDock
             ariaLabel="홈 하단 컨트롤"
@@ -198,6 +239,7 @@ function HomeRoomsContent({
             canGoPrevious={Boolean(previousRoom)}
             canGoNext={Boolean(nextRoom)}
             activeFilters={activeFilters}
+            genreOptions={genreOptions}
             onGoPrevious={goPrevious}
             onGoNext={goNext}
             onSelectFilter={onSelectFilter}

@@ -8,6 +8,7 @@ import HomeControlPanelShell, {
   type HomeFilterKey,
   type HomeFilterOption,
   type HomeFilterState,
+  type HomeGenreFilterOptionDescriptor,
   type HomeMenuItem,
 } from "./HomeControlPanelShell";
 import styles from "./HomeSearchControlDock.module.css";
@@ -20,6 +21,7 @@ type Props = {
   canGoPrevious: boolean;
   canGoNext: boolean;
   activeFilters: HomeFilterState;
+  genreOptions: HomeGenreFilterOptionDescriptor[];
   onGoPrevious: () => void;
   onGoNext: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
@@ -35,6 +37,7 @@ export default function HomeSearchControlDock({
   canGoPrevious,
   canGoNext,
   activeFilters,
+  genreOptions,
   onGoPrevious,
   onGoNext,
   onSelectFilter,
@@ -107,6 +110,7 @@ export default function HomeSearchControlDock({
             <HomeControlPanelShell
               variant="filter"
               activeFilters={activeFilters}
+              genreOptions={genreOptions}
               onSelectFilter={onSelectFilter}
             />
           )}
