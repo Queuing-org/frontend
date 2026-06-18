@@ -20,6 +20,26 @@ export default function FloatingRoomPanelShell({
 }: Props) {
   return (
     <div className={styles.panel} style={{ width, height }}>
+      <span
+        className={`${styles.edgeDragHandle} ${styles.edgeDragHandleNorth}`}
+        aria-hidden="true"
+        data-drag-handle="true"
+      />
+      <span
+        className={`${styles.edgeDragHandle} ${styles.edgeDragHandleEast}`}
+        aria-hidden="true"
+        data-drag-handle="true"
+      />
+      <span
+        className={`${styles.edgeDragHandle} ${styles.edgeDragHandleSouth}`}
+        aria-hidden="true"
+        data-drag-handle="true"
+      />
+      <span
+        className={`${styles.edgeDragHandle} ${styles.edgeDragHandleWest}`}
+        aria-hidden="true"
+        data-drag-handle="true"
+      />
       <div
         className={[styles.header, compactHeader ? styles.headerCompact : null]
           .filter(Boolean)

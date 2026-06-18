@@ -1,4 +1,5 @@
 .panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -7,6 +8,48 @@
   background-color: #ffffff;
   color: #3c3c3c;
   box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
+}
+
+.edgeDragHandle {
+  position: absolute;
+  z-index: 2;
+  display: block;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.edgeDragHandle:active {
+  cursor: grabbing;
+}
+
+.edgeDragHandleNorth {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 10px;
+}
+
+.edgeDragHandleEast {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 10px;
+}
+
+.edgeDragHandleSouth {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 10px;
+}
+
+.edgeDragHandleWest {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
 }
 
 .header {

@@ -8,6 +8,7 @@ import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
 import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThumbnailSelection";
 import { useUploadRoomThumbnail } from "@/src/features/room/hooks/useUploadRoomThumbnail";
 import { useDeleteRoom } from "@/src/features/room/hooks/useDeleteRoom";
+import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
@@ -153,14 +154,23 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
   };
 
-  const navigateToRoom = (slug: string) => {
+  const navigateToRoom = (slug: string, roomPassword?: string) => {
+    const normalizedSlug = normalizeRoomSlug(slug);
+
+    if (roomPassword) {
+      writeStoredRoomJoinPassword(normalizedSlug, roomPassword);
+    }
+
     setIsNavigatingToCreatedRoom(true);
-    router.push(`/room/${encodeURIComponent(normalizeRoomSlug(slug))}`);
+    router.push(`/room/${encodeURIComponent(normalizedSlug)}`);
   };
 
-  const uploadThumbnailAndNavigate = async (slug: string) => {
+  const uploadThumbnailAndNavigate = async (
+    slug: string,
+    roomPassword?: string,
+  ) => {
     if (!thumbnailSelection.file) {
-      navigateToRoom(slug);
+      navigateToRoom(slug, roomPassword);
       return;
     }
 
@@ -170,7 +180,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         slug,
         file: thumbnailSelection.file,
       });
-      navigateToRoom(slug);
+      navigateToRoom(slug, roomPassword);
     } catch {
       setCurrentStep(0);
 
@@ -195,16 +205,17 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
 
     try {
+      const createdRoomPassword =
+        participationMode === "password" && trimmedPassword
+          ? trimmedPassword
+          : undefined;
       const result = await createRoomMutation.mutateAsync({
         title: trimmedTitle,
-        password:
-          participationMode === "password" && trimmedPassword
-            ? trimmedPassword
-            : undefined,
+        password: createdRoomPassword,
         tags: selectedTagSlugs,
       });
 
-      await uploadThumbnailAndNavigate(result.slug);
+      await uploadThumbnailAndNavigate(result.slug, createdRoomPassword);
     } catch {
       setIsNavigatingToCreatedRoom(false);
     }
