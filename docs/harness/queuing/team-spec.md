@@ -14,6 +14,27 @@ Reason:
 - A separate QA pass is valuable when API payloads, cache keys, websocket state, or shared controls are touched.
 - Full fan-out is optional and should only be used for independent API/UI/review slices.
 
+## Context Persistence Layer
+
+AI sessions are disposable. The harness must preserve reusable context in files
+instead of assuming a future session can remember prior chat.
+
+| Artifact | Purpose | Update When |
+| --- | --- | --- |
+| `AGENTS.md` | short repo-wide bootstrap rules loaded every session | a rule matters on most tasks |
+| `docs/harness/queuing/context-ledger.md` | durable cross-session memory and read order | a decision should survive many sessions |
+| `_workspace/session-handoff.md` | current task state for session resume | a session ends with unresolved or easily-forgotten context |
+| `docs/harness/queuing/templates/session-handoff.md` | reusable handoff format | the handoff shape changes |
+| `docs/harness/queuing/incidents/*.md` | detailed reusable failure evidence | troubleshooting changes future behavior |
+
+Bootstrap rule:
+
+- For resumed, complex, or boundary-crossing work, read `AGENTS.md`,
+  `docs/harness/queuing/context-ledger.md`, and `_workspace/session-handoff.md`
+  before planning edits.
+- For simple one-file fixes, skip the full context layer and inspect the code
+  directly.
+
 ## Roles
 
 | Role | Responsibility | Skill | Writes |
@@ -78,6 +99,7 @@ Use `_workspace/` only when the task is large enough that intermediate evidence 
 
 ```text
 _workspace/
+├── session-handoff.md
 ├── 00_input/request-summary.md
 ├── 01_api_contract.md
 ├── 02_ui_flow.md

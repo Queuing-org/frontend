@@ -144,7 +144,7 @@
 
 .textInput:focus-visible,
 .primaryButton:focus-visible {
-  outline: 3px solid #5b8cff;
+  outline: 0px solid #5b8cff;
   outline-offset: 2px;
 }
 

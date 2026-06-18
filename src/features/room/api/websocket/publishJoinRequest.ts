@@ -9,9 +9,10 @@ export function publishJoinRequest(
 ) {
   const client = getSocketClient();
   const normalizedSlug = normalizeRoomSlug(safeSlug);
+  const password = payload.password?.trim();
 
   client.publish({
     destination: `/app/room/${encodeURIComponent(normalizedSlug)}/join`,
-    body: JSON.stringify({ password: payload.password ?? null }),
+    body: JSON.stringify({ password: password || null }),
   });
 }

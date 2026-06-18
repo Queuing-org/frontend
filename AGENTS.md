@@ -16,5 +16,7 @@ Most project risk is at API/UI/state boundaries: API payload shape, React Query 
 - Use `.agents/skills/queuing-api-boundary/SKILL.md` for API docs, payload, hook, type, and cache-boundary work.
 - Use `.agents/skills/queuing-ui-flow/SKILL.md` for room/home/search UI workflows and interaction states.
 - Use `.agents/skills/queuing-qa-reviewer/SKILL.md` before finishing high-risk API/UI changes.
+- For frontend implementation, review, or refactoring, apply `frontend-architecture-guardrails` before editing to check ownership, state, route/page separation, provider scope, API hooks, and testable logic.
+- For resumed or context-heavy work, read `docs/harness/queuing/context-ledger.md` and `_workspace/session-handoff.md` before planning edits.
 - Document troubleshooting, performance improvements, and reusable fixes with the analysis format in `docs/harness/queuing/templates/incident.md`; keep portfolio draft notes in ignored `docs/portfolio-notes/`.
 - For code changes, verify with `npm run lint` and `npm run build` unless the task is docs-only or the user explicitly skips verification.

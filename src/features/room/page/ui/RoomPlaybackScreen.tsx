@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useParams } from "next/navigation";
 import { useRoomState } from "@/src/features/playlist/model/useRoomState";
+import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
 import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
 import {
   joinRoom,
@@ -40,6 +41,7 @@ import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
+import type { RoomMeta } from "@/src/features/room/model/types";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
@@ -63,6 +65,27 @@ const MOBILE_ROOM_TABS: {
   { id: "queue", iconSrc: "/icons/queue.svg", label: "큐" },
   { id: "participants", iconSrc: "/icons/hambuger.svg", label: "참가자" },
 ];
+
+function roomRequiresPassword(roomMeta: RoomMeta) {
+  return !roomMeta.isPublic;
+}
+
+function isPasswordRequiredError(error: ApiError) {
+  return (
+    error.code === "room.password-required" ||
+    error.code === "room.invalid-password" ||
+    error.code === "room.password-invalid" ||
+    error.message.includes("비밀번호")
+  );
+}
+
+function shouldKeepPasswordFormAfterSubmit(error: ApiError) {
+  return (
+    isPasswordRequiredError(error) ||
+    error.status === 400 ||
+    error.status === 403
+  );
+}
 
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
@@ -130,7 +153,7 @@ export default function RoomPlaybackScreen() {
       const err = error as ApiError;
       setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
 
-      if (err.code === "room.password-required") {
+      if (shouldKeepPasswordFormAfterSubmit(err)) {
         setStatus("needs-password");
         return;
       }
@@ -147,50 +170,77 @@ export default function RoomPlaybackScreen() {
     let isActive = true;
     const storedPassword = readStoredRoomJoinPassword(slug);
     setRoomPassword(null);
+    setStatus("joining");
     setJoinErrorMessage("");
+    joinRequestRef.current = null;
     resetChatState();
 
-    if (
-      joinRequestRef.current?.slug !== slug ||
-      joinRequestRef.current.password !== storedPassword
-    ) {
-      joinRequestRef.current = {
-        slug,
-        password: storedPassword,
-        promise: joinRoom(slug, { password: storedPassword }),
-      };
-    }
-
-    const currentJoinRequest = joinRequestRef.current;
-    if (!currentJoinRequest) return;
-
     (async () => {
+      let requiresPassword = false;
+      let joinPassword: string | null = null;
+
       try {
+        const roomMeta = await fetchRoomMeta(slug);
+        if (!isActive) return;
+
+        requiresPassword = roomRequiresPassword(roomMeta);
+        joinPassword = requiresPassword ? storedPassword : null;
+
+        if (!requiresPassword && storedPassword) {
+          clearStoredRoomJoinPassword(slug);
+        }
+
+        if (requiresPassword && !joinPassword) {
+          joinRequestRef.current = null;
+          setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
+          setStatus("needs-password");
+          return;
+        }
+
+        if (
+          joinRequestRef.current?.slug !== slug ||
+          joinRequestRef.current.password !== joinPassword
+        ) {
+          joinRequestRef.current = {
+            slug,
+            password: joinPassword,
+            promise: joinRoom(
+              slug,
+              joinPassword ? { password: joinPassword } : {},
+            ),
+          };
+        }
+
+        const currentJoinRequest = joinRequestRef.current;
+        if (!currentJoinRequest) return;
+
         const joinResult = await currentJoinRequest.promise;
         if (!isActive) return;
 
         initializeChatStateFromJoinData(joinResult.data);
-        ensureRoomSubscription(slug, storedPassword);
-        setRoomPassword(storedPassword);
+        ensureRoomSubscription(slug, joinPassword);
+        setRoomPassword(joinPassword);
         setStatus("joined");
         setJoinErrorMessage("");
       } catch (error) {
         if (!isActive) return;
 
         const err = error as ApiError;
-        setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
 
-        if (storedPassword) {
+        if (joinPassword) {
           clearStoredRoomJoinPassword(slug);
+          setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
           setStatus("needs-password");
           return;
         }
 
-        if (err.code === "room.password-required") {
+        if (requiresPassword && isPasswordRequiredError(err)) {
+          setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
           setStatus("needs-password");
           return;
         }
 
+        setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
         setStatus("error");
       }
     })();

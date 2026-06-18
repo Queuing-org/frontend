@@ -27,23 +27,26 @@ If any input is missing, inspect the repository first and make the narrowest pro
 
 ## Workflow
 
-1. Snapshot the request in `_workspace/00_input/request-summary.md` for complex work.
-2. Classify the work:
+1. For resumed, complex, or boundary-crossing work, read `docs/harness/queuing/context-ledger.md` and `_workspace/session-handoff.md` before planning edits.
+2. Snapshot the request in `_workspace/00_input/request-summary.md` for complex work.
+3. Classify the work:
    - API/data boundary: use `queuing-api-boundary`.
    - UI interaction/state/CSS flow: use `queuing-ui-flow`.
    - post-change boundary review: use `queuing-qa-reviewer`.
    - recurring failure or troubleshooting lesson: use `queuing-incident-curator`.
-3. Inspect code before editing. Prefer existing project patterns over new abstractions.
-4. Implement the smallest change that satisfies the request and preserves existing behavior.
-5. Run targeted verification. For code changes, default to `npm run lint` and `npm run build`.
-6. If a reusable failure was discovered, create or update a durable incident and update the relevant skill or team spec.
-7. Final handoff must summarize changed files, verification, and any residual risk.
+4. Inspect code before editing. Prefer existing project patterns over new abstractions.
+5. Implement the smallest change that satisfies the request and preserves existing behavior.
+6. Run targeted verification. For code changes, default to `npm run lint` and `npm run build`.
+7. If a reusable failure was discovered, create or update a durable incident and update the relevant skill or team spec.
+8. If unresolved context should survive a session restart, update `_workspace/session-handoff.md`.
+9. Final handoff must summarize changed files, verification, and any residual risk.
 
 ## Handoff Contract
 
 Use these names when the workflow is large enough to preserve intermediate evidence:
 
 - `_workspace/00_input/request-summary.md`
+- `_workspace/session-handoff.md`
 - `_workspace/01_api_contract.md`
 - `_workspace/02_ui_flow.md`
 - `_workspace/03_implementation_notes.md`
@@ -69,6 +72,7 @@ Small tasks can skip `_workspace/` files, but should still follow the same menta
 ## References
 
 - Team spec: `docs/harness/queuing/team-spec.md`
+- Context ledger: `docs/harness/queuing/context-ledger.md`
 - API specialist: `.agents/skills/queuing-api-boundary/SKILL.md`
 - UI specialist: `.agents/skills/queuing-ui-flow/SKILL.md`
 - QA reviewer: `.agents/skills/queuing-qa-reviewer/SKILL.md`

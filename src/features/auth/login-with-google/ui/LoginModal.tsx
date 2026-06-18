@@ -85,13 +85,13 @@ export default function LoginModal({
           <br />그 순간을 공유해요
         </h2>
         <p id={descriptionId} className={styles.modalDescription}>
-          혼자 듣기 아까운 노래를 같이 들으며 감동을 나눠보세요.
+          혼자 듣기 아까운 띵곡을 같이 들으며 감동을 나눠보세요!
         </p>
         <GoogleLoginButton ref={googleButtonRef} onClick={onGoogleLogin} />
         <div className={styles.separator} aria-hidden="true" />
         <p className={styles.policyText}>
           가입 시
-          <span className={styles.policyHighlight}>개인정보 처리방침</span>에
+          <span className={styles.policyHighlight}> 개인정보 보호정책</span>에
           <br></br>
           동의하는 것으로 간주합니다.
         </p>
