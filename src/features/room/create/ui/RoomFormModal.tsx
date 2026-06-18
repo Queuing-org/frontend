@@ -1,8 +1,14 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { ClipLoader } from "react-spinners";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
+import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThumbnailSelection";
+import { useUploadRoomThumbnail } from "@/src/features/room/hooks/useUploadRoomThumbnail";
+import { useDeleteRoom } from "@/src/features/room/hooks/useDeleteRoom";
+import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
 import CreateGenreStep from "./CreateGenreStep";
@@ -25,6 +31,7 @@ type RoomFormModalProps = {
   initialTitle?: string;
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
+  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -41,6 +48,7 @@ export default function RoomFormModal({
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
+  initialThumbnailUrl = null,
   onClose,
 }: RoomFormModalProps) {
   if (!open) {
@@ -55,6 +63,7 @@ export default function RoomFormModal({
         initialTitle={initialTitle}
         initialTagSlugs={initialTagSlugs}
         initialHasPassword={initialHasPassword}
+        initialThumbnailUrl={initialThumbnailUrl}
         onClose={onClose}
       />
     );
@@ -68,7 +77,11 @@ type CreateRoomFormModalProps = {
 };
 
 function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
+  const router = useRouter();
   const createRoomMutation = useCreateRoom();
+  const uploadRoomThumbnailMutation = useUploadRoomThumbnail();
+  const deleteCreatedRoomMutation = useDeleteRoom();
+  const thumbnailSelection = useRoomThumbnailSelection();
   const [currentStep, setCurrentStep] = useState(0);
   const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
@@ -76,14 +89,22 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     useState<ParticipationMode>("public");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [didTryFinish, setDidTryFinish] = useState(false);
+  const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
+    useState(false);
 
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
-  const isSubmitting = createRoomMutation.isPending;
+  const isSubmitting =
+    createRoomMutation.isPending ||
+    uploadRoomThumbnailMutation.isPending ||
+    deleteCreatedRoomMutation.isPending ||
+    isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
   const canGoNext =
-    currentStep === 0 ? trimmedTitle.length > 0 && !isSubmitting : !isSubmitting;
+    currentStep === 0
+      ? trimmedTitle.length > 0 && !isSubmitting
+      : !isSubmitting;
   const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
@@ -122,7 +143,34 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
   };
 
-  const finishCreateRoom = () => {
+  const navigateToRoom = (slug: string) => {
+    setIsNavigatingToCreatedRoom(true);
+    router.push(`/room/${encodeURIComponent(normalizeRoomSlug(slug))}`);
+  };
+
+  const uploadThumbnailAndNavigate = async (slug: string) => {
+    if (!thumbnailSelection.file) {
+      navigateToRoom(slug);
+      return;
+    }
+
+    try {
+      uploadRoomThumbnailMutation.reset();
+      await uploadRoomThumbnailMutation.mutateAsync({
+        slug,
+        file: thumbnailSelection.file,
+      });
+      navigateToRoom(slug);
+    } catch {
+      try {
+        await deleteCreatedRoomMutation.mutateAsync(slug);
+      } catch {
+        // The delete mutation error is rendered below so the user knows rollback failed.
+      }
+    }
+  };
+
+  const finishCreateRoom = async () => {
     setDidTryFinish(true);
 
     if (!trimmedTitle) {
@@ -130,18 +178,36 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    if (needsPassword || isSubmitting) {
+    if (needsPassword || isSubmitting || thumbnailSelection.errorMessage) {
       return;
     }
 
-    createRoomMutation.mutate({
-      title: trimmedTitle,
-      password:
-        participationMode === "password" && trimmedPassword
-          ? trimmedPassword
-          : undefined,
-      tags: selectedTagSlugs,
-    });
+    try {
+      const result = await createRoomMutation.mutateAsync({
+        title: trimmedTitle,
+        password:
+          participationMode === "password" && trimmedPassword
+            ? trimmedPassword
+            : undefined,
+        tags: selectedTagSlugs,
+      });
+
+      await uploadThumbnailAndNavigate(result.slug);
+    } catch {
+      setIsNavigatingToCreatedRoom(false);
+    }
+  };
+
+  const handleThumbnailChange = (files: FileList | null) => {
+    uploadRoomThumbnailMutation.reset();
+    deleteCreatedRoomMutation.reset();
+    thumbnailSelection.selectFile(files);
+  };
+
+  const handleThumbnailClear = () => {
+    uploadRoomThumbnailMutation.reset();
+    deleteCreatedRoomMutation.reset();
+    thumbnailSelection.clearSelection();
   };
 
   const renderStepContent = () => {
@@ -151,9 +217,18 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           title={title}
           maxTitleLength={MAX_ROOM_TITLE_LENGTH}
           disabled={isSubmitting}
+          thumbnailErrorMessage={thumbnailSelection.errorMessage}
+          thumbnailFileName={thumbnailSelection.fileName}
+          thumbnailPreviewUrl={thumbnailSelection.previewUrl}
+          isThumbnailPreviewUnavailable={
+            thumbnailSelection.isPreviewUnavailable
+          }
           onTitleChange={(nextTitle) =>
             setTitle(nextTitle.slice(0, MAX_ROOM_TITLE_LENGTH))
           }
+          onThumbnailChange={handleThumbnailChange}
+          onThumbnailClear={handleThumbnailClear}
+          onThumbnailPreviewError={thumbnailSelection.markPreviewUnavailable}
         />
       );
     }
@@ -235,7 +310,11 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                     <button
                       type="button"
                       className={styles.stepButton}
-                      disabled={!isReachable || isSubmitting}
+                      disabled={
+                        !isReachable ||
+                        isSubmitting ||
+                        Boolean(thumbnailSelection.errorMessage)
+                      }
                       onClick={() => setCurrentStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
                     >
@@ -266,6 +345,22 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                 {createRoomMutation.error.message}
               </p>
             ) : null}
+            {uploadRoomThumbnailMutation.error ? (
+              <div className={styles.errorBlock} role="alert">
+                <p className={styles.errorText}>
+                  썸네일 업로드에 실패해서 방 생성을 취소했습니다: (
+                  {uploadRoomThumbnailMutation.error.status}){" "}
+                  {uploadRoomThumbnailMutation.error.message}
+                </p>
+              </div>
+            ) : null}
+            {deleteCreatedRoomMutation.error ? (
+              <p className={styles.errorText} role="alert">
+                썸네일 업로드 실패 후 생성된 방 정리에 실패했습니다: (
+                {deleteCreatedRoomMutation.error.status}){" "}
+                {deleteCreatedRoomMutation.error.message}
+              </p>
+            ) : null}
 
             <div className={styles.actions}>
               {currentStep > 0 ? (
@@ -284,7 +379,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   type="button"
                   className={styles.primaryButton}
                   onClick={goToNextStep}
-                  disabled={!canGoNext}
+                  disabled={!canGoNext || Boolean(thumbnailSelection.errorMessage)}
                 >
                   다음
                 </button>
@@ -294,8 +389,19 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   className={styles.primaryButton}
                   onClick={finishCreateRoom}
                   disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                 >
-                  {isSubmitting ? "완료 중" : "완료"}
+                  {isSubmitting ? (
+                    <ClipLoader
+                      aria-label="방 생성 중"
+                      color="#ffffff"
+                      loading
+                      size={18}
+                      speedMultiplier={0.9}
+                    />
+                  ) : (
+                    "완료"
+                  )}
                 </button>
               )}
             </div>

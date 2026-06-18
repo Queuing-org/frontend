@@ -2,7 +2,7 @@
 
 import { useRef, useState, type PointerEvent } from "react";
 import type { Room } from "@/src/features/room/model/types";
-import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
+import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import RoomStageCard from "@/src/features/room/list/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
@@ -208,7 +208,7 @@ export default function HomeRoomStage({
                 <RoomStageCard
                   slug={room.slug}
                   title={room.title}
-                  imageSrc={getDefaultRoomImage(index)}
+                  imageSrc={getRoomImageSrc(room.thumbnailUrl, index)}
                   isSelected={isSelected}
                   disabled={!canClick}
                   ariaLabel={

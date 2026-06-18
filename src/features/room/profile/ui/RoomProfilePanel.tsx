@@ -44,11 +44,15 @@ function isCurrentUserProfile(
 }
 
 export default function RoomProfilePanel({ currentRequester }: Props) {
-  const { data: me } = useMe();
+  const {
+    data: me,
+    isError: isCurrentUserError,
+    isLoading: isCurrentUserLoading,
+  } = useMe();
   const targetSlug = currentRequester?.slug ?? null;
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
-  const canFollow = !!currentRequester?.slug && !isSelf;
+  const canFollow = !!currentRequester?.slug && !!me && !isSelf;
   const { data: isFollowingCurrentRequester } = useFollowingRelationship(
     canFollow ? targetSlug : null,
   );
@@ -60,6 +64,12 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     buttonLabel = "나";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
+  } else if (isCurrentUserLoading) {
+    buttonLabel = "확인 중";
+  } else if (isCurrentUserError) {
+    buttonLabel = "확인 실패";
+  } else if (!me) {
+    buttonLabel = "로그인 필요";
   }
 
   return (

@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         port: "8080",
         pathname: "/uploads/**", //방 사진
       },
+      {
+        protocol: "https",
+        hostname: "imagedelivery.net",
+        pathname: "/**", //방 썸네일 CDN
+      },
     ],
   },
 };

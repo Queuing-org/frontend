@@ -98,12 +98,41 @@
   padding: 1rem;
   box-sizing: border-box;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
   font-size: 0.875rem;
   line-height: 1.5;
   color: #6b7280;
   text-align: center;
+}
+
+.statusRetryButton {
+  display: inline-flex;
+  height: 2rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.875rem;
+  border: 0;
+  border-radius: 0.375rem;
+  background: #2f86ed;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.statusRetryButton:hover {
+  background: #1f72d0;
+}
+
+.statusRetryButton:focus-visible {
+  outline: 3px solid #5b8cff;
+  outline-offset: 2px;
 }
 
 .chatSection {

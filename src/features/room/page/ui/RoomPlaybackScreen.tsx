@@ -82,11 +82,13 @@ export default function RoomPlaybackScreen() {
   const [mobileTab, setMobileTab] = useState<MobileRoomTab>("playback");
   const floatingWidgets = useFloatingWidgetsState();
 
-  const { data: roomState, refetch: refetchRoomState } = useRoomState(
-    slug,
-    roomPassword,
-    status === "joined",
-  );
+  const {
+    data: roomState,
+    error: roomStateError,
+    isError: isRoomStateError,
+    isLoading: isRoomStateLoading,
+    refetch: refetchRoomState,
+  } = useRoomState(slug, roomPassword, status === "joined");
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const roomChat = useRoomChat({
     currentUser: currentUser ?? null,
@@ -237,6 +239,29 @@ export default function RoomPlaybackScreen() {
     return (
       <div className={styles.statusState}>
         {joinErrorMessage || "방에 입장할 수 없습니다."}
+      </div>
+    );
+  }
+
+  if (isRoomStateLoading) {
+    return <div className={styles.statusState}>방 상태를 불러오는 중...</div>;
+  }
+
+  if (isRoomStateError) {
+    return (
+      <div className={styles.statusState} role="alert">
+        <span>
+          {roomStateError?.message || "방 상태를 불러오지 못했습니다."}
+        </span>
+        <button
+          type="button"
+          className={styles.statusRetryButton}
+          onClick={() => {
+            void refetchRoomState();
+          }}
+        >
+          다시 시도
+        </button>
       </div>
     );
   }

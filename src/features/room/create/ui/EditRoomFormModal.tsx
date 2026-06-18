@@ -3,6 +3,7 @@
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -13,6 +14,7 @@ type EditRoomFormModalProps = {
   initialTitle?: string;
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
+  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -22,6 +24,7 @@ export default function EditRoomFormModal({
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
+  initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
   const form = useEditRoomForm({
@@ -58,14 +61,20 @@ export default function EditRoomFormModal({
             EDIT
           </h2>
 
-          <button
-            type="button"
-            className={styles.thumbnailButton}
-            aria-label="방 썸네일 선택"
-          >
-            <span className={styles.cameraIcon} aria-hidden="true" />
-            <span className={styles.thumbnailText}>THUMBNAIL</span>
-          </button>
+          <RoomThumbnailUploadField
+            actionLabel="THUMBNAIL"
+            currentImageUrl={initialThumbnailUrl}
+            disabled={form.isSubmitting}
+            errorMessage={form.thumbnailErrorMessage}
+            fileName={form.thumbnailFileName}
+            inputId="edit-room-thumbnail"
+            isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
+            previewUrl={form.thumbnailPreviewUrl}
+            variant="edit"
+            onClearSelection={form.clearThumbnailSelection}
+            onFileChange={form.updateThumbnailFiles}
+            onPreviewError={form.onThumbnailPreviewError}
+          />
 
           <label className={styles.field}>
             <span className={styles.label}>큐 이름</span>
@@ -152,6 +161,12 @@ export default function EditRoomFormModal({
           {form.submitError ? (
             <p className={styles.errorText}>
               수정 실패: ({form.submitError.status}) {form.submitError.message}
+            </p>
+          ) : null}
+          {form.thumbnailSubmitError ? (
+            <p className={styles.errorText}>
+              썸네일 업로드 실패: ({form.thumbnailSubmitError.status}){" "}
+              {form.thumbnailSubmitError.message}
             </p>
           ) : null}
 

@@ -1,33 +1,52 @@
 "use client";
 
 import styles from "./CreateBasicInfoStep.module.css";
+import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 
 type CreateBasicInfoStepProps = {
   title: string;
   maxTitleLength: number;
   disabled: boolean;
+  thumbnailErrorMessage?: string | null;
+  thumbnailFileName?: string | null;
+  thumbnailPreviewUrl?: string | null;
+  isThumbnailPreviewUnavailable?: boolean;
   onTitleChange: (title: string) => void;
+  onThumbnailChange: (files: FileList | null) => void;
+  onThumbnailClear: () => void;
+  onThumbnailPreviewError: () => void;
 };
 
 export default function CreateBasicInfoStep({
   title,
   maxTitleLength,
   disabled,
+  thumbnailErrorMessage,
+  thumbnailFileName,
+  thumbnailPreviewUrl,
+  isThumbnailPreviewUnavailable,
   onTitleChange,
+  onThumbnailChange,
+  onThumbnailClear,
+  onThumbnailPreviewError,
 }: CreateBasicInfoStepProps) {
   return (
     <div className={styles.stack}>
       <div className={styles.row}>
         <span className={styles.label}>썸네일</span>
-        <button
-          type="button"
-          className={styles.thumbnailButton}
-          aria-label="방 썸네일 업로드"
+        <RoomThumbnailUploadField
+          actionLabel="UPLOAD"
           disabled={disabled}
-        >
-          <span className={styles.cameraIcon} aria-hidden="true" />
-          <span className={styles.thumbnailText}>UPLOAD</span>
-        </button>
+          errorMessage={thumbnailErrorMessage}
+          fileName={thumbnailFileName}
+          inputId="create-room-thumbnail"
+          isPreviewUnavailable={isThumbnailPreviewUnavailable}
+          previewUrl={thumbnailPreviewUrl}
+          variant="create"
+          onClearSelection={onThumbnailClear}
+          onFileChange={onThumbnailChange}
+          onPreviewError={onThumbnailPreviewError}
+        />
       </div>
 
       <label className={styles.row} htmlFor="create-room-title">

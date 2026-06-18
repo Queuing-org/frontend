@@ -10,6 +10,8 @@ export type Room = {
   isPrivate: boolean;
   createdAt: string;
   tags: RoomTag[];
+  thumbnailUrl?: string | null;
+  thumbnailUrls?: ThumbnailUrls | null;
 }; // 웹소켓 호출 가이드 범위 외(기존 REST 방 응답)
 
 export type RoomMeta = {
@@ -20,6 +22,18 @@ export type RoomMeta = {
   hasPassword: boolean;
   activeUsersCount: number;
   tags: RoomTag[];
+  maxParticipants?: number | null;
+  thumbnailUrl?: string | null;
+  thumbnailUrls?: ThumbnailUrls | null;
+  trackLimitMinutes?: number | null;
+};
+
+export type ThumbnailUrls = {
+  original?: string | null;
+  small?: string | null;
+  medium?: string | null;
+  large?: string | null;
+  [key: string]: string | null | undefined;
 };
 
 export type RoomOwner = {

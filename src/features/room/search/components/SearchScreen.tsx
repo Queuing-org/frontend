@@ -6,7 +6,7 @@ import {
   getRoomsFromPages,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
-import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
+import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
@@ -239,7 +239,8 @@ function SearchRoomsContent({
     : -1;
   const selectedRoom =
     selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
-  const backgroundImageSrc = getDefaultRoomImage(
+  const backgroundImageSrc = getRoomImageSrc(
+    selectedRoom?.thumbnailUrl,
     selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
   );
 

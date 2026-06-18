@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Settings, UsersRound } from "lucide-react";
 import type { Room } from "@/src/features/room/model/types";
-import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
+import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import HomeControlPanelShell, {
   type HomeFilterKey,
   type HomeFilterOption,
@@ -177,7 +177,7 @@ export default function MobileHomeRoomFeed({
             {rooms.map((room, index) => (
               <MobileHomeRoomCard
                 key={room.id}
-                imageSrc={getDefaultRoomImage(index)}
+                imageSrc={getRoomImageSrc(room.thumbnailUrl, index)}
                 isSelected={room.slug === selectedRoomSlug}
                 onRequestRoomEntry={onRequestRoomEntry}
                 onSelectRoom={onSelectRoom}

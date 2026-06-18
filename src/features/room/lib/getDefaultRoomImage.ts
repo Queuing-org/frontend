@@ -8,10 +8,20 @@ const DEFAULT_ROOM_IMAGES = [
 ] as const;
 
 export function getDefaultRoomImage(roomIndex: number) {
-  // TODO: 서버 방 응답에 대표 이미지 URL이 추가되면 이 임시 fallback을 제거한다.
   const imageIndex =
     ((roomIndex % DEFAULT_ROOM_IMAGES.length) + DEFAULT_ROOM_IMAGES.length) %
     DEFAULT_ROOM_IMAGES.length;
 
   return DEFAULT_ROOM_IMAGES[imageIndex];
+}
+
+export function getRoomImageSrc(
+  thumbnailUrl: string | null | undefined,
+  fallbackSeed: number,
+) {
+  const normalizedThumbnailUrl = thumbnailUrl?.trim();
+
+  return normalizedThumbnailUrl
+    ? normalizedThumbnailUrl
+    : getDefaultRoomImage(fallbackSeed);
 }
