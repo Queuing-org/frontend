@@ -4,6 +4,7 @@ import Providers from "./providers";
 import SsgoiProvider from "./ssgoi-provider";
 import "./globals.css";
 import localFont from "next/font/local";
+import { Analytics } from "@vercel/analytics/next";
 
 const suit = localFont({
   src: "./fonts/SUIT-Variable.woff2",
@@ -60,6 +61,7 @@ export default function RootLayout({
             <Providers>{children}</Providers>
           </div>
         </SsgoiProvider>
+        <Analytics />
       </body>
     </html>
   );

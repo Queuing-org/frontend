@@ -38,6 +38,10 @@ from files.
   `2026-06-18 대화 핵심 기록` section covering thumbnail upload error tracing,
   cmux/session context limits, AGENTS.md bootstrap behavior, context pipeline,
   memory hygiene, and frontend architecture guardrail positioning.
+- global skill update: `/Users/aryu/.codex/skills/frontend-architecture-guardrails`
+  now includes distilled guidance from `/Users/aryu/Documents/front-tip` via
+  `references/front-tip.md`, covering Next.js Server/Client boundaries, React
+  Query loading/error handling, business errors, and Suspense placement.
 - work in progress: none after the current docs edits are reviewed
 - blocked by: nothing
 
@@ -63,10 +67,20 @@ from files.
   draft note about context management, cmux/session constraints, harness
   engineering, architecture guardrail skills, and today's key conversation
   summary
+- `/Users/aryu/.codex/skills/frontend-architecture-guardrails/SKILL.md`: global
+  skill trigger and reference pointer updated for front-tip topics
+- `/Users/aryu/.codex/skills/frontend-architecture-guardrails/references/front-tip.md`:
+  distilled front-tip reference added
+- `/Users/aryu/.codex/skills/frontend-architecture-guardrails/agents/openai.yaml`:
+  default prompt updated to mention route/server-client boundaries, loading/error
+  behavior, and Suspense placement
 
 ## Verification
 
 - commands run: docs-only inspection commands
+- validation note: frontend skill quick validation was attempted but failed
+  because the local Python environment lacks the `yaml` module required by
+  `quick_validate.py`; frontmatter and reference links were checked manually
 - result: files added/updated; no code behavior changed
 - commands not run: `npm run lint`, `npm run build`
 - residual risk: docs-only change, so runtime risk is low
