@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import type { RefObject } from "react";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import { useChatScrollRestoration } from "../hooks/useChatScrollRestoration";
 import { getChatMessageRenderKey } from "../model/chatMessages";
@@ -13,6 +14,7 @@ type Props = {
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
   scrollToLatestKey: number;
+  wheelRegionRef?: RefObject<HTMLElement | null>;
 };
 
 function getInitial(nickname: string) {
@@ -26,9 +28,16 @@ export default function ChatArea({
   messages,
   onLoadOlderMessages,
   scrollToLatestKey,
+  wheelRegionRef: externalWheelRegionRef,
 }: Props) {
-  const { handleScroll, listRef, requestOlderMessages } =
+  const {
+    handleScroll,
+    listRef,
+    requestOlderMessages,
+    wheelRegionRef,
+  } =
     useChatScrollRestoration({
+      externalWheelRegionRef,
       hasOlderMessages,
       isLoadingOlderMessages,
       messageCount: messages.length,
@@ -37,7 +46,7 @@ export default function ChatArea({
     });
 
   return (
-    <div className={styles.root}>
+    <div ref={wheelRegionRef} className={styles.root}>
       <div ref={listRef} className={styles.list} onScroll={handleScroll}>
         {isLoadingOlderMessages ? (
           <div className={styles.state}>이전 채팅을 불러오는 중...</div>

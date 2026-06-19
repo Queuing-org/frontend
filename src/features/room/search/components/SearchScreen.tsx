@@ -9,7 +9,10 @@ import {
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
 import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
-import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
+import {
+  getRoomImageSrc,
+  ROOM_HERO_IMAGE_VARIANTS,
+} from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
 import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
@@ -238,10 +241,12 @@ function SearchRoomsContent({
     : -1;
   const selectedRoom =
     selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
-  const backgroundImageSrc = getRoomImageSrc(
-    selectedRoom?.thumbnailUrl,
-    selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
-  );
+  const backgroundImageSrc = getRoomImageSrc({
+    fallbackSeed: selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
+    preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
+    thumbnailUrl: selectedRoom?.thumbnailUrl,
+    thumbnailUrls: selectedRoom?.thumbnailUrls,
+  });
 
   return (
     <>
@@ -279,6 +284,7 @@ function SearchRoomsContent({
                 }
                 fill
                 className={styles.thumbnail}
+                sizes="(max-width: 900px) 100vw, 46vw"
                 priority
               />
             </div>

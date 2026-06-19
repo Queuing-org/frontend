@@ -1,6 +1,9 @@
 "use client";
 
-import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
+import {
+  getRoomImageSrc,
+  ROOM_HERO_IMAGE_VARIANTS,
+} from "@/src/features/room/lib/getDefaultRoomImage";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
 import type { PlaybackStatus, RoomMeta } from "@/src/features/room/model/types";
@@ -101,10 +104,12 @@ export function useRoomPlaybackViewModel({
   roomState,
   slug,
 }: UseRoomPlaybackViewModelParams) {
-  const backgroundImageSrc = getRoomImageSrc(
-    roomMeta?.thumbnailUrl,
-    getStableRoomImageIndex(slug),
-  );
+  const backgroundImageSrc = getRoomImageSrc({
+    fallbackSeed: getStableRoomImageIndex(slug),
+    preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
+    thumbnailUrl: roomMeta?.thumbnailUrl,
+    thumbnailUrls: roomMeta?.thumbnailUrls,
+  });
   const playbackStatus = getLatestPlaybackState(
     roomState?.playbackStatus,
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,

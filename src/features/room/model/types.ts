@@ -29,6 +29,11 @@ export type RoomMeta = {
 };
 
 export type ThumbnailUrls = {
+  thumb256?: string | null;
+  thumb384?: string | null;
+  thumb640?: string | null;
+  thumb828?: string | null;
+  thumb1200?: string | null;
   original?: string | null;
   small?: string | null;
   medium?: string | null;

@@ -96,6 +96,7 @@ export default function RoomPlaybackScreen() {
     password: string | null;
     promise: Promise<JoinRoomResult>;
   } | null>(null);
+  const [joinStateSlug, setJoinStateSlug] = useState(slug);
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
@@ -104,6 +105,12 @@ export default function RoomPlaybackScreen() {
     useState<LivePlaybackState | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileRoomTab>("playback");
   const floatingWidgets = useFloatingWidgetsState();
+  const isJoinStateForCurrentSlug = joinStateSlug === slug;
+  const currentStatus = isJoinStateForCurrentSlug ? status : "joining";
+  const currentJoinErrorMessage = isJoinStateForCurrentSlug
+    ? joinErrorMessage
+    : "";
+  const currentRoomPassword = isJoinStateForCurrentSlug ? roomPassword : null;
 
   const {
     data: roomState,
@@ -111,12 +118,12 @@ export default function RoomPlaybackScreen() {
     isError: isRoomStateError,
     isLoading: isRoomStateLoading,
     refetch: refetchRoomState,
-  } = useRoomState(slug, roomPassword, status === "joined");
+  } = useRoomState(slug, currentRoomPassword, currentStatus === "joined");
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const roomChat = useRoomChat({
     currentUser: currentUser ?? null,
-    isEnabled: status === "joined",
-    roomPassword,
+    isEnabled: currentStatus === "joined",
+    roomPassword: currentRoomPassword,
     slug,
   });
   const {
@@ -138,6 +145,7 @@ export default function RoomPlaybackScreen() {
   async function handlePasswordSubmit(password: string) {
     if (!slug) return;
 
+    setJoinStateSlug(slug);
     setIsSubmittingPassword(true);
     setJoinErrorMessage("");
 
@@ -145,6 +153,7 @@ export default function RoomPlaybackScreen() {
       const joinResult = await joinRoom(slug, { password });
       writeStoredRoomJoinPassword(slug, password);
       initializeChatStateFromJoinData(joinResult.data);
+      setJoinStateSlug(slug);
       setRoomPassword(password);
       ensureRoomSubscription(slug, password);
       setStatus("joined");
@@ -169,9 +178,6 @@ export default function RoomPlaybackScreen() {
 
     let isActive = true;
     const storedPassword = readStoredRoomJoinPassword(slug);
-    setRoomPassword(null);
-    setStatus("joining");
-    setJoinErrorMessage("");
     joinRequestRef.current = null;
     resetChatState();
 
@@ -192,6 +198,8 @@ export default function RoomPlaybackScreen() {
 
         if (requiresPassword && !joinPassword) {
           joinRequestRef.current = null;
+          setJoinStateSlug(slug);
+          setRoomPassword(null);
           setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
           setStatus("needs-password");
           return;
@@ -219,6 +227,7 @@ export default function RoomPlaybackScreen() {
 
         initializeChatStateFromJoinData(joinResult.data);
         ensureRoomSubscription(slug, joinPassword);
+        setJoinStateSlug(slug);
         setRoomPassword(joinPassword);
         setStatus("joined");
         setJoinErrorMessage("");
@@ -229,17 +238,23 @@ export default function RoomPlaybackScreen() {
 
         if (joinPassword) {
           clearStoredRoomJoinPassword(slug);
+          setJoinStateSlug(slug);
+          setRoomPassword(null);
           setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
           setStatus("needs-password");
           return;
         }
 
         if (requiresPassword && isPasswordRequiredError(err)) {
+          setJoinStateSlug(slug);
+          setRoomPassword(null);
           setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
           setStatus("needs-password");
           return;
         }
 
+        setJoinStateSlug(slug);
+        setRoomPassword(null);
         setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
         setStatus("error");
       }
@@ -258,22 +273,18 @@ export default function RoomPlaybackScreen() {
   ]);
 
   useEffect(() => {
-    if (!slug || status !== "joined") {
+    if (!slug || currentStatus !== "joined") {
       return;
     }
 
     void refetchRoomState();
-  }, [refetchRoomState, slug, status]);
+  }, [currentStatus, refetchRoomState, slug]);
 
-  useEffect(() => {
-    setLivePlaybackStatus(null);
-  }, [slug]);
-
-  if (status === "needs-password") {
+  if (currentStatus === "needs-password") {
     return (
       <div className={styles.passwordState}>
         <RoomPasswordInput
-          message={joinErrorMessage}
+          message={currentJoinErrorMessage}
           onSubmit={handlePasswordSubmit}
           submitting={isSubmittingPassword}
         />
@@ -281,14 +292,14 @@ export default function RoomPlaybackScreen() {
     );
   }
 
-  if (status === "joining") {
+  if (currentStatus === "joining") {
     return <div className={styles.statusState}>입장 중...</div>;
   }
 
-  if (status === "error") {
+  if (currentStatus === "error") {
     return (
       <div className={styles.statusState}>
-        {joinErrorMessage || "방에 입장할 수 없습니다."}
+        {currentJoinErrorMessage || "방에 입장할 수 없습니다."}
       </div>
     );
   }
@@ -330,7 +341,7 @@ export default function RoomPlaybackScreen() {
         livePlaybackStatus={livePlaybackStatus}
         mobileTab={mobileTab}
         roomChat={roomChat}
-        roomPassword={roomPassword}
+        roomPassword={currentRoomPassword}
         roomState={roomState}
         setMobileTab={setMobileTab}
         slug={slug}
@@ -391,6 +402,8 @@ function RoomPlaybackJoinedContent({
     sendErrorMessage: chatSendErrorMessage,
     sendMessage: handleSendChatMessage,
   } = roomChat;
+  const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
+  const mobileInlineChatRef = useRef<HTMLDivElement>(null);
 
   if (isMobileLayout) {
     const mobileRoomTitle = roomMeta.title;
@@ -473,7 +486,11 @@ function RoomPlaybackJoinedContent({
                     trackTitle={playback.currentTrackTitle}
                   />
                 ) : null}
-                <div className={styles.mobileInlineChat} aria-label="채팅">
+                <div
+                  ref={mobileInlineChatRef}
+                  className={styles.mobileInlineChat}
+                  aria-label="채팅"
+                >
                   <div className={styles.mobileChatList}>
                     <ChatArea
                       errorMessage={chatHistoryErrorMessage}
@@ -482,6 +499,7 @@ function RoomPlaybackJoinedContent({
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
                       scrollToLatestKey={chatScrollToLatestKey}
+                      wheelRegionRef={mobileInlineChatRef}
                     />
                   </div>
                   <div className={styles.mobileChatComposer}>
@@ -560,11 +578,12 @@ function RoomPlaybackJoinedContent({
           src={playback.backgroundImageSrc}
           alt=""
           fill
+          sizes="100vw"
           priority
           className={styles.backgroundImage}
         />
       </div>
-      <div className={styles.container}>
+      <div ref={desktopWheelRegionRef} className={styles.container}>
         <div className={styles.mainArea}>
           <RoomInfo
             roomInfo={roomMeta}
@@ -610,6 +629,7 @@ function RoomPlaybackJoinedContent({
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
               scrollToLatestKey={chatScrollToLatestKey}
+              wheelRegionRef={desktopWheelRegionRef}
             />
           </div>
           <div className={styles.controlBarDock}>

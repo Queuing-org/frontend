@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -41,6 +41,11 @@ type Props = {
   isMovePending?: boolean;
   onDelete?: (entryId: string) => void;
   onMove?: (payload: MovePayload) => void;
+};
+
+type PendingOrder = {
+  orderedEntryIds: string[];
+  sourceEntryIdsKey: string;
 };
 
 type SortableQueueCardProps = {
@@ -101,14 +106,35 @@ export default function RoomQueueSortableList({
   onDelete,
   onMove,
 }: Props) {
-  const [pendingEntries, setPendingEntries] = useState<PlaylistEntry[]>(
-    entries.filter(isPendingQueueEntry),
-  );
+  const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
   const activeFixedEntries = entries.filter((entry) => entry.status.isActive);
   const fixedEntries = entries.filter(
     (entry) => !isPendingQueueEntry(entry) && !entry.status.isActive,
   );
+  const pendingEntriesFromProps = useMemo(
+    () => entries.filter(isPendingQueueEntry),
+    [entries],
+  );
+  const pendingEntryIdsKey = useMemo(
+    () => pendingEntriesFromProps.map((entry) => entry.entryId).join("\u001f"),
+    [pendingEntriesFromProps],
+  );
+  const pendingEntries = useMemo(() => {
+    if (!pendingOrder || pendingOrder.sourceEntryIdsKey !== pendingEntryIdsKey) {
+      return pendingEntriesFromProps;
+    }
+
+    const entryById = new Map(
+      pendingEntriesFromProps.map((entry) => [entry.entryId, entry]),
+    );
+
+    return pendingOrder.orderedEntryIds.flatMap((entryId) => {
+      const entry = entryById.get(entryId);
+
+      return entry ? [entry] : [];
+    });
+  }, [pendingEntriesFromProps, pendingEntryIdsKey, pendingOrder]);
   const activeEntry = useMemo(
     () =>
       activeEntryId
@@ -126,10 +152,6 @@ export default function RoomQueueSortableList({
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
-
-  useEffect(() => {
-    setPendingEntries(entries.filter(isPendingQueueEntry));
-  }, [entries]);
 
   function handleDragStart({ active }: DragStartEvent) {
     setActiveEntryId(String(active.id));
@@ -160,7 +182,10 @@ export default function RoomQueueSortableList({
     }
 
     const reorderedEntries = arrayMove(pendingEntries, oldIndex, newIndex);
-    setPendingEntries(reorderedEntries);
+    setPendingOrder({
+      orderedEntryIds: reorderedEntries.map((entry) => entry.entryId),
+      sourceEntryIdsKey: pendingEntryIdsKey,
+    });
 
     onMove?.({
       beforeEntryId: reorderedEntries[newIndex + 1]?.entryId ?? null,

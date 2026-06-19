@@ -5,7 +5,10 @@ import Image from "next/image";
 import { Settings, UsersRound } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import type { Room } from "@/src/features/room/model/types";
-import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
+import {
+  getRoomImageSrc,
+  ROOM_CARD_IMAGE_VARIANTS,
+} from "@/src/features/room/lib/getDefaultRoomImage";
 import HomeControlPanelShell, {
   type HomeFilterKey,
   type HomeFilterOption,
@@ -215,7 +218,12 @@ export default function MobileHomeRoomFeed({
             {rooms.map((room, index) => (
               <MobileHomeRoomCard
                 key={room.id}
-                imageSrc={getRoomImageSrc(room.thumbnailUrl, index)}
+                imageSrc={getRoomImageSrc({
+                  fallbackSeed: index,
+                  preferredVariants: ROOM_CARD_IMAGE_VARIANTS,
+                  thumbnailUrl: room.thumbnailUrl,
+                  thumbnailUrls: room.thumbnailUrls,
+                })}
                 isSelected={room.slug === selectedRoomSlug}
                 onRequestRoomEntry={onRequestRoomEntry}
                 onSelectRoom={onSelectRoom}

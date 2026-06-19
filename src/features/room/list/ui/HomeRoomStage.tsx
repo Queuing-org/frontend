@@ -3,7 +3,10 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { ClipLoader } from "react-spinners";
 import type { Room } from "@/src/features/room/model/types";
-import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
+import {
+  getRoomImageSrc,
+  ROOM_STAGE_IMAGE_VARIANTS,
+} from "@/src/features/room/lib/getDefaultRoomImage";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import RoomStageCard from "@/src/features/room/list/ui/RoomStageCard";
 import styles from "./HomeRoomStage.module.css";
@@ -248,7 +251,12 @@ export default function HomeRoomStage({
                 <RoomStageCard
                   slug={room.slug}
                   title={room.title}
-                  imageSrc={getRoomImageSrc(room.thumbnailUrl, index)}
+                  imageSrc={getRoomImageSrc({
+                    fallbackSeed: index,
+                    preferredVariants: ROOM_STAGE_IMAGE_VARIANTS,
+                    thumbnailUrl: room.thumbnailUrl,
+                    thumbnailUrls: room.thumbnailUrls,
+                  })}
                   isSelected={isSelected}
                   disabled={!canClick}
                   ariaLabel={

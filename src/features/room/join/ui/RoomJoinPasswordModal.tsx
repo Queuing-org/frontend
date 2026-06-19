@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import type { Room } from "@/src/features/room/model/types";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { writeStoredRoomJoinPassword } from "../lib/roomJoinPasswordStorage";
@@ -12,24 +12,37 @@ type Props = {
   onJoined: (room: Room) => void;
 };
 
+type RoomJoinPasswordModalContentProps = Omit<Props, "room"> & {
+  room: Room;
+};
+
 export default function RoomJoinPasswordModal({
   room,
   onClose,
   onJoined,
 }: Props) {
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    setPassword("");
-    setErrorMessage("");
-    setIsSubmitting(false);
-  }, [room?.slug]);
-
   if (!room) {
     return null;
   }
+
+  return (
+    <RoomJoinPasswordModalContent
+      key={room.slug}
+      room={room}
+      onClose={onClose}
+      onJoined={onJoined}
+    />
+  );
+}
+
+function RoomJoinPasswordModalContent({
+  room,
+  onClose,
+  onJoined,
+}: RoomJoinPasswordModalContentProps) {
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const trimmedPassword = password.trim();
   const canSubmit = trimmedPassword.length > 0 && !isSubmitting;
@@ -37,7 +50,6 @@ export default function RoomJoinPasswordModal({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!room) return;
     if (!trimmedPassword) return;
 
     setIsSubmitting(true);

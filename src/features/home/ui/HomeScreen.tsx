@@ -7,6 +7,7 @@ import {
   type RoomsQueryParams,
   useRoomsQuery,
 } from "@/src/features/room/hooks/useFetchRooms";
+import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
 import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
@@ -189,6 +190,9 @@ function HomeRoomsContent({
     onSelectRoom: setCurrentRoomSlug,
   });
   const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
+  const roomMetaQuery = useRoomMetaQuery(
+    !isChromeReduced ? selectedRoomSlug : null,
+  );
 
   useLoadMoreRoomsNearEnd({
     rooms,
@@ -205,6 +209,7 @@ function HomeRoomsContent({
         isChromeReduced={isChromeReduced}
         mobileSearchQuery={mobileSearchQuery}
         onMobileSearchQueryChange={onMobileSearchQueryChange}
+        roomMeta={roomMetaQuery.data ?? null}
       />
       {isMobileLayout && !isChromeReduced ? (
         <MobileHomeRoomFeed

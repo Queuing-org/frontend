@@ -15,7 +15,7 @@ export default function OnboardingWizard() {
   const nextParam = sp.get("next");
   const next = nextParam && isSafeInternalPath(nextParam) ? nextParam : "/";
 
-  const [step, setStep] = useState<Step>("nickname");
+  const step: Step = "nickname";
 
   const [draft, setDraft] = useState<Partial<OnboardingPayload>>({});
 

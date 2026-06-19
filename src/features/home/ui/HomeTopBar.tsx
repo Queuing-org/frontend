@@ -1,4 +1,4 @@
-import type { Room } from "@/src/features/room/model/types";
+import type { Room, RoomMeta } from "@/src/features/room/model/types";
 import RoomInfo, {
   type RoomInfoDisplay,
 } from "@/src/features/room/info/ui/RoomInfo";
@@ -13,6 +13,7 @@ type Props = {
   isChromeReduced?: boolean;
   mobileSearchQuery?: string;
   onMobileSearchQueryChange?: (query: string) => void;
+  roomMeta?: RoomMeta | null;
 };
 
 export default function HomeTopBar({
@@ -20,13 +21,18 @@ export default function HomeTopBar({
   isChromeReduced = false,
   mobileSearchQuery = "",
   onMobileSearchQueryChange,
+  roomMeta,
 }: Props) {
+  const currentRoomMeta =
+    roomMeta && currentRoom && roomMeta.slug === currentRoom.slug
+      ? roomMeta
+      : null;
   const roomInfo: RoomInfoDisplay | null = !isChromeReduced && currentRoom
     ? {
-        activeUsersCount: null,
-        hasPassword: currentRoom.isPrivate,
-        tags: currentRoom.tags,
-        title: currentRoom.title,
+        activeUsersCount: currentRoomMeta?.activeUsersCount ?? null,
+        hasPassword: currentRoomMeta?.hasPassword ?? currentRoom.isPrivate,
+        tags: currentRoomMeta?.tags ?? currentRoom.tags,
+        title: currentRoomMeta?.title ?? currentRoom.title,
       }
     : null;
 
