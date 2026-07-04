@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { BadgeSummary } from "@/src/features/badge/model/types";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import styles from "./RoomParticipantsPanel.module.css";
 
@@ -8,6 +9,7 @@ type Props = {
   isOwner: boolean;
   onKick: () => void;
   participant: PlaylistParticipant;
+  representativeBadge?: BadgeSummary | null;
 };
 
 export default function RoomParticipantCard({
@@ -16,6 +18,7 @@ export default function RoomParticipantCard({
   isOwner,
   onKick,
   participant,
+  representativeBadge,
 }: Props) {
   return (
     <div className={styles.participant}>
@@ -48,6 +51,9 @@ export default function RoomParticipantCard({
             />
           ) : null}
         </div>
+        {representativeBadge ? (
+          <div className={styles.badgeLabel}>{representativeBadge.name}</div>
+        ) : null}
       </div>
       {canKick ? (
         <button

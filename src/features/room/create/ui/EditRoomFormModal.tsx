@@ -14,6 +14,7 @@ type EditRoomFormModalProps = {
   initialTitle?: string;
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
+  initialMaxParticipants?: number | null;
   initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
@@ -24,10 +25,13 @@ export default function EditRoomFormModal({
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
+  initialMaxParticipants = null,
   initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
   const form = useEditRoomForm({
+    initialHasPassword,
+    initialMaxParticipants,
     initialTagSlugs,
     initialTitle,
     onClose,
@@ -89,31 +93,59 @@ export default function EditRoomFormModal({
           </label>
 
           <div className={styles.field}>
-            <button
-              type="button"
-              className={styles.checkboxRow}
-              role="checkbox"
-              aria-checked={form.isPasswordChangeEnabled}
-              onClick={() =>
-                form.updatePasswordChangeEnabled(!form.isPasswordChangeEnabled)
-              }
-              disabled={form.isSubmitting}
-            >
-              <span
-                className={styles.checkboxBox}
-                data-checked={form.isPasswordChangeEnabled}
-                aria-hidden="true"
-              />
-              <span className={styles.label}>
-                {initialHasPassword ? "새 비밀번호로 변경" : "비밀번호 설정"}
-              </span>
-            </button>
+            <div className={styles.passwordActionRow}>
+              <button
+                type="button"
+                className={styles.checkboxRow}
+                role="checkbox"
+                aria-checked={form.isPasswordChangeEnabled}
+                onClick={() =>
+                  form.updatePasswordChangeEnabled(
+                    !form.isPasswordChangeEnabled,
+                  )
+                }
+                disabled={form.isSubmitting || form.isPasswordClearEnabled}
+              >
+                <span
+                  className={styles.checkboxBox}
+                  data-checked={form.isPasswordChangeEnabled}
+                  aria-hidden="true"
+                />
+                <span className={styles.label}>
+                  {initialHasPassword ? "새 비밀번호로 변경" : "비밀번호 설정"}
+                </span>
+              </button>
+
+              {initialHasPassword ? (
+                <button
+                  type="button"
+                  className={styles.checkboxRow}
+                  role="checkbox"
+                  aria-checked={form.isPasswordClearEnabled}
+                  onClick={() =>
+                    form.updatePasswordClearEnabled(
+                      !form.isPasswordClearEnabled,
+                    )
+                  }
+                  disabled={form.isSubmitting}
+                >
+                  <span
+                    className={styles.checkboxBox}
+                    data-checked={form.isPasswordClearEnabled}
+                    aria-hidden="true"
+                  />
+                  <span className={styles.label}>비밀번호 해제</span>
+                </button>
+              ) : null}
+            </div>
 
             {form.isPasswordChangeEnabled ? (
               <input
                 className={styles.input}
+                type="password"
                 value={form.password}
                 onChange={(event) => form.setPassword(event.target.value)}
+                maxLength={255}
                 placeholder={
                   initialHasPassword
                     ? "새 비밀번호를 입력하세요"
@@ -122,7 +154,11 @@ export default function EditRoomFormModal({
                 disabled={form.isSubmitting}
               />
             ) : null}
-            {initialHasPassword ? (
+            {form.isPasswordClearEnabled ? (
+              <span className={styles.helperText}>
+                저장하면 비밀번호 없이 입장할 수 있습니다.
+              </span>
+            ) : initialHasPassword ? (
               <span className={styles.helperText}>
                 변경하지 않으면 기존 비밀번호가 유지됩니다.
               </span>
@@ -131,6 +167,59 @@ export default function EditRoomFormModal({
               <span className={styles.errorText}>
                 새 비밀번호를 입력해주세요.
               </span>
+            ) : null}
+          </div>
+
+          <div className={styles.field}>
+            <div className={styles.labelRow}>
+              <label
+                className={styles.label}
+                htmlFor="edit-room-max-participants"
+              >
+                최대 인원 수
+              </label>
+              <span className={styles.limitHint}>
+                최대 {form.maxParticipantsLimit}명
+              </span>
+            </div>
+            <div className={styles.limitControlGroup}>
+              <input
+                id="edit-room-max-participants"
+                className={styles.numberInput}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={3}
+                value={form.maxParticipants}
+                onChange={(event) =>
+                  form.updateMaxParticipants(event.target.value)
+                }
+                placeholder="제한 없음"
+                disabled={form.isSubmitting}
+                aria-invalid={Boolean(form.maxParticipantsError)}
+                aria-describedby={
+                  form.maxParticipantsError
+                    ? "edit-room-max-participants-error"
+                    : undefined
+                }
+                data-invalid={Boolean(form.maxParticipantsError)}
+              />
+              <button
+                type="button"
+                className={styles.unlimitedButton}
+                onClick={form.clearMaxParticipants}
+                disabled={form.isSubmitting || form.maxParticipants.length === 0}
+              >
+                제한 없음
+              </button>
+            </div>
+            {form.maxParticipantsError ? (
+              <p
+                id="edit-room-max-participants-error"
+                className={styles.errorText}
+              >
+                {form.maxParticipantsError}
+              </p>
             ) : null}
           </div>
 

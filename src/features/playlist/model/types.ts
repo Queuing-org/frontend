@@ -51,7 +51,8 @@ export type PlaylistEntryStatus = {
 };
 
 export type PlaylistAddedBy = {
-  userId: number | null;
+  slug?: string | null;
+  userId?: number | null;
   nickname: string;
   avatarUrl?: string | null;
 };
@@ -62,6 +63,7 @@ export type PlaylistEntry = {
   status: PlaylistEntryStatus;
   addedBy: PlaylistAddedBy;
   entryId: string;
+  story?: string | null;
   createdAtMs: number;
   updatedAtMs: number;
 };
@@ -70,8 +72,11 @@ export type PlaylistResult = PlaylistEntry[];
 export type RoomQueueResult = PlaylistEntry[];
 
 export type PlaylistParticipant = {
-  slug: string;
-  userId: number | null;
+  participantType?: "USER" | "GUEST" | (string & {});
+  participantId?: string | null;
+  userSlug?: string | null;
+  slug?: string | null;
+  userId?: number | null;
   nickname: string;
   profileImageUrl?: string | null;
 };

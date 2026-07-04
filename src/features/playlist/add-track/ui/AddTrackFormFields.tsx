@@ -4,16 +4,24 @@ import styles from "./AddTrackModal.module.css";
 
 type AddTrackFormFieldsProps = {
   errorMessage: string;
+  storyLength: number;
+  storyMaxLength: number;
+  storyValue: string;
   submitting: boolean;
   value: string;
   onChange: (value: string) => void;
+  onStoryChange: (value: string) => void;
 };
 
 export default function AddTrackFormFields({
   errorMessage,
+  storyLength,
+  storyMaxLength,
+  storyValue,
   submitting,
   value,
   onChange,
+  onStoryChange,
 }: AddTrackFormFieldsProps) {
   return (
     <>
@@ -37,6 +45,24 @@ export default function AddTrackFormFields({
           className={styles.input}
           disabled={submitting}
           autoFocus
+        />
+      </label>
+
+      <label className={styles.fieldGroup}>
+        <div className={styles.labelRow}>
+          <span className={styles.label}>사연 (선택)</span>
+          <span className={styles.characterCount}>
+            {storyLength}/{storyMaxLength}
+          </span>
+        </div>
+        <textarea
+          value={storyValue}
+          onChange={(event) => onStoryChange(event.target.value)}
+          placeholder="함께 듣고 싶은 이유나 전하고 싶은 말을 적어주세요"
+          className={styles.textarea}
+          disabled={submitting}
+          maxLength={storyMaxLength}
+          rows={4}
         />
       </label>
 

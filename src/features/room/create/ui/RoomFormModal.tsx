@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ClipLoader } from "react-spinners";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
@@ -21,6 +22,20 @@ import styles from "./RoomFormModal.module.css";
 
 const MAX_TAGS = 5;
 const MAX_ROOM_TITLE_LENGTH = 18;
+const MAX_PARTICIPANTS_RANGE = { min: 1, max: 250 } as const;
+const TRACK_LIMIT_MINUTE_OPTIONS = [
+  5,
+  10,
+  15,
+  20,
+  25,
+  30,
+  60,
+  90,
+  120,
+  180,
+  240,
+] as const;
 const EMPTY_TAG_SLUGS: string[] = [];
 
 type RoomFormModalMode = "create" | "edit";
@@ -32,6 +47,7 @@ type RoomFormModalProps = {
   initialTitle?: string;
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
+  initialMaxParticipants?: number | null;
   initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
@@ -42,6 +58,65 @@ const createSteps = [
   { label: "세부 설정", title: "세부 설정" },
 ] as const;
 
+function parseOptionalIntegerLimit({
+  max,
+  min,
+  unit,
+  value,
+}: {
+  max: number;
+  min: number;
+  unit: string;
+  value: string;
+}) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return {
+      error: null,
+      value: undefined,
+    };
+  }
+
+  if (!/^\d+$/.test(trimmedValue)) {
+    return {
+      error: "정수로 입력해주세요.",
+      value: undefined,
+    };
+  }
+
+  const parsedValue = Number.parseInt(trimmedValue, 10);
+  if (parsedValue < min || parsedValue > max) {
+    return {
+      error: `${min}~${max}${unit} 사이로 입력해주세요.`,
+      value: undefined,
+    };
+  }
+
+  return {
+    error: null,
+    value: parsedValue,
+  };
+}
+
+function parseOptionalTrackLimitMinutes(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return undefined;
+  }
+
+  const parsedValue = Number.parseInt(trimmedValue, 10);
+
+  return TRACK_LIMIT_MINUTE_OPTIONS.some((minutes) => minutes === parsedValue)
+    ? parsedValue
+    : undefined;
+}
+
+function toDigitsOnly(value: string) {
+  return value.replace(/\D/g, "");
+}
+
 export default function RoomFormModal({
   open,
   mode,
@@ -49,28 +124,33 @@ export default function RoomFormModal({
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
+  initialMaxParticipants = null,
   initialThumbnailUrl = null,
   onClose,
 }: RoomFormModalProps) {
-  if (!open) {
+  if (!open || typeof document === "undefined") {
     return null;
   }
 
+  const portalRoot = document.body;
+
   if (mode === "edit") {
-    return (
+    return createPortal(
       <EditRoomFormModal
         open={open}
         roomSlug={roomSlug}
         initialTitle={initialTitle}
         initialTagSlugs={initialTagSlugs}
         initialHasPassword={initialHasPassword}
+        initialMaxParticipants={initialMaxParticipants}
         initialThumbnailUrl={initialThumbnailUrl}
         onClose={onClose}
-      />
+      />,
+      portalRoot,
     );
   }
 
-  return <CreateRoomFormModal onClose={onClose} />;
+  return createPortal(<CreateRoomFormModal onClose={onClose} />, portalRoot);
 }
 
 type CreateRoomFormModalProps = {
@@ -88,6 +168,8 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [password, setPassword] = useState("");
   const [participationMode, setParticipationMode] =
     useState<ParticipationMode>("public");
+  const [maxParticipants, setMaxParticipants] = useState("");
+  const [trackLimitMinutes, setTrackLimitMinutes] = useState("");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [didTryFinish, setDidTryFinish] = useState(false);
   const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
@@ -102,6 +184,14 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
+  const parsedMaxParticipants = parseOptionalIntegerLimit({
+    ...MAX_PARTICIPANTS_RANGE,
+    unit: "명",
+    value: maxParticipants,
+  });
+  const parsedTrackLimitMinutes =
+    parseOptionalTrackLimitMinutes(trackLimitMinutes);
+  const hasSettingsValidationError = Boolean(parsedMaxParticipants.error);
   const thumbnailUploadErrorMessage = uploadRoomThumbnailMutation.error
     ? [
         "썸네일 업로드 실패:",
@@ -204,6 +294,11 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
+    if (hasSettingsValidationError) {
+      setCurrentStep(createSteps.length - 1);
+      return;
+    }
+
     try {
       const createdRoomPassword =
         participationMode === "password" && trimmedPassword
@@ -213,6 +308,12 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         title: trimmedTitle,
         password: createdRoomPassword,
         tags: selectedTagSlugs,
+        ...(typeof parsedMaxParticipants.value === "number"
+          ? { maxParticipants: parsedMaxParticipants.value }
+          : {}),
+        ...(typeof parsedTrackLimitMinutes === "number"
+          ? { trackLimitMinutes: parsedTrackLimitMinutes }
+          : {}),
       });
 
       await uploadThumbnailAndNavigate(result.slug, createdRoomPassword);
@@ -279,8 +380,21 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       <CreateSettingsStep
         participationMode={participationMode}
         password={password}
+        maxParticipants={maxParticipants}
+        trackLimitMinutes={trackLimitMinutes}
         disabled={isSubmitting}
+        maxParticipantsError={
+          didTryFinish ? parsedMaxParticipants.error : null
+        }
         showPasswordError={didTryFinish && needsPassword}
+        onClearMaxParticipants={() => {
+          setMaxParticipants("");
+          setDidTryFinish(false);
+        }}
+        onMaxParticipantsChange={(nextValue) => {
+          setMaxParticipants(toDigitsOnly(nextValue));
+          setDidTryFinish(false);
+        }}
         onParticipationModeChange={(mode) => {
           setParticipationMode(mode);
           setDidTryFinish(false);
@@ -293,6 +407,11 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           setPassword(nextPassword);
           setDidTryFinish(false);
         }}
+        onTrackLimitMinutesChange={(nextValue) => {
+          setTrackLimitMinutes(nextValue);
+          setDidTryFinish(false);
+        }}
+        trackLimitMinuteOptions={TRACK_LIMIT_MINUTE_OPTIONS}
       />
     );
   };

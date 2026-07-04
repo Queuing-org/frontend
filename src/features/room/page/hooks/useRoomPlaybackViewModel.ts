@@ -6,6 +6,7 @@ import {
 } from "@/src/features/room/lib/getDefaultRoomImage";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
+import { getParticipantUserSlug } from "@/src/features/room/participants/model/participantIdentity";
 import type { PlaybackStatus, RoomMeta } from "@/src/features/room/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
@@ -73,19 +74,26 @@ function getCurrentRequesterProfile(
     return null;
   }
 
+  const requesterSlug = requester.slug?.trim() || null;
   const matchedParticipant = roomState?.participants.find((participant) => {
+    const participantSlug = getParticipantUserSlug(participant);
+    if (requesterSlug && participantSlug) {
+      return participantSlug === requesterSlug;
+    }
+
     if (typeof requester.userId === "number") {
       return participant.userId === requester.userId;
     }
 
     return participant.nickname === requester.nickname;
   });
+  const matchedParticipantSlug = getParticipantUserSlug(matchedParticipant);
 
   return {
     avatarUrl: requester.avatarUrl ?? matchedParticipant?.profileImageUrl ?? null,
     nickname: requester.nickname,
-    slug: matchedParticipant?.slug ?? null,
-    userId: requester.userId,
+    slug: requesterSlug ?? matchedParticipantSlug,
+    userId: requester.userId ?? matchedParticipant?.userId ?? null,
   };
 }
 
@@ -115,12 +123,14 @@ export function useRoomPlaybackViewModel({
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
   );
   const currentRequester = getCurrentRequesterProfile(roomState);
-  const currentTrack = roomState?.currentEntry?.track ?? null;
+  const currentEntry = roomState?.currentEntry ?? null;
+  const currentTrack = currentEntry?.track ?? null;
 
   return {
     backgroundImageSrc,
     currentRequester,
     currentTrackDurationMs: currentTrack?.durationMs ?? null,
+    currentTrackStory: currentEntry?.story ?? null,
     currentTrackTitle: currentTrack?.title ?? null,
     currentVideoId: getCurrentVideoId(roomState, playbackStatus),
     isCurrentRequesterRoomOwner: isRoomOwner(roomMeta?.owner, currentRequester),

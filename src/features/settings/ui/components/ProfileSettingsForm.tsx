@@ -5,27 +5,43 @@ import type { ApiError } from "@/src/shared/api/api-error";
 import styles from "../ProfileSettingsTab.module.css";
 
 type ProfileSettingsFormProps = {
+  badgeDisabled: boolean;
+  badgeOptions: Array<{
+    isAcquired: boolean;
+    name: string;
+    slug: string;
+  }>;
+  badgeStatusMessage: string | null;
+  badgeValue: string;
   canUpdateNickname: boolean;
   hasProfile: boolean;
+  isBadgeStatusError: boolean;
   isMeError: boolean;
   isMeLoading: boolean;
   isUpdatingProfile: boolean;
   nickname: string;
   successMessage: string | null;
   updateError: ApiError | null;
+  onBadgeChange: (badgeSlug: string) => void;
   onNicknameChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
 export default function ProfileSettingsForm({
+  badgeDisabled,
+  badgeOptions,
+  badgeStatusMessage,
+  badgeValue,
   canUpdateNickname,
   hasProfile,
+  isBadgeStatusError,
   isMeError,
   isMeLoading,
   isUpdatingProfile,
   nickname,
   successMessage,
   updateError,
+  onBadgeChange,
   onNicknameChange,
   onSubmit,
 }: ProfileSettingsFormProps) {
@@ -65,12 +81,49 @@ export default function ProfileSettingsForm({
         <div className={styles.readonlyField}>개발중입니다.</div>
       </div>
       <div className={styles.formRow}>
-        <span className={styles.fieldLabel}>칭호</span>
-        <div className={styles.readonlyField}>
-          개발중입니다.
+        <label className={styles.fieldLabel} htmlFor="settings-badge">
+          칭호
+        </label>
+        <div className={styles.selectControl}>
+          <select
+            id="settings-badge"
+            className={styles.selectField}
+            value={badgeValue}
+            onChange={(event) => onBadgeChange(event.target.value)}
+            disabled={badgeDisabled}
+          >
+            <option value="">
+              {hasProfile ? "대표 칭호 선택" : "로그인이 필요합니다"}
+            </option>
+            {badgeOptions.map((badge) => (
+              <option
+                key={badge.slug}
+                value={badge.slug}
+                disabled={!badge.isAcquired}
+                className={
+                  badge.isAcquired
+                    ? styles.badgeOptionOwned
+                    : styles.badgeOptionLocked
+                }
+                data-owned={badge.isAcquired}
+              >
+                {badge.name}
+              </option>
+            ))}
+          </select>
           <span className={styles.chevron} aria-hidden="true" />
         </div>
       </div>
+      {badgeStatusMessage ? (
+        <p
+          className={
+            isBadgeStatusError ? styles.badgeStatusError : styles.badgeStatusText
+          }
+          role={isBadgeStatusError ? "alert" : undefined}
+        >
+          {badgeStatusMessage}
+        </p>
+      ) : null}
       {successMessage ? (
         <p className={styles.successText}>{successMessage}</p>
       ) : null}

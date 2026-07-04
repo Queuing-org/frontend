@@ -1,9 +1,12 @@
 import type { UpdateRoomPayload } from "@/src/features/room/api/types";
 
 type BuildUpdateRoomPayloadParams = {
+  initialMaxParticipants: number | null;
   initialTagSlugs: string[];
   initialTitle: string;
+  isPasswordClearEnabled: boolean;
   isPasswordChangeEnabled: boolean;
+  maxParticipants: number | null;
   password: string;
   selectedTagSlugs: string[];
   title: string;
@@ -20,28 +23,41 @@ function haveSameItems(left: string[], right: string[]) {
 }
 
 export function buildUpdateRoomPayload({
+  initialMaxParticipants,
   initialTagSlugs,
   initialTitle,
+  isPasswordClearEnabled,
   isPasswordChangeEnabled,
+  maxParticipants,
   password,
   selectedTagSlugs,
   title,
 }: BuildUpdateRoomPayloadParams): UpdateRoomPayload | null {
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
-  const payload: UpdateRoomPayload = {};
+  const changedFields: Partial<Omit<UpdateRoomPayload, "title">> = {};
 
   if (!haveSameItems(selectedTagSlugs, initialTagSlugs)) {
-    payload.tags = selectedTagSlugs;
+    changedFields.tags = selectedTagSlugs;
   }
 
-  if (isPasswordChangeEnabled && trimmedPassword) {
-    payload.password = trimmedPassword;
+  if (isPasswordClearEnabled) {
+    changedFields.password = null;
+  } else if (isPasswordChangeEnabled && trimmedPassword) {
+    changedFields.password = trimmedPassword;
   }
 
-  if (trimmedTitle !== initialTitle.trim() || Object.keys(payload).length > 0) {
-    payload.title = trimmedTitle;
+  if (maxParticipants !== initialMaxParticipants) {
+    changedFields.maxParticipants = maxParticipants;
   }
 
-  return Object.keys(payload).length > 0 ? payload : null;
+  const hasChangedFields = Object.keys(changedFields).length > 0;
+  if (trimmedTitle === initialTitle.trim() && !hasChangedFields) {
+    return null;
+  }
+
+  return {
+    title: trimmedTitle,
+    ...changedFields,
+  };
 }

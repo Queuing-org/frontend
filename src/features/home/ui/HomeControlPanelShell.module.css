@@ -55,6 +55,11 @@
   font-weight: var(--fw-heavy);
 }
 
+.menuItem:disabled {
+  cursor: default;
+  opacity: 0.58;
+}
+
 /* 메뉴 옵션 버튼 영역 */
 .menuItem {
   width: fit-content;

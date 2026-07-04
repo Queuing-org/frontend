@@ -43,7 +43,7 @@ export type ThumbnailUrls = {
 
 export type RoomOwner = {
   slug: string;
-  userId: number;
+  userId?: number | null;
   nickname: string;
   profileImageUrl?: string | null;
 };
@@ -102,8 +102,11 @@ export type ChatHistoryResponse = {
 
 export type RoomJoinedData = {
   participant: {
-    slug: string;
-    userId: number | null;
+    participantType?: "USER" | "GUEST" | (string & {});
+    participantId?: string | null;
+    userSlug?: string | null;
+    slug?: string | null;
+    userId?: number | null;
     nickname: string;
     profileImageUrl?: string | null;
   };

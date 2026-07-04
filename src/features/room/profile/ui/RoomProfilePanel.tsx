@@ -1,7 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
+import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
+import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { CurrentRequesterProfile } from "../model/types";
@@ -13,7 +16,6 @@ type Props = {
 };
 
 const PLACEHOLDER_PROFILE_FIELDS = [
-  "칭호",
   "최애곡",
   "큐잉 횟수",
   "이용 시간",
@@ -28,8 +30,8 @@ function isCurrentUserProfile(
     return false;
   }
 
-  if (currentRequester.slug && me.slug === currentRequester.slug) {
-    return true;
+  if (currentRequester.slug) {
+    return me.slug === currentRequester.slug;
   }
 
   if (
@@ -50,9 +52,14 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     isLoading: isCurrentUserLoading,
   } = useMe();
   const targetSlug = currentRequester?.slug ?? null;
+  const { data: publicProfile, isLoading: isPublicProfileLoading } =
+    useUserProfile(targetSlug);
+  const { data: publicBadges, isLoading: isPublicBadgesLoading } =
+    usePublicUserBadges(targetSlug);
 
   const isSelf = isCurrentUserProfile(currentRequester, me);
-  const canFollow = !!currentRequester?.slug && !!me && !isSelf;
+  const shouldShowFollowAction = Boolean(currentRequester) && !isSelf;
+  const canFollow = shouldShowFollowAction && !!targetSlug && !!me;
   const { data: isFollowingCurrentRequester } = useFollowingRelationship(
     canFollow ? targetSlug : null,
   );
@@ -60,8 +67,6 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
   let buttonLabel = "팔로우";
   if (!currentRequester) {
     buttonLabel = "대상 없음";
-  } else if (isSelf) {
-    buttonLabel = "나";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
   } else if (isCurrentUserLoading) {
@@ -72,16 +77,26 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     buttonLabel = "로그인 필요";
   }
 
+  const representativeBadge =
+    publicProfile?.representativeBadge ?? getRepresentativeBadge(publicBadges);
+  const displayNickname =
+    publicProfile?.nickname ?? currentRequester?.nickname ?? "";
+  const displayAvatarUrl =
+    publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
+  const badgeValue = isPublicProfileLoading || isPublicBadgesLoading
+    ? "불러오는 중..."
+    : representativeBadge?.name ?? "대표 칭호 없음";
+
   return (
     <div className={styles.root}>
       {currentRequester ? (
         <>
           <div className={styles.hero}>
             <div className={styles.avatarWrap}>
-              {currentRequester.avatarUrl ? (
+              {displayAvatarUrl ? (
                 <Image
-                  src={currentRequester.avatarUrl}
-                  alt={`${currentRequester.nickname} avatar`}
+                  src={displayAvatarUrl}
+                  alt={`${displayNickname} avatar`}
                   fill
                   sizes="56px"
                   unoptimized
@@ -89,24 +104,32 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
                 />
               ) : (
                 <div className={styles.avatarFallback} aria-hidden="true">
-                  {currentRequester.nickname.slice(0, 1)}
+                  {displayNickname.slice(0, 1)}
                 </div>
               )}
             </div>
             <div className={styles.nameBlock}>
-              <div className={styles.name}>{currentRequester.nickname}</div>
+              <div className={styles.name}>{displayNickname}</div>
             </div>
-            <FollowToggleButton
-              className={styles.followButton}
-              disabled={!canFollow}
-              disabledLabel={buttonLabel}
-              initialRelationship={
-                isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
-              }
-              targetSlug={targetSlug}
-            />
+            {shouldShowFollowAction ? (
+              <FollowToggleButton
+                className={styles.followButton}
+                disabled={!canFollow}
+                disabledLabel={buttonLabel}
+                initialRelationship={
+                  isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
+                }
+                targetSlug={targetSlug}
+              />
+            ) : null}
           </div>
           <div className={styles.grid}>
+            {targetSlug ? (
+              <div className={styles.card}>
+                <div className={styles.cardTitle}>칭호</div>
+                <div className={styles.cardValue}>{badgeValue}</div>
+              </div>
+            ) : null}
             {PLACEHOLDER_PROFILE_FIELDS.map((field) => (
               <div key={field} className={styles.card}>
                 <div className={styles.cardTitle}>{field}</div>

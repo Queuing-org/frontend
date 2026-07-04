@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,7 +13,8 @@
   position: relative;
   width: min(664px, 100%);
   max-height: calc(100dvh - 24px);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
   border: 0.5px solid #d9d9d9;
   border-radius: 20px;
@@ -107,7 +108,8 @@
 }
 
 .input,
-.select {
+.select,
+.numberInput {
   width: 100%;
   height: 53px;
   box-sizing: border-box;
@@ -124,11 +126,13 @@
     box-shadow 160ms ease;
 }
 
-.input {
+.input,
+.numberInput {
   padding: 0 20px;
 }
 
-.input::placeholder {
+.input::placeholder,
+.numberInput::placeholder {
   color: #b0b0b5;
 }
 
@@ -138,9 +142,25 @@
 }
 
 .input:focus,
-.select:focus {
+.select:focus,
+.numberInput:focus {
   border-color: #b0b0b5;
   box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
+}
+
+.numberInput[data-invalid="true"] {
+  border-color: #ff2f2f;
+}
+
+.numberInput[data-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(255, 47, 47, 0.12);
+}
+
+.passwordActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
 }
 
 .checkboxRow {
@@ -207,6 +227,51 @@
   opacity: 0.5;
 }
 
+.limitControlGroup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.unlimitedButton {
+  display: inline-flex;
+  min-width: 86px;
+  height: 53px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.unlimitedButton:hover:not(:disabled) {
+  border-color: #b0b0b5;
+  color: #1f1f21;
+}
+
+.unlimitedButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.unlimitedButton:focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
+}
+
 .tagGrid {
   display: flex;
   flex-wrap: wrap;
@@ -267,6 +332,14 @@
   color: #8d8d8d;
 }
 
+.limitHint {
+  color: #ff2f2f;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .errorText {
   color: #d94b4b;
 }
@@ -320,10 +393,15 @@
   }
 
   .input,
+  .numberInput,
   .select,
   .submitButton {
     height: 52px;
     font-size: 16px;
+  }
+
+  .unlimitedButton {
+    height: 52px;
   }
 
   .tagChip {

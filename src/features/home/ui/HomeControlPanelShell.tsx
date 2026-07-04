@@ -17,6 +17,7 @@ export const HOME_CONTROL_PANEL_IDS = {
 type Props =
   | {
       variant: "menu";
+      isRandomEntryPending?: boolean;
       onSelectMenuItem: (menuItem: HomeMenuItem) => void;
     }
   | {
@@ -203,16 +204,24 @@ export default function HomeControlPanelShell(props: Props) {
         aria-label="홈 메뉴 패널"
       >
         <div className={styles.menuRow}>
-          {menuItems.map((item) => (
-            <button
-              key={item}
-              type="button"
-              className={styles.menuItem}
-              onClick={() => props.onSelectMenuItem(item)}
-            >
-              {item}
-            </button>
-          ))}
+          {menuItems.map((item) => {
+            const isRandomItem = item === "RANDOM";
+            const isPendingRandom =
+              isRandomItem && Boolean(props.isRandomEntryPending);
+
+            return (
+              <button
+                key={item}
+                type="button"
+                className={styles.menuItem}
+                disabled={isPendingRandom}
+                aria-busy={isPendingRandom}
+                onClick={() => props.onSelectMenuItem(item)}
+              >
+                {isPendingRandom ? "LOADING" : item}
+              </button>
+            );
+          })}
         </div>
       </section>
     );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Settings, UsersRound } from "lucide-react";
+import { Settings, Shuffle, UsersRound } from "lucide-react";
 import { ClipLoader } from "react-spinners";
 import type { Room } from "@/src/features/room/model/types";
 import {
@@ -24,14 +24,17 @@ type Props = {
   hasNextPage: boolean;
   isFetchingNextPage: boolean;
   isLoading?: boolean;
+  isRandomEntryPending?: boolean;
   onCreateRoom: () => void;
   onLoadMoreRooms: () => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
+  onRandomEntry: () => void;
   onRetry?: () => void;
   onRequestRoomEntry: (room: Room) => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onSelectRoom: (roomSlug: string) => void;
+  randomEntryErrorMessage?: string | null;
   rooms: Room[];
   selectedRoomSlug: string | null;
 };
@@ -111,14 +114,17 @@ export default function MobileHomeRoomFeed({
   hasNextPage,
   isFetchingNextPage,
   isLoading = false,
+  isRandomEntryPending = false,
   onCreateRoom,
   onLoadMoreRooms,
   onOpenFollow,
   onOpenSettings,
+  onRandomEntry,
   onRetry,
   onRequestRoomEntry,
   onSelectFilter,
   onSelectRoom,
+  randomEntryErrorMessage = null,
   rooms,
   selectedRoomSlug,
 }: Props) {
@@ -148,6 +154,20 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.secondaryAction}
+          onClick={onRandomEntry}
+          disabled={isRandomEntryPending}
+          aria-label="랜덤 입장"
+          aria-busy={isRandomEntryPending}
+        >
+          {isRandomEntryPending ? (
+            <ClipLoader color="#3c3c3c" size={16} aria-label="랜덤 입장 중" />
+          ) : (
+            <Shuffle className={styles.actionIcon} aria-hidden="true" />
+          )}
+        </button>
+        <button
+          type="button"
+          className={styles.secondaryAction}
           onClick={onOpenFollow}
           aria-label="팔로우"
         >
@@ -162,6 +182,11 @@ export default function MobileHomeRoomFeed({
           <Settings className={styles.actionIcon} aria-hidden="true" />
         </button>
       </section>
+      {randomEntryErrorMessage ? (
+        <p className={styles.quickActionError} role="alert">
+          {randomEntryErrorMessage}
+        </p>
+      ) : null}
 
       <section className={styles.filterSection} aria-label="홈 필터">
         <button

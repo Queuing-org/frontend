@@ -10,9 +10,13 @@ type AddTrackModalProps = {
   open: boolean;
   submitting: boolean;
   value: string;
+  storyLength: number;
+  storyMaxLength: number;
+  storyValue: string;
   errorMessage: string;
   onChange: (value: string) => void;
   onClose: () => void;
+  onStoryChange: (value: string) => void;
   onSubmit: () => void;
 };
 
@@ -21,58 +25,62 @@ export default function AddTrackModal({
   open,
   submitting,
   value,
+  storyLength,
+  storyMaxLength,
+  storyValue,
   errorMessage,
   onChange,
   onClose,
+  onStoryChange,
   onSubmit,
 }: AddTrackModalProps) {
   const { titleId } = useDialogA11y({ onClose, open });
 
   return (
     <DialogPortal open={open}>
-    <div
-      className={styles.backdrop}
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className={styles.dialog}
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-      >
-        <h2 id={titleId} className={styles.title}>
-          큐잉하기
-        </h2>
-        <div className={styles.form}>
-          <AddTrackFormFields
-            errorMessage={errorMessage}
-            submitting={submitting}
-            value={value}
-            onChange={onChange}
-          />
+      <div className={styles.backdrop} onClick={onClose} role="presentation">
+        <div
+          className={styles.dialog}
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+        >
+          <h2 id={titleId} className={styles.title}>
+            큐잉하기
+          </h2>
+          <div className={styles.form}>
+            <AddTrackFormFields
+              errorMessage={errorMessage}
+              storyLength={storyLength}
+              storyMaxLength={storyMaxLength}
+              storyValue={storyValue}
+              submitting={submitting}
+              value={value}
+              onChange={onChange}
+              onStoryChange={onStoryChange}
+            />
 
-          <div className={styles.actions}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.actionButton}
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={onSubmit}
-              disabled={disabled || submitting}
-              className={`${styles.actionButton} ${styles.submitButton}`}
-            >
-              {submitting ? "큐잉 중" : "큐잉"}
-            </button>
+            <div className={styles.actions}>
+              <button
+                type="button"
+                onClick={onClose}
+                className={styles.actionButton}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={onSubmit}
+                disabled={disabled || submitting}
+                className={`${styles.actionButton} ${styles.submitButton}`}
+              >
+                {submitting ? "큐잉 중" : "큐잉"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
     </DialogPortal>
   );
 }

@@ -1,36 +1,27 @@
 # QA Report
 
-Result: pass with residual risk.
+Result: pass with residual API-shape risk.
 
 ## Automated Verification
 
-- `npm run lint`: pass with the pre-existing warning in `src/features/onboarding/ui/OnboardingWizard.tsx` for unused `setStep`.
-- `npm run build`: pass.
 - `git diff --check`: pass.
-- `curl -skI https://local.queuing.patulus.com:3000/home`: `200 OK`.
-- `curl -skI https://local.queuing.patulus.com:3000/search`: `200 OK`.
+- `npm run lint`: pass.
+- `npm run build`: pass.
 
 ## Boundary Checks
 
-- Thumbnail upload uses `PUT /api/v1/rooms/{slug}/thumbnail`.
-- Multipart body uses field name `file`.
-- Upload success invalidates `roomKeys.all()` and `roomKeys.meta(slug)`.
-- Create room flow creates first, uploads thumbnail second, then navigates.
-- Create-upload failure attempts to delete the just-created room and does not navigate to it.
-- Edit room flow sends PATCH only for changed room fields and PUT only when a new thumbnail file is selected.
-- File validation checks allowed extension and 6MB max size.
-- Object URL previews are revoked on replacement, clear, and unmount.
-- Home stage, mobile home, search selected image, and room background prefer `thumbnailUrl` and fallback to default images.
-- `next.config.ts` allows `https://imagedelivery.net/**`.
-
-## Parallel Review
-
-- Subagent review reported no blocking findings.
-- One previous residual UX risk was that changing title/tags after create succeeded but thumbnail upload failed would not affect the already-created room. Current behavior avoids that state by rolling back the created room on thumbnail-upload failure.
+- Create-room max participants is digit-filtered, capped by validation at 250, and omitted when empty.
+- Create-room track limit is selected from fixed dropdown values and omitted when "제한 없음".
+- Random entry routes directly to `/room/{slug}` and never calls protected room entry/password modal flow.
+- Shared desktop control behavior is wired in both home and search because both use `HomeSearchControlDock`.
+- Badge representative mutation invalidates `badgeKeys.me()`, `userKeys.me()`, and the current user's public badge query.
+- Participant badge display uses list-level `useQueries` with deduped user slugs; cards do not fetch.
+- Settings badge UI uses the existing profile "칭호" row instead of an added card section.
+- Withdrawal success clears `me` and removes badge/follow/profile/search caches.
 
 ## Residual Risk
 
-- Browser visual QA could not run because no in-app browser backend was available (`agent.browsers.list()` returned `[]`).
-- The existing Next dev server on port 3000 was used for HTTP smoke checks. Starting a second server on port 3001 failed because `.next/dev/lock` was held by the existing server.
-- The upload response is typed as `ApiResponse<boolean>` to match the existing boolean mutation pattern. If the backend returns a richer thumbnail payload, the type should be updated.
-- CDN/image 404 at runtime is not swapped to the default image; fallback only covers missing `thumbnailUrl`.
+- Badge response shapes were inferred from the plan, not confirmed against live API docs. Helpers tolerate common `items`/`badges` list variants, but field-name drift is still possible.
+- Native `<option>` font styling can vary by browser; unacquired options are still disabled and sorted below acquired options.
+- CSRF refresh retry is conservative: `419` always retries once; `400`/`403` retry only when code/message contains `csrf` or `xsrf`.
+- Manual browser/API checks were not run against a live backend in this turn.

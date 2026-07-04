@@ -9,6 +9,7 @@ type AddTrackActionProps = {
   className?: string;
   label?: string;
   loginLabel?: string;
+  roomPassword?: string | null;
   slug: string;
   variant?: "default" | "queueDock";
 };
@@ -17,10 +18,11 @@ export default function AddTrackAction({
   className,
   label: labelOverride,
   loginLabel,
+  roomPassword,
   slug,
   variant = "default",
 }: AddTrackActionProps) {
-  const action = useAddTrackAction(slug);
+  const action = useAddTrackAction(slug, roomPassword);
   const isQueueDock = variant === "queueDock";
   const form = action.form;
   let appearance: "loading" | "login" | "primary" = "primary";
@@ -55,9 +57,13 @@ export default function AddTrackAction({
         open={action.isModalOpen}
         submitting={form.isSubmitting}
         value={form.inputValue}
+        storyLength={form.storyLength}
+        storyMaxLength={form.storyMaxLength}
+        storyValue={form.storyValue}
         errorMessage={form.errorMessage}
         onChange={form.updateInputValue}
         onClose={action.closeModal}
+        onStoryChange={form.updateStoryValue}
         onSubmit={action.submit}
       />
     </>

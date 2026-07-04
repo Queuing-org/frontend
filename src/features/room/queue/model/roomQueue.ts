@@ -43,7 +43,15 @@ export function isEntryRequestedByUser(
     return false;
   }
 
-  if (typeof currentUser.userId === "number") {
+  const requesterSlug = entry.addedBy.slug?.trim();
+  if (requesterSlug) {
+    return requesterSlug === currentUser.slug;
+  }
+
+  if (
+    typeof currentUser.userId === "number" &&
+    typeof entry.addedBy.userId === "number"
+  ) {
     return entry.addedBy.userId === currentUser.userId;
   }
 

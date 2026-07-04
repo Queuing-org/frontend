@@ -11,9 +11,9 @@
   min-height: 0;
   width: 100%;
   resize: none;
-  border: 1px solid #e9ebee;
+  border: 0;
   border-radius: 16px;
-  background: #ffffff;
+  background: #f7f7f9;
   color: #3c3c3c;
   font-family: inherit;
   font-size: 16px;
@@ -52,10 +52,10 @@
   justify-content: center;
   width: 52px;
   height: 28px;
-  border: 1px solid #e9ebee;
+  border: 1px solid #3b82f6;
   border-radius: 16px;
-  background: #f7f7f9;
-  color: #3c3c3c;
+  background: #3b82f6;
+  color: #ffffff;
   cursor: pointer;
 }
 
@@ -68,6 +68,7 @@
   display: block;
   width: 18px;
   height: 16px;
+  filter: brightness(0) invert(1);
 }
 
 .error,

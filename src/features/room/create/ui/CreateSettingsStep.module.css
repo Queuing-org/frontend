@@ -24,7 +24,8 @@
 }
 
 .control,
-.passwordInput {
+.passwordInput,
+.numberInput {
   width: 100%;
   min-height: 46px;
   box-sizing: border-box;
@@ -47,6 +48,10 @@
   text-align: left;
 }
 
+.numberInput {
+  min-width: 0;
+}
+
 select.control {
   appearance: none;
   padding-right: 44px;
@@ -63,34 +68,85 @@ select.control {
   cursor: pointer;
 }
 
-.control:disabled {
+.control:disabled,
+.numberInput:disabled {
   color: #b0b0b5;
   cursor: default;
 }
 
-.passwordInput::placeholder {
+.passwordInput::placeholder,
+.numberInput::placeholder {
   color: #b0b0b5;
 }
 
 .control:focus,
-.passwordInput:focus {
+.passwordInput:focus,
+.numberInput:focus {
   border-color: #b0b0b5;
   box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
 }
 
-.passwordInput[data-invalid="true"] {
+.passwordInput[data-invalid="true"],
+.numberInput[data-invalid="true"] {
   border-color: #ff2f2f;
 }
 
-.passwordInput[data-invalid="true"]:focus {
+.passwordInput[data-invalid="true"]:focus,
+.numberInput[data-invalid="true"]:focus {
   box-shadow: 0 0 0 3px rgba(255, 47, 47, 0.12);
 }
 
-.participationColumn {
+.participationColumn,
+.limitColumn {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+
+.limitControlGroup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.unlimitedButton {
+  display: inline-flex;
+  min-width: 86px;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+.unlimitedButton:hover:not(:disabled) {
+  border-color: #b0b0b5;
+  color: #1f1f21;
+}
+
+.unlimitedButton:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.unlimitedButton:focus-visible {
+  outline: 2px solid #5b8cff;
+  outline-offset: 2px;
 }
 
 .errorText {
@@ -101,6 +157,15 @@ select.control {
   line-height: 1.4;
 }
 
+.limitHint {
+  margin: 0;
+  color: #ff2f2f;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .row {
     grid-template-columns: 1fr;
@@ -109,5 +174,13 @@ select.control {
 
   .label {
     min-height: auto;
+  }
+
+  .limitControlGroup {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .limitHint {
+    grid-column: 1 / -1;
   }
 }

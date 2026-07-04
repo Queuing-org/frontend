@@ -1,10 +1,10 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import {
-  assertApiBooleanResult,
   unwrapApiResponse,
 } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import type { ThumbnailUrls } from "@/src/features/room/model/types";
 
 export type UploadRoomThumbnailParams = {
   slug: string;
@@ -12,10 +12,16 @@ export type UploadRoomThumbnailParams = {
 };
 
 export type UploadRoomThumbnailResult = {
-  success: boolean;
+  width?: number;
+  height?: number;
+  sizeBytes?: number;
+  activatedAt?: string;
+  contentType?: string;
+  thumbnailUrl?: string | null;
+  thumbnailUrls?: ThumbnailUrls | null;
 };
 
-type UploadRoomThumbnailResponse = ApiResponse<boolean>;
+type UploadRoomThumbnailResponse = ApiResponse<UploadRoomThumbnailResult>;
 
 export async function uploadRoomThumbnail({
   slug,
@@ -30,10 +36,5 @@ export async function uploadRoomThumbnail({
     formData,
   );
 
-  return {
-    success: assertApiBooleanResult(
-      unwrapApiResponse(res.data),
-      "방 썸네일을 업로드하지 못했습니다.",
-    ),
-  };
+  return unwrapApiResponse(res.data);
 }

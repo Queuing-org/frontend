@@ -32,6 +32,7 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
     className: dragActivatorClassName,
     ...safeDragActivatorProps
   } = dragActivatorProps ?? {};
+  const story = entry.story?.trim() ?? "";
 
   const handleDeletePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -66,8 +67,8 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
         <div className={styles.title}>
           {entry.addedBy.nickname} - {entry.track.title}
         </div>
-        <div className={styles.detailRow}>
-          <div className={styles.story}>사연이 나옵니다.</div>
+        <div className={styles.detailRow} data-has-story={Boolean(story)}>
+          {story ? <div className={styles.story}>{story}</div> : null}
           <div className={styles.duration}>
             {formatQueueDuration(entry.track.durationMs)}
           </div>

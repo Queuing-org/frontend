@@ -32,6 +32,7 @@ import {
 import HomeSearchControlDock from "@/src/features/home/ui/HomeSearchControlDock";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
+import { useRandomEntryNavigation } from "@/src/features/room/hooks/useRandomEntryNavigation";
 import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
 import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
@@ -227,6 +228,7 @@ function SearchRoomsContent({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
   });
+  const randomEntry = useRandomEntryNavigation();
 
   useLoadMoreRoomsNearEnd({
     rooms: roomListRooms,
@@ -301,10 +303,13 @@ function SearchRoomsContent({
         genreOptions={genreOptions}
         onGoPrevious={goPrevious}
         onGoNext={goNext}
+        onRandomEntry={randomEntry.requestRandomEntry}
         onSelectFilter={onSelectFilter}
         onCreateRoom={onCreateRoom}
         onOpenFollow={onOpenFollow}
         onOpenSettings={onOpenSettings}
+        isRandomEntryPending={randomEntry.isPending}
+        randomEntryErrorMessage={randomEntry.errorMessage}
         onEnterSelectedRoom={() => {
           if (selectedRoom) {
             roomEntry.requestRoomEntry(selectedRoom);

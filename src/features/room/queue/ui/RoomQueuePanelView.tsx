@@ -28,6 +28,7 @@ type RoomQueuePanelViewProps = {
   isRefetching: boolean;
   moveErrorMessage: string;
   myEntries: PlaylistEntry[];
+  roomPassword?: string | null;
   roomSlug: string;
   onChangeTab: (tab: QueueTab) => void;
   onDeleteMyEntry: (entryId: string) => void;
@@ -51,6 +52,7 @@ export default function RoomQueuePanelView({
   isRefetching,
   moveErrorMessage,
   myEntries,
+  roomPassword,
   roomSlug,
   onChangeTab,
   onDeleteMyEntry,
@@ -101,7 +103,11 @@ export default function RoomQueuePanelView({
         <div className={styles.refreshing}>최신 목록으로 갱신 중...</div>
       ) : null}
       <div className={styles.addTrackDock}>
-        <AddTrackAction slug={roomSlug} variant="queueDock" />
+        <AddTrackAction
+          roomPassword={roomPassword}
+          slug={roomSlug}
+          variant="queueDock"
+        />
       </div>
     </div>
   );

@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
+import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
 import styles from "./AccountSettingsTab.module.css";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
@@ -15,15 +17,36 @@ type AccountSettingsTabProps = {
 export default function AccountSettingsTab({
   onLoggedOut,
 }: AccountSettingsTabProps) {
+  const [isConfirmingWithdraw, setIsConfirmingWithdraw] = useState(false);
   const { data: me } = useMe();
   const {
     mutate: logout,
     isPending: isLoggingOut,
     error: logoutError,
   } = useLogout();
+  const {
+    mutate: withdraw,
+    isPending: isWithdrawing,
+    error: withdrawError,
+    reset: resetWithdraw,
+  } = useWithdrawMe();
+  const isAccountActionPending = isLoggingOut || isWithdrawing;
 
   function handleLogout() {
+    setIsConfirmingWithdraw(false);
     logout(undefined, {
+      onSuccess: onLoggedOut,
+    });
+  }
+
+  function handleWithdraw() {
+    if (!isConfirmingWithdraw) {
+      resetWithdraw();
+      setIsConfirmingWithdraw(true);
+      return;
+    }
+
+    withdraw(undefined, {
       onSuccess: onLoggedOut,
     });
   }
@@ -84,7 +107,7 @@ export default function AccountSettingsTab({
           type="button"
           className={`${styles.actionButton} ${styles.logoutButton}`}
           onClick={handleLogout}
-          disabled={!me || isLoggingOut}
+          disabled={!me || isAccountActionPending}
         >
           {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
         </button>
@@ -92,15 +115,40 @@ export default function AccountSettingsTab({
         <button
           type="button"
           className={`${styles.actionButton} ${styles.withdrawButton}`}
-          disabled
+          onClick={handleWithdraw}
+          disabled={!me || isAccountActionPending}
         >
-          회원탈퇴 (개발 중)
+          {isWithdrawing
+            ? "탈퇴 중..."
+            : isConfirmingWithdraw
+              ? "탈퇴 확인"
+              : "회원탈퇴"}
         </button>
+        {isConfirmingWithdraw && !isWithdrawing ? (
+          <button
+            type="button"
+            className={`${styles.actionButton} ${styles.cancelWithdrawButton}`}
+            onClick={() => setIsConfirmingWithdraw(false)}
+          >
+            취소
+          </button>
+        ) : null}
       </div>
+
+      {isConfirmingWithdraw ? (
+        <p className={styles.confirmText}>
+          탈퇴하려면 한 번 더 눌러주세요.
+        </p>
+      ) : null}
 
       {logoutError ? (
         <p className={styles.errorText} role="alert">
           로그아웃 실패: {logoutError.message}
+        </p>
+      ) : null}
+      {withdrawError ? (
+        <p className={styles.errorText} role="alert">
+          회원탈퇴 실패: {withdrawError.message}
         </p>
       ) : null}
     </div>

@@ -9,6 +9,7 @@ import {
 } from "@/src/features/room/hooks/useFetchRooms";
 import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
 import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
+import { useRandomEntryNavigation } from "@/src/features/room/hooks/useRandomEntryNavigation";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
 import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
@@ -189,6 +190,7 @@ function HomeRoomsContent({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
   });
+  const randomEntry = useRandomEntryNavigation();
   const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
   const roomMetaQuery = useRoomMetaQuery(
     !isChromeReduced ? selectedRoomSlug : null,
@@ -219,18 +221,21 @@ function HomeRoomsContent({
           hasNextPage={Boolean(roomsQuery.hasNextPage)}
           isFetchingNextPage={roomsQuery.isFetchingNextPage}
           isLoading={roomsQuery.isPending}
+          isRandomEntryPending={randomEntry.isPending}
           onCreateRoom={onCreateRoom}
           onLoadMoreRooms={() => {
             void roomsQuery.fetchNextPage();
           }}
           onOpenFollow={onOpenFollow}
           onOpenSettings={onOpenSettings}
+          onRandomEntry={randomEntry.requestRandomEntry}
           onRetry={() => {
             void roomsQuery.refetch();
           }}
           onRequestRoomEntry={roomEntry.requestRoomEntry}
           onSelectFilter={onSelectFilter}
           onSelectRoom={setCurrentRoomSlug}
+          randomEntryErrorMessage={randomEntry.errorMessage}
           rooms={rooms}
           selectedRoomSlug={selectedRoomSlug}
         />
@@ -257,10 +262,13 @@ function HomeRoomsContent({
             genreOptions={genreOptions}
             onGoPrevious={goPrevious}
             onGoNext={goNext}
+            onRandomEntry={randomEntry.requestRandomEntry}
             onSelectFilter={onSelectFilter}
             onCreateRoom={onCreateRoom}
             onOpenFollow={onOpenFollow}
             onOpenSettings={onOpenSettings}
+            isRandomEntryPending={randomEntry.isPending}
+            randomEntryErrorMessage={randomEntry.errorMessage}
             onEnterSelectedRoom={() => {
               if (currentRoom) {
                 roomEntry.requestRoomEntry(currentRoom);

@@ -455,6 +455,7 @@ function RoomPlaybackJoinedContent({
                 className={styles.mobileHeaderAddTrack}
                 label="노래 신청"
                 loginLabel="로그인"
+                roomPassword={roomPassword}
                 slug={slug}
                 variant="queueDock"
               />
@@ -483,6 +484,7 @@ function RoomPlaybackJoinedContent({
                         slug={slug}
                       />
                     }
+                    story={playback.currentTrackStory}
                     trackTitle={playback.currentTrackTitle}
                   />
                 ) : null}
@@ -617,6 +619,7 @@ function RoomPlaybackJoinedContent({
                     slug={slug}
                   />
                 }
+                story={playback.currentTrackStory}
                 trackTitle={playback.currentTrackTitle}
               />
             ) : null}

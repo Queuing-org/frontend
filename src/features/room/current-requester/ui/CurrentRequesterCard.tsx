@@ -10,6 +10,7 @@ type CurrentRequesterCardProps = {
   isOwner: boolean;
   requester: CurrentRequesterProfile;
   skipAction?: ReactNode;
+  story?: string | null;
   trackTitle: string | null;
 };
 
@@ -30,9 +31,11 @@ export default function CurrentRequesterCard({
   isOwner,
   requester,
   skipAction,
+  story,
   trackTitle,
 }: CurrentRequesterCardProps) {
   const durationText = formatDurationMs(durationMs);
+  const storyText = story?.trim() ?? "";
 
   return (
     <div className={styles.card}>
@@ -72,9 +75,16 @@ export default function CurrentRequesterCard({
             </>
           ) : null}
         </div>
-        <div className={styles.descriptionRow}>
-          <span className={styles.story}>“사연이 나올 영역입니다.”</span>
-          <span className={styles.dot}>·</span>
+        <div
+          className={styles.descriptionRow}
+          data-has-story={Boolean(storyText)}
+        >
+          {storyText ? (
+            <>
+              <span className={styles.story}>“{storyText}”</span>
+              <span className={styles.dot}>·</span>
+            </>
+          ) : null}
           <span className={styles.duration}>{durationText}</span>
         </div>
       </div>

@@ -105,7 +105,8 @@
 }
 
 .textInput,
-.readonlyField {
+.readonlyField,
+.selectField {
   width: 100%;
   height: 40px;
   box-sizing: border-box;
@@ -131,6 +132,38 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 16px 0 14px;
+}
+
+.selectControl {
+  position: relative;
+  min-width: 0;
+}
+
+.selectField {
+  appearance: none;
+  padding: 0 40px 0 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.selectField:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.selectField:focus-visible {
+  outline: 0px solid #5b8cff;
+  outline-offset: 2px;
+}
+
+.badgeOptionOwned {
+  color: #3c3c3c;
+  font-weight: var(--fw-bold);
+}
+
+.badgeOptionLocked {
+  color: #b0b0b5;
+  font-weight: var(--fw-regular);
 }
 
 .textInput::placeholder {
@@ -183,16 +216,22 @@
 }
 
 .chevron {
+  position: absolute;
+  top: 50%;
+  right: 16px;
   flex: 0 0 auto;
   width: 10px;
   height: 10px;
   border-right: 2px solid #a8a8ad;
   border-bottom: 2px solid #a8a8ad;
-  transform: rotate(45deg) translateY(-2px);
+  pointer-events: none;
+  transform: translateY(-65%) rotate(45deg);
 }
 
 .successText,
-.errorText {
+.errorText,
+.badgeStatusText,
+.badgeStatusError {
   margin: -8px 0 0 130px;
   font-size: 12px;
   font-weight: var(--fw-medium);
@@ -204,6 +243,14 @@
 }
 
 .errorText {
+  color: #d94b4b;
+}
+
+.badgeStatusText {
+  color: #8d8d8d;
+}
+
+.badgeStatusError {
   color: #d94b4b;
 }
 
@@ -288,12 +335,14 @@
 
   .fieldLabel,
   .textInput,
-  .readonlyField {
+  .readonlyField,
+  .selectField {
     font-size: 13px;
   }
 
   .textInput,
-  .readonlyField {
+  .readonlyField,
+  .selectField {
     height: 38px;
   }
 
@@ -318,7 +367,9 @@
   }
 
   .successText,
-  .errorText {
+  .errorText,
+  .badgeStatusText,
+  .badgeStatusError {
     margin: -14px 0 0;
   }
 }

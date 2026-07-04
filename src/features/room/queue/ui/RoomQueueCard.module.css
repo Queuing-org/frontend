@@ -86,6 +86,10 @@
   margin-top: 4px;
 }
 
+.detailRow[data-has-story="false"] {
+  justify-content: flex-start;
+}
+
 .story {
   min-width: 0;
   overflow: hidden;

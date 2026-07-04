@@ -78,6 +78,7 @@ function RoomQueuePanelContent({
       isRefetching={queuePanel.isRefetching}
       moveErrorMessage={queuePanel.moveErrorMessage}
       myEntries={queuePanel.myEntries}
+      roomPassword={roomPassword}
       roomSlug={roomSlug}
       onChangeTab={queuePanel.setActiveTab}
       onDeleteMyEntry={queuePanel.handleDeleteMyEntry}

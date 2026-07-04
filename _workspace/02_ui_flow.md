@@ -1,33 +1,34 @@
 # UI Flow Notes
 
-## Thumbnail Selection State
+## Create Room
 
-- `useRoomThumbnailSelection` owns file validation, object URL preview creation, preview failure state, and URL revocation.
-- The reusable `RoomThumbnailUploadField` is presentational; it receives selected file state and emits file-change, clear, and preview-error events.
-- Allowed extensions are `jpg`, `jpeg`, `png`, `heic`, `heif`, and `webp`.
-- Maximum file size is 6MB.
-- HEIC/HEIF preview failures show the selected file name instead of a broken preview.
+- `RoomFormModal` owns create form state and payload construction.
+- `CreateSettingsStep` is presentational/controlled for:
+  - max participants
+  - per-track time limit
+  - participation mode and password
+- Max participants is digit-filtered text input and always shows "최대 250명" in red.
+- Per-track time limit is a dropdown with "제한 없음" plus fixed minute options.
+- Empty fields are omitted from the create payload.
+- Invalid max-participant input blocks final submission and shows inline errors.
 
-## Create Room Flow
+## Random Entry
 
-- `useCreateRoom` only creates the room and invalidates the room list.
-- `RoomFormModal` owns post-create orchestration:
-  - create room
-  - if a thumbnail was selected, upload it
-  - navigate to `/room/{slug}` after upload success or when no thumbnail is selected
-- If create succeeds but thumbnail upload fails, the client immediately attempts to delete the created room.
-- The user stays in the create form and receives a red frontend error; no room navigation is offered for thumbnail-upload failure.
-- The final create action is blocked while local thumbnail validation has an error, including files over 6MB.
+- Desktop `HomeSearchControlDock` menu handles `RANDOM`.
+- Home and search desktop controls share the same random entry hook, keeping the shared control behavior consistent.
+- Mobile home quick actions include a random-entry icon button.
+- Pending state disables only the random-entry action and shows loading UI.
+- Random-entry errors render near the home/search control surface.
 
-## Edit Room Flow
+## Badge Settings
 
-- `useEditRoomForm` owns PATCH payload calculation and optional thumbnail upload.
-- It sends room PATCH only when title/tags/password changed.
-- It sends thumbnail PUT only when a new file is selected.
-- The clear action removes only the local file selection; it does not delete the server thumbnail.
-- Existing thumbnail preview comes from `roomMeta.thumbnailUrl`.
+- Profile settings keep the existing "칭호" row in `ProfileSettingsForm`.
+- The "개발중입니다" field is replaced with a dropdown.
+- Acquired badges are sorted above unacquired badges.
+- Acquired options are selectable and styled bold; unacquired options are disabled/gray.
 
-## Image Fallback
+## Room Badge Display
 
-- `getRoomImageSrc(thumbnailUrl, seed)` is the shared choice point.
-- Home stage, mobile home cards, search selected thumbnail, and room background use `thumbnailUrl` first and the default room image second.
+- Room profile panel fetches public profile and public badges when `currentRequester.slug` exists.
+- Slug-less requesters do not render a badge card.
+- Participant list dedupes user slugs and fetches public badges via `useQueries`; participant cards receive computed badge data only.

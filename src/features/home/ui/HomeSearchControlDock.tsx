@@ -24,11 +24,14 @@ type Props = {
   genreOptions: HomeGenreFilterOptionDescriptor[];
   onGoPrevious: () => void;
   onGoNext: () => void;
+  onRandomEntry: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onEnterSelectedRoom: () => void;
+  isRandomEntryPending?: boolean;
+  randomEntryErrorMessage?: string | null;
 };
 
 export default function HomeSearchControlDock({
@@ -40,11 +43,14 @@ export default function HomeSearchControlDock({
   genreOptions,
   onGoPrevious,
   onGoNext,
+  onRandomEntry,
   onSelectFilter,
   onCreateRoom,
   onOpenFollow,
   onOpenSettings,
   onEnterSelectedRoom,
+  isRandomEntryPending = false,
+  randomEntryErrorMessage = null,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
@@ -87,6 +93,11 @@ export default function HomeSearchControlDock({
       return;
     }
 
+    if (menuItem === "RANDOM") {
+      onRandomEntry();
+      return;
+    }
+
     if (menuItem === "FOLLOW") {
       onOpenFollow();
       return;
@@ -104,6 +115,7 @@ export default function HomeSearchControlDock({
           {openPanel === "menu" ? (
             <HomeControlPanelShell
               variant="menu"
+              isRandomEntryPending={isRandomEntryPending}
               onSelectMenuItem={selectMenuItem}
             />
           ) : (
@@ -114,6 +126,11 @@ export default function HomeSearchControlDock({
               onSelectFilter={onSelectFilter}
             />
           )}
+        </div>
+      ) : null}
+      {randomEntryErrorMessage ? (
+        <div className={styles.errorBubble} role="alert">
+          {randomEntryErrorMessage}
         </div>
       ) : null}
       <RadialControl

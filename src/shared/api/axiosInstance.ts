@@ -1,6 +1,10 @@
-import axios from "axios";
+import axios, {
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import { API_BASE_URL } from "./config";
 import { ApiError } from "./api-error";
+import { refreshCsrf } from "./csrf/ensureCsrf";
 
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -10,6 +14,86 @@ export const axiosInstance = axios.create({
   xsrfHeaderName: "X-XSRF-TOKEN",
   withXSRFToken: true,
 });
+
+type CsrfRetryRequestConfig = InternalAxiosRequestConfig & {
+  _csrfRetry?: boolean;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function getNestedString(
+  value: Record<string, unknown>,
+  key: string,
+): string | undefined {
+  const fieldValue = value[key];
+
+  return typeof fieldValue === "string" ? fieldValue : undefined;
+}
+
+function getBackendErrorData(data: unknown) {
+  if (!isRecord(data)) {
+    return {
+      code: undefined,
+      message: typeof data === "string" ? data : undefined,
+      statusCode: undefined,
+    };
+  }
+
+  const error = data.error;
+  const backendError = isRecord(error) ? error : data;
+  const statusCode = backendError.statusCode;
+
+  return {
+    code: getNestedString(backendError, "code"),
+    message:
+      getNestedString(backendError, "message") ??
+      getNestedString(data, "message"),
+    statusCode: typeof statusCode === "number" ? statusCode : undefined,
+  };
+}
+
+function isCsrfRequest(config: InternalAxiosRequestConfig | undefined) {
+  return (config?.url ?? "").includes("/api/auth/csrf");
+}
+
+function shouldRefreshCsrf(error: AxiosError) {
+  const backendError = getBackendErrorData(error.response?.data);
+  const status = backendError.statusCode ?? error.response?.status ?? 0;
+  const errorText = [backendError.code, backendError.message]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (status === 419) {
+    return true;
+  }
+
+  return (
+    (status === 400 || status === 403) &&
+    (errorText.includes("csrf") || errorText.includes("xsrf"))
+  );
+}
+
+axiosInstance.interceptors.response.use(
+  (res) => res,
+  async (err) => {
+    if (!axios.isAxiosError(err) || !shouldRefreshCsrf(err)) {
+      return Promise.reject(err);
+    }
+
+    const config = err.config as CsrfRetryRequestConfig | undefined;
+    if (!config || config._csrfRetry || isCsrfRequest(config)) {
+      return Promise.reject(err);
+    }
+
+    config._csrfRetry = true;
+    await refreshCsrf();
+
+    return axiosInstance(config);
+  },
+);
 
 axiosInstance.interceptors.response.use(
   (res) => res,
