@@ -110,27 +110,31 @@ export default function HomeSearchControlDock({
 
   return (
     <div ref={dockRef} className={styles.dock}>
-      {openPanel ? (
-        <div className={styles.panelAnchor}>
-          {openPanel === "menu" ? (
-            <HomeControlPanelShell
-              variant="menu"
-              isRandomEntryPending={isRandomEntryPending}
-              onSelectMenuItem={selectMenuItem}
-            />
-          ) : (
-            <HomeControlPanelShell
-              variant="filter"
-              activeFilters={activeFilters}
-              genreOptions={genreOptions}
-              onSelectFilter={onSelectFilter}
-            />
-          )}
-        </div>
-      ) : null}
-      {randomEntryErrorMessage ? (
-        <div className={styles.errorBubble} role="alert">
-          {randomEntryErrorMessage}
+      {openPanel || randomEntryErrorMessage ? (
+        <div className={styles.floatStack}>
+          {randomEntryErrorMessage ? (
+            <div className={styles.errorBubble} role="alert">
+              {randomEntryErrorMessage}
+            </div>
+          ) : null}
+          {openPanel ? (
+            <div className={styles.panelAnchor}>
+              {openPanel === "menu" ? (
+                <HomeControlPanelShell
+                  variant="menu"
+                  isRandomEntryPending={isRandomEntryPending}
+                  onSelectMenuItem={selectMenuItem}
+                />
+              ) : (
+                <HomeControlPanelShell
+                  variant="filter"
+                  activeFilters={activeFilters}
+                  genreOptions={genreOptions}
+                  onSelectFilter={onSelectFilter}
+                />
+              )}
+            </div>
+          ) : null}
         </div>
       ) : null}
       <RadialControl

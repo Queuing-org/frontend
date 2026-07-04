@@ -2,6 +2,17 @@ import axios from "axios";
 import { API_BASE_URL } from "../config";
 
 let bootPromise: Promise<void> | null = null;
+let refreshPromise: Promise<void> | null = null;
+
+function requestCsrf(): Promise<void> {
+  return axios
+    .get("/api/auth/csrf", {
+      baseURL: API_BASE_URL,
+      withCredentials: true,
+      headers: { Accept: "application/json" },
+    })
+    .then(() => undefined);
+}
 
 /**
  * 서버가 XSRF-TOKEN 쿠키를 내려주도록 1회 호출
@@ -9,21 +20,27 @@ let bootPromise: Promise<void> | null = null;
  */
 export function ensureCsrf({ force = false } = {}): Promise<void> {
   if (force) {
-    bootPromise = null;
+    if (!refreshPromise) {
+      bootPromise = null;
+      refreshPromise = requestCsrf()
+        .catch((error) => {
+          bootPromise = null;
+          throw error;
+        })
+        .finally(() => {
+          refreshPromise = null;
+        });
+      bootPromise = refreshPromise;
+    }
+
+    return refreshPromise;
   }
 
   if (!bootPromise) {
-    bootPromise = axios
-      .get("/api/auth/csrf", {
-        baseURL: API_BASE_URL,
-        withCredentials: true,
-        headers: { Accept: "application/json" },
-      })
-      .then(() => undefined)
-      .catch((error) => {
-        bootPromise = null;
-        throw error;
-      });
+    bootPromise = requestCsrf().catch((error) => {
+      bootPromise = null;
+      throw error;
+    });
   }
 
   return bootPromise;

@@ -6,17 +6,25 @@ import { API_BASE_URL } from "./config";
 import { ApiError } from "./api-error";
 import { refreshCsrf } from "./csrf/ensureCsrf";
 
+const CSRF_METHODS = new Set(["delete", "patch", "post", "put"]);
+let csrfVersion = 0;
+
+function shouldAttachCsrfHeader(config: InternalAxiosRequestConfig) {
+  return CSRF_METHODS.has((config.method ?? "get").toLowerCase());
+}
+
 export const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { Accept: "application/json" },
   xsrfCookieName: "XSRF-TOKEN",
   xsrfHeaderName: "X-XSRF-TOKEN",
-  withXSRFToken: true,
+  withXSRFToken: shouldAttachCsrfHeader,
 });
 
 type CsrfRetryRequestConfig = InternalAxiosRequestConfig & {
   _csrfRetry?: boolean;
+  _csrfVersion?: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -71,10 +79,18 @@ function shouldRefreshCsrf(error: AxiosError) {
   }
 
   return (
-    (status === 400 || status === 403) &&
+    status >= 400 &&
+    status < 500 &&
     (errorText.includes("csrf") || errorText.includes("xsrf"))
   );
 }
+
+axiosInstance.interceptors.request.use((config) => {
+  const csrfConfig = config as CsrfRetryRequestConfig;
+  csrfConfig._csrfVersion = csrfVersion;
+
+  return config;
+});
 
 axiosInstance.interceptors.response.use(
   (res) => res,
@@ -89,7 +105,10 @@ axiosInstance.interceptors.response.use(
     }
 
     config._csrfRetry = true;
-    await refreshCsrf();
+    if ((config._csrfVersion ?? csrfVersion) >= csrfVersion) {
+      await refreshCsrf();
+      csrfVersion += 1;
+    }
 
     return axiosInstance(config);
   },
