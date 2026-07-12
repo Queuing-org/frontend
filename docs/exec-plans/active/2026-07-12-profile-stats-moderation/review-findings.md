@@ -26,6 +26,7 @@
 - 새로고침 후 서버가 반환하는 `차단된 사용자의 채팅입니다` 안내 메시지도 숨김.
 - 설정/방 프로필에 `이용 시간` 하드코딩 UI 복구.
 - 음악력 추천/비추천 컨트롤을 프로필 패널 우측 하단으로 이동.
+- Vercel의 `ERR_PNPM_OUTDATED_LOCKFILE` 실패 해결.
 
 ## 반영 결과
 
@@ -33,5 +34,7 @@
 - Inline 8은 이용 시간 포함 기존 3항목 flex UI 복구로 원인이 제거됐다.
 - 차단 성공 콜백이 현재 방의 차단 slug 집합을 갱신하고 기존/실시간 메시지에 동일 필터를 적용한다.
 - 서버의 차단 안내 센티널은 `shouldDisplayChatMessage`에서 제거한다.
+- 테스트 의존성 5개와 전이 의존성을 `pnpm-lock.yaml`에 동기화하고 frozen install을 검증했다.
 - `npm run lint`, `npm run test`(12 files/36 tests), `npm run build`가 통과했다.
+- `pnpm install --frozen-lockfile`, `pnpm run lint`, `pnpm run test`(12 files/36 tests)가 통과했다.
 - QA 판정: `pass`. 로컬 브라우저 시각 검증은 브라우저 연결 권한 문제로 실행하지 못했다.

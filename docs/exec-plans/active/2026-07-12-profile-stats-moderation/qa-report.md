@@ -42,3 +42,12 @@
 - `npm run build`: pass
 - 최종 판정: `pass`
 - 시각 브라우저 검증은 로컬 브라우저 연결 권한 문제로 수행하지 못했다.
+
+## Vercel pnpm lockfile 후속 QA
+
+- 원인: 테스트 의존성 5개가 `package.json`과 `package-lock.json`에만 반영되고 `pnpm-lock.yaml`에는 누락됐다.
+- `pnpm install --lockfile-only`: pass
+- `pnpm install --frozen-lockfile`: pass
+- `pnpm run lint`: pass
+- `pnpm run test`: pass (12 files, 36 tests)
+- 코드 변경은 없으며 기존 `npm run build` 통과 결과는 유효하다. 외부 Vercel 빌드는 push 후 check로 재검증한다.
