@@ -6,7 +6,7 @@
 - branch: `feat/profile-stats-moderation-modals`
 - latest commit: 현재 HEAD의 `feat: 채팅 메시지 관리 메뉴 연결`
 - Draft PR: https://github.com/Queuing-org/frontend/pull/26
-- delivery status: `ci-pending`
+- delivery status: `ci-pending` (GitHub Actions pass, CodeRabbit 재검토 pending, Vercel external failure)
 
 ## 해소된 차단 요인
 
@@ -14,9 +14,9 @@ GitHub CLI 재인증 후 실제 Keychain 환경에서 `aryu1217` 계정과 `repo
 
 ## 다음 작업
 
-1. GitHub Actions 결과를 확인한다.
-2. 실패한 check 또는 unresolved review thread가 있으면 `queuing-pr-review-cycle`로 재개한다.
-3. CI와 리뷰가 통과하면 ready 전환 여부를 사용자에게 확인한다.
+1. CodeRabbit 재검토 결과를 확인한다.
+2. Vercel 외부 배포 실패를 별도 처리할지 사용자에게 확인한다.
+3. 필수 CI와 리뷰가 통과하면 ready 전환 여부를 사용자에게 확인한다.
 
 ## 검증 증거
 
