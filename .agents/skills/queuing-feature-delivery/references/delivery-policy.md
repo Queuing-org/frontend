@@ -43,6 +43,18 @@ Allowed status values:
 - `completed`
 - `blocked`
 
+## Commit Policy
+
+Plan feature-sized commit slices before implementation and record the intended order in the active run.
+
+- Use Conventional Commit messages in the form `<type>(scope): 한국어 요약`. Omit `(scope)` when it would not add useful context.
+- Allowed types are `feat`, `fix`, `refactor`, `test`, `docs`, and `chore`.
+- Keep code and the tests that prove that behavior in the same feature commit.
+- Do not use vague summaries such as `WIP`, `수정`, or `작업`.
+- Run the relevant targeted verification before every commit.
+- Before publishing a code-change PR, run `npm run lint`, `npm run test`, and `npm run build`.
+- Summarize the feature commits and verification results in the PR body.
+
 Update the state after each phase boundary. Do not mark `ready` unless local QA passed and no known blocking CI or review issue remains.
 
 ## Skill Routing
