@@ -9,4 +9,4 @@
 - local_qa: pending
 - ci: pending
 - review_threads: not-applicable
-- next_action: 사용자 차단 API와 모달 구현
+- next_action: 채팅 메시지 신고 API와 모달 구현
