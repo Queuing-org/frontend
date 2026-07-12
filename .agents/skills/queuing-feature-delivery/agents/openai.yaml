@@ -1,0 +1,4 @@
+interface:
+  display_name: "Queuing Feature Delivery"
+  short_description: "기능 브랜치부터 Draft PR까지 안전하게 전달"
+  default_prompt: "Use $queuing-feature-delivery to implement this feature on a scoped branch and open a validated draft PR."

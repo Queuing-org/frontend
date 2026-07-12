@@ -5,6 +5,7 @@
 ## Canonical Files
 
 - `team-spec.md`: 역할 구조, 라우팅, 인수인계, 실패 정책
+- `delivery-workflow.md`: 기능 브랜치부터 Draft PR, CI, 리뷰 수정까지의 전달 상태 머신
 - `context-ledger.md`: 세션이 바뀌어도 유지해야 하는 프로젝트/하네스 맥락
 - `incidents/`: 반복되는 실패와 재발 방지 규칙
 - `templates/`: `docs/exec-plans/active/{run}/`와 incident 작성용 템플릿

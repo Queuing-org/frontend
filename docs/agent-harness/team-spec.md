@@ -39,16 +39,20 @@ Bootstrap rule:
 
 | Role | Responsibility | Skill | Writes |
 | --- | --- | --- | --- |
+| Delivery Orchestrator | Own the feature branch, delivery state, specialist routing, QA gate, commit, push, and draft PR. | `.agents/skills/queuing-feature-delivery/SKILL.md` | `docs/exec-plans/active/{run}/delivery-state.md`, PR |
 | Orchestrator | Classify the request, choose specialists, preserve handoffs, and own final integration. | `.agents/skills/queuing-orchestrator/SKILL.md` | `docs/exec-plans/active/{run}/request-summary.md`, `docs/exec-plans/active/{run}/change-summary.md` |
 | API Boundary Specialist | Align endpoint docs, client payloads, response types, hooks, and cache invalidation. | `.agents/skills/queuing-api-boundary/SKILL.md` | `docs/exec-plans/active/{run}/api-contract.md` |
 | UI Flow Specialist | Own component state, CSS modules, interaction details, shared controls, and modal behavior. | `.agents/skills/queuing-ui-flow/SKILL.md` | `docs/exec-plans/active/{run}/ui-flow.md` |
 | QA Reviewer | Compare both sides of changed boundaries and classify pass/fix/redo. | `.agents/skills/queuing-qa-reviewer/SKILL.md` | `docs/exec-plans/active/{run}/qa-report.md` |
+| PR Review Coordinator | Inspect CI and unresolved review threads, route fixes, rerun QA, and report readiness. | `.agents/skills/queuing-pr-review-cycle/SKILL.md` | `docs/exec-plans/active/{run}/review-findings.md`, `delivery-state.md` |
 | Incident Curator | Promote troubleshooting lessons, performance improvements, and reusable fixes into durable analysis records and skill updates. | `.agents/skills/queuing-incident-curator/SKILL.md` | `docs/agent-harness/incidents/YYYY-MM-DD-*.md` |
 
 ## Request Routing
 
 | Request type | Use |
 | --- | --- |
+| Feature, fix, or refactor intended for branch-to-PR delivery | `queuing-feature-delivery`; it selects the implementation specialists and QA. |
+| Existing PR with failing CI or review feedback | `queuing-pr-review-cycle`; it resumes the linked active run. |
 | Simple one-file UI or CSS tweak | Direct implementation; no harness artifact required. |
 | Shared home/search controls, modal behavior, drag/drop, responsive UI | `queuing-ui-flow`; QA if behavior is shared or risky. |
 | API client, hook, payload, type, auth/password header, cache invalidation | `queuing-api-boundary`; QA required. |
@@ -100,12 +104,14 @@ Use a run-scoped directory only when the task is large enough that intermediate 
 ```text
 docs/exec-plans/active/YYYY-MM-DD-short-slug/
 ├── plan.md
+├── delivery-state.md
 ├── request-summary.md
 ├── handoff.md
 ├── api-contract.md
 ├── ui-flow.md
 ├── implementation-notes.md
 ├── qa-report.md
+├── review-findings.md
 └── change-summary.md
 ```
 
