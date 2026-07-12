@@ -1,0 +1,127 @@
+.overlay {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(22, 22, 22, 0.48);
+}
+
+.modal {
+  width: min(100%, 460px);
+  box-sizing: border-box;
+  padding: 28px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.2);
+  color: #3c3c3c;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: var(--fw-bold);
+}
+
+.description {
+  margin: 10px 0 0;
+  color: #747474;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.reasons {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.reasonItem {
+  display: flex;
+  min-height: 42px;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.reasonItem:focus-within {
+  border-color: #2f86ed;
+  outline: 1px solid #2f86ed;
+}
+
+.reasonItem input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2f86ed;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.error {
+  margin: 12px 0 0;
+  color: #c73939;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.primaryButton,
+.secondaryButton {
+  min-width: 88px;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 0;
+  background: #d94b4b;
+  color: #ffffff;
+}
+
+.secondaryButton {
+  border: 1px solid #d9d9d9;
+  background: #ffffff;
+  color: #3c3c3c;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: 2px solid #2f86ed;
+  outline-offset: 2px;
+}
