@@ -38,7 +38,7 @@ Summarize the latest user request and what they actually care about.
 ## Resume Steps
 
 1. Read `AGENTS.md`.
-2. Read `docs/harness/queuing/context-ledger.md`.
+2. Read `docs/agent-harness/context-ledger.md`.
 3. Read this handoff.
 4. Check `git status --short`.
 5. Continue from the first unfinished item below.

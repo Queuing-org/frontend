@@ -38,10 +38,10 @@ Harness generates only the artifacts needed to make the workflow reusable:
 - `.agents/skills/{domain}-orchestrator/SKILL.md` for reusable top-level orchestration
 - `.agents/skills/{specialist}/SKILL.md` for reusable specialist behavior
 - `.agents/skills/{specialist}/references/*` for progressive-disclosure details
-- `docs/harness/{domain}/team-spec.md` for role topology, handoffs, and failure policy
-- `docs/harness/{domain}/roles/{role}.md` only when a role needs a durable brief but not a full skill
-- `_workspace/{phase}_{role}_{artifact}.md` for intermediate artifacts and review evidence
-- `_workspace/experiments/{run}/results.tsv` when the harness includes an autonomous experiment loop
+- `docs/agent-harness/{domain}/team-spec.md` for role topology, handoffs, and failure policy
+- `docs/agent-harness/{domain}/roles/{role}.md` only when a role needs a durable brief but not a full skill
+- `docs/exec-plans/active/{run}/{phase}_{role}_{artifact}.md` for intermediate artifacts and review evidence
+- `docs/exec-plans/active/{run}/experiments/results.tsv` when the harness includes an autonomous experiment loop
 
 Default to specialist skills plus a markdown team spec. Add extra role briefs only when the role is stable enough to justify its own file.
 
@@ -95,7 +95,7 @@ Output:
 2. Decide whether the work stays single-agent, needs a sequential orchestrator, or benefits from bounded parallel workers.
 3. Select one of the six patterns from `references/agent-design-patterns.md`.
 4. For autonomous experiment loops, choose the matching workflow profile from `references/autonomous-experimentation.md` and decide whether it composes with Pipeline, Supervisor, or Producer-Reviewer.
-5. Define how artifacts move between phases through `_workspace/` files and final output paths.
+5. Define how artifacts move between phases through `docs/exec-plans/active/{run}/` files and final output paths.
 6. Decide which recovery or model-specific logic must stay removable as the harness evolves.
 
 Output:
@@ -110,7 +110,7 @@ Output:
 1. Define each stable role as one of:
    - reusable specialist skill
    - reusable orchestrator skill
-   - role-spec markdown under `docs/harness/{domain}/roles/`
+   - role-spec markdown under `docs/agent-harness/{domain}/roles/`
 2. Write explicit responsibilities, inputs, outputs, review edges, and failure policy.
 3. Keep role boundaries aligned with specialization, parallelism, context pressure, and reuse.
 4. Avoid creating separate files for roles that are too narrow or single-use.
@@ -140,13 +140,13 @@ Output:
 1. Define the reusable end-to-end workflow in an orchestrator skill or team spec.
 2. Specify phase order, handoff files, ownership, fallback rules, and which recovery logic is stable versus removable.
 3. Reserve worker delegation for clearly parallel slices such as broad research, multi-surface review, or independent generation branches.
-4. For autonomous experiment loops, preserve the run ledger, baseline artifact, and keep/discard policy under `_workspace/experiments/{run}/`.
-5. Preserve intermediate artifacts in `_workspace/` for debugging and auditability.
+4. For autonomous experiment loops, preserve the run ledger, baseline artifact, and keep/discard policy under `docs/exec-plans/active/{run}/experiments/`.
+5. Preserve intermediate artifacts in `docs/exec-plans/active/{run}/` for debugging and auditability.
 
 Output:
 
 - orchestrator skill or team spec
-- `_workspace/` contract
+- `docs/exec-plans/active/{run}/` contract
 - failure and retry policy
 
 ### Phase 6: Validation and Testing
@@ -169,7 +169,7 @@ Use the smallest pattern that preserves quality and clarity.
 
 | Pattern | Best for | Default portable style |
 | --- | --- | --- |
-| Pipeline | sequential dependent work | sequential orchestrator skill plus `_workspace/` handoffs |
+| Pipeline | sequential dependent work | sequential orchestrator skill plus `docs/exec-plans/active/{run}/` handoffs |
 | Fan-out/Fan-in | parallel independent work with later synthesis | orchestrator skill plus bounded parallel workers and a final synthesis step |
 | Expert Pool | selective routing to a subset of specialists | routing section in team spec plus reusable specialist skills |
 | Producer-Reviewer | generation followed by explicit quality review | specialist producer skill, reviewer skill, and bounded revision loop |
@@ -209,7 +209,7 @@ Every generated harness should meet these checks:
 - reviewer or QA steps are explicit when quality risk is high
 - `When to use` and `Required inputs` sections are concrete enough to prevent overlap
 - generated skills start with YAML frontmatter that includes at least `name` and `description`
-- `_workspace/` handoffs are deterministic and preserved for inspection
+- `docs/exec-plans/active/{run}/` handoffs are deterministic and preserved for inspection
 - any repo `AGENTS.md` stays short, repo-wide, and pointer-heavy
 - model-specific recovery logic is isolated enough to remove without rewriting the whole harness
 - no platform-specific runtime assumptions are required unless the repository already depends on them

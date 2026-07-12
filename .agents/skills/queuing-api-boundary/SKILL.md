@@ -9,7 +9,7 @@ description: Verify and implement queuing-org API clients, hooks, payloads, cach
 
 Use this skill when a task touches:
 
-- `src/entities/*/api/*`
+- `src/features/*/api/*` and domain-specific API clients nested under `src/features`
 - React Query hooks or mutation invalidation
 - request payloads, response typing, headers, or `ApiResponse<T>` unwrapping
 - room password, slug normalization, playlist queue, room update, friend, auth, user, or search endpoints
@@ -27,7 +27,7 @@ Do not use it for purely visual CSS changes with no data flow.
 ## Workflow
 
 1. Read the endpoint client, hook, type definitions, and consuming component together.
-2. Compare API docs or observed response shape to `src/entities/*/model/types.ts`.
+2. Compare API docs or observed response shape to the feature's co-located types or `model/types.ts`.
 3. Check shared conventions:
    - use `axiosInstance`
    - unwrap `ApiResponse<T>` consistently
@@ -37,7 +37,7 @@ Do not use it for purely visual CSS changes with no data flow.
 4. For mutations, list every query key that must be invalidated or optimistically updated.
 5. For PATCH requests, send only fields with a clear user intent. Do not send UI-only fields or unknown existing secrets.
 6. For troubleshooting, separate confirmed facts from hypotheses. A 500 is server failure behavior; client payload ambiguity should be documented as a defensive frontend fix, not overstated as the root cause unless reproduced.
-7. Write `_workspace/01_api_contract.md` for large or risky changes.
+7. Write `docs/exec-plans/active/{run}/api-contract.md` for large or risky changes.
 
 ## Project-Specific Rules
 
@@ -54,7 +54,7 @@ Do not use it for purely visual CSS changes with no data flow.
 
 - updated API client, hook, types, or consuming component
 - query invalidation notes
-- `_workspace/01_api_contract.md` for complex work
+- `docs/exec-plans/active/{run}/api-contract.md` for complex work
 - incident candidate when a reusable API failure is discovered
 
 ## Validation

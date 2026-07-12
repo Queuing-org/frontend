@@ -21,11 +21,11 @@ from files.
 - dirty files observed after this task:
   - harness/context files touched by this task: `AGENTS.md`,
     `.agents/skills/queuing-orchestrator/SKILL.md`,
-    `docs/harness/queuing/README.md`,
-    `docs/harness/queuing/team-spec.md`,
-    `docs/harness/queuing/context-ledger.md`,
-    `docs/harness/queuing/templates/session-handoff.md`,
-    `_workspace/session-handoff.md`
+    `docs/agent-harness/README.md`,
+    `docs/agent-harness/team-spec.md`,
+    `docs/agent-harness/context-ledger.md`,
+    `docs/agent-harness/templates/session-handoff.md`,
+    `docs/exec-plans/completed/2026-06-18-agent-context-harness/handoff.md`
   - unrelated existing/user changes observed: `src/features/auth/login-with-google/ui/LoginModal.module.css`,
     `src/features/auth/login-with-google/ui/LoginModal.tsx`,
     `src/features/room/api/websocket/publishJoinRequest.ts`,
@@ -47,20 +47,20 @@ from files.
 
 ## Decisions Made
 
-- decision: add a durable context ledger under `docs/harness/queuing/`
+- decision: add a durable context ledger under `docs/agent-harness/`
 - rationale: `AGENTS.md` should stay short, while cross-session memory needs a
   maintained project artifact that future agents can read after chat history is
   gone
 - rejected alternatives: storing full chat logs; putting long workflow detail in
-  `AGENTS.md`; trusting `_workspace/*` alone as durable memory
+  `AGENTS.md`; trusting singleton task files alone as durable memory
 
 ## Files Touched
 
-- `docs/harness/queuing/context-ledger.md`: durable context memory and read order
-- `docs/harness/queuing/templates/session-handoff.md`: reusable handoff template
-- `_workspace/session-handoff.md`: current task handoff
-- `docs/harness/queuing/team-spec.md`: context persistence policy
-- `docs/harness/queuing/README.md`: canonical file list and resume read order
+- `docs/agent-harness/context-ledger.md`: durable context memory and read order
+- `docs/agent-harness/templates/session-handoff.md`: reusable handoff template
+- `docs/exec-plans/completed/2026-06-18-agent-context-harness/handoff.md`: archived task handoff
+- `docs/agent-harness/team-spec.md`: context persistence policy
+- `docs/agent-harness/README.md`: canonical file list and resume read order
 - `.agents/skills/queuing-orchestrator/SKILL.md`: resume workflow and handoff contract
 - `AGENTS.md`: short bootstrap pointer
 - `docs/portfolio-notes/2026-06-18-ai-context-harness-engineering.md`: portfolio
@@ -88,7 +88,7 @@ from files.
 ## Resume Steps
 
 1. Read `AGENTS.md`.
-2. Read `docs/harness/queuing/context-ledger.md`.
+2. Read `docs/agent-harness/context-ledger.md`.
 3. Read this handoff.
 4. Check `git status --short`.
 5. If continuing this harness work, inspect the diff and decide whether a

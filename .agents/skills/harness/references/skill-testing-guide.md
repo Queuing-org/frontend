@@ -61,7 +61,7 @@ The point is not to prove that the skill always wins. The point is to learn whet
 ### Workspace Layout
 
 ```text
-_workspace/
+docs/exec-plans/active/{run}/
 └── iteration-1/
     └── eval-0/
         ├── with_skill/

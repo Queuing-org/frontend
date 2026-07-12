@@ -1,6 +1,6 @@
 # Queuing Context Ledger
 
-Last refreshed: 2026-06-18
+Last refreshed: 2026-07-12
 
 ## Purpose
 
@@ -17,11 +17,11 @@ state.
 For resumed, complex, or boundary-crossing work, read in this order:
 
 1. `AGENTS.md`
-2. `docs/harness/queuing/context-ledger.md`
-3. `_workspace/session-handoff.md` when it exists
-4. `docs/harness/queuing/team-spec.md`
+2. `docs/agent-harness/context-ledger.md`
+3. The relevant run under `docs/exec-plans/active/` and its `handoff.md` when present
+4. `docs/agent-harness/team-spec.md`
 5. Relevant skills under `.agents/skills/`
-6. Relevant incidents under `docs/harness/queuing/incidents/`
+6. Relevant incidents under `docs/agent-harness/incidents/`
 
 For simple one-file fixes, `AGENTS.md` plus direct code inspection is enough.
 
@@ -41,9 +41,9 @@ The repo uses a lightweight harness, not a heavyweight agent framework:
 
 - `AGENTS.md` gives every session the stable repo-wide rules.
 - `.agents/skills/*` defines reusable specialist behavior.
-- `docs/harness/queuing/team-spec.md` defines routing, handoffs, and failure policy.
-- `_workspace/*` stores task-level handoff artifacts.
-- `docs/harness/queuing/incidents/*` stores confirmed reusable lessons.
+- `docs/agent-harness/team-spec.md` defines routing, handoffs, and failure policy.
+- `docs/exec-plans/active/{run}/*` stores task-level handoff artifacts; completed runs move to `docs/exec-plans/completed/`.
+- `docs/agent-harness/incidents/*` stores confirmed reusable lessons.
 
 The current architecture pattern is `Pipeline + Producer-Reviewer`:
 
@@ -57,11 +57,11 @@ The current architecture pattern is `Pipeline + Producer-Reviewer`:
 
 - Do not rely on chat history for project memory.
 - Put durable rules in this ledger, the team spec, a skill, or an incident.
-- Put task-local state in `_workspace/session-handoff.md`.
+- Put task-local state in the relevant active run's `handoff.md`.
 - Update this ledger only when the information should survive many sessions.
 - Prefer incident records for detailed debugging evidence; keep this ledger short and pointer-heavy.
 - If a change creates a new reusable rule, update the relevant skill in the same change.
-- If a session ends with unresolved work, update `_workspace/session-handoff.md` before stopping.
+- If a session ends with unresolved work, update the relevant active run's `handoff.md` before stopping.
 
 ## What Belongs Here
 
@@ -98,4 +98,4 @@ The strongest AI-use story is not "AI wrote the code." It is:
 > specialists, preserve failure evidence, and keep human verification explicit.
 
 That story should be backed by this ledger, `AGENTS.md`, `.agents/skills/*`,
-`_workspace/*`, and the incident records.
+`docs/exec-plans/active/{run}/*`, and the incident records.

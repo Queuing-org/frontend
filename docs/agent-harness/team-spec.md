@@ -22,16 +22,16 @@ instead of assuming a future session can remember prior chat.
 | Artifact | Purpose | Update When |
 | --- | --- | --- |
 | `AGENTS.md` | short repo-wide bootstrap rules loaded every session | a rule matters on most tasks |
-| `docs/harness/queuing/context-ledger.md` | durable cross-session memory and read order | a decision should survive many sessions |
-| `_workspace/session-handoff.md` | current task state for session resume | a session ends with unresolved or easily-forgotten context |
-| `docs/harness/queuing/templates/session-handoff.md` | reusable handoff format | the handoff shape changes |
-| `docs/harness/queuing/incidents/*.md` | detailed reusable failure evidence | troubleshooting changes future behavior |
+| `docs/agent-harness/context-ledger.md` | durable cross-session memory and read order | a decision should survive many sessions |
+| `docs/exec-plans/active/{run}/handoff.md` | current task state for session resume | a session ends with unresolved or easily-forgotten context |
+| `docs/agent-harness/templates/session-handoff.md` | reusable handoff format | the handoff shape changes |
+| `docs/agent-harness/incidents/*.md` | detailed reusable failure evidence | troubleshooting changes future behavior |
 
 Bootstrap rule:
 
 - For resumed, complex, or boundary-crossing work, read `AGENTS.md`,
-  `docs/harness/queuing/context-ledger.md`, and `_workspace/session-handoff.md`
-  before planning edits.
+  `docs/agent-harness/context-ledger.md`, and the relevant run under
+  `docs/exec-plans/active/` before planning edits.
 - For simple one-file fixes, skip the full context layer and inspect the code
   directly.
 
@@ -39,11 +39,11 @@ Bootstrap rule:
 
 | Role | Responsibility | Skill | Writes |
 | --- | --- | --- | --- |
-| Orchestrator | Classify the request, choose specialists, preserve handoffs, and own final integration. | `.agents/skills/queuing-orchestrator/SKILL.md` | `_workspace/00_input/request-summary.md`, `_workspace/final/change-summary.md` |
-| API Boundary Specialist | Align endpoint docs, client payloads, response types, hooks, and cache invalidation. | `.agents/skills/queuing-api-boundary/SKILL.md` | `_workspace/01_api_contract.md` |
-| UI Flow Specialist | Own component state, CSS modules, interaction details, shared controls, and modal behavior. | `.agents/skills/queuing-ui-flow/SKILL.md` | `_workspace/02_ui_flow.md` |
-| QA Reviewer | Compare both sides of changed boundaries and classify pass/fix/redo. | `.agents/skills/queuing-qa-reviewer/SKILL.md` | `_workspace/04_qa_report.md` |
-| Incident Curator | Promote troubleshooting lessons, performance improvements, and reusable fixes into durable analysis records and skill updates. | `.agents/skills/queuing-incident-curator/SKILL.md` | `docs/harness/queuing/incidents/YYYY-MM-DD-*.md` |
+| Orchestrator | Classify the request, choose specialists, preserve handoffs, and own final integration. | `.agents/skills/queuing-orchestrator/SKILL.md` | `docs/exec-plans/active/{run}/request-summary.md`, `docs/exec-plans/active/{run}/change-summary.md` |
+| API Boundary Specialist | Align endpoint docs, client payloads, response types, hooks, and cache invalidation. | `.agents/skills/queuing-api-boundary/SKILL.md` | `docs/exec-plans/active/{run}/api-contract.md` |
+| UI Flow Specialist | Own component state, CSS modules, interaction details, shared controls, and modal behavior. | `.agents/skills/queuing-ui-flow/SKILL.md` | `docs/exec-plans/active/{run}/ui-flow.md` |
+| QA Reviewer | Compare both sides of changed boundaries and classify pass/fix/redo. | `.agents/skills/queuing-qa-reviewer/SKILL.md` | `docs/exec-plans/active/{run}/qa-report.md` |
+| Incident Curator | Promote troubleshooting lessons, performance improvements, and reusable fixes into durable analysis records and skill updates. | `.agents/skills/queuing-incident-curator/SKILL.md` | `docs/agent-harness/incidents/YYYY-MM-DD-*.md` |
 
 ## Request Routing
 
@@ -54,7 +54,7 @@ Bootstrap rule:
 | API client, hook, payload, type, auth/password header, cache invalidation | `queuing-api-boundary`; QA required. |
 | Room create/update/delete/join or playlist add/move/delete/playback | `queuing-api-boundary` + `queuing-ui-flow`; QA required. |
 | Reproducing a server/client bug, unclear 500, performance improvement, or reusable fix | `queuing-api-boundary` or `queuing-ui-flow` + `queuing-incident-curator`; QA when code changes. |
-| Reusable workflow, large feature, or multi-surface refactor | `queuing-orchestrator` with optional `_workspace/` artifacts. |
+| Reusable workflow, large feature, or multi-surface refactor | `queuing-orchestrator` with optional `docs/exec-plans/active/{run}/` artifacts. |
 
 ## Phase Order
 
@@ -62,50 +62,51 @@ Bootstrap rule:
 
 - Inputs: newest user request, screenshots/logs/API docs, current repo state.
 - Actions: identify target workflow, affected files, and risk level.
-- Output: `_workspace/00_input/request-summary.md` for complex work.
+- Output: `docs/exec-plans/active/{run}/request-summary.md` for complex work.
 - Completion: the scope is narrow enough to implement without guessing.
 
 ### Phase 2: Boundary Design
 
 - Inputs: request snapshot and relevant source files.
 - Actions: inspect API/client/UI/state boundaries before editing.
-- Outputs: `_workspace/01_api_contract.md` and/or `_workspace/02_ui_flow.md` when useful.
+- Outputs: `docs/exec-plans/active/{run}/api-contract.md` and/or `docs/exec-plans/active/{run}/ui-flow.md` when useful.
 - Completion: the payload, state owner, cache keys, and interaction states are explicit.
 
 ### Phase 3: Implementation
 
 - Inputs: boundary design and current code.
 - Actions: make scoped edits using existing project patterns.
-- Output: `_workspace/03_implementation_notes.md` for large work.
+- Output: `docs/exec-plans/active/{run}/implementation-notes.md` for large work.
 - Completion: code or docs match the latest request.
 
 ### Phase 4: QA Review
 
 - Inputs: original request, diff, and boundary artifacts.
 - Actions: compare producer/consumer sides and run verification.
-- Output: `_workspace/04_qa_report.md` for risky work.
+- Output: `docs/exec-plans/active/{run}/qa-report.md` for risky work.
 - Completion: `pass`, `fix`, or `redo` status is explicit.
 
 ### Phase 5: Analysis Record Promotion
 
 - Inputs: troubleshooting evidence, performance findings, before/after code, alternatives, and QA findings.
 - Actions: decide whether the lesson belongs in durable harness docs.
-- Output: `docs/harness/queuing/incidents/YYYY-MM-DD-*.md` and optional skill updates.
+- Output: `docs/agent-harness/incidents/YYYY-MM-DD-*.md` and optional skill updates.
 - Completion: recurring lessons have before/after code, problem analysis, considered alternatives, chosen rationale, result, and a reusable rule.
 
-## `_workspace/` Contract
+## Active Run Contract
 
-Use `_workspace/` only when the task is large enough that intermediate evidence matters. Names must be deterministic:
+Use a run-scoped directory only when the task is large enough that intermediate evidence matters. Follow `docs/exec-plans/README.md` and keep names deterministic:
 
 ```text
-_workspace/
-├── session-handoff.md
-├── 00_input/request-summary.md
-├── 01_api_contract.md
-├── 02_ui_flow.md
-├── 03_implementation_notes.md
-├── 04_qa_report.md
-└── final/change-summary.md
+docs/exec-plans/active/YYYY-MM-DD-short-slug/
+├── plan.md
+├── request-summary.md
+├── handoff.md
+├── api-contract.md
+├── ui-flow.md
+├── implementation-notes.md
+├── qa-report.md
+└── change-summary.md
 ```
 
 Small tasks can skip files but must still preserve the reasoning in the final response.

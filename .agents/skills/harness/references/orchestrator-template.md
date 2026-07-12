@@ -6,7 +6,7 @@ Use this template when a workflow is reusable enough to deserve a top-level orch
 
 - Define the goal before defining the roles.
 - Name every phase output and handoff file.
-- Prefer markdown specs and `_workspace/` artifacts over implied coordination.
+- Prefer markdown specs and `docs/exec-plans/active/{run}/` artifacts over implied coordination.
 - Add worker-delegation notes only where parallelism is clearly bounded.
 - Keep failure policy explicit. A reusable orchestrator should say what happens when a phase fails, stalls, or returns conflicting results.
 - Keep model-specific retries, shortcuts, and recovery heuristics in a clearly removable section instead of weaving them through the whole spec.
@@ -30,8 +30,8 @@ Describe the end-to-end outcome and the boundary of responsibility.
 ## Roles
 | Role | Responsibility | Reusable skill | Writes |
 | --- | --- | --- | --- |
-| {role-1} | {what this role owns} | `.agents/skills/{role-1}/SKILL.md` or `n/a` | `_workspace/01_{role-1}_{artifact}.md` |
-| {role-2} | {what this role owns} | `.agents/skills/{role-2}/SKILL.md` or `n/a` | `_workspace/02_{role-2}_{artifact}.md` |
+| {role-1} | {what this role owns} | `.agents/skills/{role-1}/SKILL.md` or `n/a` | `docs/exec-plans/active/{run}/01_{role-1}_{artifact}.md` |
+| {role-2} | {what this role owns} | `.agents/skills/{role-2}/SKILL.md` or `n/a` | `docs/exec-plans/active/{run}/02_{role-2}_{artifact}.md` |
 
 ## Phase Order
 
@@ -56,7 +56,7 @@ Describe the end-to-end outcome and the boundary of responsibility.
 ## Handoff Files
 | From | To | File | Purpose |
 | --- | --- | --- | --- |
-| {role-1} | {role-2} | `_workspace/01_{role-1}_{artifact}.md` | {why this handoff exists} |
+| {role-1} | {role-2} | `docs/exec-plans/active/{run}/01_{role-1}_{artifact}.md` | {why this handoff exists} |
 
 ## Failure Policy
 - retry policy:
@@ -92,10 +92,10 @@ Describe the end-to-end outcome and the boundary of responsibility.
 - expected reporting:
 ```
 
-## Recommended `_workspace/` Layout
+## Recommended `docs/exec-plans/active/{run}/` Layout
 
 ```text
-_workspace/
+docs/exec-plans/active/{run}/
 ├── 00_input/
 │   └── request-summary.md
 ├── 01_{role}_{artifact}.md

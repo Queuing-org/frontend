@@ -34,7 +34,7 @@ Do not use it for small bugs that are fully fixed and unlikely to change future 
 ## Workflow
 
 1. Preserve raw notes in `docs/portfolio-notes/` when they are portfolio draft notes, scratch investigation notes, performance-improvement notes, or personal analysis.
-2. Promote a lesson to `docs/harness/queuing/incidents/YYYY-MM-DD-short-slug.md` only when it should affect future work.
+2. Promote a lesson to `docs/agent-harness/incidents/YYYY-MM-DD-short-slug.md` only when it should affect future work.
 3. Separate sections:
    - problem
    - previous behavior
@@ -57,7 +57,7 @@ Do not use it for small bugs that are fully fixed and unlikely to change future 
 
 ## Outputs
 
-- durable incident or improvement analysis under `docs/harness/queuing/incidents/`
+- durable incident or improvement analysis under `docs/agent-harness/incidents/`
 - optional updates to `.agents/skills/*/SKILL.md`
 - optional team spec update when role boundaries or handoffs change
 

@@ -23,8 +23,8 @@ AGENTS.md
 .agents/skills/media-research/SKILL.md
 .agents/skills/community-research/SKILL.md
 .agents/skills/background-research/SKILL.md
-docs/harness/deep-research/team-spec.md
-_workspace/
+docs/agent-harness/deep-research/team-spec.md
+docs/exec-plans/active/{run}/
 ├── 00_input/request-summary.md
 ├── 01_official_findings.md
 ├── 01_media_findings.md
@@ -35,7 +35,7 @@ _workspace/
 
 ### Handoff Pattern
 
-- the orchestrator snapshots the request in `_workspace/00_input/request-summary.md`
+- the orchestrator snapshots the request in `docs/exec-plans/active/{run}/request-summary.md`
 - each specialist writes one findings file with cited evidence
 - the synthesis phase reads all branch outputs and writes one merged report
 
@@ -64,10 +64,10 @@ AGENTS.md
 .agents/skills/frontend-builder/SKILL.md
 .agents/skills/backend-builder/SKILL.md
 .agents/skills/qa-review/SKILL.md
-docs/harness/product-build/team-spec.md
-docs/harness/product-build/roles/frontend-lead.md
-docs/harness/product-build/roles/backend-lead.md
-_workspace/
+docs/agent-harness/product-build/team-spec.md
+docs/agent-harness/product-build/roles/frontend-lead.md
+docs/agent-harness/product-build/roles/backend-lead.md
+docs/exec-plans/active/{run}/
 ├── 00_input/spec-summary.md
 ├── task-queue.md
 ├── 01_frontend_plan.md
@@ -111,8 +111,8 @@ AGENTS.md
 .agents/skills/architecture-review/SKILL.md
 .agents/skills/test-review/SKILL.md
 .agents/skills/findings-editor/SKILL.md
-docs/harness/code-review/team-spec.md
-_workspace/
+docs/agent-harness/code-review/team-spec.md
+docs/exec-plans/active/{run}/
 ├── 00_input/review-scope.md
 ├── 01_security_findings.md
 ├── 01_performance_findings.md
@@ -154,8 +154,8 @@ AGENTS.md
 .agents/skills/outline-writer/SKILL.md
 .agents/skills/draft-writer/SKILL.md
 .agents/skills/editorial-review/SKILL.md
-docs/harness/editorial/team-spec.md
-_workspace/
+docs/agent-harness/editorial/team-spec.md
+docs/exec-plans/active/{run}/
 ├── 00_input/brief.md
 ├── 01_concept.md
 ├── 02_outline.md
@@ -176,8 +176,8 @@ Use these defaults when translating a design into files:
 
 - reusable domain logic becomes a specialist skill under `.agents/skills/`
 - reusable coordination becomes an orchestrator skill or a team spec
-- temporary but inspectable artifacts live in `_workspace/`
-- durable role rules that are too narrow for a skill live under `docs/harness/{domain}/roles/`
+- temporary but inspectable artifacts live in `docs/exec-plans/active/{run}/`
+- durable role rules that are too narrow for a skill live under `docs/agent-harness/{domain}/roles/`
 
 ## Example 5: Autonomous Experiment Loop
 
@@ -198,8 +198,8 @@ AGENTS.md
 .agents/skills/experiment-orchestrator/SKILL.md
 .agents/skills/candidate-editor/SKILL.md
 .agents/skills/evaluator/SKILL.md
-docs/harness/autonomous-experiment/team-spec.md
-_workspace/
+docs/agent-harness/autonomous-experiment/team-spec.md
+docs/exec-plans/active/{run}/
 ├── 00_input/request-summary.md
 └── experiments/
     └── {run}/

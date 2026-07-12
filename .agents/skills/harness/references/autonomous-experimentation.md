@@ -26,7 +26,7 @@ Every autonomous experiment harness should define these items up front:
 - immutable evaluation surface: the code, data, rubric, or benchmark that stays read-only for the run
 - baseline run: one measured run before any mutation
 - comparison rule: fixed budget, fixed dataset, fixed prompt set, or another explicit comparison contract
-- experiment ledger: `_workspace/experiments/{run}/results.tsv`
+- experiment ledger: `docs/exec-plans/active/{run}/experiments/results.tsv`
 - keep/discard policy: the rule for advancing a change, reverting it, or retrying it
 - failure policy: bounded retry count, timeout rule, and crash handling
 
@@ -35,18 +35,17 @@ Treat the immutable evaluation surface as read-only for the duration of the run.
 ## Minimum Artifact Set
 
 ```text
-_workspace/
+docs/exec-plans/active/{run}/
 └── experiments/
-    └── {run}/
-        ├── request-summary.md
-        ├── baseline.md
-        ├── results.tsv
-        ├── candidate-{id}.md
-        ├── eval-{id}.md
-        └── final-summary.md
+    ├── request-summary.md
+    ├── baseline.md
+    ├── results.tsv
+    ├── candidate-{id}.md
+    ├── eval-{id}.md
+    └── final-summary.md
 ```
 
-Use the smallest artifact set that still makes the loop auditable. If the domain needs extra per-run files, keep them under the same `{run}` directory.
+Use the smallest artifact set that still makes the loop auditable. If the domain needs extra files, keep them under the same run directory.
 
 ## Default `results.tsv` Shape
 

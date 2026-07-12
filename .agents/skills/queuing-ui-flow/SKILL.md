@@ -35,7 +35,7 @@ Do not use it for API-only changes unless the UI behavior also changes.
 4. Use existing public assets before adding new icons or images.
 5. Make hover/focus/disabled states explicit and prevent layout jumps where the UI is fixed-format.
 6. For drag interactions, prevent unintended text/image selection and keep buttons from starting drag gestures.
-7. Write `_workspace/02_ui_flow.md` for large or interaction-heavy changes.
+7. Write `docs/exec-plans/active/{run}/ui-flow.md` for large or interaction-heavy changes.
 
 ## Project-Specific Rules
 
@@ -53,7 +53,7 @@ Do not use it for API-only changes unless the UI behavior also changes.
 
 - updated React components and CSS modules
 - state ownership notes for future sorting/filter/API work
-- `_workspace/02_ui_flow.md` for complex interaction changes
+- `docs/exec-plans/active/{run}/ui-flow.md` for complex interaction changes
 
 ## Validation
 

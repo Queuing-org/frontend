@@ -54,14 +54,12 @@ public/icons/title_hipjjiri.svg    # /icons/title_hipjjiri.svg
 
 ## Structure (요약)
 
-원칙: `app`은 라우팅/조립, 로직은 `entities`/`features`로 분리합니다. 여러 feature를 조합한 화면 단위 UI는 `widgets`에 둡니다.
+원칙: `app`은 라우팅과 조립, `features`는 도메인별 API/model/UI, `shared`는 교차 기능 공통 코드에 사용합니다. 자세한 의존 규칙은 [`ARCHITECTURE.md`](./ARCHITECTURE.md)를 기준으로 합니다.
 
 ```txt
 src/
   app/            # page.tsx (조립)
-  entities/       # 도메인 데이터, API client, model type
-  features/       # 기능 단위(auth, room-create, room-chat, playlist 등)
-  widgets/        # home/room 등 조합 UI
+  features/       # 기능/도메인 단위 API, model, hook, UI
   shared/         # 공통 유틸/컴포넌트
 public/
   icons/          # SVG 아이콘, 칭호 명패

@@ -9,7 +9,7 @@ Before choosing a pattern, choose the coordination style that fits the work:
 | Coordination style | Use when | Typical artifacts |
 | --- | --- | --- |
 | Single-agent workflow | one person or one skill can complete the job without durable specialist boundaries | one `SKILL.md`, one output contract |
-| Sequential orchestration skill | work has clear phase dependencies | orchestrator `SKILL.md`, `_workspace/` handoffs |
+| Sequential orchestration skill | work has clear phase dependencies | orchestrator `SKILL.md`, `docs/exec-plans/active/{run}/` handoffs |
 | Parallel worker fan-out | several bounded slices can run independently and then be merged | orchestrator spec, specialist skills, synthesis step |
 | Supervisor-led delegation | the backlog changes during execution and needs reassignment | team spec with routing and reassignment rules |
 | Hierarchical delegation | the problem decomposes cleanly into a shallow tree of sub-goals | top-level orchestrator plus one subordinate coordination layer |
@@ -46,8 +46,8 @@ Sequential dependent work where each phase consumes the prior phase's artifact.
 
 ### Minimum Generated Artifacts
 
-- `.agents/skills/{domain}-orchestrator/SKILL.md` or `docs/harness/{domain}/team-spec.md`
-- `_workspace/01_*`, `_workspace/02_*`, and later phase artifacts with deterministic names
+- `.agents/skills/{domain}-orchestrator/SKILL.md` or `docs/agent-harness/{domain}/team-spec.md`
+- `docs/exec-plans/active/{run}/01_*`, `docs/exec-plans/active/{run}/02_*`, and later phase artifacts with deterministic names
 - specialist skills only for phases that are reusable outside the current flow
 
 ### Recommended Portable Implementation Style
@@ -76,7 +76,7 @@ Parallel independent work followed by a synthesis step.
 ### Minimum Generated Artifacts
 
 - orchestrator skill or team spec with branch ownership
-- one `_workspace/{phase}_{role}_{artifact}.md` per parallel branch
+- one `docs/exec-plans/active/{run}/{phase}_{role}_{artifact}.md` per parallel branch
 - one synthesis artifact or final report that cites the branch outputs
 
 ### Recommended Portable Implementation Style
@@ -104,7 +104,7 @@ Selective routing to one or more relevant specialists from a larger set.
 
 ### Minimum Generated Artifacts
 
-- routing rules in `docs/harness/{domain}/team-spec.md`
+- routing rules in `docs/agent-harness/{domain}/team-spec.md`
 - reusable specialist skills under `.agents/skills/`
 - optional decision table or request-to-skill matrix in `references/`
 
@@ -135,7 +135,7 @@ A generation phase followed by explicit quality review and bounded revision.
 
 - producer skill
 - reviewer skill or QA brief
-- review artifact in `_workspace/`
+- review artifact in `docs/exec-plans/active/{run}/`
 - bounded revision policy in the team spec
 
 ### Recommended Portable Implementation Style
@@ -233,10 +233,10 @@ Recommended pairings:
 
 Minimum extra artifacts:
 
-- `_workspace/experiments/{run}/request-summary.md`
-- `_workspace/experiments/{run}/baseline.md`
-- `_workspace/experiments/{run}/results.tsv`
-- `_workspace/experiments/{run}/final-summary.md`
+- `docs/exec-plans/active/{run}/experiments/request-summary.md`
+- `docs/exec-plans/active/{run}/experiments/baseline.md`
+- `docs/exec-plans/active/{run}/experiments/results.tsv`
+- `docs/exec-plans/active/{run}/experiments/final-summary.md`
 
 Core rules:
 
@@ -251,9 +251,9 @@ Core rules:
 Use these defaults when converting a pattern into files:
 
 - reusable coordination logic becomes `.agents/skills/{domain}-orchestrator/SKILL.md`
-- durable role topology becomes `docs/harness/{domain}/team-spec.md`
+- durable role topology becomes `docs/agent-harness/{domain}/team-spec.md`
 - reusable specialist behavior becomes `.agents/skills/{specialist}/SKILL.md`
 - bulky domain detail moves into `.agents/skills/{specialist}/references/`
 - model-specific recovery notes belong in linked references or clearly named removable sections
-- intermediate work products live in `_workspace/` and keep deterministic names
-- autonomous experiment ledgers live under `_workspace/experiments/{run}/`
+- intermediate work products live in `docs/exec-plans/active/{run}/` and keep deterministic names
+- autonomous experiment ledgers live under `docs/exec-plans/active/{run}/experiments/`

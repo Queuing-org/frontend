@@ -24,7 +24,7 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - changed files or diff
 - relevant endpoint docs or observed network evidence
 - expected verification commands
-- any `_workspace/` artifacts created during implementation
+- any `docs/exec-plans/active/{run}/` artifacts created during implementation
 
 ## Workflow
 
@@ -44,14 +44,14 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
    - `pass`: no blocking issue
    - `fix`: targeted issue is cheaper than redo
    - `redo`: implementation direction conflicts with the request or contract
-5. Write `_workspace/04_qa_report.md` for high-risk or multi-step changes.
+5. Write `docs/exec-plans/active/{run}/qa-report.md` for high-risk or multi-step changes.
 
 ## Outputs
 
 - blocking findings with file references
 - verification summary
 - residual risk notes
-- optional `_workspace/04_qa_report.md`
+- optional `docs/exec-plans/active/{run}/qa-report.md`
 
 ## Validation Checklist
 

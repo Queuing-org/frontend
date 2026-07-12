@@ -102,7 +102,7 @@ If the output structure matters, say so explicitly.
 ## Outputs
 - `docs/api/endpoints.md` with endpoint list and auth notes
 - `docs/api/examples.md` with request and response examples
-- `_workspace/qa_api_gaps.md` for missing information discovered during validation
+- `docs/exec-plans/active/{run}/qa_api_gaps.md` for missing information discovered during validation
 ```
 
 Use deterministic names. Another person should be able to predict the artifact names without rereading the whole skill.
