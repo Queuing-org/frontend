@@ -1,8 +1,10 @@
 .root {
+  position: relative;
   display: flex;
+  box-sizing: border-box;
   flex-direction: column;
   height: 100%;
-  padding: 0px 18px 20px;
+  padding: 0 18px 56px;
   background: #ffffff;
   color: #3c3c3c;
 }
@@ -118,6 +120,9 @@
 }
 
 .musicPowerActions {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
   display: inline-flex;
   gap: 2px;
 }
@@ -180,8 +185,13 @@
 
 @media (max-width: 760px) {
   .root {
-    padding: 1rem;
+    padding: 1rem 1rem 3.5rem;
     overflow-y: auto;
+  }
+
+  .musicPowerActions {
+    right: 1rem;
+    bottom: 1rem;
   }
 
   .grid {

@@ -83,6 +83,11 @@
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
 }
 
+.menu[data-placement="up"] {
+  top: auto;
+  bottom: 30px;
+}
+
 .menu button {
   min-height: 38px;
   padding: 0 14px;

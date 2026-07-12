@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
@@ -17,10 +18,6 @@ type Props = {
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
 };
-
-function formatStat(value: number | undefined) {
-  return typeof value === "number" ? value.toLocaleString("ko-KR") : "-";
-}
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -101,6 +98,9 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     if (!me) {
       return "로그인 후 음악력을 추천할 수 있습니다";
     }
+    if (!targetSlug) {
+      return "추천 대상 정보를 준비 중입니다";
+    }
     if (musicPowerQuery.isLoading) {
       return "음악력 추천 상태 확인 중";
     }
@@ -166,40 +166,17 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
             <div className={styles.card}>
               <div className={styles.cardTitle}>큐잉 횟수</div>
               <div className={styles.cardValue}>
-                {formatStat(publicProfile?.queuingCount)}
+                {formatOptionalStat(publicProfile?.queuingCount)}
               </div>
+            </div>
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>이용 시간</div>
+              <div className={styles.cardValue}>개발 중입니다.</div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>음악력</div>
               <div className={styles.musicPowerValue}>
-                <span>{formatStat(musicPower)}</span>
-                {!isSelf ? (
-                  <span className={styles.musicPowerActions}>
-                    <button
-                      type="button"
-                      className={styles.musicPowerButton}
-                      aria-label={recommendationLabel}
-                      title={recommendationLabel}
-                      disabled={isRecommendationDisabled}
-                      onClick={() => {
-                        if (targetSlug) {
-                          recommendMusicPower.mutate(targetSlug);
-                        }
-                      }}
-                    >
-                      <ArrowUp aria-hidden="true" size={15} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.musicPowerButton}
-                      aria-label="음악력 추천 취소는 아직 지원하지 않습니다"
-                      title="추천 취소 API가 없어 아직 사용할 수 없습니다."
-                      disabled
-                    >
-                      <ArrowDown aria-hidden="true" size={15} />
-                    </button>
-                  </span>
-                ) : null}
+                <span>{formatOptionalStat(musicPower)}</span>
               </div>
               {recommendMusicPower.error ? (
                 <p className={styles.recommendationError} role="alert">
@@ -208,6 +185,33 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
               ) : null}
             </div>
           </div>
+          {!isSelf ? (
+            <div className={styles.musicPowerActions}>
+              <button
+                type="button"
+                className={styles.musicPowerButton}
+                aria-label={recommendationLabel}
+                title={recommendationLabel}
+                disabled={isRecommendationDisabled}
+                onClick={() => {
+                  if (targetSlug) {
+                    recommendMusicPower.mutate(targetSlug);
+                  }
+                }}
+              >
+                <ArrowUp aria-hidden="true" size={15} />
+              </button>
+              <button
+                type="button"
+                className={styles.musicPowerButton}
+                aria-label="음악력 추천 취소는 아직 지원하지 않습니다"
+                title="추천 취소 API가 없어 아직 사용할 수 없습니다."
+                disabled
+              >
+                <ArrowDown aria-hidden="true" size={15} />
+              </button>
+            </div>
+          ) : null}
         </>
       ) : (
         <div className={styles.empty}>

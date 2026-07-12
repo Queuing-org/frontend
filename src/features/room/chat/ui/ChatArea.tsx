@@ -18,6 +18,7 @@ import { useChatScrollRestoration } from "../hooks/useChatScrollRestoration";
 import {
   getChatMessageManagementActions,
   getChatMessageRenderKey,
+  shouldDisplayChatMessage,
   type ChatMessageManagementAction,
 } from "../model/chatMessages";
 import ReportChatMessageModal, {
@@ -44,6 +45,7 @@ type ChatMessageRowProps = {
   menuRef: RefObject<HTMLDivElement | null>;
   message: ChatMessage;
   messageKey: string;
+  menuPlacement: "down" | "up";
   onBlock: (message: ChatMessage) => void;
   onReport: (message: ChatMessage) => void;
   onToggleMenu: (
@@ -62,6 +64,7 @@ function ChatMessageRow({
   menuRef,
   message,
   messageKey,
+  menuPlacement,
   onBlock,
   onReport,
   onToggleMenu,
@@ -95,7 +98,7 @@ function ChatMessageRow({
           <button
             type="button"
             className={styles.menuButton}
-            aria-label={`${message.senderNickname} 메시지 관리 메뉴`}
+            aria-label={`${message.senderNickname} 메시지(${message.content.slice(0, 12)}) 관리 메뉴`}
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             aria-controls={isMenuOpen ? menuId : undefined}
@@ -110,6 +113,7 @@ function ChatMessageRow({
               className={styles.menu}
               role="menu"
               aria-label={`${message.senderNickname} 메시지 관리`}
+              data-placement={menuPlacement}
             >
               {actions.includes("report") ? (
                 <button
@@ -150,11 +154,23 @@ export default function ChatArea({
   wheelRegionRef: externalWheelRegionRef,
 }: Props) {
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
+  const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
+  const [blockedChatSenders, setBlockedChatSenders] = useState<{
+    roomSlug: string;
+    slugs: ReadonlySet<string>;
+  }>(() => ({ roomSlug, slugs: new Set() }));
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const blockedSenderSlugs =
+    blockedChatSenders.roomSlug === roomSlug
+      ? blockedChatSenders.slugs
+      : new Set<string>();
+  const visibleMessages = messages.filter((message) =>
+    shouldDisplayChatMessage(message, blockedSenderSlugs),
+  );
   const {
     handleScroll,
     listRef,
@@ -164,7 +180,7 @@ export default function ChatArea({
     externalWheelRegionRef,
     hasOlderMessages,
     isLoadingOlderMessages,
-    messageCount: messages.length,
+    messageCount: visibleMessages.length,
     onLoadOlderMessages,
     scrollToLatestKey,
   });
@@ -214,14 +230,24 @@ export default function ChatArea({
   const handleToggleMenu = useCallback(
     (messageKey: string, trigger: HTMLButtonElement) => {
       activeTriggerRef.current = trigger;
+      const listRect = listRef.current?.getBoundingClientRect();
+      const triggerRect = trigger.getBoundingClientRect();
+      const estimatedMenuHeight = 82;
+      const spaceBelow = (listRect?.bottom ?? window.innerHeight) - triggerRect.bottom;
+      const spaceAbove = triggerRect.top - (listRect?.top ?? 0);
+      setMenuPlacement(
+        spaceBelow < estimatedMenuHeight && spaceAbove >= estimatedMenuHeight
+          ? "up"
+          : "down",
+      );
       setOpenMenuKey((currentKey) =>
         currentKey === messageKey ? null : messageKey,
       );
     },
-    [],
+    [listRef],
   );
   const handleBlock = useCallback((message: ChatMessage) => {
-    if (!message.senderSlug) {
+    if (!currentUser || !message.senderSlug) {
       return;
     }
     setOpenMenuKey(null);
@@ -229,10 +255,10 @@ export default function ChatArea({
       nickname: message.senderNickname,
       slug: message.senderSlug,
     });
-  }, []);
+  }, [currentUser]);
   const handleReport = useCallback(
     (message: ChatMessage) => {
-      if (!message.messageKey) {
+      if (!currentUser || !message.messageKey) {
         return;
       }
       setOpenMenuKey(null);
@@ -242,7 +268,7 @@ export default function ChatArea({
         slug: roomSlug,
       });
     },
-    [roomPassword, roomSlug],
+    [currentUser, roomPassword, roomSlug],
   );
   const restoreTriggerFocus = useCallback(() => {
     queueMicrotask(() => activeTriggerRef.current?.focus());
@@ -272,11 +298,11 @@ export default function ChatArea({
               {errorMessage}
             </button>
           ) : null}
-          {messages.length === 0 ? (
+          {visibleMessages.length === 0 ? (
             <div className={styles.empty}>아직 채팅이 없습니다.</div>
           ) : (
             <ol className={styles.messages}>
-              {messages.map((message) => {
+              {visibleMessages.map((message) => {
                 const messageKey = getChatMessageRenderKey(message);
                 return (
                   <ChatMessageRow
@@ -289,6 +315,7 @@ export default function ChatArea({
                     menuRef={menuRef}
                     message={message}
                     messageKey={messageKey}
+                    menuPlacement={menuPlacement}
                     onBlock={handleBlock}
                     onReport={handleReport}
                     onToggleMenu={handleToggleMenu}
@@ -301,6 +328,15 @@ export default function ChatArea({
       </div>
       <BlockUserModal
         target={blockTarget}
+        onBlocked={(blockedTarget) => {
+          setBlockedChatSenders((current) => {
+            const nextSlugs = new Set(
+              current.roomSlug === roomSlug ? current.slugs : [],
+            );
+            nextSlugs.add(blockedTarget.slug);
+            return { roomSlug, slugs: nextSlugs };
+          });
+        }}
         onClose={() => {
           setBlockTarget(null);
           restoreTriggerFocus();

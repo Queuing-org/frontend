@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,7 +8,13 @@ import BlockUserModal from "./BlockUserModal";
 
 vi.mock("../api/blockUser", () => ({ blockUser: vi.fn() }));
 
-function renderModal(onClose = vi.fn()) {
+function renderModal({
+  onBlocked = vi.fn(),
+  onClose = vi.fn(),
+}: {
+  onBlocked?: ReturnType<typeof vi.fn>;
+  onClose?: ReturnType<typeof vi.fn>;
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false } },
   });
@@ -17,12 +23,13 @@ function renderModal(onClose = vi.fn()) {
     <QueryClientProvider client={queryClient}>
       <BlockUserModal
         target={{ nickname: "대상", slug: "target-user" }}
+        onBlocked={onBlocked}
         onClose={onClose}
       />
     </QueryClientProvider>,
   );
 
-  return onClose;
+  return { onBlocked, onClose };
 }
 
 describe("BlockUserModal", () => {
@@ -32,12 +39,16 @@ describe("BlockUserModal", () => {
 
   it("확인 후 같은 모달에서 완료 화면을 보여준다", async () => {
     const user = userEvent.setup();
-    const onClose = renderModal();
+    const { onBlocked, onClose } = renderModal();
     vi.mocked(blockUser).mockResolvedValue();
 
     await user.click(screen.getByRole("button", { name: "차단" }));
 
     expect(await screen.findByRole("heading", { name: "차단 완료" })).toBeInTheDocument();
+    expect(onBlocked).toHaveBeenCalledWith({
+      nickname: "대상",
+      slug: "target-user",
+    });
     await user.click(screen.getByRole("button", { name: "닫기" }));
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -53,6 +64,7 @@ describe("BlockUserModal", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("차단할 수 없습니다.");
     expect(screen.getByRole("heading", { name: "사용자 차단" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "차단" })).toHaveFocus();
   });
 
   it("요청 중 중복 제출과 닫기를 막는다", async () => {
@@ -61,7 +73,7 @@ describe("BlockUserModal", () => {
     vi.mocked(blockUser).mockImplementation(
       () => new Promise<void>((resolve) => { resolveBlock = resolve; }),
     );
-    const onClose = renderModal();
+    const { onClose } = renderModal();
 
     await user.click(screen.getByRole("button", { name: "차단" }));
     const pendingButton = screen.getByRole("button", { name: "차단 중..." });
@@ -73,6 +85,11 @@ describe("BlockUserModal", () => {
     expect(blockUser).toHaveBeenCalledOnce();
     expect(onClose).not.toHaveBeenCalled();
 
-    resolveBlock?.();
+    await act(async () => {
+      resolveBlock?.();
+    });
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "차단 완료" })).toBeInTheDocument();
+    });
   });
 });

@@ -33,11 +33,12 @@ describe("음악력 API", () => {
   });
 
   it("인코딩한 사용자 slug로 음악력을 추천한다", async () => {
+    const result = { ...response, musicPower: 13, recommendedByMe: true };
     vi.mocked(axiosInstance.post).mockResolvedValue({
-      data: { result: { ...response, musicPower: 13, recommendedByMe: true } },
+      data: { result },
     });
 
-    await recommendMusicPower("target/user");
+    await expect(recommendMusicPower("target/user")).resolves.toEqual(result);
     expect(axiosInstance.post).toHaveBeenCalledWith(
       "/api/v1/user-profiles/target%2Fuser/music-power",
     );

@@ -176,11 +176,26 @@ export function isChatMessageFromUser(
 
 export type ChatMessageManagementAction = "block" | "report";
 
+const BLOCKED_CHAT_MESSAGE_CONTENT = "차단된 사용자의 채팅입니다";
+
+export function shouldDisplayChatMessage(
+  message: ChatMessage,
+  blockedSenderSlugs: ReadonlySet<string>,
+) {
+  const normalizedContent = message.content.trim().replace(/\.$/, "");
+
+  if (normalizedContent === BLOCKED_CHAT_MESSAGE_CONTENT) {
+    return false;
+  }
+
+  return !message.senderSlug || !blockedSenderSlugs.has(message.senderSlug);
+}
+
 export function getChatMessageManagementActions(
   message: ChatMessage,
   currentUser: User | null,
 ): ChatMessageManagementAction[] {
-  if (isChatMessageFromUser(message, currentUser)) {
+  if (!currentUser || isChatMessageFromUser(message, currentUser)) {
     return [];
   }
 

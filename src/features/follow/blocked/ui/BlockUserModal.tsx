@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import { useBlockUser } from "../hooks/useBlockUser";
@@ -12,12 +12,12 @@ export type BlockUserTarget = {
 };
 
 type Props = {
+  onBlocked?: (target: BlockUserTarget) => void;
   onClose: () => void;
   target: BlockUserTarget | null;
 };
 
-export default function BlockUserModal({ onClose, target }: Props) {
-  const [isComplete, setIsComplete] = useState(false);
+export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -26,7 +26,6 @@ export default function BlockUserModal({ onClose, target }: Props) {
   const open = Boolean(target);
   const handleClose = useCallback(() => {
     if (!blockUser.isPending) {
-      setIsComplete(false);
       resetBlockUser();
       onClose();
     }
@@ -50,10 +49,16 @@ export default function BlockUserModal({ onClose, target }: Props) {
   }, [open]);
 
   useEffect(() => {
-    if (isComplete) {
+    if (blockUser.isSuccess) {
       closeButtonRef.current?.focus();
     }
-  }, [isComplete]);
+  }, [blockUser.isSuccess]);
+
+  useEffect(() => {
+    if (blockUser.error) {
+      confirmButtonRef.current?.focus();
+    }
+  }, [blockUser.error]);
 
   if (!target) {
     return null;
@@ -65,7 +70,7 @@ export default function BlockUserModal({ onClose, target }: Props) {
     }
 
     blockUser.mutate(target.slug, {
-      onSuccess: () => setIsComplete(true),
+      onSuccess: () => onBlocked?.(target),
     });
   };
 
@@ -87,7 +92,7 @@ export default function BlockUserModal({ onClose, target }: Props) {
           aria-labelledby={titleId}
           aria-busy={blockUser.isPending}
         >
-          {isComplete ? (
+          {blockUser.isSuccess ? (
             <>
               <h2 id={titleId} className={styles.title}>
                 차단 완료

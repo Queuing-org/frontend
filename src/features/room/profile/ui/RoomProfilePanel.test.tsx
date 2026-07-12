@@ -39,7 +39,7 @@ const requester = {
   slug: "target-user",
   userId: 2,
 };
-const recommendMutation = {
+const recommendMutation: Partial<ReturnType<typeof useRecommendMusicPower>> = {
   error: null,
   isPending: false,
   mutate: vi.fn(),
@@ -83,16 +83,17 @@ describe("RoomProfilePanel", () => {
       isLoading: false,
     } as ReturnType<typeof useMusicPower>);
     vi.mocked(useRecommendMusicPower).mockReturnValue(
-      recommendMutation as unknown as ReturnType<typeof useRecommendMusicPower>,
+      recommendMutation as ReturnType<typeof useRecommendMusicPower>,
     );
   });
 
-  it("방 프로필에 2×2 필드와 실제 통계를 표시한다", () => {
+  it("방 프로필에 실제 통계와 하드코딩 이용 시간을 표시한다", () => {
     render(<RoomProfilePanel currentRequester={requester} />);
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
-    expect(screen.queryByText("이용 시간")).not.toBeInTheDocument();
+    expect(screen.getByText("이용 시간")).toBeInTheDocument();
+    expect(screen.getByText("개발 중입니다.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 추천" })).toBeEnabled();
     expect(
       screen.getByRole("button", {
@@ -168,6 +169,23 @@ describe("RoomProfilePanel", () => {
       screen.getByRole("button", {
         name: "음악력 추천 상태를 확인할 수 없습니다",
       }),
+    ).toBeDisabled();
+  });
+
+  it("대상 slug가 아직 없으면 준비 중 안내로 추천을 비활성화한다", () => {
+    vi.mocked(useMusicPower).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+    } as ReturnType<typeof useMusicPower>);
+
+    render(
+      <RoomProfilePanel
+        currentRequester={{ ...requester, slug: null, userId: 3 }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "추천 대상 정보를 준비 중입니다" }),
     ).toBeDisabled();
   });
 });
