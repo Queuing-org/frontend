@@ -173,3 +173,24 @@ export function isChatMessageFromUser(
 
   return message.senderNickname === user.nickname;
 }
+
+export type ChatMessageManagementAction = "block" | "report";
+
+export function getChatMessageManagementActions(
+  message: ChatMessage,
+  currentUser: User | null,
+): ChatMessageManagementAction[] {
+  if (isChatMessageFromUser(message, currentUser)) {
+    return [];
+  }
+
+  const actions: ChatMessageManagementAction[] = [];
+  if (message.messageKey?.trim()) {
+    actions.push("report");
+  }
+  if (message.senderSlug?.trim()) {
+    actions.push("block");
+  }
+
+  return actions;
+}
