@@ -255,10 +255,10 @@
 }
 
 .profileStats {
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
   align-items: flex-start;
-  justify-content: space-between;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin: 28px 46px 0;
 }
@@ -269,10 +269,6 @@
 }
 
 .statItem:nth-child(2) {
-  text-align: center;
-}
-
-.statItem:nth-child(3) {
   text-align: right;
 }
 
@@ -353,8 +349,7 @@
     margin: 10px 8px 0;
   }
 
-  .statItem:nth-child(2),
-  .statItem:nth-child(3) {
+  .statItem:nth-child(2) {
     text-align: left;
   }
 

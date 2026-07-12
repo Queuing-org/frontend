@@ -9,4 +9,4 @@
 - local_qa: pending
 - ci: pending
 - review_threads: not-applicable
-- next_action: 프로필 음악력과 큐잉 통계 구현
+- next_action: 사용자 차단 API와 모달 구현

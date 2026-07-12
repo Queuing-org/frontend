@@ -136,7 +136,10 @@ export default function ProfileSettingsTab() {
           onSubmit={form.handleNicknameSubmit}
         />
       </div>
-      <ProfileStats />
+      <ProfileStats
+        musicPower={form.me?.musicPower}
+        queuingCount={form.me?.queuingCount}
+      />
     </div>
   );
 }

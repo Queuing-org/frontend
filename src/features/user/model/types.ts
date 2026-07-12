@@ -6,6 +6,8 @@ export interface User {
   slug: string; //ex) "user-123abc45"
   profileImageUrl: string | null;
   representativeBadge?: BadgeSummary | null;
+  musicPower?: number;
+  queuingCount?: number;
 }
 
 export type OnboardingPayload = {

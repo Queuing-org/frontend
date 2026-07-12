@@ -11,4 +11,12 @@ export type UserProfile = {
   slug: string;
   profileImageUrl: string | null;
   representativeBadge?: BadgeSummary | null;
+  musicPower?: number;
+  queuingCount?: number;
+};
+
+export type MusicPowerResponse = {
+  musicPower: number;
+  recommendedByMe: boolean;
+  targetUserSlug: string;
 };

@@ -1,10 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { ArrowDown, ArrowUp } from "lucide-react";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
+import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
+import { useRecommendMusicPower } from "@/src/features/user/profile/hooks/useRecommendMusicPower";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { CurrentRequesterProfile } from "../model/types";
@@ -15,12 +18,9 @@ type Props = {
   currentTrackTitle?: string | null;
 };
 
-const PLACEHOLDER_PROFILE_FIELDS = [
-  "최애곡",
-  "큐잉 횟수",
-  "이용 시간",
-  "음악력",
-] as const;
+function formatStat(value: number | undefined) {
+  return typeof value === "number" ? value.toLocaleString("ko-KR") : "-";
+}
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -54,6 +54,8 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
   const targetSlug = currentRequester?.slug ?? null;
   const { data: publicProfile, isLoading: isPublicProfileLoading } =
     useUserProfile(targetSlug);
+  const musicPowerQuery = useMusicPower(targetSlug);
+  const recommendMusicPower = useRecommendMusicPower();
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
     usePublicUserBadges(targetSlug);
 
@@ -86,6 +88,33 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
   const badgeValue = isPublicProfileLoading || isPublicBadgesLoading
     ? "불러오는 중..."
     : representativeBadge?.name ?? "대표 칭호 없음";
+  const musicPower =
+    musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
+  const isRecommendationDisabled =
+    !me ||
+    isSelf ||
+    !targetSlug ||
+    musicPowerQuery.isLoading ||
+    musicPowerQuery.data?.recommendedByMe !== false ||
+    recommendMusicPower.isPending;
+  const recommendationLabel = (() => {
+    if (!me) {
+      return "로그인 후 음악력을 추천할 수 있습니다";
+    }
+    if (musicPowerQuery.isLoading) {
+      return "음악력 추천 상태 확인 중";
+    }
+    if (!musicPowerQuery.data) {
+      return "음악력 추천 상태를 확인할 수 없습니다";
+    }
+    if (musicPowerQuery.data.recommendedByMe) {
+      return "이미 음악력을 추천했습니다";
+    }
+    if (recommendMusicPower.isPending) {
+      return "음악력 추천 중";
+    }
+    return "음악력 추천";
+  })();
 
   return (
     <div className={styles.root}>
@@ -124,18 +153,60 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
             ) : null}
           </div>
           <div className={styles.grid}>
-            {targetSlug ? (
-              <div className={styles.card}>
-                <div className={styles.cardTitle}>칭호</div>
-                <div className={styles.cardValue}>{badgeValue}</div>
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>칭호</div>
+              <div className={styles.cardValue}>
+                {targetSlug ? badgeValue : "-"}
               </div>
-            ) : null}
-            {PLACEHOLDER_PROFILE_FIELDS.map((field) => (
-              <div key={field} className={styles.card}>
-                <div className={styles.cardTitle}>{field}</div>
-                <div className={styles.cardValue}>개발 중입니다.</div>
+            </div>
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>최애곡</div>
+              <div className={styles.cardValue}>-</div>
+            </div>
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>큐잉 횟수</div>
+              <div className={styles.cardValue}>
+                {formatStat(publicProfile?.queuingCount)}
               </div>
-            ))}
+            </div>
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>음악력</div>
+              <div className={styles.musicPowerValue}>
+                <span>{formatStat(musicPower)}</span>
+                {!isSelf ? (
+                  <span className={styles.musicPowerActions}>
+                    <button
+                      type="button"
+                      className={styles.musicPowerButton}
+                      aria-label={recommendationLabel}
+                      title={recommendationLabel}
+                      disabled={isRecommendationDisabled}
+                      onClick={() => {
+                        if (targetSlug) {
+                          recommendMusicPower.mutate(targetSlug);
+                        }
+                      }}
+                    >
+                      <ArrowUp aria-hidden="true" size={15} />
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.musicPowerButton}
+                      aria-label="음악력 추천 취소는 아직 지원하지 않습니다"
+                      title="추천 취소 API가 없어 아직 사용할 수 없습니다."
+                      disabled
+                    >
+                      <ArrowDown aria-hidden="true" size={15} />
+                    </button>
+                  </span>
+                ) : null}
+              </div>
+              {recommendMusicPower.error ? (
+                <p className={styles.recommendationError} role="alert">
+                  {recommendMusicPower.error.message}
+                </p>
+              ) : null}
+            </div>
           </div>
         </>
       ) : (

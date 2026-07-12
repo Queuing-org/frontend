@@ -2,20 +2,25 @@
 
 import styles from "../ProfileSettingsTab.module.css";
 
-export default function ProfileStats() {
+type Props = {
+  musicPower?: number;
+  queuingCount?: number;
+};
+
+function formatStat(value: number | undefined) {
+  return typeof value === "number" ? value.toLocaleString("ko-KR") : "-";
+}
+
+export default function ProfileStats({ musicPower, queuingCount }: Props) {
   return (
     <dl className={styles.profileStats}>
       <div className={styles.statItem}>
         <dt>큐잉 횟수</dt>
-        <dd>개발중입니다.</dd>
-      </div>
-      <div className={styles.statItem}>
-        <dt>이용 시간</dt>
-        <dd>개발중입니다.</dd>
+        <dd>{formatStat(queuingCount)}</dd>
       </div>
       <div className={styles.statItem}>
         <dt>음악력</dt>
-        <dd>개발중입니다.</dd>
+        <dd>{formatStat(musicPower)}</dd>
       </div>
     </dl>
   );
