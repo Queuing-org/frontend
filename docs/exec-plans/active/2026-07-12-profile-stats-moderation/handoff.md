@@ -5,19 +5,18 @@
 - 구현, 기능별 6개 커밋, 전체 lint/test/build, 독립 QA `pass` 완료
 - branch: `feat/profile-stats-moderation-modals`
 - latest commit: 현재 HEAD의 `feat: 채팅 메시지 관리 메뉴 연결`
-- worktree: handoff 기록 전까지 clean
+- Draft PR: https://github.com/Queuing-org/frontend/pull/26
+- delivery status: `ci-pending`
 
-## 차단 요인
+## 해소된 차단 요인
 
-`gh auth status`에서 활성 계정 `aryu1217`의 token이 invalid로 확인되어 push와 Draft PR 생성을 중단했다.
+GitHub CLI 재인증 후 실제 Keychain 환경에서 `aryu1217` 계정과 `repo`, `workflow` 권한을 확인했다. 브랜치 push와 Draft PR 생성을 완료했다.
 
 ## 다음 작업
 
-1. 사용자가 `gh auth login -h github.com`으로 재인증한다.
-2. `gh auth status`와 worktree/6개 커밋을 재확인한다.
-3. `git push -u origin feat/profile-stats-moderation-modals`를 실행한다.
-4. 제목 `feat: 프로필 통계와 채팅 신고·차단 기능 추가`로 Draft PR을 생성한다.
-5. delivery state를 `ci-pending`으로 갱신하고 PR URL을 기록한다.
+1. GitHub Actions 결과를 확인한다.
+2. 실패한 check 또는 unresolved review thread가 있으면 `queuing-pr-review-cycle`로 재개한다.
+3. CI와 리뷰가 통과하면 ready 전환 여부를 사용자에게 확인한다.
 
 ## 검증 증거
 

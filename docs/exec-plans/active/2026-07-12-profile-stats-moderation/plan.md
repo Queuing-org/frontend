@@ -49,7 +49,7 @@
 - [x] 신고
 - [x] 채팅 관리 메뉴
 - [x] 전체 검증 및 독립 QA
-- [ ] push 및 Draft PR
+- [x] push 및 Draft PR
 
 ## 결정
 
