@@ -9,4 +9,4 @@
 - local_qa: pending
 - ci: pending
 - review_threads: not-applicable
-- next_action: 프론트 컴포넌트 테스트 환경 추가
+- next_action: 프로필 음악력과 큐잉 통계 구현
