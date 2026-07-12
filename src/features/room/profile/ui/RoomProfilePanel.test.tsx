@@ -93,7 +93,7 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("이용 시간")).toBeInTheDocument();
-    expect(screen.getByText("개발 중입니다.")).toBeInTheDocument();
+    expect(screen.getByText("개발중입니다.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 추천" })).toBeEnabled();
     expect(
       screen.getByRole("button", {

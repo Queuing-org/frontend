@@ -171,7 +171,7 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>이용 시간</div>
-              <div className={styles.cardValue}>개발 중입니다.</div>
+              <div className={styles.cardValue}>개발중입니다.</div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>음악력</div>

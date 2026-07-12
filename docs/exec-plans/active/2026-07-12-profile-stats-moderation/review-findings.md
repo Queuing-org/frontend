@@ -19,6 +19,7 @@
 - 테스트의 `as unknown as` — `actionable`, partial mock helper로 축소.
 - `BlockUserModal`의 `isComplete` 파생 상태 — `actionable`, mutation `isSuccess`로 단일화.
 - docstring coverage 경고 — `question/non-blocking`, TypeScript 함수 docstring 80% 규칙이 저장소 lint/CI 계약에 없으므로 일괄 주석 추가하지 않음.
+- 방/설정 프로필의 이용 시간 placeholder 문구 불일치 — `actionable`, `개발중입니다.`로 통일.
 
 ## 사용자 후속 요청
 
