@@ -29,6 +29,7 @@ Run a bounded delivery pipeline from request to draft PR. Read `references/deliv
    - Use `queuing-ui-flow` for user interaction, room/home/search, modal, queue, or CSS flow work.
    - Apply `frontend-architecture-guardrails` to frontend implementation, review, or refactoring.
    - Use `queuing-incident-curator` if the task produces a durable failure lesson.
+   - Plan coherent feature-sized commit slices before implementation and record them in `plan.md`.
 6. Read every selected skill fully, inspect the relevant code, and implement the smallest coherent change.
 7. Run targeted verification plus `npm run lint` and `npm run build` for code changes. Record commands and results in the active run.
 8. Run `queuing-qa-reviewer` against the original request, actual diff, contracts, and verification evidence.
@@ -37,10 +38,10 @@ Run a bounded delivery pipeline from request to draft PR. Read `references/deliv
    - `pass`: continue.
    - `fix`: apply one targeted fix pass, rerun verification, and review again.
    - `redo`: stop before publishing and report the direction-level conflict.
-9. Inspect the final diff and stage only files belonging to the run. Write a concise conventional commit, using a Korean summary when the repository work is Korean-facing.
-10. Confirm `gh --version` and `gh auth status`, then push the branch and open a draft PR.
+9. Inspect each planned feature slice and stage only files belonging to that slice and run. Follow the commit policy in `references/delivery-policy.md`, and run the relevant verification before every commit.
+10. Before publishing, run `npm run lint`, `npm run test`, and `npm run build` for code changes. Confirm `gh --version` and `gh auth status`, then push the branch and open a draft PR.
     - Use the installed GitHub publish skill when available, but preserve this skill's branch policy and explicit staging scope.
-    - Populate `.github/pull_request_template.md` with the request, impact, verification, selected skills, QA result, execution-plan path, and residual risk.
+    - Populate `.github/pull_request_template.md` with the request, impact, feature-by-feature commits, verification, selected skills, QA result, execution-plan path, and residual risk.
 11. Set delivery state to `ci-pending`, store the PR URL, and return branch, commit, PR, checks run, and remaining risks.
 
 ## Failure Policy

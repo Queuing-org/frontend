@@ -173,3 +173,39 @@ export function isChatMessageFromUser(
 
   return message.senderNickname === user.nickname;
 }
+
+export type ChatMessageManagementAction = "block" | "report";
+
+const BLOCKED_CHAT_MESSAGE_CONTENT = "차단된 사용자의 채팅입니다";
+
+export function shouldDisplayChatMessage(
+  message: ChatMessage,
+  blockedSenderSlugs: ReadonlySet<string>,
+) {
+  const normalizedContent = message.content.trim().replace(/\.$/, "");
+
+  if (normalizedContent === BLOCKED_CHAT_MESSAGE_CONTENT) {
+    return false;
+  }
+
+  return !message.senderSlug || !blockedSenderSlugs.has(message.senderSlug);
+}
+
+export function getChatMessageManagementActions(
+  message: ChatMessage,
+  currentUser: User | null,
+): ChatMessageManagementAction[] {
+  if (!currentUser || isChatMessageFromUser(message, currentUser)) {
+    return [];
+  }
+
+  const actions: ChatMessageManagementAction[] = [];
+  if (message.messageKey?.trim()) {
+    actions.push("report");
+  }
+  if (message.senderSlug?.trim()) {
+    actions.push("block");
+  }
+
+  return actions;
+}

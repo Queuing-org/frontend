@@ -495,11 +495,14 @@ function RoomPlaybackJoinedContent({
                 >
                   <div className={styles.mobileChatList}>
                     <ChatArea
+                      currentUser={currentUser}
                       errorMessage={chatHistoryErrorMessage}
                       hasOlderMessages={hasOlderChatMessages}
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      roomPassword={roomPassword}
+                      roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
                       wheelRegionRef={mobileInlineChatRef}
                     />
@@ -626,11 +629,14 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.chatSection}>
             <ChatArea
+              currentUser={currentUser}
               errorMessage={chatHistoryErrorMessage}
               hasOlderMessages={hasOlderChatMessages}
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              roomPassword={roomPassword}
+              roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
               wheelRegionRef={desktopWheelRegionRef}
             />
