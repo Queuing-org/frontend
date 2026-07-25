@@ -63,7 +63,7 @@
 - [x] 로컬 커밋
 - [x] push, draft PR
 - [x] 태그 최대 3개 후속 구현 및 로컬 QA
-- [ ] 태그 제한 후속 커밋 및 PR branch push
+- [x] 태그 제한 후속 커밋 및 PR branch push
 
 ## Verification
 

@@ -4,10 +4,11 @@
 
 - Branch: `feat/preupload-room-thumbnail`
 - Feature commit: `a3aae36`
+- Tag-limit follow-up commit: `e6fbe61`
 - QA: `pass`
 - Push: `origin/feat/preupload-room-thumbnail`
 - Draft PR: https://github.com/Queuing-org/frontend/pull/27
-- Delivery state: `ci-pending`
+- Delivery state: `ready`
 
 ## Resolved Blocker
 
@@ -15,15 +16,16 @@ GitHub CLI 재인증 후 branch push와 Draft PR 생성을 완료했다.
 
 ## Next Action
 
-1. GitHub Actions 결과를 확인한다.
-2. unresolved review thread가 생기면 `queuing-pr-review-cycle`로 대응한다.
-3. CI와 리뷰가 모두 통과한 뒤 별도 요청에 따라 ready 상태를 결정한다.
+1. Draft PR의 human review를 진행한다.
+2. 새 actionable review thread가 생기면 `queuing-pr-review-cycle`로 대응한다.
+3. 별도 요청 없이는 ready-for-review 전환이나 merge를 수행하지 않는다.
 
 ## Verification Evidence
 
-- Targeted tests: 8/8 pass
-- Full tests: 44/44 pass
+- Tag-limit targeted tests: 9/9 pass
+- Full tests: 47/47 pass
 - Lint: pass
 - QA reviewer: pass
-- webpack compile and TypeScript: pass
-- Full prerender: pre-existing `SsgoiProvider` error reproduced on clean `origin/main`
+- Build: pass
+- GitHub Actions, CodeRabbit, Vercel: pass after tag-limit follow-up
+- Unresolved review threads: none
