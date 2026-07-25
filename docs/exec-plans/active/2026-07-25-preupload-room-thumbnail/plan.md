@@ -39,8 +39,10 @@
 
 1. `feat(room): 방 생성 전 썸네일 업로드 적용`
    - API client, mutation hook, create payload, 모달 UI 흐름, 회귀 테스트, 실행 계획 증거
-2. `docs: 썸네일 업로드 Draft PR 상태 기록`
-   - PR URL, 발행 상태, CI 대기 상태
+2. `docs: GitHub 발행 차단 상태 기록`
+   - 로컬 커밋, 인증 차단 조건, 재개 절차
+3. `docs: 썸네일 업로드 Draft PR 상태 기록`
+   - 인증 복구 후 PR URL, 발행 상태, CI 대기 상태
 
 ## Progress
 
@@ -51,7 +53,8 @@
 - [x] production compile 및 TypeScript 검증
 - [ ] 기존 전역 prerender 오류와 별개인 `npm run build` 성공
 - [x] QA 검토
-- [ ] 커밋, push, draft PR
+- [x] 로컬 커밋
+- [ ] push, draft PR
 
 ## Verification
 
