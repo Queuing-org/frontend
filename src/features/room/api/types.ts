@@ -4,6 +4,7 @@ export type CreateRoomPayload = {
   tags?: string[];
   maxParticipants?: number | null;
   trackLimitMinutes?: number | null;
+  thumbnailUploadToken?: string;
 };
 
 export type CreateRoomResult = {

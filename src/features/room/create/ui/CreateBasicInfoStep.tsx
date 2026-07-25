@@ -7,9 +7,11 @@ type CreateBasicInfoStepProps = {
   title: string;
   maxTitleLength: number;
   disabled: boolean;
+  thumbnailDisabled?: boolean;
   thumbnailErrorMessage?: string | null;
   thumbnailFileName?: string | null;
   thumbnailPreviewUrl?: string | null;
+  thumbnailStatusMessage?: string | null;
   isThumbnailPreviewUnavailable?: boolean;
   onTitleChange: (title: string) => void;
   onThumbnailChange: (files: FileList | null) => void;
@@ -21,9 +23,11 @@ export default function CreateBasicInfoStep({
   title,
   maxTitleLength,
   disabled,
+  thumbnailDisabled = disabled,
   thumbnailErrorMessage,
   thumbnailFileName,
   thumbnailPreviewUrl,
+  thumbnailStatusMessage,
   isThumbnailPreviewUnavailable,
   onTitleChange,
   onThumbnailChange,
@@ -36,12 +40,13 @@ export default function CreateBasicInfoStep({
         <span className={styles.label}>썸네일</span>
         <RoomThumbnailUploadField
           actionLabel="UPLOAD"
-          disabled={disabled}
+          disabled={thumbnailDisabled}
           errorMessage={thumbnailErrorMessage}
           fileName={thumbnailFileName}
           inputId="create-room-thumbnail"
           isPreviewUnavailable={isThumbnailPreviewUnavailable}
           previewUrl={thumbnailPreviewUrl}
+          statusMessage={thumbnailStatusMessage}
           variant="create"
           onClearSelection={onThumbnailClear}
           onFileChange={onThumbnailChange}

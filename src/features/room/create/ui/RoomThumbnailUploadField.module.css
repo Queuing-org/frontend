@@ -186,3 +186,7 @@
   font-weight: var(--fw-medium);
   line-height: 1.4;
 }
+
+.feedback[data-tone="status"] {
+  color: #5f6368;
+}

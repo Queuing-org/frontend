@@ -16,6 +16,7 @@ type RoomThumbnailUploadFieldProps = {
   inputId: string;
   isPreviewUnavailable?: boolean;
   previewUrl?: string | null;
+  statusMessage?: string | null;
   variant: "create" | "edit";
   onClearSelection: () => void;
   onFileChange: (files: FileList | null) => void;
@@ -31,6 +32,7 @@ export default function RoomThumbnailUploadField({
   inputId,
   isPreviewUnavailable = false,
   previewUrl,
+  statusMessage,
   variant,
   onClearSelection,
   onFileChange,
@@ -96,6 +98,10 @@ export default function RoomThumbnailUploadField({
       {errorMessage ? (
         <p className={styles.feedback} role="alert">
           {errorMessage}
+        </p>
+      ) : statusMessage ? (
+        <p className={styles.feedback} data-tone="status" role="status">
+          {statusMessage}
         </p>
       ) : null}
     </div>
