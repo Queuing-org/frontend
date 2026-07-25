@@ -5,8 +5,8 @@ import { useUpdateRoom } from "../model/useUpdateRoom";
 import { buildUpdateRoomPayload } from "../model/buildUpdateRoomPayload";
 import { useRoomThumbnailSelection } from "../../hooks/useRoomThumbnailSelection";
 import { useUploadRoomThumbnail } from "../../hooks/useUploadRoomThumbnail";
+import { ROOM_TAG_LIMIT } from "../../model/roomFormLimits";
 
-const MAX_TAGS = 5;
 const MAX_ROOM_TITLE_LENGTH = 255;
 const MAX_PARTICIPANTS = 250;
 
@@ -80,7 +80,7 @@ export function useEditRoomForm({
     number | null
   >(() => normalizedInitialMaxParticipants);
   const [savedTagSlugs, setSavedTagSlugs] = useState<string[]>(() =>
-    initialTagSlugs.slice(0, MAX_TAGS),
+    initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
   const [title, setTitle] = useState(() => initialTitle);
   const [maxParticipants, setMaxParticipants] = useState(() =>
@@ -91,7 +91,7 @@ export function useEditRoomForm({
   const [isPasswordChangeEnabled, setIsPasswordChangeEnabled] =
     useState(false);
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
-    initialTagSlugs.slice(0, MAX_TAGS),
+    initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
 
   const isSubmitting =
@@ -118,7 +118,7 @@ export function useEditRoomForm({
         return previousSlugs.filter((selectedSlug) => selectedSlug !== slug);
       }
 
-      if (previousSlugs.length >= MAX_TAGS) {
+      if (previousSlugs.length >= ROOM_TAG_LIMIT) {
         return previousSlugs;
       }
 
@@ -198,7 +198,7 @@ export function useEditRoomForm({
         setSavedTitle(trimmedTitle);
         setSavedMaxParticipants(parsedMaxParticipants.value);
         setMaxParticipants(formatMaxParticipants(parsedMaxParticipants.value));
-        setSavedTagSlugs(selectedTagSlugs.slice(0, MAX_TAGS));
+        setSavedTagSlugs(selectedTagSlugs.slice(0, ROOM_TAG_LIMIT));
         setIsPasswordChangeEnabled(false);
         setIsPasswordClearEnabled(false);
         setPassword("");
@@ -242,7 +242,7 @@ export function useEditRoomForm({
     maxParticipantsError: parsedMaxParticipants.error,
     maxParticipantsLimit: MAX_PARTICIPANTS,
     maxRoomTitleLength: MAX_ROOM_TITLE_LENGTH,
-    maxTags: MAX_TAGS,
+    maxTags: ROOM_TAG_LIMIT,
     password,
     selectedTagSlugs,
     setPassword,

@@ -8,6 +8,7 @@ import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
 import { useUploadTemporaryRoomThumbnail } from "@/src/features/room/create/model/useUploadTemporaryRoomThumbnail";
 import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThumbnailSelection";
+import { ROOM_TAG_LIMIT } from "@/src/features/room/model/roomFormLimits";
 import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
@@ -19,7 +20,6 @@ import CreateSettingsStep, {
 import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
-const MAX_TAGS = 5;
 const MAX_ROOM_TITLE_LENGTH = 18;
 const MAX_PARTICIPANTS_RANGE = { min: 1, max: 250 } as const;
 const TRACK_LIMIT_MINUTE_OPTIONS = [
@@ -221,7 +221,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         return previousSlugs.filter((selectedSlug) => selectedSlug !== slug);
       }
 
-      if (previousSlugs.length >= MAX_TAGS) {
+      if (previousSlugs.length >= ROOM_TAG_LIMIT) {
         return previousSlugs;
       }
 
@@ -367,7 +367,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         >
           <CreateGenreStepContent
             selectedTagSlugs={selectedTagSlugs}
-            maxTags={MAX_TAGS}
+            maxTags={ROOM_TAG_LIMIT}
             disabled={isSubmitting}
             onToggleTag={toggleTag}
           />
@@ -475,7 +475,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
               <h3 className={styles.stepTitle}>{stepTitle}</h3>
               {currentStep === 1 ? (
                 <span className={styles.stepMeta}>
-                  {selectedTagSlugs.length}/{MAX_TAGS}
+                  {selectedTagSlugs.length}/{ROOM_TAG_LIMIT}
                 </span>
               ) : null}
             </div>

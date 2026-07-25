@@ -7,8 +7,9 @@ import { createRoom } from "@/src/features/room/api/createRoom";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
 import RoomFormModal from "./RoomFormModal";
 
-const { push } = vi.hoisted(() => ({
+const { push, roomTags } = vi.hoisted(() => ({
   push: vi.fn(),
+  roomTags: [] as Array<{ name: string; slug: string }>,
 }));
 
 vi.mock("next/navigation", () => ({
@@ -21,7 +22,7 @@ vi.mock("@/src/features/room/api/uploadTemporaryRoomThumbnail", () => ({
   uploadTemporaryRoomThumbnail: vi.fn(),
 }));
 vi.mock("@/src/features/room/hooks/useRoomTags", () => ({
-  useRoomTags: () => ({ data: [] }),
+  useRoomTags: () => ({ data: roomTags }),
 }));
 
 function renderCreateRoomModal() {
@@ -43,6 +44,28 @@ function renderCreateRoomModal() {
   );
 }
 
+function renderEditRoomModal(initialTagSlugs: string[]) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      mutations: { retry: false },
+      queries: { retry: false },
+    },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <RoomFormModal
+        initialTagSlugs={initialTagSlugs}
+        initialTitle="기존 방"
+        mode="edit"
+        onClose={vi.fn()}
+        open
+        roomSlug="existing-room"
+      />
+    </QueryClientProvider>,
+  );
+}
+
 async function selectThumbnail(fileName = "cover.png") {
   const input = document.getElementById(
     "create-room-thumbnail",
@@ -55,9 +78,10 @@ async function selectThumbnail(fileName = "cover.png") {
   return file;
 }
 
-describe("RoomFormModal thumbnail pre-upload", () => {
+describe("RoomFormModal room form flows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    roomTags.splice(0);
     Object.defineProperty(URL, "createObjectURL", {
       configurable: true,
       value: vi.fn(() => "blob:thumbnail-preview"),
@@ -223,5 +247,57 @@ describe("RoomFormModal thumbnail pre-upload", () => {
       "thumbnailUploadToken",
     );
     expect(uploadTemporaryRoomThumbnail).not.toHaveBeenCalled();
+  });
+
+  it("태그를 최대 3개까지 선택하고 생성 payload에 반영한다", async () => {
+    const user = userEvent.setup();
+    roomTags.push(
+      { name: "록", slug: "rock" },
+      { name: "재즈", slug: "jazz" },
+      { name: "팝", slug: "pop" },
+      { name: "힙합", slug: "hip-hop" },
+    );
+    vi.mocked(createRoom).mockResolvedValue({ slug: "three-tag-room" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "태그 세 개 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    expect(screen.getByText("0/3")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "록" }));
+    await user.click(screen.getByRole("button", { name: "재즈" }));
+    await user.click(screen.getByRole("button", { name: "팝" }));
+
+    expect(screen.getByText("3/3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "힙합" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() => {
+      expect(vi.mocked(createRoom).mock.calls[0]?.[0]).toEqual(
+        expect.objectContaining({
+          tags: ["rock", "jazz", "pop"],
+        }),
+      );
+    });
+  });
+
+  it("수정 UI도 3개 카운터와 미선택 태그 비활성화를 적용한다", async () => {
+    const user = userEvent.setup();
+    roomTags.push(
+      { name: "록", slug: "rock" },
+      { name: "재즈", slug: "jazz" },
+      { name: "팝", slug: "pop" },
+      { name: "힙합", slug: "hip-hop" },
+    );
+    renderEditRoomModal(["rock", "jazz", "pop"]);
+
+    expect(screen.getByText("3/3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "힙합" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "팝" }));
+
+    expect(screen.getByText("2/3")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "힙합" })).toBeEnabled();
   });
 });

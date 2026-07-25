@@ -15,6 +15,8 @@
 - 재선택과 선택 제거는 이전 mutation data/error를 reset해 오래된 token이 생성 payload에 들어가지 않게 한다.
 - 방 생성 실패 시 성공한 임시 token을 유지해 생성 요청만 재시도할 수 있다.
 - 생성 후 PUT과 실패 시 방 DELETE 롤백을 제거했다.
+- 생성·수정 폼은 `ROOM_TAG_LIMIT = 3`을 공유해 선택 방어, 카운터, 칩 disabled 상태가 같은 제약을 사용한다.
+- 수정 폼은 초기 태그와 저장 비교 기준을 첫 3개로 정규화하되, 태그를 직접 바꾸지 않은 수정에서는 서버의 기존 초과 태그를 자동 삭제하지 않는다.
 
 ## Tests
 
@@ -26,11 +28,13 @@
 - 성공 token의 생성 payload 전달
 - 성공 후 선택 제거 시 token 제거
 - 썸네일 없는 기존 생성 흐름
+- 생성 폼의 `0/3`·`3/3` 카운터, 네 번째 태그 비활성화, create payload
+- 수정 폼의 초기 태그 정규화, 네 번째 태그 추가 방어, 카운터와 disabled 상태
 
 ## Build Evidence
 
 - `npm run lint`: pass
-- `npm run test`: 14 files, 44 tests pass
-- `npm run build`: Turbopack optimized production build 단계에서 13분 이상 무응답이라 중단
-- `npx next build --webpack`: compile과 TypeScript pass, `/_global-error` prerender에서 `useSsgoi must be used within SsgoiProvider` 실패
-- 동일 webpack prerender 실패를 별도 `/tmp`의 clean `origin/main` archive에서도 재현
+- `npm run test`: 15 files, 47 tests pass
+- 태그 제한 targeted tests: 2 files, 9 tests pass
+- `npm run build`: pass
+- `git diff --check`: pass
