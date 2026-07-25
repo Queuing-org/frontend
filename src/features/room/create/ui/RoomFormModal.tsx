@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import { ClipLoader } from "react-spinners";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
+import { useUploadTemporaryRoomThumbnail } from "@/src/features/room/create/model/useUploadTemporaryRoomThumbnail";
 import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThumbnailSelection";
-import { useUploadRoomThumbnail } from "@/src/features/room/hooks/useUploadRoomThumbnail";
-import { useDeleteRoom } from "@/src/features/room/hooks/useDeleteRoom";
 import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
@@ -160,8 +159,8 @@ type CreateRoomFormModalProps = {
 function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const router = useRouter();
   const createRoomMutation = useCreateRoom();
-  const uploadRoomThumbnailMutation = useUploadRoomThumbnail();
-  const deleteCreatedRoomMutation = useDeleteRoom();
+  const uploadTemporaryRoomThumbnailMutation =
+    useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
   const [currentStep, setCurrentStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -179,8 +178,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const trimmedPassword = password.trim();
   const isSubmitting =
     createRoomMutation.isPending ||
-    uploadRoomThumbnailMutation.isPending ||
-    deleteCreatedRoomMutation.isPending ||
+    uploadTemporaryRoomThumbnailMutation.isPending ||
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
@@ -192,19 +190,26 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const parsedTrackLimitMinutes =
     parseOptionalTrackLimitMinutes(trackLimitMinutes);
   const hasSettingsValidationError = Boolean(parsedMaxParticipants.error);
-  const thumbnailUploadErrorMessage = uploadRoomThumbnailMutation.error
+  const thumbnailUploadErrorMessage = uploadTemporaryRoomThumbnailMutation.error
     ? [
         "썸네일 업로드 실패:",
-        `(${uploadRoomThumbnailMutation.error.status})`,
-        uploadRoomThumbnailMutation.error.message,
+        `(${uploadTemporaryRoomThumbnailMutation.error.status})`,
+        uploadTemporaryRoomThumbnailMutation.error.message,
       ].join(" ")
     : null;
+  const hasSelectedThumbnailWithoutToken = Boolean(
+    thumbnailSelection.file &&
+      !uploadTemporaryRoomThumbnailMutation.data?.uploadToken,
+  );
   const hasThumbnailBlockingError = Boolean(
     thumbnailSelection.errorMessage || thumbnailUploadErrorMessage,
   );
   const canGoNext =
     currentStep === 0
-      ? trimmedTitle.length > 0 && !isSubmitting && !hasThumbnailBlockingError
+      ? trimmedTitle.length > 0 &&
+        !isSubmitting &&
+        !hasThumbnailBlockingError &&
+        !hasSelectedThumbnailWithoutToken
       : !isSubmitting;
   const stepTitle = createSteps[currentStep].title;
 
@@ -255,33 +260,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     router.push(`/room/${encodeURIComponent(normalizedSlug)}`);
   };
 
-  const uploadThumbnailAndNavigate = async (
-    slug: string,
-    roomPassword?: string,
-  ) => {
-    if (!thumbnailSelection.file) {
-      navigateToRoom(slug, roomPassword);
-      return;
-    }
-
-    try {
-      uploadRoomThumbnailMutation.reset();
-      await uploadRoomThumbnailMutation.mutateAsync({
-        slug,
-        file: thumbnailSelection.file,
-      });
-      navigateToRoom(slug, roomPassword);
-    } catch {
-      setCurrentStep(0);
-
-      try {
-        await deleteCreatedRoomMutation.mutateAsync(slug);
-      } catch {
-        // The delete mutation error is rendered below so the user knows rollback failed.
-      }
-    }
-  };
-
   const finishCreateRoom = async () => {
     setDidTryFinish(true);
 
@@ -290,7 +268,12 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    if (needsPassword || isSubmitting || hasThumbnailBlockingError) {
+    if (
+      needsPassword ||
+      isSubmitting ||
+      hasThumbnailBlockingError ||
+      hasSelectedThumbnailWithoutToken
+    ) {
       return;
     }
 
@@ -314,23 +297,31 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         ...(typeof parsedTrackLimitMinutes === "number"
           ? { trackLimitMinutes: parsedTrackLimitMinutes }
           : {}),
+        ...(uploadTemporaryRoomThumbnailMutation.data?.uploadToken
+          ? {
+              thumbnailUploadToken:
+                uploadTemporaryRoomThumbnailMutation.data.uploadToken,
+            }
+          : {}),
       });
 
-      await uploadThumbnailAndNavigate(result.slug, createdRoomPassword);
+      navigateToRoom(result.slug, createdRoomPassword);
     } catch {
       setIsNavigatingToCreatedRoom(false);
     }
   };
 
   const handleThumbnailChange = (files: FileList | null) => {
-    uploadRoomThumbnailMutation.reset();
-    deleteCreatedRoomMutation.reset();
-    thumbnailSelection.selectFile(files);
+    uploadTemporaryRoomThumbnailMutation.reset();
+    const selectedFile = thumbnailSelection.selectFile(files);
+
+    if (selectedFile) {
+      uploadTemporaryRoomThumbnailMutation.mutate({ file: selectedFile });
+    }
   };
 
   const handleThumbnailClear = () => {
-    uploadRoomThumbnailMutation.reset();
-    deleteCreatedRoomMutation.reset();
+    uploadTemporaryRoomThumbnailMutation.reset();
     thumbnailSelection.clearSelection();
   };
 
@@ -340,12 +331,20 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         <CreateBasicInfoStep
           title={title}
           maxTitleLength={MAX_ROOM_TITLE_LENGTH}
-          disabled={isSubmitting}
+          disabled={createRoomMutation.isPending || isNavigatingToCreatedRoom}
+          thumbnailDisabled={isSubmitting}
           thumbnailErrorMessage={
             thumbnailSelection.errorMessage ?? thumbnailUploadErrorMessage
           }
           thumbnailFileName={thumbnailSelection.fileName}
           thumbnailPreviewUrl={thumbnailSelection.previewUrl}
+          thumbnailStatusMessage={
+            uploadTemporaryRoomThumbnailMutation.isPending
+              ? "썸네일 업로드 중..."
+              : uploadTemporaryRoomThumbnailMutation.data?.uploadToken
+                ? "썸네일 업로드 완료"
+                : null
+          }
           isThumbnailPreviewUnavailable={
             thumbnailSelection.isPreviewUnavailable
           }
@@ -489,14 +488,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                 {createRoomMutation.error.message}
               </p>
             ) : null}
-            {deleteCreatedRoomMutation.error ? (
-              <p className={styles.errorText} role="alert">
-                썸네일 업로드 실패 후 생성된 방 정리에 실패했습니다: (
-                {deleteCreatedRoomMutation.error.status}){" "}
-                {deleteCreatedRoomMutation.error.message}
-              </p>
-            ) : null}
-
             <div className={styles.actions}>
               {currentStep > 0 ? (
                 <button

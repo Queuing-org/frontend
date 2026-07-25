@@ -66,7 +66,7 @@ export function useRoomThumbnailSelection() {
 
       if (!nextFile) {
         clearSelection();
-        return;
+        return null;
       }
 
       const validationError = validateRoomThumbnailFile(nextFile);
@@ -78,7 +78,7 @@ export function useRoomThumbnailSelection() {
         setFileName(null);
         setPreviewUrl(null);
         setErrorMessage(validationError);
-        return;
+        return null;
       }
 
       const nextPreviewUrl = URL.createObjectURL(nextFile);
@@ -87,6 +87,8 @@ export function useRoomThumbnailSelection() {
       setFileName(nextFile.name);
       setPreviewUrl(nextPreviewUrl);
       setErrorMessage(null);
+
+      return nextFile;
     },
     [clearSelection, revokePreviewUrl],
   );
