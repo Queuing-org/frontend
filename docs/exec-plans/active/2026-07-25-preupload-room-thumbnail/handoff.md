@@ -5,23 +5,19 @@
 - Branch: `feat/preupload-room-thumbnail`
 - Feature commit: `a3aae36`
 - QA: `pass`
-- Working tree after this handoff commit should be clean.
-- Push/PR: not started
+- Push: `origin/feat/preupload-room-thumbnail`
+- Draft PR: https://github.com/Queuing-org/frontend/pull/27
+- Delivery state: `ci-pending`
 
-## Blocker
+## Resolved Blocker
 
-`gh auth status` reports that the active `aryu1217` token in `~/.config/gh/hosts.yml` is invalid.
+GitHub CLI 재인증 후 branch push와 Draft PR 생성을 완료했다.
 
-The delivery policy requires stopping before push or PR creation when GitHub authentication is unavailable.
+## Next Action
 
-## Resume
-
-1. Run `gh auth login -h github.com`.
-2. Confirm `gh auth status`.
-3. Push `feat/preupload-room-thumbnail` to `origin`.
-4. Open a draft PR against `main` using the repository template.
-5. Update `delivery-state.md` to `ci-pending` with the PR URL.
-6. Commit and push the final delivery-state record.
+1. GitHub Actions 결과를 확인한다.
+2. unresolved review thread가 생기면 `queuing-pr-review-cycle`로 대응한다.
+3. CI와 리뷰가 모두 통과한 뒤 별도 요청에 따라 ready 상태를 결정한다.
 
 ## Verification Evidence
 

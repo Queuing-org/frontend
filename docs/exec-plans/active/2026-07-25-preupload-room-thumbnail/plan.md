@@ -54,7 +54,7 @@
 - [ ] 기존 전역 prerender 오류와 별개인 `npm run build` 성공
 - [x] QA 검토
 - [x] 로컬 커밋
-- [ ] push, draft PR
+- [x] push, draft PR
 
 ## Verification
 
