@@ -299,5 +299,7 @@ describe("RoomFormModal room form flows", () => {
 
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "힙합" })).toBeEnabled();
+    expect(document.getElementById("edit-room-thumbnail")).toBeNull();
+    expect(screen.queryByText("THUMBNAIL")).not.toBeInTheDocument();
   });
 });

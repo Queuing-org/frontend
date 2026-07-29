@@ -51,7 +51,7 @@ export function useDeleteRoomQueueEntries() {
         queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(variables.slug),
+        queryKey: playlistKeys.roomPlaybackPrefix(variables.slug),
       });
     },
   });

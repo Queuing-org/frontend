@@ -4,15 +4,15 @@ import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
-  PlaybackSnapshot,
   PlaylistProtectedRequestParams,
+  RoomPlayback,
 } from "../model/types";
 
 export async function fetchRoomPlayback({
   slug,
   password,
-}: PlaylistProtectedRequestParams): Promise<PlaybackSnapshot | null> {
-  const res = await axiosInstance.get<ApiResponse<PlaybackSnapshot | null>>(
+}: PlaylistProtectedRequestParams): Promise<RoomPlayback> {
+  const res = await axiosInstance.get<ApiResponse<RoomPlayback>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/playback`,
     {
       headers: buildRoomPasswordHeaders(password),

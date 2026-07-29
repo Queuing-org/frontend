@@ -3,20 +3,20 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { userKeys } from "@/src/features/user/model/queryKeys";
-import { recommendMusicPower } from "../api/recommendMusicPower";
+import { setMusicPowerVote } from "../api/setMusicPowerVote";
 import type { UserProfile } from "../model/types";
-import { useRecommendMusicPower } from "./useRecommendMusicPower";
+import { useSetMusicPowerVote } from "./useSetMusicPowerVote";
 
-vi.mock("../api/recommendMusicPower", () => ({
-  recommendMusicPower: vi.fn(),
+vi.mock("../api/setMusicPowerVote", () => ({
+  setMusicPowerVote: vi.fn(),
 }));
 
-describe("useRecommendMusicPower", () => {
+describe("useSetMusicPowerVote", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("추천 성공 시 음악력과 공개 프로필 캐시를 함께 갱신한다", async () => {
+  it("성공 시 음악력, 내 투표, 공개 프로필 캐시를 함께 갱신한다", async () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
     });
@@ -27,23 +27,26 @@ describe("useRecommendMusicPower", () => {
       musicPower: 4,
     };
     queryClient.setQueryData(userKeys.profile("target-user"), profile);
-    vi.mocked(recommendMusicPower).mockResolvedValue({
+    vi.mocked(setMusicPowerVote).mockResolvedValue({
       musicPower: 5,
-      recommendedByMe: true,
+      myVote: "DOWNVOTE",
       targetUserSlug: "target-user",
     });
     const wrapper = ({ children }: PropsWithChildren) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
-    const { result } = renderHook(() => useRecommendMusicPower(), { wrapper });
+    const { result } = renderHook(() => useSetMusicPowerVote(), { wrapper });
 
     await act(async () => {
-      await result.current.mutateAsync("target-user");
+      await result.current.mutateAsync({
+        userSlug: "target-user",
+        vote: "DOWNVOTE",
+      });
     });
 
     expect(queryClient.getQueryData(userKeys.musicPower("target-user"))).toEqual({
       musicPower: 5,
-      recommendedByMe: true,
+      myVote: "DOWNVOTE",
       targetUserSlug: "target-user",
     });
     expect(

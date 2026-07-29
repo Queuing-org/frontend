@@ -9,17 +9,14 @@ import { playlistKeys } from "./queryKeys";
 export function useRoomQueue(
   slug: string,
   password?: string | null,
-  offset = 0,
-  size = 100,
 ) {
   return useSuspenseQuery<RoomQueueResult, ApiError>({
-    queryKey: playlistKeys.roomQueue(slug, password, offset, size),
+    queryKey: playlistKeys.roomQueue(slug, password, false),
     queryFn: () =>
       fetchRoomQueue({
         slug,
         password,
-        offset,
-        size,
+        mine: false,
       }),
     retry: false,
   });

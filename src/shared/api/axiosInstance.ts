@@ -5,8 +5,13 @@ import axios, {
 import { API_BASE_URL } from "./config";
 import { ApiError } from "./api-error";
 import { refreshCsrf } from "./csrf/ensureCsrf";
+import {
+  getRateLimitRetryDelayMs,
+  parseRetryAfterMs,
+} from "./rateLimitRetry";
 
 const CSRF_METHODS = new Set(["delete", "patch", "post", "put"]);
+const MAX_RATE_LIMIT_RETRIES = 2;
 let csrfVersion = 0;
 
 function shouldAttachCsrfHeader(config: InternalAxiosRequestConfig) {
@@ -25,6 +30,7 @@ export const axiosInstance = axios.create({
 type CsrfRetryRequestConfig = InternalAxiosRequestConfig & {
   _csrfRetry?: boolean;
   _csrfVersion?: number;
+  _rateLimitRetryCount?: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -116,8 +122,27 @@ axiosInstance.interceptors.response.use(
 
 axiosInstance.interceptors.response.use(
   (res) => res,
-  (err) => {
+  async (err) => {
     const status = err?.response?.status ?? 0;
+    const retryAfterMs = parseRetryAfterMs(
+      err?.response?.headers?.["retry-after"],
+    );
+    const config = err?.config as CsrfRetryRequestConfig | undefined;
+    const method = (config?.method ?? "get").toLowerCase();
+    const retryCount = config?._rateLimitRetryCount ?? 0;
+
+    if (
+      status === 429 &&
+      method === "get" &&
+      config &&
+      retryCount < MAX_RATE_LIMIT_RETRIES
+    ) {
+      config._rateLimitRetryCount = retryCount + 1;
+      const delayMs = getRateLimitRetryDelayMs(retryAfterMs, retryCount);
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+
+      return axiosInstance(config);
+    }
 
     const backendError = err?.response?.data?.error;
     const backendStatus = backendError?.statusCode;
@@ -138,7 +163,8 @@ axiosInstance.interceptors.response.use(
         status: finalStatus,
         message: String(message),
         code: backendCode,
+        retryAfterMs,
       })
     );
-  }
+  },
 );
