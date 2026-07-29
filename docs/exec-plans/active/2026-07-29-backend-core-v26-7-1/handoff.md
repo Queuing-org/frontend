@@ -1,6 +1,6 @@
 # Handoff
 
-- phase: publishing
+- phase: ci-pending
 - branch: `feat/backend-core-v26-7-1`
 - base: `origin/main@2619fb06`
 - commits:
@@ -10,5 +10,6 @@
   - `2b8325b` SSE/WebSocket
 - verification: test 30 files/77 tests, lint, build, fresh QA `pass`
 - manual_smoke: `/home`, `/search`, `/room/nonexistent-v26-qa` 200
-- next_action: push 후 Draft PR 생성, CI와 리뷰 대기
+- pr: https://github.com/Queuing-org/frontend/pull/28
+- next_action: CI와 리뷰 대기. 실패나 리뷰 요청이 생기면 `queuing-pr-review-cycle`로 재개
 - blockers: 인증된 두 계정과 실제 이벤트를 요구하는 수동 시나리오는 로컬 자격증명 부재로 미수행

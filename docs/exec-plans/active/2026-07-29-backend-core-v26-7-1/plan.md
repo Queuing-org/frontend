@@ -77,7 +77,7 @@
 - [x] 테스트/린트/빌드
 - [x] fresh QA
 - [x] 기능 단위 커밋
-- [ ] push/Draft PR
+- [x] push/Draft PR
 
 ## Decisions
 
