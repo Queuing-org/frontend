@@ -44,7 +44,9 @@ Do not use it for purely visual CSS changes with no data flow.
 - Room update payloads should avoid unknown existing secrets: never send `password: ""` to mean "keep password".
 - Room update `PATCH /api/v1/rooms/{slug}` currently rejects password-only payloads with `400 invalid-input`; when any room update is sent, include the current non-empty `title` alongside changed `tags` or `password`.
 - Empty password strings are ambiguous unless the API explicitly documents them as "clear password".
-- Queue mutations must refresh `roomQueue`; changes that affect current playback or participants should also consider `roomState`.
+- Queue mutations must refresh `roomQueue`; playback changes must consider `roomPlayback`, and participant changes must consider `roomParticipants`.
+- A connected global STOMP client is not proof that the current socket session joined a room. After every reconnect, repeat `/app/room/{slug}/join` before restoring room topic subscriptions and invalidating room reads.
+- Room route exit and a cancelled in-flight join must publish `/app/room/{slug}/leave` while the socket is connected. Do not rely on component subscription cleanup to remove the backend participant session.
 - Playlist item operations use `entryId`, not track video id.
 - Room chat messages may identify senders by `senderId` or `senderSlug` depending on API surface/version. Chat parsers and send-confirm logic must tolerate both and must not silently drop otherwise valid messages.
 - Chat send confirmation is driven by `CHAT_MESSAGE`, but if that real-time event is missed, backfill the latest chat history before requiring a manual refresh.

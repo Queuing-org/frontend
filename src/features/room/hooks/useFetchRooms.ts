@@ -164,6 +164,5 @@ export function useRoomsQuery(params: RoomsQueryParams = {}) {
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
       getNextRoomsPageParam(lastPage, normalizedParams),
-    retry: false,
   });
 }

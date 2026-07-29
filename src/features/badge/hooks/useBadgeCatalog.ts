@@ -10,6 +10,5 @@ export function useBadgeCatalog() {
   return useQuery<BadgeCatalogResponse, ApiError>({
     queryKey: badgeKeys.catalog(),
     queryFn: fetchBadges,
-    retry: false,
   });
 }

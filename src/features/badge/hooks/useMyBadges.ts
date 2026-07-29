@@ -11,6 +11,5 @@ export function useMyBadges(enabled = true) {
     queryKey: badgeKeys.me(),
     queryFn: fetchMyBadges,
     enabled,
-    retry: false,
   });
 }

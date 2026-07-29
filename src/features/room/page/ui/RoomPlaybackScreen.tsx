@@ -14,10 +14,7 @@ import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
 import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
-import {
-  joinRoom,
-  type JoinRoomResult,
-} from "@/src/features/room/api/joinRoom";
+import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
@@ -26,6 +23,10 @@ import {
   readStoredRoomJoinPassword,
   writeStoredRoomJoinPassword,
 } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
+import {
+  isPasswordRequiredError,
+  shouldKeepPasswordFormAfterSubmit,
+} from "@/src/features/room/join/model/roomJoinErrors";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
@@ -74,32 +75,11 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
   return !roomMeta.isPublic;
 }
 
-function isPasswordRequiredError(error: ApiError) {
-  return (
-    error.code === "room.password-required" ||
-    error.code === "room.invalid-password" ||
-    error.code === "room.password-invalid" ||
-    error.message.includes("비밀번호")
-  );
-}
-
-function shouldKeepPasswordFormAfterSubmit(error: ApiError) {
-  return (
-    isPasswordRequiredError(error) ||
-    error.status === 400 ||
-    error.status === 403
-  );
-}
-
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
   const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const slug = normalizeRoomSlug(params.slug ?? "");
-  const joinRequestRef = useRef<{
-    slug: string;
-    password: string | null;
-    promise: Promise<JoinRoomResult>;
-  } | null>(null);
+  const activeJoinAbortControllerRef = useRef<AbortController | null>(null);
   const [joinStateSlug, setJoinStateSlug] = useState(slug);
   const [status, setStatus] = useState<JoinStatus>("joining");
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
@@ -146,9 +126,10 @@ export default function RoomPlaybackScreen() {
     initializeFromJoinData: initializeChatStateFromJoinData,
     reset: resetChatState,
   } = roomChat;
-  const { cleanupRoomSubscription, ensureRoomSubscription } =
+  const { ensureRoomSubscription, leaveRoomSession } =
     useRoomRealtimeEvents({
       cleanupChatSubscriptions,
+      initializeChatStateFromJoinData,
       resetChatState,
       setJoinErrorMessage,
       setLivePlaybackStatus,
@@ -162,9 +143,18 @@ export default function RoomPlaybackScreen() {
     setJoinStateSlug(slug);
     setIsSubmittingPassword(true);
     setJoinErrorMessage("");
+    activeJoinAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    activeJoinAbortControllerRef.current = abortController;
 
     try {
-      const joinResult = await joinRoom(slug, { password });
+      const joinResult = await joinRoom(
+        slug,
+        { password },
+        { signal: abortController.signal },
+      );
+      if (abortController.signal.aborted) return;
+
       writeStoredRoomJoinPassword(slug, password);
       initializeChatStateFromJoinData(joinResult.data);
       setJoinStateSlug(slug);
@@ -173,6 +163,8 @@ export default function RoomPlaybackScreen() {
       setStatus("joined");
       setJoinErrorMessage("");
     } catch (error) {
+      if (abortController.signal.aborted) return;
+
       const err = error as ApiError;
       setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
 
@@ -183,16 +175,20 @@ export default function RoomPlaybackScreen() {
 
       setStatus("error");
     } finally {
-      setIsSubmittingPassword(false);
+      if (activeJoinAbortControllerRef.current === abortController) {
+        activeJoinAbortControllerRef.current = null;
+        setIsSubmittingPassword(false);
+      }
     }
   }
 
   useEffect(() => {
     if (!slug) return;
 
-    let isActive = true;
+    const abortController = new AbortController();
+    activeJoinAbortControllerRef.current?.abort();
+    activeJoinAbortControllerRef.current = abortController;
     const storedPassword = readStoredRoomJoinPassword(slug);
-    joinRequestRef.current = null;
     resetChatState();
 
     (async () => {
@@ -201,7 +197,7 @@ export default function RoomPlaybackScreen() {
 
       try {
         const roomMeta = await fetchRoomMeta(slug);
-        if (!isActive) return;
+        if (abortController.signal.aborted) return;
 
         requiresPassword = roomRequiresPassword(roomMeta);
         joinPassword = requiresPassword ? storedPassword : null;
@@ -211,7 +207,6 @@ export default function RoomPlaybackScreen() {
         }
 
         if (requiresPassword && !joinPassword) {
-          joinRequestRef.current = null;
           setJoinStateSlug(slug);
           setRoomPassword(null);
           setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
@@ -219,25 +214,12 @@ export default function RoomPlaybackScreen() {
           return;
         }
 
-        if (
-          joinRequestRef.current?.slug !== slug ||
-          joinRequestRef.current.password !== joinPassword
-        ) {
-          joinRequestRef.current = {
-            slug,
-            password: joinPassword,
-            promise: joinRoom(
-              slug,
-              joinPassword ? { password: joinPassword } : {},
-            ),
-          };
-        }
-
-        const currentJoinRequest = joinRequestRef.current;
-        if (!currentJoinRequest) return;
-
-        const joinResult = await currentJoinRequest.promise;
-        if (!isActive) return;
+        const joinResult = await joinRoom(
+          slug,
+          joinPassword ? { password: joinPassword } : {},
+          { signal: abortController.signal },
+        );
+        if (abortController.signal.aborted) return;
 
         initializeChatStateFromJoinData(joinResult.data);
         ensureRoomSubscription(slug, joinPassword);
@@ -246,7 +228,7 @@ export default function RoomPlaybackScreen() {
         setStatus("joined");
         setJoinErrorMessage("");
       } catch (error) {
-        if (!isActive) return;
+        if (abortController.signal.aborted) return;
 
         const err = error as ApiError;
 
@@ -271,17 +253,23 @@ export default function RoomPlaybackScreen() {
         setRoomPassword(null);
         setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
         setStatus("error");
+      } finally {
+        if (activeJoinAbortControllerRef.current === abortController) {
+          activeJoinAbortControllerRef.current = null;
+        }
       }
     })();
 
     return () => {
-      isActive = false;
-      cleanupRoomSubscription();
+      abortController.abort();
+      activeJoinAbortControllerRef.current?.abort();
+      activeJoinAbortControllerRef.current = null;
+      leaveRoomSession();
     };
   }, [
-    cleanupRoomSubscription,
     ensureRoomSubscription,
     initializeChatStateFromJoinData,
+    leaveRoomSession,
     resetChatState,
     slug,
   ]);

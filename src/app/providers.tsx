@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ensureCsrf } from "../shared/api/csrf/ensureCsrf";
+import { shouldRetryQuery } from "../shared/api/queryRetry";
 import BadgeAwardProvider from "../features/badge/events/ui/BadgeAwardProvider";
 import FollowPresenceProvider from "../features/follow/presence/ui/FollowPresenceProvider";
 
@@ -13,7 +14,7 @@ export default function Providers({ children }: { children: ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            retry: false,
+            retry: shouldRetryQuery,
             refetchOnWindowFocus: false,
           },
         },

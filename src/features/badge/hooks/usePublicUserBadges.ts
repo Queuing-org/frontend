@@ -17,7 +17,6 @@ export function publicUserBadgesQueryOptions(
   return {
     queryKey: badgeKeys.publicUser(userSlug),
     queryFn: () => fetchPublicUserBadges(userSlug),
-    retry: false,
   };
 }
 
@@ -26,6 +25,5 @@ export function usePublicUserBadges(userSlug: string | null | undefined) {
     queryKey: badgeKeys.publicUser(userSlug),
     queryFn: () => fetchPublicUserBadges(userSlug!),
     enabled: Boolean(userSlug),
-    retry: false,
   });
 }

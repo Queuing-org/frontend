@@ -58,6 +58,8 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - The final UI behavior matches the newest user request, not an older request.
 - Every API mutation has a deliberate success/error/cache path.
 - Any claim about a 500 or backend root cause is backed by reproducible evidence.
+- App-scoped STOMP changes are tested against room entry while the client is already active but reconnecting.
+- Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.
 - Build/lint results are reported honestly, including pre-existing warnings.

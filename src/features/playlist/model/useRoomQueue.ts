@@ -18,6 +18,5 @@ export function useRoomQueue(
         password,
         mine: false,
       }),
-    retry: false,
   });
 }

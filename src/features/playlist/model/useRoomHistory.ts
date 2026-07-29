@@ -26,6 +26,5 @@ export function useRoomHistory(
       page.hasNext ? page.nextCursor ?? undefined : undefined,
     enabled,
     select: (data) => data.pages,
-    retry: false,
   });
 }

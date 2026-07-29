@@ -89,7 +89,7 @@
 ## Verification
 
 - Targeted Vitest suites per feature: pass
-- `npm run test`: pass, 30 files / 77 tests
+- `npm run test`: pass, 33 files / 86 tests
 - `npm run lint`: pass
 - `npm run build`: pass
 - fresh read-only QA: `pass`
@@ -98,3 +98,5 @@
 ## Residual Risk
 
 - 두 계정, 실제 SSE 재연결, 공개/비공개 방 비밀번호 헤더 검증은 유효한 테스트 계정과 실행 중 백엔드가 필요하다.
+- 방 입장 회귀 수정 후 shared backend에 방 fixture가 없어 실제 Chrome 입장/퇴장 E2E는 재수행하지 못했다. STOMP 세션 순서는 회귀 테스트로 검증했다.
+- 모바일 viewport의 기존 `useMediaQuery` hydration mismatch는 이번 PR 이전 코드에도 존재하는 별도 이슈다.

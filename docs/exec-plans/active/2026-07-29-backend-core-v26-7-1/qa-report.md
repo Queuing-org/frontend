@@ -38,3 +38,22 @@ Codex in-app browser 연결은 코드와 무관한 실행 도구 메타데이터
 - 공개·비공개 방 비밀번호 헤더의 실제 네트워크 확인
 
 해당 경계는 자동 테스트로 검증했지만, 배포 전 통합 환경에서 별도 수동 확인이 필요하다.
+
+## 2026-07-29 Room Entry Regression Follow-up
+
+- classification: `pass`
+- fresh read-only re-review: `pass`
+- targeted tests: pass — 4 files / 10 tests
+  - active-but-reconnecting client waits beyond the previous 5-second boundary
+  - cancelled published join sends leave
+  - reconnect restores join before a single room subscription and read invalidation
+  - reconnect 중 route session cleanup aborts rejoin and publishes leave exactly once
+  - query retries exclude 4xx/429 and preserve network/5xx recovery
+- production query-level `retry: false` overrides: zero
+- `npm run test`: pass — 33 files / 86 tests
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
+- local desktop Chrome `/home`: empty-room state rendered successfully
+- live room entry/leave E2E: unavailable because `GET /api/v1/rooms?size=20` returned no rooms; no external fixture was created
+- separate pre-existing evidence: mobile viewport home hydration mismatch from `useMediaQuery` initial server/client branch, outside this regression fix

@@ -27,6 +27,16 @@ import type {
   MusicPowerResponse,
   UserProfile,
 } from "@/src/features/user/profile/model/types";
+import {
+  joinRoom,
+  type JoinRoomResult,
+} from "@/src/features/room/api/joinRoom";
+import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
+import {
+  isPasswordRequiredError,
+  shouldKeepPasswordFormAfterSubmit,
+} from "@/src/features/room/join/model/roomJoinErrors";
+import { ApiError } from "@/src/shared/api/api-error";
 import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import {
@@ -76,6 +86,9 @@ function isWsErrorData(data: unknown): data is WsErrorData {
 
 type UseRoomRealtimeEventsParams = {
   cleanupChatSubscriptions: () => void;
+  initializeChatStateFromJoinData: (
+    data: JoinRoomResult["data"],
+  ) => void;
   resetChatState: () => void;
   setJoinErrorMessage: (message: string) => void;
   setLivePlaybackStatus: Dispatch<SetStateAction<LivePlaybackState | null>>;
@@ -90,6 +103,7 @@ type RoomSubscriptionConfig = {
 
 export function useRoomRealtimeEvents({
   cleanupChatSubscriptions,
+  initializeChatStateFromJoinData,
   resetChatState,
   setJoinErrorMessage,
   setLivePlaybackStatus,
@@ -100,6 +114,8 @@ export function useRoomRealtimeEvents({
   const router = useRouter();
   const roomSubscriptionRef = useRef<StompSubscription | null>(null);
   const roomSubscriptionConfigRef = useRef<RoomSubscriptionConfig | null>(null);
+  const reconnectPendingRef = useRef(false);
+  const rejoinAbortControllerRef = useRef<AbortController | null>(null);
   const hasRedirectedAfterKickRef = useRef(false);
 
   const cleanupBrokerSubscription = useCallback(() => {
@@ -111,10 +127,29 @@ export function useRoomRealtimeEvents({
     roomSubscriptionRef.current = null;
   }, []);
 
+  const cancelRejoin = useCallback(() => {
+    rejoinAbortControllerRef.current?.abort();
+    rejoinAbortControllerRef.current = null;
+  }, []);
+
   const cleanupRoomSubscription = useCallback(() => {
+    cancelRejoin();
     cleanupBrokerSubscription();
     roomSubscriptionConfigRef.current = null;
-  }, [cleanupBrokerSubscription]);
+    reconnectPendingRef.current = false;
+  }, [cancelRejoin, cleanupBrokerSubscription]);
+
+  const leaveRoomSession = useCallback(() => {
+    const config = roomSubscriptionConfigRef.current;
+    cancelRejoin();
+    cleanupBrokerSubscription();
+    roomSubscriptionConfigRef.current = null;
+    reconnectPendingRef.current = false;
+
+    if (config) {
+      publishLeaveRequest(config.slug);
+    }
+  }, [cancelRejoin, cleanupBrokerSubscription]);
 
   const invalidateRoomReads = useCallback(
     (roomSlug: string) => {
@@ -276,12 +311,83 @@ export function useRoomRealtimeEvents({
     return addSocketListener({
       onConnect: () => {
         const config = roomSubscriptionConfigRef.current;
-        if (!config) {
+        if (!config || !reconnectPendingRef.current) {
           return;
         }
 
-        subscribeWithConfig(config, true);
-        invalidateRoomReads(config.slug);
+        reconnectPendingRef.current = false;
+        cancelRejoin();
+        const abortController = new AbortController();
+        rejoinAbortControllerRef.current = abortController;
+
+        void joinRoom(
+          config.slug,
+          config.password ? { password: config.password } : {},
+          {
+            leaveOnAbort: false,
+            signal: abortController.signal,
+          },
+        )
+          .then((joinResult) => {
+            if (
+              abortController.signal.aborted ||
+              roomSubscriptionConfigRef.current !== config
+            ) {
+              return;
+            }
+
+            initializeChatStateFromJoinData(joinResult.data);
+            subscribeWithConfig(config, true);
+            invalidateRoomReads(config.slug);
+            setJoinErrorMessage("");
+            setStatus("joined");
+          })
+          .catch((error: unknown) => {
+            if (
+              abortController.signal.aborted ||
+              roomSubscriptionConfigRef.current !== config
+            ) {
+              return;
+            }
+
+            const joinError =
+              error instanceof ApiError
+                ? error
+                : new ApiError({
+                    status: 503,
+                    code: "room.rejoin-failed",
+                    message: "방 연결을 복구하지 못했습니다.",
+                  });
+            const shouldRequestPassword =
+              isPasswordRequiredError(joinError) ||
+              (config.password !== null &&
+                shouldKeepPasswordFormAfterSubmit(joinError));
+
+            if (shouldRequestPassword) {
+              clearStoredRoomJoinPassword(config.slug);
+              cleanupRoomSubscription();
+            }
+
+            setJoinErrorMessage(joinError.message);
+            setStatus(shouldRequestPassword ? "needs-password" : "error");
+          })
+          .finally(() => {
+            if (rejoinAbortControllerRef.current === abortController) {
+              rejoinAbortControllerRef.current = null;
+            }
+          });
+      },
+      onWebSocketClose: () => {
+        if (!roomSubscriptionConfigRef.current) {
+          return;
+        }
+
+        cancelRejoin();
+        cleanupBrokerSubscription();
+        cleanupChatSubscriptions();
+        reconnectPendingRef.current = true;
+        setJoinErrorMessage("");
+        setStatus("joining");
       },
       onStompError: (frame) => {
         if (hasRedirectedAfterKickRef.current || !frame.body) {
@@ -325,6 +431,9 @@ export function useRoomRealtimeEvents({
   }, [
     cleanupChatSubscriptions,
     cleanupRoomSubscription,
+    cancelRejoin,
+    cleanupBrokerSubscription,
+    initializeChatStateFromJoinData,
     invalidateRoomReads,
     queryClient,
     resetChatState,
@@ -359,5 +468,6 @@ export function useRoomRealtimeEvents({
   return {
     cleanupRoomSubscription,
     ensureRoomSubscription,
+    leaveRoomSession,
   };
 }

@@ -8,5 +8,5 @@
 - selected_skills: queuing-feature-delivery, queuing-orchestrator, queuing-api-boundary, queuing-ui-flow, frontend-architecture-guardrails, queuing-qa-reviewer
 - local_qa: pass
 - ci: pending
-- review_threads: pending
-- next_action: GitHub Actions와 리뷰 결과를 기다린다. 실패나 요청 변경이 생기면 queuing-pr-review-cycle로 이어간다.
+- review_threads: none
+- next_action: 검증된 방 입장 회귀 수정 커밋을 기존 PR에 push하고 checks를 재확인한다.

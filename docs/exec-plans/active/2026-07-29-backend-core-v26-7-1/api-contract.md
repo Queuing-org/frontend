@@ -40,3 +40,11 @@
 - Parse `Retry-After` delta seconds and HTTP-date into `retryAfterMs`.
 - GET/query 429: at most two retries, delay `max(retryAfterMs, exponentialBackoff)`.
 - ordinary 4xx and mutations: no automatic retry.
+- React Query does not retry exhausted 4xx/429 responses, but preserves up to three retries for network/5xx query failures.
+
+## Room WebSocket Session
+
+- The app-scoped STOMP transport and a room participant session are separate states.
+- An active but disconnected client waits for the next `onConnect`; the room connect timeout must be longer than the 5-second broker reconnect delay.
+- Every reconnected socket repeats `/app/room/{slug}/join` with the stored password before restoring room/chat topic subscriptions.
+- Route exit and a cancelled published join send `/app/room/{slug}/leave`.

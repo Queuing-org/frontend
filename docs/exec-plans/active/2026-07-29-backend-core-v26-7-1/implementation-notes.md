@@ -19,6 +19,14 @@
 - 로그인 사용자 범위에서 칭호 EventSource를 한 번 열고 이벤트 ID와 badgeCode로 중복 제거한 뒤 모달을 순차 표시한다.
 - 방 WebSocket은 runtime guard를 통과한 음악력/트랙 시작 이벤트만 즉시 캐시에 반영한다. 재연결은 기존 구독을 해제한 뒤 하나만 복원하고 방 조회를 재검증한다.
 
+## Room Entry Regression Follow-up
+
+- 전역 follow presence가 singleton STOMP client를 방 입장 전부터 활성화하면서 `reconnectDelay=5000ms`와 기존 입장 대기 `5000ms`가 경쟁하던 문제를 수정했다.
+- socket 연결 대기를 polling에서 `onConnect` 기반으로 바꾸고, 재연결 지연을 포함할 수 있도록 제한 시간을 12초로 조정했다.
+- 재연결은 topic 재구독만 하지 않고 `/join` handshake 성공 뒤 room/chat 구독과 playback/participants/queue 재검증을 수행한다.
+- 입장 요청에 `AbortSignal`을 추가하고 route cleanup/취소 시 `/leave`를 보내 ghost participant를 방지한다.
+- React Query 기본 재시도는 4xx/429를 제외하고 network/5xx에만 기존 최대 3회를 복구했다.
+
 ## Removed
 
 - 기존 방 썸네일 PUT/DELETE API, 훅, 편집 입력

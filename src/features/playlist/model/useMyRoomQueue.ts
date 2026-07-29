@@ -15,6 +15,5 @@ export function useMyRoomQueue(
     queryKey: playlistKeys.roomQueue(slug, password, true),
     queryFn: () => fetchRoomQueue({ slug, password, mine: true }),
     enabled,
-    retry: false,
   });
 }

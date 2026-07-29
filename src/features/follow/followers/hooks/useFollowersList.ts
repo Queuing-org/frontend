@@ -11,6 +11,5 @@ export function useFollowersList(
   return useSuspenseQuery<FollowersListResponse, ApiError>({
     queryKey: followKeys.followers(params?.lastId, params?.size),
     queryFn: () => fetchFollowers(params),
-    retry: false,
   });
 }

@@ -15,6 +15,5 @@ export function useRoomPlayback(
     queryKey: playlistKeys.roomPlayback(slug, password),
     queryFn: () => fetchRoomPlayback({ slug: slug!, password }),
     enabled: enabled && !!slug,
-    retry: false,
   });
 }

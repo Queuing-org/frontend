@@ -15,6 +15,5 @@ export function useRoomParticipants(
     queryKey: playlistKeys.roomParticipants(slug, password),
     queryFn: () => fetchRoomParticipants({ slug: slug!, password }),
     enabled: enabled && Boolean(slug),
-    retry: false,
   });
 }

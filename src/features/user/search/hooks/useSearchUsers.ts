@@ -9,6 +9,5 @@ export function useSearchUsers(params: SearchUserParams) {
     queryKey: userKeys.search(params.query, params.lastId, params.limit),
     queryFn: () => searchUsers(params),
     enabled: params.query.trim().length > 0,
-    retry: false,
   });
 }

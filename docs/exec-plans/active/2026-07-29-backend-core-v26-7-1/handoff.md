@@ -8,8 +8,8 @@
   - `45067d3` 프로필/presence
   - `6e5801e` 방 데이터/UI
   - `2b8325b` SSE/WebSocket
-- verification: test 30 files/77 tests, lint, build, fresh QA `pass`
+- verification: regression targeted 4 files/10 tests, full test 33 files/86 tests, lint, build, diff check; fresh read-only QA pass
 - manual_smoke: `/home`, `/search`, `/room/nonexistent-v26-qa` 200
 - pr: https://github.com/Queuing-org/frontend/pull/28
-- next_action: CI와 리뷰 대기. 실패나 리뷰 요청이 생기면 `queuing-pr-review-cycle`로 재개
-- blockers: 인증된 두 계정과 실제 이벤트를 요구하는 수동 시나리오는 로컬 자격증명 부재로 미수행
+- next_action: 수정 커밋을 기존 PR #28에 push하고 checks를 재확인
+- blockers: shared backend 방 목록이 비어 있어 수정 후 실제 방 입장/퇴장 Chrome E2E는 미수행
