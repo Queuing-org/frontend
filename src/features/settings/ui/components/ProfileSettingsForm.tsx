@@ -7,23 +7,25 @@ import styles from "../ProfileSettingsTab.module.css";
 type ProfileSettingsFormProps = {
   badgeDisabled: boolean;
   badgeOptions: Array<{
+    badgeCode: string;
     isAcquired: boolean;
     name: string;
-    slug: string;
   }>;
   badgeStatusMessage: string | null;
   badgeValue: string;
-  canUpdateNickname: boolean;
+  canUpdateProfile: boolean;
   hasProfile: boolean;
   isBadgeStatusError: boolean;
   isMeError: boolean;
   isMeLoading: boolean;
   isUpdatingProfile: boolean;
   nickname: string;
+  statusMessage: string;
   successMessage: string | null;
   updateError: ApiError | null;
-  onBadgeChange: (badgeSlug: string) => void;
+  onBadgeChange: (badgeCode: string) => void;
   onNicknameChange: (value: string) => void;
+  onStatusMessageChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
 
@@ -32,17 +34,19 @@ export default function ProfileSettingsForm({
   badgeOptions,
   badgeStatusMessage,
   badgeValue,
-  canUpdateNickname,
+  canUpdateProfile,
   hasProfile,
   isBadgeStatusError,
   isMeError,
   isMeLoading,
   isUpdatingProfile,
   nickname,
+  statusMessage,
   successMessage,
   updateError,
   onBadgeChange,
   onNicknameChange,
+  onStatusMessageChange,
   onSubmit,
 }: ProfileSettingsFormProps) {
   const nicknameInputValue = isMeLoading
@@ -70,11 +74,29 @@ export default function ProfileSettingsForm({
           <button
             type="submit"
             className={styles.primaryButton}
-            disabled={!canUpdateNickname}
+            disabled={!canUpdateProfile}
           >
             {isUpdatingProfile ? "변경 중" : "저장"}
           </button>
         </div>
+      </div>
+      <div className={styles.formRow}>
+        <label className={styles.fieldLabel} htmlFor="settings-status-message">
+          한 줄 메시지
+        </label>
+        <input
+          id="settings-status-message"
+          className={styles.textInput}
+          value={isMeLoading ? "" : statusMessage}
+          onChange={(event) => onStatusMessageChange(event.target.value)}
+          placeholder="한 줄 메시지를 입력하세요"
+          maxLength={255}
+          disabled={!hasProfile || isUpdatingProfile || isMeLoading}
+          aria-describedby="settings-status-message-hint"
+        />
+        <span id="settings-status-message-hint" className={styles.srOnly}>
+          최대 255자, 빈 문자열로 저장하면 삭제됩니다.
+        </span>
       </div>
       <div className={styles.formRow}>
         <span className={styles.fieldLabel}>최애 곡</span>
@@ -97,8 +119,8 @@ export default function ProfileSettingsForm({
             </option>
             {badgeOptions.map((badge) => (
               <option
-                key={badge.slug}
-                value={badge.slug}
+                key={badge.badgeCode}
+                value={badge.badgeCode}
                 disabled={!badge.isAcquired}
                 className={
                   badge.isAcquired
@@ -129,7 +151,7 @@ export default function ProfileSettingsForm({
       ) : null}
       {updateError ? (
         <p className={styles.errorText}>
-          사용자 이름 변경 실패: ({updateError.status}) {updateError.message}
+          프로필 변경 실패: ({updateError.status}) {updateError.message}
         </p>
       ) : null}
       {isMeError ? (

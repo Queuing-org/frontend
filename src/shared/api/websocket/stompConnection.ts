@@ -1,6 +1,7 @@
 import { Client, type IFrame } from "@stomp/stompjs";
 
 type SocketListener = {
+  onConnect?: (frame: IFrame) => void;
   onStompError?: (frame: IFrame) => void;
   onWebSocketClose?: (event: CloseEvent) => void;
   onWebSocketError?: (event: Event) => void;
@@ -18,8 +19,11 @@ const client = new Client({
   },
 });
 
-client.onConnect = () => {
+client.onConnect = (frame) => {
   console.log("STOMP connected");
+  for (const listener of socketListeners) {
+    listener.onConnect?.(frame);
+  }
 };
 
 client.onStompError = (frame) => {

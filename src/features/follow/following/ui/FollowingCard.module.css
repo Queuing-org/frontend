@@ -41,6 +41,20 @@
   white-space: nowrap;
 }
 
+.status[data-online="true"] {
+  color: #287a3e;
+}
+
+.roomLink {
+  color: #2f86ed;
+  text-decoration: none;
+}
+
+.roomLink:hover,
+.roomLink:focus-visible {
+  text-decoration: underline;
+}
+
 .nickname {
   color: #3c3c3c;
   font-size: 14px;
