@@ -1,9 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useRouter } from "next/navigation";
+import type { RoomPlayback } from "@/src/features/playlist/model/types";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import type {
@@ -13,8 +20,23 @@ import type {
 } from "@/src/features/room/model/types";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { clearStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
+import { badgeKeys } from "@/src/features/badge/model/queryKeys";
+import { userKeys } from "@/src/features/user/model/queryKeys";
+import type { User } from "@/src/features/user/model/types";
+import type {
+  MusicPowerResponse,
+  UserProfile,
+} from "@/src/features/user/profile/model/types";
 import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import {
+  applyMusicPowerChange,
+  applyMusicPowerToProfile,
+  applyTrackStarted,
+  isMusicPowerChangedData,
+  isTrackStartedData,
+  parseRoomWsEvent,
+} from "../model/roomRealtimeEvents";
 import type { LivePlaybackState } from "./useRoomPlaybackViewModel";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
@@ -54,7 +76,6 @@ function isWsErrorData(data: unknown): data is WsErrorData {
 
 type UseRoomRealtimeEventsParams = {
   cleanupChatSubscriptions: () => void;
-  refetchRoomState: () => unknown;
   resetChatState: () => void;
   setJoinErrorMessage: (message: string) => void;
   setLivePlaybackStatus: Dispatch<SetStateAction<LivePlaybackState | null>>;
@@ -62,9 +83,13 @@ type UseRoomRealtimeEventsParams = {
   slug: string;
 };
 
+type RoomSubscriptionConfig = {
+  password: string | null;
+  slug: string;
+};
+
 export function useRoomRealtimeEvents({
   cleanupChatSubscriptions,
-  refetchRoomState,
   resetChatState,
   setJoinErrorMessage,
   setLivePlaybackStatus,
@@ -73,26 +98,171 @@ export function useRoomRealtimeEvents({
 }: UseRoomRealtimeEventsParams) {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const roomSubscriptionRef = useRef<{
-    password: string | null;
-    slug: string;
-    subscription: StompSubscription;
-  } | null>(null);
+  const roomSubscriptionRef = useRef<StompSubscription | null>(null);
+  const roomSubscriptionConfigRef = useRef<RoomSubscriptionConfig | null>(null);
   const hasRedirectedAfterKickRef = useRef(false);
 
-  const cleanupRoomSubscription = useCallback(() => {
-    if (!roomSubscriptionRef.current) {
-      return;
-    }
-
+  const cleanupBrokerSubscription = useCallback(() => {
     try {
-      roomSubscriptionRef.current.subscription.unsubscribe();
+      roomSubscriptionRef.current?.unsubscribe();
     } catch {
-      // The socket may already be closing while the page is leaving.
+      // The socket may already be closing or reconnecting.
     }
-
     roomSubscriptionRef.current = null;
   }, []);
+
+  const cleanupRoomSubscription = useCallback(() => {
+    cleanupBrokerSubscription();
+    roomSubscriptionConfigRef.current = null;
+  }, [cleanupBrokerSubscription]);
+
+  const invalidateRoomReads = useCallback(
+    (roomSlug: string) => {
+      void queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomParticipantsPrefix(roomSlug),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+      });
+    },
+    [queryClient],
+  );
+
+  const handleRoomEvent = useCallback(
+    (roomSlug: string, event: WsEvent) => {
+      if (event.type === "PLAYBACK_SYNC" && isPlaybackSyncData(event.data)) {
+        const syncedPlayback: LivePlaybackState = {
+          roomSlug,
+          videoId: event.data.videoId,
+          status: event.data.status,
+          currentTime: event.data.currentTime,
+          serverTimestamp: event.data.serverTimestamp,
+        };
+
+        setLivePlaybackStatus((previous) => {
+          if (
+            previous &&
+            previous.roomSlug === syncedPlayback.roomSlug &&
+            previous.serverTimestamp > syncedPlayback.serverTimestamp
+          ) {
+            return previous;
+          }
+
+          return syncedPlayback;
+        });
+        return;
+      }
+
+      if (
+        event.type === "MUSIC_POWER_CHANGED" &&
+        isMusicPowerChangedData(event.data)
+      ) {
+        const change = event.data;
+        queryClient.setQueryData<MusicPowerResponse>(
+          userKeys.musicPower(change.targetUserSlug),
+          (current) => applyMusicPowerChange(current, change),
+        );
+        queryClient.setQueryData<UserProfile>(
+          userKeys.profile(change.targetUserSlug),
+          (current) => applyMusicPowerToProfile(current, change),
+        );
+        queryClient.setQueryData<User | null>(userKeys.me(), (current) =>
+          applyMusicPowerToProfile(current, change),
+        );
+        return;
+      }
+
+      if (event.type === "TRACK_STARTED" && isTrackStartedData(event.data)) {
+        const trackStarted = event.data;
+        queryClient.setQueriesData<RoomPlayback>(
+          { queryKey: playlistKeys.roomPlaybackPrefix(roomSlug) },
+          (current) =>
+            applyTrackStarted(current, trackStarted, event.timestamp),
+        );
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomHistoryPrefix(roomSlug),
+        });
+        return;
+      }
+
+      if (
+        event.type === "QUEUE_ADDED" ||
+        event.type === "QUEUE_REMOVED" ||
+        event.type === "QUEUE_REORDERED" ||
+        event.type === "TRACK_ENDED"
+      ) {
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+        });
+        if (event.type === "TRACK_ENDED") {
+          void queryClient.invalidateQueries({
+            queryKey: playlistKeys.roomHistoryPrefix(roomSlug),
+          });
+        }
+        return;
+      }
+
+      if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
+        void queryClient.invalidateQueries({
+          queryKey: roomKeys.meta(roomSlug),
+        });
+        void queryClient.invalidateQueries({
+          queryKey: playlistKeys.roomParticipantsPrefix(roomSlug),
+        });
+        return;
+      }
+
+      if (event.type === "BADGE_AWARDED") {
+        void queryClient.invalidateQueries({ queryKey: badgeKeys.catalog() });
+        void queryClient.invalidateQueries({ queryKey: badgeKeys.me() });
+      }
+    },
+    [queryClient, setLivePlaybackStatus],
+  );
+
+  const subscribeWithConfig = useCallback(
+    (config: RoomSubscriptionConfig, force = false) => {
+      if (!force && roomSubscriptionRef.current) {
+        return;
+      }
+
+      cleanupBrokerSubscription();
+      roomSubscriptionRef.current = subscribeRoomEvents(
+        config.slug,
+        ({ body }) => {
+          if (!body) {
+            return;
+          }
+
+          const event = parseRoomWsEvent(body);
+          if (!event) {
+            return;
+          }
+
+          const eventRoomSlug = normalizeRoomSlug(event.roomSlug);
+          if (eventRoomSlug !== config.slug) {
+            return;
+          }
+
+          handleRoomEvent(config.slug, event);
+        },
+        config.password,
+      );
+    },
+    [cleanupBrokerSubscription, handleRoomEvent],
+  );
 
   useEffect(() => {
     hasRedirectedAfterKickRef.current = false;
@@ -104,6 +274,15 @@ export function useRoomRealtimeEvents({
     }
 
     return addSocketListener({
+      onConnect: () => {
+        const config = roomSubscriptionConfigRef.current;
+        if (!config) {
+          return;
+        }
+
+        subscribeWithConfig(config, true);
+        invalidateRoomReads(config.slug);
+      },
       onStompError: (frame) => {
         if (hasRedirectedAfterKickRef.current || !frame.body) {
           return;
@@ -131,7 +310,10 @@ export function useRoomRealtimeEvents({
         setStatus("error");
         setJoinErrorMessage(errorData.message);
         void queryClient.removeQueries({
-          queryKey: playlistKeys.roomStatePrefix(slug),
+          queryKey: playlistKeys.roomPlaybackPrefix(slug),
+        });
+        void queryClient.removeQueries({
+          queryKey: playlistKeys.roomParticipantsPrefix(slug),
         });
         void queryClient.removeQueries({
           queryKey: playlistKeys.roomQueuePrefix(slug),
@@ -143,108 +325,35 @@ export function useRoomRealtimeEvents({
   }, [
     cleanupChatSubscriptions,
     cleanupRoomSubscription,
+    invalidateRoomReads,
     queryClient,
     resetChatState,
     router,
     setJoinErrorMessage,
     setStatus,
     slug,
+    subscribeWithConfig,
   ]);
 
   const ensureRoomSubscription = useCallback(
     (roomSlug: string, password?: string | null) => {
-      const subscriptionPassword = password ?? null;
-
+      const config = {
+        password: password ?? null,
+        slug: roomSlug,
+      };
+      const currentConfig = roomSubscriptionConfigRef.current;
       if (
-        roomSubscriptionRef.current?.slug === roomSlug &&
-        roomSubscriptionRef.current.password === subscriptionPassword
+        currentConfig?.slug === config.slug &&
+        currentConfig.password === config.password &&
+        roomSubscriptionRef.current
       ) {
         return;
       }
 
-      cleanupRoomSubscription();
-
-      roomSubscriptionRef.current = {
-        password: subscriptionPassword,
-        slug: roomSlug,
-        subscription: subscribeRoomEvents(
-          roomSlug,
-          ({ body }) => {
-            if (!body) return;
-
-            let event: WsEvent;
-            try {
-              event = JSON.parse(body) as WsEvent;
-            } catch {
-              return;
-            }
-
-            const eventRoomSlug =
-              typeof event.roomSlug === "string"
-                ? normalizeRoomSlug(event.roomSlug)
-                : roomSlug;
-
-            if (eventRoomSlug !== roomSlug) {
-              return;
-            }
-
-            if (
-              event.type === "PLAYBACK_SYNC" &&
-              isPlaybackSyncData(event.data)
-            ) {
-              const syncedPlayback: LivePlaybackState = {
-                roomSlug,
-                videoId: event.data.videoId,
-                status: event.data.status,
-                currentTime: event.data.currentTime,
-                serverTimestamp: event.data.serverTimestamp,
-              };
-
-              setLivePlaybackStatus((previous) => {
-                if (
-                  previous &&
-                  previous.roomSlug === syncedPlayback.roomSlug &&
-                  previous.serverTimestamp > syncedPlayback.serverTimestamp
-                ) {
-                  return previous;
-                }
-
-                return syncedPlayback;
-              });
-              return;
-            }
-
-            if (
-              event.type === "QUEUE_ADDED" ||
-              event.type === "QUEUE_REMOVED" ||
-              event.type === "QUEUE_REORDERED" ||
-              event.type === "TRACK_STARTED" ||
-              event.type === "TRACK_ENDED"
-            ) {
-              void queryClient.invalidateQueries({
-                queryKey: playlistKeys.roomQueuePrefix(roomSlug),
-              });
-              void refetchRoomState();
-              return;
-            }
-
-            if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
-              void queryClient.invalidateQueries({
-                queryKey: roomKeys.meta(roomSlug),
-              });
-              void refetchRoomState();
-            }
-          },
-          subscriptionPassword,
-        ),
-      };
+      roomSubscriptionConfigRef.current = config;
+      subscribeWithConfig(config, true);
     },
-    [
-      cleanupRoomSubscription,
-      queryClient,
-      refetchRoomState,
-      setLivePlaybackStatus,
-    ],
+    [subscribeWithConfig],
   );
 
   return {
