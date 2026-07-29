@@ -1,7 +1,7 @@
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 
-export type QueueTab = "all" | "mine";
+export type QueueTab = "all" | "mine" | "history";
 export type QueueEntryStatusTone = "active" | "played" | "queued" | "skipped";
 
 export function formatQueueDuration(durationMs: number) {

@@ -10,7 +10,8 @@ import {
   type SetStateAction,
 } from "react";
 import { useParams } from "next/navigation";
-import { useRoomState } from "@/src/features/playlist/model/useRoomState";
+import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
+import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
 import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
 import {
@@ -39,7 +40,10 @@ import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
-import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
+import type {
+  PlaylistParticipant,
+  RoomPlayback,
+} from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
@@ -113,12 +117,23 @@ export default function RoomPlaybackScreen() {
   const currentRoomPassword = isJoinStateForCurrentSlug ? roomPassword : null;
 
   const {
-    data: roomState,
-    error: roomStateError,
-    isError: isRoomStateError,
-    isLoading: isRoomStateLoading,
-    refetch: refetchRoomState,
-  } = useRoomState(slug, currentRoomPassword, currentStatus === "joined");
+    data: roomPlayback,
+    error: roomPlaybackError,
+    isError: isRoomPlaybackError,
+    isLoading: isRoomPlaybackLoading,
+    refetch: refetchRoomPlayback,
+  } = useRoomPlayback(slug, currentRoomPassword, currentStatus === "joined");
+  const {
+    data: participants = [],
+    error: participantsError,
+    isError: isParticipantsError,
+    isLoading: isParticipantsLoading,
+    refetch: refetchParticipants,
+  } = useRoomParticipants(
+    slug,
+    currentRoomPassword,
+    currentStatus === "joined",
+  );
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const roomChat = useRoomChat({
     currentUser: currentUser ?? null,
@@ -134,7 +149,6 @@ export default function RoomPlaybackScreen() {
   const { cleanupRoomSubscription, ensureRoomSubscription } =
     useRoomRealtimeEvents({
       cleanupChatSubscriptions,
-      refetchRoomState,
       resetChatState,
       setJoinErrorMessage,
       setLivePlaybackStatus,
@@ -277,8 +291,13 @@ export default function RoomPlaybackScreen() {
       return;
     }
 
-    void refetchRoomState();
-  }, [currentStatus, refetchRoomState, slug]);
+    void Promise.all([refetchRoomPlayback(), refetchParticipants()]);
+  }, [
+    currentStatus,
+    refetchParticipants,
+    refetchRoomPlayback,
+    slug,
+  ]);
 
   if (currentStatus === "needs-password") {
     return (
@@ -304,21 +323,23 @@ export default function RoomPlaybackScreen() {
     );
   }
 
-  if (isRoomStateLoading) {
+  if (isRoomPlaybackLoading || isParticipantsLoading) {
     return <div className={styles.statusState}>방 상태를 불러오는 중...</div>;
   }
 
-  if (isRoomStateError) {
+  if (isRoomPlaybackError || isParticipantsError) {
     return (
       <div className={styles.statusState} role="alert">
         <span>
-          {roomStateError?.message || "방 상태를 불러오지 못했습니다."}
+          {roomPlaybackError?.message ||
+            participantsError?.message ||
+            "방 상태를 불러오지 못했습니다."}
         </span>
         <button
           type="button"
           className={styles.statusRetryButton}
           onClick={() => {
-            void refetchRoomState();
+            void Promise.all([refetchRoomPlayback(), refetchParticipants()]);
           }}
         >
           다시 시도
@@ -342,7 +363,8 @@ export default function RoomPlaybackScreen() {
         mobileTab={mobileTab}
         roomChat={roomChat}
         roomPassword={currentRoomPassword}
-        roomState={roomState}
+        participants={participants}
+        roomPlayback={roomPlayback}
         setMobileTab={setMobileTab}
         slug={slug}
       />
@@ -359,7 +381,8 @@ type RoomPlaybackJoinedContentProps = {
   mobileTab: MobileRoomTab;
   roomChat: ReturnType<typeof useRoomChat>;
   roomPassword: string | null;
-  roomState?: RoomStateSnapshot;
+  participants: PlaylistParticipant[];
+  roomPlayback?: RoomPlayback;
   setMobileTab: Dispatch<SetStateAction<MobileRoomTab>>;
   slug: string;
 };
@@ -373,7 +396,8 @@ function RoomPlaybackJoinedContent({
   mobileTab,
   roomChat,
   roomPassword,
-  roomState,
+  participants,
+  roomPlayback,
   setMobileTab,
   slug,
 }: RoomPlaybackJoinedContentProps) {
@@ -381,8 +405,9 @@ function RoomPlaybackJoinedContent({
   const playback = useRoomPlaybackViewModel({
     currentUser,
     livePlaybackStatus,
+    participants,
+    roomPlayback,
     roomMeta,
-    roomState,
     slug,
   });
   const chatDisabledReason = isCurrentUserLoading
@@ -537,7 +562,7 @@ function RoomPlaybackJoinedContent({
               <section className={styles.mobilePanel} aria-label="참가자">
                 <RoomParticipantsPanel
                   currentUser={currentUser ?? null}
-                  participants={roomState?.participants ?? []}
+                  participants={participants}
                   roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={slug}
@@ -669,7 +694,7 @@ function RoomPlaybackJoinedContent({
           showChatLoginAction ? redirectToGoogleLogin : undefined
         }
         onSendChatMessage={handleSendChatMessage}
-        participants={roomState?.participants ?? []}
+        participants={participants}
         roomMeta={roomMeta}
         roomPassword={roomPassword}
         roomSlug={slug}

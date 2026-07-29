@@ -5,7 +5,11 @@ import {
   ROOM_HERO_IMAGE_VARIANTS,
 } from "@/src/features/room/lib/getDefaultRoomImage";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
-import type { RoomStateSnapshot } from "@/src/features/playlist/model/types";
+import type {
+  PlaybackPosition,
+  PlaylistParticipant,
+  RoomPlayback,
+} from "@/src/features/playlist/model/types";
 import { getParticipantUserSlug } from "@/src/features/room/participants/model/participantIdentity";
 import type { PlaybackStatus, RoomMeta } from "@/src/features/room/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
@@ -20,27 +24,27 @@ export type LivePlaybackState = {
 };
 
 function getLatestPlaybackState(
-  roomStatePlayback: RoomStateSnapshot["playbackStatus"] | null | undefined,
+  roomPlaybackStatus: PlaybackPosition | null | undefined,
   livePlayback: LivePlaybackState | null,
 ) {
-  if (!roomStatePlayback) {
+  if (!roomPlaybackStatus) {
     return livePlayback;
   }
 
   if (!livePlayback) {
-    return roomStatePlayback;
+    return roomPlaybackStatus;
   }
 
-  return roomStatePlayback.serverTimestamp >= livePlayback.serverTimestamp
-    ? roomStatePlayback
+  return roomPlaybackStatus.serverTimestamp >= livePlayback.serverTimestamp
+    ? roomPlaybackStatus
     : livePlayback;
 }
 
 function getCurrentVideoId(
-  roomState: RoomStateSnapshot | undefined,
+  roomPlayback: RoomPlayback | undefined,
   playbackStatus:
     | LivePlaybackState
-    | RoomStateSnapshot["playbackStatus"]
+    | PlaybackPosition
     | null,
 ) {
   const playbackVideoId = playbackStatus?.videoId;
@@ -48,7 +52,7 @@ function getCurrentVideoId(
     return playbackVideoId.trim();
   }
 
-  const currentTrackVideoId = roomState?.currentEntry?.track.videoId;
+  const currentTrackVideoId = roomPlayback?.currentEntry?.track.videoId;
   if (typeof currentTrackVideoId === "string" && currentTrackVideoId.trim()) {
     return currentTrackVideoId.trim();
   }
@@ -67,15 +71,16 @@ function getStableRoomImageIndex(slug: string) {
 }
 
 function getCurrentRequesterProfile(
-  roomState: RoomStateSnapshot | undefined,
+  roomPlayback: RoomPlayback | undefined,
+  participants: PlaylistParticipant[],
 ): CurrentRequesterProfile | null {
-  const requester = roomState?.currentEntry?.addedBy;
+  const requester = roomPlayback?.currentEntry?.addedBy;
   if (!requester) {
     return null;
   }
 
   const requesterSlug = requester.slug?.trim() || null;
-  const matchedParticipant = roomState?.participants.find((participant) => {
+  const matchedParticipant = participants.find((participant) => {
     const participantSlug = getParticipantUserSlug(participant);
     if (requesterSlug && participantSlug) {
       return participantSlug === requesterSlug;
@@ -100,16 +105,18 @@ function getCurrentRequesterProfile(
 type UseRoomPlaybackViewModelParams = {
   currentUser: User | null | undefined;
   livePlaybackStatus: LivePlaybackState | null;
+  participants: PlaylistParticipant[];
+  roomPlayback: RoomPlayback | undefined;
   roomMeta: RoomMeta | null | undefined;
-  roomState: RoomStateSnapshot | undefined;
   slug: string;
 };
 
 export function useRoomPlaybackViewModel({
   currentUser,
   livePlaybackStatus,
+  participants,
+  roomPlayback,
   roomMeta,
-  roomState,
   slug,
 }: UseRoomPlaybackViewModelParams) {
   const backgroundImageSrc = getRoomImageSrc({
@@ -119,11 +126,14 @@ export function useRoomPlaybackViewModel({
     thumbnailUrls: roomMeta?.thumbnailUrls,
   });
   const playbackStatus = getLatestPlaybackState(
-    roomState?.playbackStatus,
+    roomPlayback?.playbackStatus,
     livePlaybackStatus?.roomSlug === slug ? livePlaybackStatus : null,
   );
-  const currentRequester = getCurrentRequesterProfile(roomState);
-  const currentEntry = roomState?.currentEntry ?? null;
+  const currentRequester = getCurrentRequesterProfile(
+    roomPlayback,
+    participants,
+  );
+  const currentEntry = roomPlayback?.currentEntry ?? null;
   const currentTrack = currentEntry?.track ?? null;
 
   return {
@@ -132,7 +142,7 @@ export function useRoomPlaybackViewModel({
     currentTrackDurationMs: currentTrack?.durationMs ?? null,
     currentTrackStory: currentEntry?.story ?? null,
     currentTrackTitle: currentTrack?.title ?? null,
-    currentVideoId: getCurrentVideoId(roomState, playbackStatus),
+    currentVideoId: getCurrentVideoId(roomPlayback, playbackStatus),
     isCurrentRequesterRoomOwner: isRoomOwner(roomMeta?.owner, currentRequester),
     isCurrentUserRoomOwner: isRoomOwner(roomMeta?.owner, currentUser),
     playbackStatus,

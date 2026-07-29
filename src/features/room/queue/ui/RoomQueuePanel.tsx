@@ -70,12 +70,16 @@ function RoomQueuePanelContent({
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
       deleteErrorMessage={queuePanel.deleteErrorMessage}
       emptyMessage={queuePanel.emptyMessage}
+      hasNextHistoryPage={queuePanel.hasNextHistoryPage}
+      historyEntries={queuePanel.historyEntries}
+      historyErrorMessage={queuePanel.historyErrorMessage}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
       isMoveMyPending={queuePanel.moveMyQueueEntry.isPending}
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}
       isRefetching={queuePanel.isRefetching}
+      isFetchingNextHistoryPage={queuePanel.isFetchingNextHistoryPage}
       moveErrorMessage={queuePanel.moveErrorMessage}
       myEntries={queuePanel.myEntries}
       roomPassword={roomPassword}
@@ -85,6 +89,7 @@ function RoomQueuePanelContent({
       onDeleteRoomEntry={queuePanel.handleDeleteRoomEntry}
       onMoveMyEntry={queuePanel.handleMoveMyEntry}
       onMoveRoomEntry={queuePanel.handleMoveRoomEntry}
+      onLoadMoreHistory={queuePanel.loadNextHistoryPage}
     />
   );
 }

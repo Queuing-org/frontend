@@ -56,6 +56,16 @@
   white-space: nowrap;
 }
 
+.statusMessage {
+  margin-top: 5px;
+  overflow: hidden;
+  color: #8d8d8d;
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .followButton {
   flex-shrink: 0;
   min-width: 92px;
@@ -145,6 +155,12 @@
 .musicPowerButton:focus-visible {
   border-color: #2f86ed;
   color: #2f86ed;
+}
+
+.musicPowerButton[aria-pressed="true"] {
+  border-color: #2f86ed;
+  background: #eaf4ff;
+  color: #1f72d0;
 }
 
 .musicPowerButton:disabled {

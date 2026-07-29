@@ -40,6 +40,16 @@ export default function RoomQueueTabs({
         내 신청곡
         <span className={styles.tabCount}>{myCount}</span>
       </button>
+      <button
+        type="button"
+        role="tab"
+        className={styles.tab}
+        aria-selected={activeTab === "history"}
+        data-active={activeTab === "history"}
+        onClick={() => onChange("history")}
+      >
+        지난 곡
+      </button>
     </div>
   );
 }

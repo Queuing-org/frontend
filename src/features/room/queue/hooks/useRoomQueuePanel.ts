@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
+import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
+import { useRoomHistory } from "@/src/features/playlist/model/useRoomHistory";
 import { useMoveMyQueueEntry } from "@/src/features/playlist/model/useMoveMyQueueEntry";
 import { useMoveRoomQueueEntry } from "@/src/features/playlist/model/useMoveRoomQueueEntry";
 import { useDeleteMyQueueEntry } from "@/src/features/playlist/model/useDeleteMyQueueEntry";
@@ -40,11 +42,19 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const [moveErrorMessage, setMoveErrorMessage] = useState("");
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
-  const { data: entries, isRefetching } = useRoomQueue(
+  const { data: entries, isRefetching: isAllRefetching } = useRoomQueue(
     roomSlug,
     roomPassword,
-    0,
-    200,
+  );
+  const {
+    data: myQueueEntries = [],
+    isLoading: isMyQueueLoading,
+    isRefetching: isMyRefetching,
+  } = useMyRoomQueue(roomSlug, roomPassword, Boolean(currentUser));
+  const historyQuery = useRoomHistory(
+    roomSlug,
+    roomPassword,
+    activeTab === "history",
   );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
@@ -53,9 +63,7 @@ export function useRoomQueuePanel({
 
   const allEntries = entries;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
-  const myEntries = allEntries.filter((entry) =>
-    isEntryRequestedByUser(entry, currentUser),
-  );
+  const myEntries = myQueueEntries;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -65,11 +73,15 @@ export function useRoomQueuePanel({
   if (activeTab === "mine") {
     if (isCurrentUserLoading) {
       emptyMessage = "내 신청곡 정보를 확인하는 중입니다.";
+    } else if (isMyQueueLoading) {
+      emptyMessage = "내 신청곡을 불러오는 중입니다.";
     } else if (!currentUser) {
       emptyMessage = "내 신청곡을 확인할 수 없습니다.";
     } else {
       emptyMessage = "내가 신청한 곡이 아직 없습니다.";
     }
+  } else if (activeTab === "history") {
+    emptyMessage = "아직 지난 곡이 없습니다.";
   }
 
   const handleDeleteRoomEntry = (entryId: string) => {
@@ -169,12 +181,20 @@ export function useRoomQueuePanel({
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
+    hasNextHistoryPage: historyQuery.hasNextPage,
+    historyEntries:
+      historyQuery.data?.flatMap((page) => page.items) ?? [],
+    historyErrorMessage: historyQuery.error?.message ?? "",
+    isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
     isOwner,
-    isRefetching,
+    isRefetching: isAllRefetching || isMyRefetching,
     moveErrorMessage,
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,
+    loadNextHistoryPage: () => {
+      void historyQuery.fetchNextPage();
+    },
     setActiveTab,
   };
 }
