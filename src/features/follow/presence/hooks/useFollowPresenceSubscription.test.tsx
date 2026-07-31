@@ -7,21 +7,18 @@ import { subscribeFollowPresence } from "../api/subscribeFollowPresence";
 import { useFollowPresenceSubscription } from "./useFollowPresenceSubscription";
 
 const socket = vi.hoisted(() => ({
-  listener: null as {
-    onConnect?: () => void;
-  } | null,
+  client: {
+    activate: vi.fn(),
+    deactivate: vi.fn(),
+    onConnect: undefined as (() => void) | undefined,
+  },
 }));
 
 vi.mock("@/src/features/user/session/hooks/useMe", () => ({
   useMe: vi.fn(),
 }));
-vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
-  addSocketListener: vi.fn((listener) => {
-    socket.listener = listener;
-    return vi.fn();
-  }),
-  connectSocket: vi.fn(),
-  getSocketClient: vi.fn(() => ({ connected: false })),
+vi.mock("@/src/shared/api/websocket/createStompClient", () => ({
+  createStompClient: vi.fn(() => socket.client),
 }));
 vi.mock("../api/subscribeFollowPresence", () => ({
   subscribeFollowPresence: vi.fn(),
@@ -30,7 +27,7 @@ vi.mock("../api/subscribeFollowPresence", () => ({
 describe("follow presence STOMP 재구독", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    socket.listener = null;
+    socket.client.onConnect = undefined;
     vi.mocked(useMe).mockReturnValue({
       data: {
         nickname: "나",
@@ -57,16 +54,21 @@ describe("follow presence STOMP 재구독", () => {
     const { unmount } = renderHook(() => useFollowPresenceSubscription(), {
       wrapper,
     });
-    await waitFor(() => expect(socket.listener).not.toBeNull());
+    await waitFor(() => expect(socket.client.activate).toHaveBeenCalledOnce());
 
-    socket.listener?.onConnect?.();
-    socket.listener?.onConnect?.();
+    socket.client.onConnect?.();
+    socket.client.onConnect?.();
 
     expect(subscribeFollowPresence).toHaveBeenCalledTimes(2);
+    expect(subscribeFollowPresence).toHaveBeenCalledWith(
+      socket.client,
+      expect.any(Function),
+    );
     expect(firstUnsubscribe).toHaveBeenCalledOnce();
     expect(secondUnsubscribe).not.toHaveBeenCalled();
 
     unmount();
     expect(secondUnsubscribe).toHaveBeenCalledOnce();
+    expect(socket.client.deactivate).toHaveBeenCalledOnce();
   });
 });

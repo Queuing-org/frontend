@@ -7,7 +7,8 @@
 - 제거된 방 썸네일 편집, 검색 통계, 지역 제한 필드를 정리했다.
 - GET 429의 서버 지시 대기와 제한된 재시도 정책을 추가했다.
 - 전역 STOMP 재연결과 방 입장 timeout 경쟁을 제거하고, reconnect join 및 route leave로 방 세션 생명주기를 복구했다.
-- user-event 구독 등록과 room join publish 사이의 경쟁 조건을 receipt 미지원 broker 호환 경계로 차단했다.
+- 로그인 전환 시 badge provider가 앱 children을 remount하지 않도록 SSE controller를 sibling으로 분리했다.
+- app-wide follow presence와 room membership의 STOMP client를 분리해 로그인 사용자의 `ROOM_JOINED` 누락을 제거했다.
 
 기능 커밋:
 

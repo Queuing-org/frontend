@@ -4,11 +4,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
-import {
-  addSocketListener,
-  connectSocket,
-  getSocketClient,
-} from "@/src/shared/api/websocket/stompConnection";
+import { createStompClient } from "@/src/shared/api/websocket/createStompClient";
 import { followKeys } from "../../model/queryKeys";
 import type { FollowListResponse } from "../../model/types";
 import { subscribeFollowPresence } from "../api/subscribeFollowPresence";
@@ -19,14 +15,16 @@ import {
 
 export function useFollowPresenceSubscription() {
   const { data: me } = useMe();
+  const userSlug = me?.slug;
   const queryClient = useQueryClient();
   const subscriptionRef = useRef<StompSubscription | null>(null);
 
   useEffect(() => {
-    if (!me) {
+    if (!userSlug) {
       return;
     }
 
+    const client = createStompClient({ debugLabel: "FOLLOW_PRESENCE_STOMP" });
     const cleanupSubscription = () => {
       try {
         subscriptionRef.current?.unsubscribe();
@@ -38,35 +36,32 @@ export function useFollowPresenceSubscription() {
 
     const subscribeOnce = () => {
       cleanupSubscription();
-      subscriptionRef.current = subscribeFollowPresence(({ body }) => {
-        const event = parseFollowPresenceEvent(body);
-        if (!event) {
-          return;
-        }
+      subscriptionRef.current = subscribeFollowPresence(
+        client,
+        ({ body }) => {
+          const event = parseFollowPresenceEvent(body);
+          if (!event) {
+            return;
+          }
 
-        queryClient.setQueriesData<FollowListResponse>(
-          { queryKey: followKeys.followersRoot() },
-          (list) => applyPresenceToList(list, event),
-        );
-        queryClient.setQueriesData<FollowListResponse>(
-          { queryKey: followKeys.followingsRoot() },
-          (list) => applyPresenceToList(list, event),
-        );
-      });
+          queryClient.setQueriesData<FollowListResponse>(
+            { queryKey: followKeys.followersRoot() },
+            (list) => applyPresenceToList(list, event),
+          );
+          queryClient.setQueriesData<FollowListResponse>(
+            { queryKey: followKeys.followingsRoot() },
+            (list) => applyPresenceToList(list, event),
+          );
+        },
+      );
     };
 
-    const removeSocketListener = addSocketListener({
-      onConnect: subscribeOnce,
-    });
-
-    connectSocket();
-    if (getSocketClient().connected) {
-      subscribeOnce();
-    }
+    client.onConnect = subscribeOnce;
+    client.activate();
 
     return () => {
-      removeSocketListener();
       cleanupSubscription();
+      void client.deactivate();
     };
-  }, [me, queryClient]);
+  }, [queryClient, userSlug]);
 }

@@ -25,7 +25,10 @@
 - socket 연결 대기를 polling에서 `onConnect` 기반으로 바꾸고, 재연결 지연을 포함할 수 있도록 제한 시간을 12초로 조정했다.
 - 재연결은 topic 재구독만 하지 않고 `/join` handshake 성공 뒤 room/chat 구독과 playback/participants/queue 재검증을 수행한다.
 - 입장 요청에 `AbortSignal`을 추가하고 route cleanup/취소 시 `/leave`를 보내 ghost participant를 방지한다.
-- backend broker가 STOMP `SUBSCRIBE receipt`를 반환하지 않아 `/user/playlist/events` 구독 뒤 250ms 안정화 구간을 거쳐 `/join`을 한 번만 전송한다.
+- 로그인 상태에서 follow presence와 room join user destination을 같은 STOMP client에 구독하면 `ROOM_JOINED`가 누락되는 실브라우저 재현을 확인했다.
+- app-wide follow presence는 전용 STOMP client를 생성하고 로그인 사용자 slug 생명주기에 맞춰 activate/deactivate한다. room membership client는 room join과 room/chat 이벤트만 소유한다.
+- badge SSE controller를 앱 children의 sibling으로 렌더해 비로그인에서 로그인으로 전환될 때 현재 route를 unmount/remount하지 않는다.
+- 실패한 250ms subscription settle 가설은 제거하고, room join은 응답 구독 호출 직후 한 번만 publish한다.
 - React Query 기본 재시도는 4xx/429를 제외하고 network/5xx에만 기존 최대 3회를 복구했다.
 
 ## Removed

@@ -59,7 +59,8 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Every API mutation has a deliberate success/error/cache path.
 - Any claim about a 500 or backend root cause is backed by reproducible evidence.
 - App-scoped STOMP changes are tested against room entry while the client is already active but reconnecting.
-- Room join tests prove the user-event subscribe call precedes join publish and the compatibility settle boundary is preserved, including cancellation during that boundary.
+- Room join tests prove the user-event subscribe call precedes join publish without relying on an arbitrary timing delay.
+- Auth transition QA verifies that badge SSE activation does not remount app children and that follow presence uses a different STOMP client from room membership.
 - Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.

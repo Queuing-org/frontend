@@ -1,6 +1,6 @@
 # Handoff
 
-- phase: verification-complete
+- phase: ci-pending
 - branch: `feat/backend-core-v26-7-1`
 - base: `origin/main@2619fb06`
 - commits:
@@ -9,8 +9,8 @@
   - `6e5801e` 방 데이터/UI
   - `2b8325b` SSE/WebSocket
   - `393ceba` user-event 구독/join 안정화
-- verification: subscription/join race focused 1 file/6 tests, full 33 files/88 tests, lint/build/diff check pass; fresh read-only QA pass
-- manual_smoke: `/home`, `/search`, `/room/nonexistent-v26-qa` 200
+- verification: auth lifecycle focused 3 files/7 tests, full 33 files/87 tests, lint/build/diff check, fresh QA pass; login-activated Chrome E2E `/home` and public room pass
+- manual_smoke: authenticated-provider `/home` rendered; public room `ROOM_JOINED` and playback/participants/chats/meta 200
 - pr: https://github.com/Queuing-org/frontend/pull/28
-- next_action: 영향 사용자 Dia 환경에서 subscription/join race 수정 후 실제 방 입장을 재검증
-- blockers: 250ms 안정화 구간은 broker ACK가 아니므로 영향 사용자 환경의 post-change 검증이 필요함
+- next_action: auth lifecycle/STOMP ownership 수정 커밋을 기존 PR에 push하고 checks 확인
+- blockers: 실제 Google OAuth credential flow는 자동화하지 않아 영향 사용자 post-deploy 재검증 필요

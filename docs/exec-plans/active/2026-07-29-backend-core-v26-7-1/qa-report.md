@@ -58,18 +58,26 @@ Codex in-app browser 연결은 코드와 무관한 실행 도구 메타데이터
 - live room entry/leave E2E: unavailable because `GET /api/v1/rooms?size=20` returned no rooms; no external fixture was created
 - separate pre-existing evidence: mobile viewport home hydration mismatch from `useMediaQuery` initial server/client branch, outside this regression fix
 
-## 2026-07-31 Subscription/Join Race Follow-up
+## 2026-07-31 Authenticated Realtime Collision Follow-up
 
 - classification: `pass`
-- focused tests: pass — 1 file / 6 tests
-  - join is not published before the 250ms user-event subscription settle boundary
-  - cancellation during the settle boundary publishes neither join nor leave
-  - the 8-second response timeout starts after publish and sends leave exactly once
-- live evidence:
-  - user failure: `CONNECTED -> SUBSCRIBE -> SEND /join -> UNSUBSCRIBE`, no `ROOM_JOINED`
-  - backend STOMP receipt check: no `RECEIPT` within 8 seconds
-- residual risk: 250ms compatibility settle is not a broker ACK; affected-user post-change verification remains required
-- `npm run test`: pass — 33 files / 88 tests
+- focused tests: pass — 3 files / 7 tests
+  - auth state changes do not remount app children when badge SSE starts
+  - follow presence owns a dedicated client and deactivates it on auth cleanup
+  - room join subscribes to its response destination before immediate publish
+- before-fix Chrome E2E:
+  - mock `/me` success activates the same login-only providers as an authenticated session
+  - shared socket frames: `SUBSCRIBE follow-presence -> SUBSCRIBE playlist/events -> SEND /join`
+  - no `ROOM_JOINED`; UI reaches `room.join-timeout`
+- after-fix Chrome E2E:
+  - presence and room connect on separate WebSocket sessions
+  - room frames: `SUBSCRIBE playlist/events -> SEND /join -> MESSAGE ROOM_JOINED`
+  - playback, participants, chats, and room meta return 200
+  - room content renders without refresh
+  - `/home` remains rendered when `/me` changes from pending to authenticated
+- removed: ineffective 250ms subscription settle delay
+- residual risk: actual Google OAuth credential entry was not automated; affected-user post-deploy recheck remains required
+- `npm run test`: pass — 33 files / 87 tests
 - `npm run lint`: pass
 - `npm run build`: pass
 - `git diff --check`: pass

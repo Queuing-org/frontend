@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { PropsWithChildren } from "react";
+import { useEffect, type PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import BadgeAwardProvider from "./BadgeAwardProvider";
@@ -100,5 +100,53 @@ describe("BadgeAwardProvider", () => {
     });
     await user.click(screen.getByRole("button", { name: "확인" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("로그인 상태가 바뀌어도 앱 children을 remount하지 않는다", () => {
+    const onMount = vi.fn();
+    const onUnmount = vi.fn();
+    vi.mocked(useMe).mockReturnValue({
+      data: null,
+    } as ReturnType<typeof useMe>);
+
+    function AppLifecycleProbe() {
+      useEffect(() => {
+        onMount();
+        return onUnmount;
+      }, []);
+
+      return <span>앱 화면</span>;
+    }
+
+    const view = render(
+      <BadgeAwardProvider>
+        <AppLifecycleProbe />
+      </BadgeAwardProvider>,
+      { wrapper: Wrapper },
+    );
+
+    expect(onMount).toHaveBeenCalledOnce();
+    expect(onUnmount).not.toHaveBeenCalled();
+    expect(MockEventSource.latest).toBeNull();
+
+    vi.mocked(useMe).mockReturnValue({
+      data: {
+        nickname: "나",
+        profileImageUrl: null,
+        slug: "me",
+      },
+    } as ReturnType<typeof useMe>);
+    view.rerender(
+      <BadgeAwardProvider>
+        <AppLifecycleProbe />
+      </BadgeAwardProvider>,
+    );
+
+    expect(onMount).toHaveBeenCalledOnce();
+    expect(onUnmount).not.toHaveBeenCalled();
+    expect(MockEventSource.latest?.options).toEqual({
+      withCredentials: true,
+    });
+    expect(screen.getByText("앱 화면")).toBeInTheDocument();
   });
 });

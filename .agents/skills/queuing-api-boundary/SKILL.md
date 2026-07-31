@@ -46,7 +46,8 @@ Do not use it for purely visual CSS changes with no data flow.
 - Empty password strings are ambiguous unless the API explicitly documents them as "clear password".
 - Queue mutations must refresh `roomQueue`; playback changes must consider `roomPlayback`, and participant changes must consider `roomParticipants`.
 - A connected global STOMP client is not proof that the current socket session joined a room. After every reconnect, repeat `/app/room/{slug}/join` before restoring room topic subscriptions and invalidating room reads.
-- The current backend broker does not acknowledge a STOMP `SUBSCRIBE` receipt. Invoke `/user/playlist/events` subscribe before publishing room join and preserve the tested compatibility settle boundary; do not claim broker registration is acknowledged, publish both frames back-to-back, or retry join without an idempotency contract.
+- The current backend broker does not acknowledge a STOMP `SUBSCRIBE` receipt. Subscribe to `/user/playlist/events` before publishing room join, but do not add timing delays or retry join without an idempotency contract.
+- App-wide `/user/queue/follow-presence` must use a dedicated STOMP client instead of the room session client. A shared connection reproducibly lost `ROOM_JOINED` when follow presence was subscribed first.
 - Room route exit and a cancelled in-flight join must publish `/app/room/{slug}/leave` while the socket is connected. Do not rely on component subscription cleanup to remove the backend participant session.
 - Playlist item operations use `entryId`, not track video id.
 - Room chat messages may identify senders by `senderId` or `senderSlug` depending on API surface/version. Chat parsers and send-confirm logic must tolerate both and must not silently drop otherwise valid messages.

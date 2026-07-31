@@ -23,22 +23,15 @@ export default function BadgeAwardProvider({
 }) {
   const { data: me } = useMe();
 
-  if (!me) {
-    return children;
-  }
-
   return (
-    <AuthenticatedBadgeAwardProvider key={me.slug}>
+    <>
       {children}
-    </AuthenticatedBadgeAwardProvider>
+      {me ? <AuthenticatedBadgeAwardController key={me.slug} /> : null}
+    </>
   );
 }
 
-function AuthenticatedBadgeAwardProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function AuthenticatedBadgeAwardController() {
   const queryClient = useQueryClient();
   const [queue, setQueue] = useState<BadgeAward[]>([]);
   const seenRef = useRef(new Set<string>());
@@ -79,10 +72,5 @@ function AuthenticatedBadgeAwardProvider({
     setQueue((current) => current.slice(1));
   }, []);
 
-  return (
-    <>
-      {children}
-      <BadgeAwardModal badge={queue[0] ?? null} onClose={closeCurrent} />
-    </>
-  );
+  return <BadgeAwardModal badge={queue[0] ?? null} onClose={closeCurrent} />;
 }

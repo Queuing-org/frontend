@@ -1,4 +1,5 @@
-import { Client, type IFrame } from "@stomp/stompjs";
+import type { IFrame } from "@stomp/stompjs";
+import { createStompClient } from "./createStompClient";
 
 type SocketListener = {
   onConnect?: (frame: IFrame) => void;
@@ -9,15 +10,7 @@ type SocketListener = {
 
 const socketListeners = new Set<SocketListener>();
 
-const client = new Client({
-  brokerURL: process.env.NEXT_PUBLIC_WS_URL,
-  reconnectDelay: 5000,
-  heartbeatIncoming: 4000,
-  heartbeatOutgoing: 4000,
-  debug: (message) => {
-    console.log("[STOMP]", message);
-  },
-});
+const client = createStompClient();
 
 client.onConnect = (frame) => {
   console.log("STOMP connected");

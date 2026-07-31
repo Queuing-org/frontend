@@ -32,22 +32,25 @@
   - desktop Chrome `/home`: pass
   - live room entry/leave E2E: unavailable because the shared backend returned an empty room list
 
-## 2026-07-31 user-event 구독/join 경쟁
+## 2026-07-31 로그인 전용 실시간 연결 충돌
 
 - source: 사용자 Dia DevTools WebSocket frame 캡처 및 live API/STOMP 진단
 - classification: actionable
 - evidence:
-  - 실패 세션은 `CONNECTED -> SUBSCRIBE /user/playlist/events -> SEND /join -> UNSUBSCRIBE` 순서였고 `ROOM_JOINED`가 없었다.
-  - 대상 공개 방 `nIw81kKS`의 REST meta/state는 200이었으며 participants는 비어 있었다.
-  - 같은 컴퓨터의 분리된 Chrome/Dia 세션은 존재하는 공개 방에서 `ROOM_JOINED`까지 정상 수신했다.
-  - backend broker는 `SUBSCRIBE receipt` 요청에 8초 안에 `RECEIPT`를 반환하지 않았다.
+  - 비로그인 Chrome E2E는 공개 방 `ROOM_JOINED`와 방 REST 조회가 정상이다.
+  - `/me` 성공을 주입해 로그인 전용 provider를 활성화하면 단일 socket에서 `follow-presence -> playlist/events -> /join` 순서 후 `ROOM_JOINED`가 누락되고 timeout이 재현된다.
+  - `BadgeAwardProvider`는 `me`가 생길 때 앱 children 전체를 keyed provider로 다시 감싸 route를 remount했다.
 - resolution:
-  - user-event 구독 뒤 250ms 안정화 구간을 거쳐 join을 한 번만 publish한다.
-  - 안정화 중 abort는 예약 publish를 취소하며 join/leave를 발행하지 않는다.
+  - follow presence와 room membership이 각각 전용 STOMP client를 소유한다.
+  - follow presence client는 로그인 user slug 생명주기에 맞춰 activate/deactivate한다.
+  - badge SSE controller는 앱 children의 sibling으로 렌더해 auth 전환에도 route identity를 보존한다.
+  - 효과가 없던 250ms join 지연을 제거한다.
 - residual risk:
-  - 250ms는 broker receipt로 확인된 ACK가 아닌 호환 완화다. 영향 사용자 환경의 post-change 재검증이 필요하다.
+  - 백엔드 내부에서 같은 session의 두 user destination 중 join 응답이 누락되는 이유는 직접 관측하지 못했다.
+  - 실제 Google OAuth 입력은 자동화하지 않았으므로 영향 사용자 환경의 배포 후 재검증이 필요하다.
 - verification:
-  - focused Vitest: 1 file / 6 tests pass
-  - full Vitest: 33 files / 88 tests pass
+  - focused Vitest: 3 files / 7 tests pass
+  - authenticated-provider Chrome E2E: home and room pass
+  - full Vitest: 33 files / 87 tests pass
   - lint/build/diff check: pass
   - fresh read-only QA: pass
