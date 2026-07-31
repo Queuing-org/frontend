@@ -76,6 +76,8 @@ describe("joinRoom socket lifecycle", () => {
       "room",
       expect.any(Object),
     );
+    expect(publishJoinRequest).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(250);
     expect(publishJoinRequest).toHaveBeenCalledWith("room", {});
 
     joinHandlers?.onJoined({
@@ -91,7 +93,7 @@ describe("joinRoom socket lifecycle", () => {
     client.connected = true;
     const abortController = new AbortController();
     const request = joinRoom("room", {}, { signal: abortController.signal });
-    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(250);
 
     expect(publishJoinRequest).toHaveBeenCalledWith("room", {});
     abortController.abort();
@@ -113,12 +115,29 @@ describe("joinRoom socket lifecycle", () => {
         signal: abortController.signal,
       },
     );
-    await vi.advanceTimersByTimeAsync(0);
+    await vi.advanceTimersByTimeAsync(250);
     abortController.abort();
 
     await expect(request).rejects.toMatchObject({
       code: "room.join-cancelled",
     });
+    expect(publishLeaveRequest).not.toHaveBeenCalled();
+  });
+
+  it("구독 안정화 중 취소되면 join과 leave를 모두 보내지 않는다", async () => {
+    client.connected = true;
+    const abortController = new AbortController();
+    const request = joinRoom("room", {}, { signal: abortController.signal });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(subscribeUserJoinEvents).toHaveBeenCalledTimes(1);
+    abortController.abort();
+
+    await expect(request).rejects.toMatchObject({
+      code: "room.join-cancelled",
+    });
+    await vi.advanceTimersByTimeAsync(250);
+    expect(publishJoinRequest).not.toHaveBeenCalled();
     expect(publishLeaveRequest).not.toHaveBeenCalled();
   });
 
@@ -128,9 +147,39 @@ describe("joinRoom socket lifecycle", () => {
     const rejection = expect(request).rejects.toMatchObject({
       code: "room.join-timeout",
     });
-    await vi.advanceTimersByTimeAsync(8_000);
+    await vi.advanceTimersByTimeAsync(250);
+    expect(publishJoinRequest).toHaveBeenCalledWith("room", {});
+    expect(publishJoinRequest).toHaveBeenCalledTimes(1);
 
+    await vi.advanceTimersByTimeAsync(7_999);
+    expect(publishLeaveRequest).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
     await rejection;
     expect(publishLeaveRequest).toHaveBeenCalledWith("room");
+    expect(publishLeaveRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("user-event 구독 안정화 전에는 join을 publish하지 않는다", async () => {
+    client.connected = true;
+    const request = joinRoom("room");
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(subscribeUserJoinEvents).toHaveBeenCalledTimes(1);
+    expect(publishJoinRequest).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(249);
+    expect(publishJoinRequest).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(publishJoinRequest).toHaveBeenCalledWith("room", {});
+    expect(publishJoinRequest).toHaveBeenCalledTimes(1);
+
+    joinHandlers?.onJoined({
+      roomSlug: "room",
+      timestamp: 1,
+      data: null,
+    });
+    await expect(request).resolves.toMatchObject({ roomSlug: "room" });
   });
 });

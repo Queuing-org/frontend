@@ -57,3 +57,20 @@ Codex in-app browser 연결은 코드와 무관한 실행 도구 메타데이터
 - local desktop Chrome `/home`: empty-room state rendered successfully
 - live room entry/leave E2E: unavailable because `GET /api/v1/rooms?size=20` returned no rooms; no external fixture was created
 - separate pre-existing evidence: mobile viewport home hydration mismatch from `useMediaQuery` initial server/client branch, outside this regression fix
+
+## 2026-07-31 Subscription/Join Race Follow-up
+
+- classification: `pass`
+- focused tests: pass — 1 file / 6 tests
+  - join is not published before the 250ms user-event subscription settle boundary
+  - cancellation during the settle boundary publishes neither join nor leave
+  - the 8-second response timeout starts after publish and sends leave exactly once
+- live evidence:
+  - user failure: `CONNECTED -> SUBSCRIBE -> SEND /join -> UNSUBSCRIBE`, no `ROOM_JOINED`
+  - backend STOMP receipt check: no `RECEIPT` within 8 seconds
+- residual risk: 250ms compatibility settle is not a broker ACK; affected-user post-change verification remains required
+- `npm run test`: pass — 33 files / 88 tests
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
+- fresh read-only QA: `pass`

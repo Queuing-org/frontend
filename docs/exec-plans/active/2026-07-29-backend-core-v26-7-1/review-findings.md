@@ -31,3 +31,23 @@
   - fresh read-only QA: pass
   - desktop Chrome `/home`: pass
   - live room entry/leave E2E: unavailable because the shared backend returned an empty room list
+
+## 2026-07-31 user-event 구독/join 경쟁
+
+- source: 사용자 Dia DevTools WebSocket frame 캡처 및 live API/STOMP 진단
+- classification: actionable
+- evidence:
+  - 실패 세션은 `CONNECTED -> SUBSCRIBE /user/playlist/events -> SEND /join -> UNSUBSCRIBE` 순서였고 `ROOM_JOINED`가 없었다.
+  - 대상 공개 방 `nIw81kKS`의 REST meta/state는 200이었으며 participants는 비어 있었다.
+  - 같은 컴퓨터의 분리된 Chrome/Dia 세션은 존재하는 공개 방에서 `ROOM_JOINED`까지 정상 수신했다.
+  - backend broker는 `SUBSCRIBE receipt` 요청에 8초 안에 `RECEIPT`를 반환하지 않았다.
+- resolution:
+  - user-event 구독 뒤 250ms 안정화 구간을 거쳐 join을 한 번만 publish한다.
+  - 안정화 중 abort는 예약 publish를 취소하며 join/leave를 발행하지 않는다.
+- residual risk:
+  - 250ms는 broker receipt로 확인된 ACK가 아닌 호환 완화다. 영향 사용자 환경의 post-change 재검증이 필요하다.
+- verification:
+  - focused Vitest: 1 file / 6 tests pass
+  - full Vitest: 33 files / 88 tests pass
+  - lint/build/diff check: pass
+  - fresh read-only QA: pass

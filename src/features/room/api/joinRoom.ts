@@ -20,6 +20,7 @@ type JoinRoomOptions = {
 
 const SOCKET_CONNECT_TIMEOUT_MS = 12_000;
 const ROOM_JOIN_TIMEOUT_MS = 8_000;
+const USER_EVENT_SUBSCRIPTION_SETTLE_MS = 250;
 
 function createJoinCancelledError() {
   return new ApiError({
@@ -158,6 +159,8 @@ export async function joinRoom(
     let settled = false;
     let joinPublished = false;
     let subscription: StompSubscription | null = null;
+    let publishTimer: ReturnType<typeof setTimeout> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const removeSocketListener = addSocketListener({
       onStompError: (frame) => {
         finishReject(createStompError(frame), { unsubscribe: false });
@@ -176,18 +179,15 @@ export async function joinRoom(
       });
     };
 
-    const timeoutId = setTimeout(() => {
-      finishReject(
-        new ApiError({
-          status: 408,
-          code: "room.join-timeout",
-          message: "방 참가 응답 대기 시간이 초과되었습니다.",
-        }),
-      );
-    }, ROOM_JOIN_TIMEOUT_MS);
-
     const cleanup = (cleanupOptions: { unsubscribe?: boolean } = {}) => {
-      clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (publishTimer) {
+        clearTimeout(publishTimer);
+        publishTimer = null;
+      }
       removeSocketListener();
       options.signal?.removeEventListener("abort", handleAbort);
 
@@ -238,8 +238,37 @@ export async function joinRoom(
         onJoined: finishResolve,
         onError: finishReject,
       });
-      publishJoinRequest(safeSlug, payload);
-      joinPublished = true;
+      // backend broker가 SUBSCRIBE receipt를 반환하지 않으므로 user-event
+      // 구독 등록이 inbound join 처리보다 먼저 끝날 짧은 안정화 구간을 둔다.
+      publishTimer = setTimeout(() => {
+        publishTimer = null;
+        if (settled) return;
+
+        try {
+          publishJoinRequest(safeSlug, payload);
+          joinPublished = true;
+          timeoutId = setTimeout(() => {
+            finishReject(
+              new ApiError({
+                status: 408,
+                code: "room.join-timeout",
+                message: "방 참가 응답 대기 시간이 초과되었습니다.",
+              }),
+            );
+          }, ROOM_JOIN_TIMEOUT_MS);
+        } catch (error) {
+          finishReject(
+            new ApiError({
+              status: 500,
+              code: "room.join-publish-failed",
+              message:
+                error instanceof Error
+                  ? error.message
+                  : "방 참가 요청 전송에 실패했습니다.",
+            }),
+          );
+        }
+      }, USER_EVENT_SUBSCRIPTION_SETTLE_MS);
     } catch (error) {
       finishReject(
         new ApiError({

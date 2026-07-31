@@ -25,6 +25,7 @@
 - socket 연결 대기를 polling에서 `onConnect` 기반으로 바꾸고, 재연결 지연을 포함할 수 있도록 제한 시간을 12초로 조정했다.
 - 재연결은 topic 재구독만 하지 않고 `/join` handshake 성공 뒤 room/chat 구독과 playback/participants/queue 재검증을 수행한다.
 - 입장 요청에 `AbortSignal`을 추가하고 route cleanup/취소 시 `/leave`를 보내 ghost participant를 방지한다.
+- backend broker가 STOMP `SUBSCRIBE receipt`를 반환하지 않아 `/user/playlist/events` 구독 뒤 250ms 안정화 구간을 거쳐 `/join`을 한 번만 전송한다.
 - React Query 기본 재시도는 4xx/429를 제외하고 network/5xx에만 기존 최대 3회를 복구했다.
 
 ## Removed
