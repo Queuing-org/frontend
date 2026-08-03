@@ -58,7 +58,7 @@
 - [x] 잘못된 진단 코드/문서 정리
 - [x] targeted/full QA
 - [x] 기능 단위 commit
-- [ ] push/Draft PR
+- [x] push/Draft PR
 
 ## Residual Risk
 

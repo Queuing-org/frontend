@@ -2,6 +2,7 @@
 
 - branch: `feat/backend-core-v26-8-0`
 - base: `feat/backend-core-v26-7-1`
+- draft PR: https://github.com/Queuing-org/frontend/pull/29
 - implementation: complete
 - automated QA: test/lint/build pass
 - fresh QA: pass after participant legacy slug fallback removal
