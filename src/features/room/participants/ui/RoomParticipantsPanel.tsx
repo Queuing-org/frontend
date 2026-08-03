@@ -1,11 +1,9 @@
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import type { RoomMeta } from "@/src/features/room/model/types";
+import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { User } from "@/src/features/user/model/types";
-import {
-  getParticipantKickTargetKey,
-  isRoomOwner,
-} from "../model/participantIdentity";
+import { getParticipantKickTargetKey } from "../model/participantIdentity";
 import RoomParticipantList from "./RoomParticipantList";
 import styles from "./RoomParticipantsPanel.module.css";
 

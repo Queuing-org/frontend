@@ -1,11 +1,4 @@
-type UserLike = {
-  participantId?: string | null;
-  participantType?: string | null;
-  slug?: string | null;
-  userSlug?: string | null;
-  userId?: number | null;
-  nickname?: string | null;
-};
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 
 export type ParticipantKickTarget = {
   participantId?: string | null;
@@ -18,78 +11,53 @@ function normalizeIdentifier(value: string | null | undefined) {
   return normalized ? normalized : null;
 }
 
-export function getParticipantUserSlug(user: UserLike | null | undefined) {
-  if (!user) {
+export function getParticipantUserSlug(
+  participant:
+    | Pick<PlaylistParticipant, "userSlug">
+    | null
+    | undefined,
+) {
+  if (!participant) {
     return null;
   }
 
-  const directSlug = normalizeIdentifier(user.userSlug ?? user.slug);
-  if (directSlug) {
-    return directSlug;
-  }
-
-  const participantId = normalizeIdentifier(user.participantId);
-  if (user.participantType === "USER" && participantId?.startsWith("u_")) {
-    return normalizeIdentifier(participantId.slice(2));
-  }
-
-  return null;
+  return normalizeIdentifier(participant.userSlug);
 }
 
 export function isSameUser(
-  left: UserLike | null | undefined,
-  right: UserLike | null | undefined,
+  participant: PlaylistParticipant | null | undefined,
+  user: { slug?: string | null } | null | undefined,
 ) {
-  if (!left || !right) {
+  if (!participant || !user) {
     return false;
   }
 
-  const leftSlug = getParticipantUserSlug(left);
-  const rightSlug = getParticipantUserSlug(right);
-  if (leftSlug && rightSlug) {
-    return leftSlug === rightSlug;
-  }
-
-  if (left.userId != null && right.userId != null) {
-    return left.userId === right.userId;
-  }
-
-  return false;
+  const participantSlug = getParticipantUserSlug(participant);
+  const userSlug = normalizeIdentifier(user.slug);
+  return Boolean(
+    participantSlug && userSlug && participantSlug === userSlug,
+  );
 }
 
-export function isRoomOwner(
-  owner: UserLike | null | undefined,
-  user: UserLike | null | undefined,
+export function isParticipantRoomOwner(
+  owner: { slug?: string | null } | null | undefined,
+  participant: PlaylistParticipant | null | undefined,
 ) {
-  return isSameUser(owner, user);
+  const ownerSlug = normalizeIdentifier(owner?.slug);
+  const participantSlug = getParticipantUserSlug(participant);
+  return Boolean(
+    ownerSlug && participantSlug && ownerSlug === participantSlug,
+  );
 }
 
 export function getParticipantIdentityKey(
-  participant: UserLike | null | undefined,
+  participant: PlaylistParticipant,
 ) {
-  if (!participant) {
-    return "participant:unknown";
-  }
-
-  const userSlug = getParticipantUserSlug(participant);
-  if (userSlug) {
-    return `user:${userSlug}`;
-  }
-
-  const participantId = normalizeIdentifier(participant.participantId);
-  if (participantId) {
-    return `participant:${participantId}`;
-  }
-
-  if (participant.userId != null) {
-    return `legacy-user:${participant.userId}`;
-  }
-
-  return `nickname:${participant.nickname ?? "unknown"}`;
+  return `participant:${participant.participantId}`;
 }
 
 export function getParticipantKickTarget(
-  participant: UserLike,
+  participant: PlaylistParticipant,
 ): ParticipantKickTarget | null {
   const userSlug = getParticipantUserSlug(participant);
   if (userSlug) {

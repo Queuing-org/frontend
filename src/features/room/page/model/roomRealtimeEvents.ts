@@ -93,14 +93,10 @@ export function isTrackStartedData(value: unknown): value is TrackStartedData {
     typeof track.videoId === "string" &&
     typeof track.provider === "string" &&
     typeof track.durationMs === "number" &&
-    typeof track.thumbnailUrl === "string" &&
+    (track.thumbnailUrl === null || typeof track.thumbnailUrl === "string") &&
     typeof addedBy.nickname === "string" &&
-    (addedBy.slug === undefined ||
-      addedBy.slug === null ||
-      typeof addedBy.slug === "string") &&
-    (addedBy.avatarUrl === undefined ||
-      addedBy.avatarUrl === null ||
-      typeof addedBy.avatarUrl === "string") &&
+    (addedBy.slug === null || typeof addedBy.slug === "string") &&
+    (addedBy.avatarUrl === null || typeof addedBy.avatarUrl === "string") &&
     isPlaybackPosition(value.playbackStatus)
   );
 }
@@ -144,7 +140,12 @@ export function applyTrackStarted(
     currentEntry: {
       order: previousEntry?.order ?? 0,
       track: data.track,
-      status: { skipped: false, isActive: true, isPlayed: false },
+      status: {
+        skipped: false,
+        isActive: true,
+        isPlayed: false,
+        ownerOrderLocked: previousEntry?.status.ownerOrderLocked ?? false,
+      },
       addedBy: data.addedBy,
       entryId: data.entryId,
       story: previousEntry?.story ?? null,

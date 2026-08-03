@@ -62,4 +62,13 @@ describe("방 실시간 이벤트 guard와 캐시 변환", () => {
   it("필수 필드가 빠진 이벤트를 거부한다", () => {
     expect(isTrackStartedData({ ...trackStarted, addedBy: {} })).toBe(false);
   });
+
+  it("TRACK_STARTED의 null 썸네일을 허용한다", () => {
+    expect(
+      isTrackStartedData({
+        ...trackStarted,
+        track: { ...trackStarted.track, thumbnailUrl: null },
+      }),
+    ).toBe(true);
+  });
 });

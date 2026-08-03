@@ -1,11 +1,9 @@
 type UserLike = {
   slug?: string | null;
-  userSlug?: string | null;
-  userId?: number | null;
 };
 
 function getPublicUserSlug(user: UserLike | null | undefined) {
-  const slug = user?.userSlug ?? user?.slug;
+  const slug = user?.slug;
 
   return slug?.trim() || null;
 }
@@ -20,15 +18,7 @@ export function isSameUser(
 
   const leftSlug = getPublicUserSlug(left);
   const rightSlug = getPublicUserSlug(right);
-  if (leftSlug && rightSlug) {
-    return leftSlug === rightSlug;
-  }
-
-  if (left.userId != null && right.userId != null) {
-    return left.userId === right.userId;
-  }
-
-  return false;
+  return Boolean(leftSlug && rightSlug && leftSlug === rightSlug);
 }
 
 export function isRoomOwner(

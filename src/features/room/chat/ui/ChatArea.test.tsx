@@ -51,7 +51,6 @@ function message(
     messageId: null,
     messageKey: `${nickname}-key`,
     messageType: "TEXT",
-    senderId: 2,
     senderNickname: nickname,
     senderProfileImageUrl: null,
     senderSlug: `${nickname}-slug`,
@@ -61,11 +60,11 @@ function message(
 }
 
 const messages = [
-  message("본인", { senderId: 1, senderNickname: "나", senderSlug: "me" }),
+  message("본인", { senderNickname: "나", senderSlug: "me" }),
   message("회원", {}),
-  message("비회원", { senderId: null, senderSlug: null }),
+  message("비회원", { senderSlug: null }),
   message("구형", { messageKey: null }),
-  message("식별없음", { messageKey: null, senderId: null, senderSlug: null }),
+  message("식별없음", { messageKey: null, senderSlug: null }),
 ];
 
 function renderChat(chatMessages = messages) {

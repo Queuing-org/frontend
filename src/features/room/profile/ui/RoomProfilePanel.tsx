@@ -30,19 +30,9 @@ function isCurrentUserProfile(
     return false;
   }
 
-  if (currentRequester.slug) {
-    return me.slug === currentRequester.slug;
-  }
-
-  if (
-    typeof me.userId === "number" &&
-    typeof currentRequester.userId === "number" &&
-    me.userId === currentRequester.userId
-  ) {
-    return true;
-  }
-
-  return me.nickname === currentRequester.nickname;
+  return Boolean(
+    currentRequester.slug && me.slug === currentRequester.slug,
+  );
 }
 
 export default function RoomProfilePanel({

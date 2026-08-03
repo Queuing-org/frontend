@@ -49,20 +49,20 @@ export type PlaylistTrack = {
   videoId: string;
   provider: TrackProvider;
   durationMs: number;
-  thumbnailUrl: string;
+  thumbnailUrl: string | null;
 };
 
 export type PlaylistEntryStatus = {
   skipped: boolean;
   isActive: boolean;
   isPlayed: boolean;
+  ownerOrderLocked: boolean;
 };
 
 export type PlaylistAddedBy = {
-  slug?: string | null;
-  userId?: number | null;
+  slug: string | null;
   nickname: string;
-  avatarUrl?: string | null;
+  avatarUrl: string | null;
 };
 
 export type PlaylistEntry = {
@@ -76,16 +76,12 @@ export type PlaylistEntry = {
   updatedAtMs: number;
 };
 
-export type RoomQueueResult = PlaylistEntry[];
-
 export type PlaylistParticipant = {
-  participantType?: "USER" | "GUEST" | (string & {});
-  participantId?: string | null;
-  userSlug?: string | null;
-  slug?: string | null;
-  userId?: number | null;
+  participantType: "USER" | "GUEST";
+  participantId: string;
+  userSlug: string | null;
   nickname: string;
-  profileImageUrl?: string | null;
+  profileImageUrl: string | null;
 };
 
 export type PlaybackPosition = {
@@ -106,6 +102,12 @@ export type RoomQueuePage = {
   items: PlaylistEntry[];
   hasNext: boolean;
   nextCursor: string | null;
+  queueRevision: number;
+  totalPendingCount: number;
+};
+
+export type RoomQueuePageParam = {
+  cursor: string;
   queueRevision: number;
 };
 

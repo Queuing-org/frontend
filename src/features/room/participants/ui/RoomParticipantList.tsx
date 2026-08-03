@@ -11,7 +11,7 @@ import {
   getParticipantKickTarget,
   getParticipantKickTargetKey,
   getParticipantUserSlug,
-  isRoomOwner,
+  isParticipantRoomOwner,
   isSameUser,
   type ParticipantKickTarget,
 } from "../model/participantIdentity";
@@ -76,7 +76,7 @@ export default function RoomParticipantList({
   return (
     <div className={styles.list}>
       {participants.map((participant) => {
-        const isOwner = isRoomOwner(owner, participant);
+        const isOwner = isParticipantRoomOwner(owner, participant);
         const kickTarget = getParticipantKickTarget(participant);
         const kickTargetKey = getParticipantKickTargetKey(kickTarget);
         const participantBadgeSlug =

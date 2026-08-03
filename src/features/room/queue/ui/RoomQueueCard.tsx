@@ -51,7 +51,7 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
     >
       <div className={styles.thumbnailWrap}>
         <Image
-          src={entry.track.thumbnailUrl}
+          src={entry.track.thumbnailUrl ?? "/Thumbnail.png"}
           alt={`${entry.track.title} thumbnail`}
           fill
           sizes="72px"

@@ -82,15 +82,7 @@ function getCurrentRequesterProfile(
   const requesterSlug = requester.slug?.trim() || null;
   const matchedParticipant = participants.find((participant) => {
     const participantSlug = getParticipantUserSlug(participant);
-    if (requesterSlug && participantSlug) {
-      return participantSlug === requesterSlug;
-    }
-
-    if (typeof requester.userId === "number") {
-      return participant.userId === requester.userId;
-    }
-
-    return participant.nickname === requester.nickname;
+    return Boolean(requesterSlug && participantSlug === requesterSlug);
   });
   const matchedParticipantSlug = getParticipantUserSlug(matchedParticipant);
 
@@ -98,7 +90,6 @@ function getCurrentRequesterProfile(
     avatarUrl: requester.avatarUrl ?? matchedParticipant?.profileImageUrl ?? null,
     nickname: requester.nickname,
     slug: requesterSlug ?? matchedParticipantSlug,
-    userId: requester.userId ?? matchedParticipant?.userId ?? null,
   };
 }
 

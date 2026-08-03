@@ -78,6 +78,19 @@ async function selectThumbnail(fileName = "cover.png") {
   return file;
 }
 
+function uploadResult(uploadToken: string, thumbnailUrl: string) {
+  return {
+    uploadToken,
+    thumbnailUrl,
+    thumbnailUrls: null,
+    contentType: "image/png",
+    sizeBytes: 9,
+    width: 100,
+    height: 100,
+    expiresAt: "2026-08-02T08:00:00Z",
+  };
+}
+
 describe("RoomFormModal room form flows", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -148,10 +161,9 @@ describe("RoomFormModal room form flows", () => {
           status: 400,
         }),
       )
-      .mockResolvedValueOnce({
-        uploadToken: "rtu_retry",
-        thumbnailUrl: "https://example.com/retry.png",
-      });
+      .mockResolvedValueOnce(
+        uploadResult("rtu_retry", "https://example.com/retry.png"),
+      );
     renderCreateRoomModal();
 
     await selectThumbnail("invalid.png");
@@ -172,10 +184,9 @@ describe("RoomFormModal room form flows", () => {
 
   it("성공한 uploadToken을 방 생성 payload에 포함한다", async () => {
     const user = userEvent.setup();
-    vi.mocked(uploadTemporaryRoomThumbnail).mockResolvedValue({
-      uploadToken: "rtu_success",
-      thumbnailUrl: "https://example.com/success.png",
-    });
+    vi.mocked(uploadTemporaryRoomThumbnail).mockResolvedValue(
+      uploadResult("rtu_success", "https://example.com/success.png"),
+    );
     vi.mocked(createRoom).mockResolvedValue({ slug: "created-room" });
     renderCreateRoomModal();
 
@@ -201,10 +212,9 @@ describe("RoomFormModal room form flows", () => {
 
   it("업로드 성공 후 선택을 제거하면 token도 생성 payload에서 제외한다", async () => {
     const user = userEvent.setup();
-    vi.mocked(uploadTemporaryRoomThumbnail).mockResolvedValue({
-      uploadToken: "rtu_removed",
-      thumbnailUrl: "https://example.com/removed.png",
-    });
+    vi.mocked(uploadTemporaryRoomThumbnail).mockResolvedValue(
+      uploadResult("rtu_removed", "https://example.com/removed.png"),
+    );
     vi.mocked(createRoom).mockResolvedValue({ slug: "room-after-clear" });
     renderCreateRoomModal();
 

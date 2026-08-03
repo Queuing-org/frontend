@@ -19,12 +19,8 @@ export function isChatMessageData(data: unknown): data is ChatMessageEventData {
     typeof candidate.messageId === "number" ||
     (typeof candidate.messageKey === "string" &&
       candidate.messageKey.trim().length > 0);
-  const hasValidSenderId =
-    candidate.senderId == null || typeof candidate.senderId === "number";
   const hasValidSenderSlug =
     candidate.senderSlug === null || typeof candidate.senderSlug === "string";
-  const hasSenderIdentity =
-    hasValidSenderSlug || typeof candidate.senderId === "number";
 
   return (
     hasValidMessageId &&
@@ -32,8 +28,7 @@ export function isChatMessageData(data: unknown): data is ChatMessageEventData {
     hasStableMessageIdentity &&
     typeof candidate.messageType === "string" &&
     typeof candidate.content === "string" &&
-    hasValidSenderId &&
-    hasSenderIdentity &&
+    hasValidSenderSlug &&
     typeof candidate.senderNickname === "string" &&
     (candidate.senderProfileImageUrl == null ||
       typeof candidate.senderProfileImageUrl === "string") &&
@@ -149,29 +144,7 @@ export function isChatMessageFromUser(
     return false;
   }
 
-  let hasStableIdentity = false;
-
-  if (message.senderSlug && user.slug) {
-    hasStableIdentity = true;
-
-    if (message.senderSlug === user.slug) {
-      return true;
-    }
-  }
-
-  if (message.senderId != null && user.userId != null) {
-    hasStableIdentity = true;
-
-    if (message.senderId === user.userId) {
-      return true;
-    }
-  }
-
-  if (hasStableIdentity) {
-    return false;
-  }
-
-  return message.senderNickname === user.nickname;
+  return Boolean(message.senderSlug && message.senderSlug === user.slug);
 }
 
 export type ChatMessageManagementAction = "block" | "report";

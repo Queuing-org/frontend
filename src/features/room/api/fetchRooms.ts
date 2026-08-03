@@ -20,7 +20,6 @@ export type FetchRoomsParams = {
   cursorLastRandomRank?: number | null;
   cursorSeed?: number | string | null;
   keyword?: string;
-  lastId?: number | null;
   participantOrder?: RoomParticipantOrder;
   size?: number;
 };
@@ -41,7 +40,6 @@ export async function fetchRooms({
   cursorLastRandomRank,
   cursorSeed,
   keyword,
-  lastId,
   participantOrder,
   size,
 }: FetchRoomsParams = {}): Promise<RoomsResponse> {
@@ -57,7 +55,6 @@ export async function fetchRooms({
         ...(trimmedKeyword ? { keyword: trimmedKeyword } : {}),
         ...(createdOrder ? { createdOrder } : {}),
         ...(participantOrder ? { participantOrder } : {}),
-        ...(typeof lastId === "number" ? { lastId } : {}),
         ...(isPresentQueryValue(normalizedCursorSeed)
           ? { cursorSeed: normalizedCursorSeed }
           : {}),

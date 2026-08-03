@@ -21,8 +21,6 @@ export const ROOM_CARD_IMAGE_VARIANTS = [
   "thumb256",
   "thumb384",
   "thumb640",
-  "small",
-  "medium",
 ] as const;
 
 export const ROOM_STAGE_IMAGE_VARIANTS = [
@@ -30,16 +28,12 @@ export const ROOM_STAGE_IMAGE_VARIANTS = [
   "thumb1200",
   "thumb640",
   "thumb384",
-  "large",
-  "medium",
 ] as const;
 
 export const ROOM_HERO_IMAGE_VARIANTS = [
   "thumb1200",
   "thumb828",
   "thumb640",
-  "large",
-  "medium",
 ] as const;
 
 const DEFAULT_ROOM_IMAGE_VARIANTS = [
@@ -48,15 +42,11 @@ const DEFAULT_ROOM_IMAGE_VARIANTS = [
   "thumb384",
   "thumb1200",
   "thumb256",
-  "medium",
-  "large",
-  "small",
-  "original",
 ] as const;
 
 type GetRoomImageSrcParams = {
   fallbackSeed: number;
-  preferredVariants?: readonly string[];
+  preferredVariants?: readonly (keyof ThumbnailUrls)[];
   thumbnailUrl?: string | null;
   thumbnailUrls?: ThumbnailUrls | null;
 };
@@ -69,7 +59,7 @@ function normalizeImageUrl(imageUrl: string | null | undefined) {
 
 function getRoomThumbnailVariantUrl(
   thumbnailUrls: ThumbnailUrls | null | undefined,
-  preferredVariants: readonly string[],
+  preferredVariants: readonly (keyof ThumbnailUrls)[],
 ) {
   if (!thumbnailUrls) {
     return null;
