@@ -47,10 +47,12 @@ Do not use it for purely visual CSS changes with no data flow.
 - Queue mutations must refresh `roomQueue`; playback changes must consider `roomPlayback`, and participant changes must consider `roomParticipants`.
 - A connected global STOMP client is not proof that the current socket session joined a room. After every reconnect, repeat `/app/room/{slug}/join` before restoring room topic subscriptions and invalidating room reads.
 - The current backend broker does not acknowledge a STOMP `SUBSCRIBE` receipt. Subscribe to `/user/playlist/events` before publishing room join, but do not add timing delays or retry join without an idempotency contract.
-- App-wide `/user/queue/follow-presence` must use a dedicated STOMP client instead of the room session client. A shared connection reproducibly lost `ROOM_JOINED` when follow presence was subscribed first.
+- App-wide `/user/queue/follow-presence` and room membership use dedicated clients because their ownership and reconnect lifecycles differ. Do not claim this separation fixes a room join failure unless the same authenticated account and backend state are controlled in the comparison.
 - Room route exit and a cancelled in-flight join must publish `/app/room/{slug}/leave` while the socket is connected. Do not rely on component subscription cleanup to remove the backend participant session.
+- Queue reads are infinite pages. Fetch the first page with `size`, pair every next `cursor` with that page's `queueRevision`, display `totalPendingCount`, and reset to the first page on `room.queue-mutation-conflict`.
+- `user.session-replaced` permanently stops reconnect for that room client instance without stopping the app-wide follow presence client.
 - Playlist item operations use `entryId`, not track video id.
-- Room chat messages may identify senders by `senderId` or `senderSlug` depending on API surface/version. Chat parsers and send-confirm logic must tolerate both and must not silently drop otherwise valid messages.
+- Public identity is slug-based: chat uses nullable `senderSlug`, requesters use nullable `addedBy.slug`, owners use `owner.slug`, and participants use `userSlug` plus `participantId`. Do not fall back to numeric IDs or nicknames.
 - Chat send confirmation is driven by `CHAT_MESSAGE`, but if that real-time event is missed, backfill the latest chat history before requiring a manual refresh.
 - Public room card images are currently frontend defaults. Do not assume the backend provides a representative image until the API adds it.
 

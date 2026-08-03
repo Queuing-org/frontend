@@ -60,8 +60,10 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Any claim about a 500 or backend root cause is backed by reproducible evidence.
 - App-scoped STOMP changes are tested against room entry while the client is already active but reconnecting.
 - Room join tests prove the user-event subscribe call precedes join publish without relying on an arbitrary timing delay.
-- Auth transition QA verifies that badge SSE activation does not remount app children and that follow presence uses a different STOMP client from room membership.
+- Auth transition QA verifies that badge SSE activation does not remount app children and that follow presence remains alive when the room client is stopped by `user.session-replaced`.
 - Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
+- Queue pagination tests prove first-page-only entry, cursor/revision pairing, `totalPendingCount`, conflict reset, and locked personal-order payload exclusion.
+- Account-specific failures require same-account and same-backend-state comparisons before assigning a frontend root cause.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.
 - Build/lint results are reported honestly, including pre-existing warnings.

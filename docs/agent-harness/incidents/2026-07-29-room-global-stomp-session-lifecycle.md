@@ -4,7 +4,7 @@
 
 backend-core v26.7.1 프론트 마이그레이션 뒤 방 입장이 간헐적으로 5초 timeout에 걸렸고, 방 화면에 들어가도 데이터가 비어 새로고침해야 복구되는 사례가 생겼다. SPA에서 방을 나간 뒤에도 같은 WebSocket 연결에 참가자가 남는 현상도 확인했다.
 
-후속 사용자 캡처에서는 로그인 상태에서 STOMP `CONNECTED` 뒤 `/user/playlist/events`를 `SUBSCRIBE`하고 `/join`을 `SEND`했지만 `ROOM_JOINED` 없이 입장 timeout 후 `UNSUBSCRIBE`되는 흐름이 확인됐다. 비로그인 상태의 같은 방과 backend는 정상 입장했다.
+후속 사용자 캡처에서는 로그인 상태에서 STOMP `CONNECTED` 뒤 `/user/playlist/events`를 `SUBSCRIBE`하고 `/join`을 `SEND`했지만 `ROOM_JOINED` 없이 입장 timeout 후 `UNSUBSCRIBE`되는 흐름이 확인됐다. 이후 계정 A/B 검증에서 같은 컴퓨터·브라우저·프론트 커밋에서도 특정 계정(`따뜻한코러스810`)만 실패하고 다른 계정은 성공했다. 오래된 프론트 커밋에서도 동일 계정만 실패했으므로 이 증상은 프론트 변경으로 생긴 회귀가 아니었다.
 
 ## Previous Behavior
 
@@ -70,15 +70,16 @@ STOMP transport 연결과 백엔드 방 참가 세션은 서로 다른 상태다
 - 사용자 실패 캡처: `CONNECTED -> SUBSCRIBE /user/playlist/events -> SEND /join -> UNSUBSCRIBE`, `ROOM_JOINED` 없음.
 - 같은 시점 대상 방 REST meta/state는 200이었고 participants는 비어 있어 join 완료 증거가 없었다.
 - 직접 STOMP `SUBSCRIBE receipt` 요청은 `CONNECTED`만 수신하고 8초 내 `RECEIPT`를 받지 못했다.
-- Chrome에서 `/me` 성공을 주입해 로그인 전용 provider를 켜자 단일 socket의 `SUBSCRIBE follow-presence -> SUBSCRIBE playlist/events -> SEND /join` 뒤 `ROOM_JOINED`가 누락되고 timeout이 재현됐다.
-- 동일 조건에서 follow presence와 room을 별도 socket으로 분리하자 room socket이 `ROOM_JOINED`를 수신하고 playback, participants, chats, room meta가 모두 200을 반환했다.
+- 특정 계정은 배포/로컬 및 신규/과거 프론트 커밋에서 모두 실패했고, 다른 계정은 같은 컴퓨터의 동일 조건에서 성공했다.
+- 같은 실패 계정은 다른 컴퓨터에서도 증상을 비교해야 했지만, 확보된 프론트 A/B만으로도 “이번 프론트 기능 개발이 원인”이라는 가설은 기각됐다.
+- provider 주입 및 socket 분리 실험은 서로 다른 인증 상태를 완전히 통제하지 못했으므로 방 입장 실패의 인과 증거로 사용할 수 없다.
 - 비로그인에서 로그인으로 `me`가 바뀔 때 badge provider children의 mount 횟수가 1회로 유지되는 회귀 테스트를 추가했다.
 
 ## Cause or Remaining Hypotheses
 
-확정 원인은 전역 transport 재연결과 방 입장 timeout의 동일한 5초 경계, reconnect 시 join handshake 누락, route cleanup 시 leave 누락, 로그인 전용 follow presence와 room membership의 단일 STOMP client 공유, auth 전환 시 badge provider의 앱 children remount다.
+확정된 프론트 문제는 transport 연결 대기 경계, reconnect 시 join handshake 누락, route cleanup 시 leave 누락이었다. 이들은 독립적으로 수정 가치가 있지만 특정 로그인 계정의 입장 실패 원인은 아니었다.
 
-백엔드 내부에서 같은 socket의 두 user destination 중 room 응답이 누락되는 이유는 직접 관측하지 못했다. 프론트 경계에서는 shared client로 실패하고 dedicated clients로 성공하는 동일 브라우저 E2E를 확보했다.
+특정 계정 실패의 남은 가설은 백엔드의 계정별 방 참가/session 상태다. 프론트에서 participant polling, 강제 새로고침, 임의 지연을 추가해 우회하면 원인을 숨기고 정상 계정의 흐름만 복잡하게 만들므로 제거했다.
 
 별도 잔여 이슈로 모바일 viewport에서 기존 `useMediaQuery` 초기값 때문에 home hydration mismatch가 재현됐다. 이 현상은 이번 PR diff 이전부터 존재하며 방 세션 수정과는 별도 범위다.
 
@@ -92,7 +93,7 @@ STOMP transport 연결과 백엔드 방 참가 세션은 서로 다른 상태다
 
 ## Chosen Solution and Rationale
 
-기본 방 세션 복구에는 option 3을 적용했다. 로그인 상태의 후속 충돌에는 option 5를 적용했다. presence는 로그인 user slug 생명주기, room은 route와 room membership 생명주기를 가지므로 별도 transport가 책임 경계와 실제 backend 동작에 맞다.
+기본 방 세션 복구에는 option 3을 적용했다. presence와 room 연결 분리는 서로 다른 생명주기를 격리하는 구조적 선택으로 유지하되, 특정 계정의 입장 실패를 고친 증거로 주장하지 않는다.
 
 250ms 안정화는 영향 사용자 재검증에서 실패했고 같은 연결의 user destination 충돌을 해결하지 못해 제거했다. join 재전송도 backend idempotency 계약이 없어 선택하지 않았다.
 
@@ -109,7 +110,7 @@ STOMP transport 연결과 백엔드 방 참가 세션은 서로 다른 상태다
 
 ## Reusable Rule
 
-Global presence transport state and room membership state must be modeled separately and use separate clients when their user destinations conflict. Every new room socket session needs a join handshake; topic cleanup is not a leave handshake. Auth-dependent providers must not change the wrapper identity of the app children they observe. Do not replace a reproduced lifecycle conflict with arbitrary delays or unsafe join retries.
+Global presence transport state and room membership state must be modeled separately when their owners and terminal states differ. Every new room socket session needs a join handshake; topic cleanup is not a leave handshake. Auth-dependent providers must not change the wrapper identity of the app children they observe. For account-specific failures, compare the same account across frontend versions before attributing causality; do not add polling, hard reloads, arbitrary delays, or unsafe join retries as diagnostic leftovers.
 
 ## Skill or Team Spec Updates
 
@@ -122,7 +123,7 @@ Global presence transport state and room membership state must be modeled separa
 
 - focused Vitest: 3 files / 7 tests pass
 - before-fix authenticated-provider Chrome E2E: `room.join-timeout` reproduced
-- after-fix authenticated-provider Chrome E2E: `/home` render and public room `ROOM_JOINED`/REST reads pass
+- after-fix authenticated-provider Chrome E2E는 검증에 사용한 계정에서는 통과했지만, 특정 실패 계정 문제 해결의 증거는 아님
 - full Vitest 33 files / 87 tests, lint, build, diff check: pass
 - fresh read-only QA: pass
-- actual Google OAuth user session after-change: pending user recheck
+- 후속 계정 A/B: 특정 계정만 과거/현재 프론트 모두 실패하여 프론트 회귀 가설 기각
