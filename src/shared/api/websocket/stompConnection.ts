@@ -1,5 +1,8 @@
 import type { IFrame } from "@stomp/stompjs";
-import { createStompClient } from "./createStompClient";
+import {
+  createStompClient,
+  DEFAULT_STOMP_RECONNECT_DELAY_MS,
+} from "./createStompClient";
 
 type SocketListener = {
   onConnect?: (frame: IFrame) => void;
@@ -46,11 +49,17 @@ client.onWebSocketClose = (event) => {
 };
 
 export function connectSocket() {
+  client.reconnectDelay = DEFAULT_STOMP_RECONNECT_DELAY_MS;
   client.activate();
 }
 
 export function disconnectSocket() {
   client.deactivate();
+}
+
+export function stopSocketAutoReconnect() {
+  client.reconnectDelay = 0;
+  void client.deactivate();
 }
 
 export function getSocketClient() {

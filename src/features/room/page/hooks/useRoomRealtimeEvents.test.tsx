@@ -5,7 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
-import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
+import {
+  addSocketListener,
+  getSocketClient,
+  stopSocketAutoReconnect,
+} from "@/src/shared/api/websocket/stompConnection";
 import { useRoomRealtimeEvents } from "./useRoomRealtimeEvents";
 
 vi.mock("next/navigation", () => ({
@@ -25,11 +29,95 @@ vi.mock(
 );
 vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
   addSocketListener: vi.fn(),
+  getSocketClient: vi.fn(),
+  stopSocketAutoReconnect: vi.fn(),
 }));
 
 describe("useRoomRealtimeEvents 재연결", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(getSocketClient).mockReturnValue({
+      subscribe: vi.fn(() => ({ id: "user-events", unsubscribe: vi.fn() })),
+    } as never);
+  });
+
+  it("같은 방 session-replaced를 받으면 방 연결만 정리하고 재접속을 중단한다", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    let userEventHandler: ((message: { body: string }) => void) | undefined;
+    const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
+    vi.mocked(getSocketClient).mockReturnValue({
+      subscribe: vi.fn((_destination, handler) => {
+        userEventHandler = handler as typeof userEventHandler;
+        return userSubscription;
+      }),
+    } as never);
+    vi.mocked(addSocketListener).mockReturnValue(vi.fn());
+    const roomSubscription = { id: "room-events", unsubscribe: vi.fn() };
+    vi.mocked(subscribeRoomEvents).mockReturnValue(roomSubscription);
+    const setJoinErrorMessage = vi.fn();
+    const setStatus = vi.fn();
+    const resetChatState = vi.fn();
+    const cleanupChatSubscriptions = vi.fn();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions,
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState,
+          setJoinErrorMessage,
+          setLivePlaybackStatus: vi.fn(),
+          setStatus,
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => {
+      userEventHandler?.({
+        body: JSON.stringify({
+          type: "ERROR",
+          roomSlug: "other-room",
+          timestamp: 1,
+          data: {
+            code: "user.session-replaced",
+            message: "server message",
+          },
+        }),
+      });
+    });
+    expect(stopSocketAutoReconnect).not.toHaveBeenCalled();
+    expect(roomSubscription.unsubscribe).not.toHaveBeenCalled();
+
+    act(() => {
+      userEventHandler?.({
+        body: JSON.stringify({
+          type: "ERROR",
+          roomSlug: "room",
+          timestamp: 1,
+          data: {
+            code: "user.session-replaced",
+            message: "server message",
+          },
+        }),
+      });
+    });
+
+    expect(roomSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(userSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+    expect(cleanupChatSubscriptions).toHaveBeenCalledTimes(1);
+    expect(resetChatState).toHaveBeenCalledTimes(1);
+    expect(setStatus).toHaveBeenCalledWith("error");
+    expect(setJoinErrorMessage).toHaveBeenCalledWith(
+      "현재 방은 다른 창에서 마지막으로 열렸습니다.",
+    );
+    expect(stopSocketAutoReconnect).toHaveBeenCalledTimes(1);
+    expect(publishLeaveRequest).not.toHaveBeenCalled();
   });
 
   it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {

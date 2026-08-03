@@ -33,11 +33,16 @@ import {
 } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
 import {
-  isPasswordRequiredError,
+  isRoomAccessDeniedError,
   shouldKeepPasswordFormAfterSubmit,
 } from "@/src/features/room/join/model/roomJoinErrors";
 import { ApiError } from "@/src/shared/api/api-error";
-import { addSocketListener } from "@/src/shared/api/websocket/stompConnection";
+import {
+  addSocketListener,
+  getSocketClient,
+  stopSocketAutoReconnect,
+} from "@/src/shared/api/websocket/stompConnection";
+import { parseRoomJoinEvent } from "@/src/features/room/api/websocket/subscribeUserJoinEvents";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import {
   applyMusicPowerChange,
@@ -52,6 +57,9 @@ import type { LivePlaybackState } from "./useRoomPlaybackViewModel";
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 
 const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
+const SESSION_REPLACED_ERROR_CODE = "user.session-replaced";
+const SESSION_REPLACED_MESSAGE =
+  "현재 방은 다른 창에서 마지막으로 열렸습니다.";
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   if (!data || typeof data !== "object") {
@@ -80,6 +88,20 @@ function isWsErrorData(data: unknown): data is WsErrorData {
   return (
     typeof candidate.statusCode === "number" &&
     typeof candidate.code === "string" &&
+    typeof candidate.message === "string"
+  );
+}
+
+function isSessionReplacedData(
+  data: unknown,
+): data is { code: string; message: string } {
+  if (!data || typeof data !== "object") {
+    return false;
+  }
+
+  const candidate = data as { code?: unknown; message?: unknown };
+  return (
+    candidate.code === SESSION_REPLACED_ERROR_CODE &&
     typeof candidate.message === "string"
   );
 }
@@ -113,6 +135,7 @@ export function useRoomRealtimeEvents({
   const queryClient = useQueryClient();
   const router = useRouter();
   const roomSubscriptionRef = useRef<StompSubscription | null>(null);
+  const userSubscriptionRef = useRef<StompSubscription | null>(null);
   const roomSubscriptionConfigRef = useRef<RoomSubscriptionConfig | null>(null);
   const reconnectPendingRef = useRef(false);
   const rejoinAbortControllerRef = useRef<AbortController | null>(null);
@@ -127,6 +150,15 @@ export function useRoomRealtimeEvents({
     roomSubscriptionRef.current = null;
   }, []);
 
+  const cleanupUserSubscription = useCallback(() => {
+    try {
+      userSubscriptionRef.current?.unsubscribe();
+    } catch {
+      // The socket may already be closing or reconnecting.
+    }
+    userSubscriptionRef.current = null;
+  }, []);
+
   const cancelRejoin = useCallback(() => {
     rejoinAbortControllerRef.current?.abort();
     rejoinAbortControllerRef.current = null;
@@ -135,21 +167,23 @@ export function useRoomRealtimeEvents({
   const cleanupRoomSubscription = useCallback(() => {
     cancelRejoin();
     cleanupBrokerSubscription();
+    cleanupUserSubscription();
     roomSubscriptionConfigRef.current = null;
     reconnectPendingRef.current = false;
-  }, [cancelRejoin, cleanupBrokerSubscription]);
+  }, [cancelRejoin, cleanupBrokerSubscription, cleanupUserSubscription]);
 
   const leaveRoomSession = useCallback(() => {
     const config = roomSubscriptionConfigRef.current;
     cancelRejoin();
     cleanupBrokerSubscription();
+    cleanupUserSubscription();
     roomSubscriptionConfigRef.current = null;
     reconnectPendingRef.current = false;
 
     if (config) {
       publishLeaveRequest(config.slug);
     }
-  }, [cancelRejoin, cleanupBrokerSubscription]);
+  }, [cancelRejoin, cleanupBrokerSubscription, cleanupUserSubscription]);
 
   const invalidateRoomReads = useCallback(
     (roomSlug: string) => {
@@ -299,6 +333,74 @@ export function useRoomRealtimeEvents({
     [cleanupBrokerSubscription, handleRoomEvent],
   );
 
+  const handleSessionReplaced = useCallback(
+    (roomSlug: string) => {
+      const config = roomSubscriptionConfigRef.current;
+      if (!config || config.slug !== roomSlug) {
+        return;
+      }
+
+      cancelRejoin();
+      cleanupBrokerSubscription();
+      cleanupUserSubscription();
+      roomSubscriptionConfigRef.current = null;
+      reconnectPendingRef.current = false;
+      cleanupChatSubscriptions();
+      resetChatState();
+      setLivePlaybackStatus(null);
+      setJoinErrorMessage(SESSION_REPLACED_MESSAGE);
+      setStatus("error");
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomParticipantsPrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+      });
+      stopSocketAutoReconnect();
+    },
+    [
+      cancelRejoin,
+      cleanupBrokerSubscription,
+      cleanupChatSubscriptions,
+      cleanupUserSubscription,
+      queryClient,
+      resetChatState,
+      setJoinErrorMessage,
+      setLivePlaybackStatus,
+      setStatus,
+    ],
+  );
+
+  const subscribeUserEvents = useCallback(
+    (config: RoomSubscriptionConfig) => {
+      cleanupUserSubscription();
+      userSubscriptionRef.current = getSocketClient().subscribe(
+        "/user/playlist/events",
+        ({ body }) => {
+          if (!body) {
+            return;
+          }
+
+          const event = parseRoomJoinEvent(body);
+          if (
+            !event ||
+            event.roomSlug !== config.slug ||
+            event.type !== "ERROR" ||
+            !isSessionReplacedData(event.data)
+          ) {
+            return;
+          }
+
+          handleSessionReplaced(config.slug);
+        },
+      );
+    },
+    [cleanupUserSubscription, handleSessionReplaced],
+  );
+
   useEffect(() => {
     hasRedirectedAfterKickRef.current = false;
   }, [slug]);
@@ -338,6 +440,7 @@ export function useRoomRealtimeEvents({
 
             initializeChatStateFromJoinData(joinResult.data);
             subscribeWithConfig(config, true);
+            subscribeUserEvents(config);
             invalidateRoomReads(config.slug);
             setJoinErrorMessage("");
             setStatus("joined");
@@ -359,7 +462,7 @@ export function useRoomRealtimeEvents({
                     message: "방 연결을 복구하지 못했습니다.",
                   });
             const shouldRequestPassword =
-              isPasswordRequiredError(joinError) ||
+              isRoomAccessDeniedError(joinError) ||
               (config.password !== null &&
                 shouldKeepPasswordFormAfterSubmit(joinError));
 
@@ -384,6 +487,7 @@ export function useRoomRealtimeEvents({
 
         cancelRejoin();
         cleanupBrokerSubscription();
+        cleanupUserSubscription();
         cleanupChatSubscriptions();
         reconnectPendingRef.current = true;
         setJoinErrorMessage("");
@@ -433,6 +537,7 @@ export function useRoomRealtimeEvents({
     cleanupRoomSubscription,
     cancelRejoin,
     cleanupBrokerSubscription,
+    cleanupUserSubscription,
     initializeChatStateFromJoinData,
     invalidateRoomReads,
     queryClient,
@@ -442,6 +547,7 @@ export function useRoomRealtimeEvents({
     setStatus,
     slug,
     subscribeWithConfig,
+    subscribeUserEvents,
   ]);
 
   const ensureRoomSubscription = useCallback(
@@ -461,8 +567,9 @@ export function useRoomRealtimeEvents({
 
       roomSubscriptionConfigRef.current = config;
       subscribeWithConfig(config, true);
+      subscribeUserEvents(config);
     },
-    [subscribeWithConfig],
+    [subscribeUserEvents, subscribeWithConfig],
   );
 
   return {

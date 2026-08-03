@@ -24,7 +24,7 @@ import {
   writeStoredRoomJoinPassword,
 } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import {
-  isPasswordRequiredError,
+  isRoomAccessDeniedError,
   shouldKeepPasswordFormAfterSubmit,
 } from "@/src/features/room/join/model/roomJoinErrors";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
@@ -232,7 +232,7 @@ export default function RoomPlaybackScreen() {
 
         const err = error as ApiError;
 
-        if (joinPassword) {
+        if (joinPassword && isRoomAccessDeniedError(err)) {
           clearStoredRoomJoinPassword(slug);
           setJoinStateSlug(slug);
           setRoomPassword(null);
@@ -241,10 +241,10 @@ export default function RoomPlaybackScreen() {
           return;
         }
 
-        if (requiresPassword && isPasswordRequiredError(err)) {
+        if (requiresPassword && isRoomAccessDeniedError(err)) {
           setJoinStateSlug(slug);
           setRoomPassword(null);
-          setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
+          setJoinErrorMessage(err.message);
           setStatus("needs-password");
           return;
         }
