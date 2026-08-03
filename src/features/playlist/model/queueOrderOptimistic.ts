@@ -1,14 +1,22 @@
-import type { RoomQueueResult } from "./types";
+import type { InfiniteData } from "@tanstack/react-query";
+import type { RoomQueuePage, RoomQueuePageParam } from "./types";
 
-export type QueueOrderSnapshot = [readonly unknown[], RoomQueueResult | undefined];
+export type RoomQueueData = InfiniteData<
+  RoomQueuePage,
+  RoomQueuePageParam | null
+>;
+
+export type QueueOrderSnapshot = [readonly unknown[], RoomQueueData | undefined];
 
 export function applyPendingEntryOrder(
-  currentEntries: RoomQueueResult | undefined,
+  currentData: RoomQueueData | undefined,
   orderedPendingEntryIds: string[],
 ) {
-  if (!currentEntries || orderedPendingEntryIds.length < 2) {
-    return currentEntries;
+  if (!currentData || orderedPendingEntryIds.length < 2) {
+    return currentData;
   }
+
+  const currentEntries = currentData.pages.flatMap((page) => page.items);
 
   const orderedEntriesById = new Map(
     currentEntries
@@ -20,12 +28,12 @@ export function applyPendingEntryOrder(
     .filter((entry) => !!entry);
 
   if (reorderedEntries.length !== orderedPendingEntryIds.length) {
-    return currentEntries;
+    return currentData;
   }
 
   let reorderedIndex = 0;
 
-  return currentEntries.map((entry) => {
+  const nextEntries = currentEntries.map((entry) => {
     if (!orderedEntriesById.has(entry.entryId)) {
       return entry;
     }
@@ -35,4 +43,41 @@ export function applyPendingEntryOrder(
 
     return reorderedEntry ?? entry;
   });
+
+  let nextEntryIndex = 0;
+  return {
+    ...currentData,
+    pages: currentData.pages.map((page) => ({
+      ...page,
+      items: page.items.map(() => {
+        const entry = nextEntries[nextEntryIndex];
+        nextEntryIndex += 1;
+        return entry;
+      }),
+    })),
+  };
+}
+
+export function removeQueueEntries(
+  currentData: RoomQueueData | undefined,
+  entryIds: ReadonlySet<string>,
+) {
+  if (!currentData) {
+    return currentData;
+  }
+
+  const removedCount = currentData.pages.reduce(
+    (count, page) =>
+      count + page.items.filter((entry) => entryIds.has(entry.entryId)).length,
+    0,
+  );
+
+  return {
+    ...currentData,
+    pages: currentData.pages.map((page) => ({
+      ...page,
+      items: page.items.filter((entry) => !entryIds.has(entry.entryId)),
+      totalPendingCount: Math.max(0, page.totalPendingCount - removedCount),
+    })),
+  };
 }

@@ -66,11 +66,14 @@ function RoomQueuePanelContent({
     <RoomQueuePanelView
       activeTab={queuePanel.activeTab}
       allEntries={queuePanel.allEntries}
+      allPendingCount={queuePanel.allPendingCount}
       canDeleteEntry={queuePanel.canDeleteEntry}
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
       deleteErrorMessage={queuePanel.deleteErrorMessage}
       emptyMessage={queuePanel.emptyMessage}
       hasNextHistoryPage={queuePanel.hasNextHistoryPage}
+      hasNextAllQueuePage={queuePanel.hasNextAllQueuePage}
+      hasNextMyQueuePage={queuePanel.hasNextMyQueuePage}
       historyEntries={queuePanel.historyEntries}
       historyErrorMessage={queuePanel.historyErrorMessage}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
@@ -80,8 +83,12 @@ function RoomQueuePanelContent({
       isOwner={queuePanel.isOwner}
       isRefetching={queuePanel.isRefetching}
       isFetchingNextHistoryPage={queuePanel.isFetchingNextHistoryPage}
+      isFetchingNextAllQueuePage={queuePanel.isFetchingNextAllQueuePage}
+      isFetchingNextMyQueuePage={queuePanel.isFetchingNextMyQueuePage}
       moveErrorMessage={queuePanel.moveErrorMessage}
       myEntries={queuePanel.myEntries}
+      myPendingCount={queuePanel.myPendingCount}
+      queueErrorMessage={queuePanel.queueErrorMessage}
       roomPassword={roomPassword}
       roomSlug={roomSlug}
       onChangeTab={queuePanel.setActiveTab}
@@ -90,6 +97,8 @@ function RoomQueuePanelContent({
       onMoveMyEntry={queuePanel.handleMoveMyEntry}
       onMoveRoomEntry={queuePanel.handleMoveRoomEntry}
       onLoadMoreHistory={queuePanel.loadNextHistoryPage}
+      onLoadMoreAllQueue={queuePanel.loadNextAllQueuePage}
+      onLoadMoreMyQueue={queuePanel.loadNextMyQueuePage}
     />
   );
 }

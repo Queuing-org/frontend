@@ -37,8 +37,10 @@ type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: string;
   entries: PlaylistEntry[];
+  hasUnloadedEntries?: boolean;
   isDeletePending?: boolean;
   isMovePending?: boolean;
+  moveMode: "owner" | "self";
   onDelete?: (entryId: string) => void;
   onMove?: (payload: MovePayload) => void;
 };
@@ -101,8 +103,10 @@ export default function RoomQueueSortableList({
   canDeleteEntry,
   emptyMessage,
   entries,
+  hasUnloadedEntries = false,
   isDeletePending = false,
   isMovePending = false,
+  moveMode,
   onDelete,
   onMove,
 }: Props) {
@@ -112,9 +116,24 @@ export default function RoomQueueSortableList({
   const fixedEntries = entries.filter(
     (entry) => !isPendingQueueEntry(entry) && !entry.status.isActive,
   );
+  const lockedPendingEntries = useMemo(
+    () =>
+      moveMode === "self"
+        ? entries.filter(
+            (entry) =>
+              isPendingQueueEntry(entry) && entry.status.ownerOrderLocked,
+          )
+        : [],
+    [entries, moveMode],
+  );
   const pendingEntriesFromProps = useMemo(
-    () => entries.filter(isPendingQueueEntry),
-    [entries],
+    () =>
+      entries.filter(
+        (entry) =>
+          isPendingQueueEntry(entry) &&
+          (moveMode === "owner" || !entry.status.ownerOrderLocked),
+      ),
+    [entries, moveMode],
   );
   const pendingEntryIdsKey = useMemo(
     () => pendingEntriesFromProps.map((entry) => entry.entryId).join("\u001f"),
@@ -182,13 +201,17 @@ export default function RoomQueueSortableList({
     }
 
     const reorderedEntries = arrayMove(pendingEntries, oldIndex, newIndex);
+    const beforeEntryId = reorderedEntries[newIndex + 1]?.entryId ?? null;
+    if (hasUnloadedEntries && beforeEntryId === null) {
+      return;
+    }
     setPendingOrder({
       orderedEntryIds: reorderedEntries.map((entry) => entry.entryId),
       sourceEntryIdsKey: pendingEntryIdsKey,
     });
 
     onMove?.({
-      beforeEntryId: reorderedEntries[newIndex + 1]?.entryId ?? null,
+      beforeEntryId,
       movedEntryId: activeEntryId,
       orderedPendingEntryIds: reorderedEntries.map((entry) => entry.entryId),
     });
@@ -207,6 +230,20 @@ export default function RoomQueueSortableList({
               key={entry.entryId}
               entry={entry}
               data-drag-disabled="true"
+            />
+          ))}
+        </ul>
+      ) : null}
+      {lockedPendingEntries.length > 0 ? (
+        <ul className={styles.fixedTopList}>
+          {lockedPendingEntries.map((entry) => (
+            <RoomQueueCard
+              key={entry.entryId}
+              entry={entry}
+              data-drag-disabled="true"
+              isDeletePending={isDeletePending}
+              onDelete={onDelete}
+              showDeleteButton={canDeleteEntry?.(entry) ?? true}
             />
           ))}
         </ul>

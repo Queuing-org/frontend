@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
 import { useRoomHistory } from "@/src/features/playlist/model/useRoomHistory";
@@ -14,7 +15,9 @@ import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   isEntryRequestedByUser,
+  getMovablePersonalQueueEntryIds,
   isPendingQueueEntry,
+  isValidPersonalQueueMove,
   type QueueTab,
 } from "../model/roomQueue";
 
@@ -32,6 +35,17 @@ type MovePayload = {
   orderedPendingEntryIds: string[];
 };
 
+function getQueueErrorMessage(error: unknown) {
+  if (
+    error instanceof ApiError &&
+    error.code === "room.queue-mutation-conflict"
+  ) {
+    return "";
+  }
+
+  return error instanceof Error ? error.message : "";
+}
+
 export function useRoomQueuePanel({
   currentUser,
   isCurrentUserLoading,
@@ -42,12 +56,13 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const [moveErrorMessage, setMoveErrorMessage] = useState("");
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
-  const { data: entries, isRefetching: isAllRefetching } = useRoomQueue(
-    roomSlug,
-    roomPassword,
-  );
+  const allQueueQuery = useRoomQueue(roomSlug, roomPassword);
   const {
-    data: myQueueEntries = [],
+    data: myQueueData,
+    error: myQueueError,
+    fetchNextQueuePage: fetchNextMyQueuePage,
+    hasNextPage: hasNextMyQueuePage,
+    isFetchingNextPage: isFetchingNextMyQueuePage,
     isLoading: isMyQueueLoading,
     isRefetching: isMyRefetching,
   } = useMyRoomQueue(roomSlug, roomPassword, Boolean(currentUser));
@@ -61,9 +76,19 @@ export function useRoomQueuePanel({
   const deleteMyQueueEntry = useDeleteMyQueueEntry();
   const deleteRoomQueueEntries = useDeleteRoomQueueEntries();
 
-  const allEntries = entries;
+  const queueErrorMessage =
+    activeTab === "all"
+      ? getQueueErrorMessage(allQueueQuery.error)
+      : activeTab === "mine"
+        ? getQueueErrorMessage(myQueueError)
+        : "";
+
+  const allEntries = allQueueQuery.data.pages.flatMap((page) => page.items);
+  const allPendingCount =
+    allQueueQuery.data.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
-  const myEntries = myQueueEntries;
+  const myEntries = myQueueData?.pages.flatMap((page) => page.items) ?? [];
+  const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -150,11 +175,26 @@ export function useRoomQueuePanel({
     orderedPendingEntryIds,
   }: MovePayload) => {
     setMoveErrorMessage("");
+    const movableEntryIds = getMovablePersonalQueueEntryIds(myEntries);
+    const movableEntryIdSet = new Set(movableEntryIds);
+    if (!isValidPersonalQueueMove(
+      movableEntryIdSet,
+      movedEntryId,
+      beforeEntryId,
+    )) {
+      setMoveErrorMessage(
+        "방장이 순서를 지정한 곡은 변경할 수 없어요.",
+      );
+      return;
+    }
+
     moveMyQueueEntry.mutate(
       {
         beforeEntryId,
         movedEntryId,
-        orderedPendingEntryIds,
+        orderedPendingEntryIds: orderedPendingEntryIds.filter((entryId) =>
+          movableEntryIdSet.has(entryId),
+        ),
         password: roomPassword,
         slug: roomSlug,
       },
@@ -171,6 +211,7 @@ export function useRoomQueuePanel({
   return {
     activeTab,
     allEntries,
+    allPendingCount,
     canDeleteEntry,
     canDeleteEntryAsOwner,
     deleteErrorMessage,
@@ -182,16 +223,28 @@ export function useRoomQueuePanel({
     handleMoveMyEntry,
     handleMoveRoomEntry,
     hasNextHistoryPage: historyQuery.hasNextPage,
+    hasNextAllQueuePage: allQueueQuery.hasNextPage,
+    hasNextMyQueuePage,
     historyEntries:
       historyQuery.data?.flatMap((page) => page.items) ?? [],
     historyErrorMessage: historyQuery.error?.message ?? "",
     isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
     isOwner,
-    isRefetching: isAllRefetching || isMyRefetching,
+    isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
+    isFetchingNextMyQueuePage,
+    isRefetching: allQueueQuery.isRefetching || isMyRefetching,
     moveErrorMessage,
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,
+    myPendingCount,
+    queueErrorMessage,
+    loadNextAllQueuePage: () => {
+      void allQueueQuery.fetchNextQueuePage();
+    },
+    loadNextMyQueuePage: () => {
+      void fetchNextMyQueuePage();
+    },
     loadNextHistoryPage: () => {
       void historyQuery.fetchNextPage();
     },

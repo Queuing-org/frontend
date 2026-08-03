@@ -20,11 +20,14 @@ type MovePayload = {
 type RoomQueuePanelViewProps = {
   activeTab: QueueTab;
   allEntries: PlaylistEntry[];
+  allPendingCount: number;
   canDeleteEntry: (entry: PlaylistEntry) => boolean;
   canDeleteEntryAsOwner: (entry: PlaylistEntry) => boolean;
   deleteErrorMessage: string;
   emptyMessage: string;
   hasNextHistoryPage: boolean;
+  hasNextAllQueuePage: boolean;
+  hasNextMyQueuePage: boolean;
   historyEntries: RoomHistoryEntry[];
   historyErrorMessage: string;
   isDeleteMyPending: boolean;
@@ -34,8 +37,12 @@ type RoomQueuePanelViewProps = {
   isOwner: boolean;
   isRefetching: boolean;
   isFetchingNextHistoryPage: boolean;
+  isFetchingNextAllQueuePage: boolean;
+  isFetchingNextMyQueuePage: boolean;
   moveErrorMessage: string;
   myEntries: PlaylistEntry[];
+  myPendingCount: number;
+  queueErrorMessage: string;
   roomPassword?: string | null;
   roomSlug: string;
   onChangeTab: (tab: QueueTab) => void;
@@ -44,16 +51,21 @@ type RoomQueuePanelViewProps = {
   onMoveMyEntry: (payload: MovePayload) => void;
   onMoveRoomEntry: (payload: MovePayload) => void;
   onLoadMoreHistory: () => void;
+  onLoadMoreAllQueue: () => void;
+  onLoadMoreMyQueue: () => void;
 };
 
 export default function RoomQueuePanelView({
   activeTab,
   allEntries,
+  allPendingCount,
   canDeleteEntry,
   canDeleteEntryAsOwner,
   deleteErrorMessage,
   emptyMessage,
   hasNextHistoryPage,
+  hasNextAllQueuePage,
+  hasNextMyQueuePage,
   historyEntries,
   historyErrorMessage,
   isDeleteMyPending,
@@ -63,8 +75,12 @@ export default function RoomQueuePanelView({
   isOwner,
   isRefetching,
   isFetchingNextHistoryPage,
+  isFetchingNextAllQueuePage,
+  isFetchingNextMyQueuePage,
   moveErrorMessage,
   myEntries,
+  myPendingCount,
+  queueErrorMessage,
   roomPassword,
   roomSlug,
   onChangeTab,
@@ -73,13 +89,15 @@ export default function RoomQueuePanelView({
   onMoveMyEntry,
   onMoveRoomEntry,
   onLoadMoreHistory,
+  onLoadMoreAllQueue,
+  onLoadMoreMyQueue,
 }: RoomQueuePanelViewProps) {
   return (
     <div className={styles.root}>
       <RoomQueueTabs
         activeTab={activeTab}
-        allCount={allEntries.length}
-        myCount={myEntries.length}
+        allCount={allPendingCount}
+        myCount={myPendingCount}
         onChange={onChangeTab}
       />
       <div className={styles.listArea}>
@@ -103,6 +121,8 @@ export default function RoomQueuePanelView({
             isMoveMyPending={isMoveMyPending}
             isMoveRoomPending={isMoveRoomPending}
             isOwner={isOwner}
+            hasNextAllQueuePage={hasNextAllQueuePage}
+            hasNextMyQueuePage={hasNextMyQueuePage}
             myEntries={myEntries}
             onDeleteMyEntry={onDeleteMyEntry}
             onDeleteRoomEntry={onDeleteRoomEntry}
@@ -120,6 +140,9 @@ export default function RoomQueuePanelView({
       {historyErrorMessage ? (
         <div className={styles.error}>{historyErrorMessage}</div>
       ) : null}
+      {queueErrorMessage ? (
+        <div className={styles.error}>{queueErrorMessage}</div>
+      ) : null}
       {isMoveMyPending || isMoveRoomPending ? (
         <div className={styles.refreshing}>큐 순서를 변경하는 중...</div>
       ) : null}
@@ -128,6 +151,26 @@ export default function RoomQueuePanelView({
       ) : null}
       {isRefetching ? (
         <div className={styles.refreshing}>최신 목록으로 갱신 중...</div>
+      ) : null}
+      {activeTab === "all" && hasNextAllQueuePage ? (
+        <button
+          type="button"
+          className={styles.loadMoreButton}
+          disabled={isFetchingNextAllQueuePage}
+          onClick={onLoadMoreAllQueue}
+        >
+          {isFetchingNextAllQueuePage ? "불러오는 중..." : "대기곡 더 보기"}
+        </button>
+      ) : null}
+      {activeTab === "mine" && hasNextMyQueuePage ? (
+        <button
+          type="button"
+          className={styles.loadMoreButton}
+          disabled={isFetchingNextMyQueuePage}
+          onClick={onLoadMoreMyQueue}
+        >
+          {isFetchingNextMyQueuePage ? "불러오는 중..." : "내 신청곡 더 보기"}
+        </button>
       ) : null}
       {activeTab !== "history" ? (
         <div className={styles.addTrackDock}>

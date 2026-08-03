@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "@/src/shared/api/api-error";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { fetchRoomHistory } from "./fetchRoomHistory";
 import { fetchRoomParticipants } from "./fetchRoomParticipants";
 import { fetchRoomPlayback } from "./fetchRoomPlayback";
-import { fetchRoomQueue } from "./fetchRoomQueue";
+import { fetchRoomQueuePage } from "./fetchRoomQueue";
 
 vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: { get: vi.fn() },
@@ -25,14 +24,19 @@ const queueEntry = (entryId: string) => ({
     durationMs: 1000,
     thumbnailUrl: "https://example.com/thumbnail.jpg",
   },
-  status: { skipped: false, isActive: false, isPlayed: false },
-  addedBy: { nickname: "신청자", slug: "requester" },
+  status: {
+    skipped: false,
+    isActive: false,
+    isPlayed: false,
+    ownerOrderLocked: false,
+  },
+  addedBy: { nickname: "신청자", slug: "requester", avatarUrl: null },
   entryId,
   createdAtMs: 1,
   updatedAtMs: 1,
 });
 
-describe("v26.7.1 방 조회 API", () => {
+describe("v26.8.0 방 조회 API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -46,6 +50,7 @@ describe("v26.7.1 방 조회 API", () => {
             hasNext: true,
             nextCursor: "entry-1",
             queueRevision: 12,
+            totalPendingCount: 2,
           },
         },
       })
@@ -56,13 +61,20 @@ describe("v26.7.1 방 조회 API", () => {
             hasNext: false,
             nextCursor: null,
             queueRevision: 12,
+            totalPendingCount: 2,
           },
         },
       });
 
     await expect(
-      fetchRoomQueue({ slug: "room", password: "secret" }),
-    ).resolves.toHaveLength(2);
+      fetchRoomQueuePage({ slug: "room", password: "secret" }),
+    ).resolves.toMatchObject({ totalPendingCount: 2 });
+    await fetchRoomQueuePage({
+      slug: "room",
+      password: "secret",
+      cursor: "entry-1",
+      queueRevision: 12,
+    });
 
     expect(axiosInstance.get).toHaveBeenNthCalledWith(
       1,
@@ -84,46 +96,6 @@ describe("v26.7.1 방 조회 API", () => {
         headers: { "X-Room-Password": "secret" },
       },
     );
-  });
-
-  it("페이지 조회 중 queue conflict가 발생하면 첫 페이지부터 한 번 재시작한다", async () => {
-    const firstPage = {
-      data: {
-        result: {
-          items: [queueEntry("entry-1")],
-          hasNext: true,
-          nextCursor: "entry-1",
-          queueRevision: 12,
-        },
-      },
-    };
-    vi.mocked(axiosInstance.get)
-      .mockResolvedValueOnce(firstPage)
-      .mockRejectedValueOnce(
-        new ApiError({
-          status: 409,
-          code: "room.queue-mutation-conflict",
-          message: "conflict",
-        }),
-      )
-      .mockResolvedValueOnce({
-        data: {
-          result: {
-            items: [queueEntry("entry-new")],
-            hasNext: false,
-            nextCursor: null,
-            queueRevision: 13,
-          },
-        },
-      });
-
-    await expect(fetchRoomQueue({ slug: "room" })).resolves.toEqual([
-      queueEntry("entry-new"),
-    ]);
-    expect(axiosInstance.get).toHaveBeenCalledTimes(3);
-    expect(vi.mocked(axiosInstance.get).mock.calls[2]?.[1]).toMatchObject({
-      params: { size: 100 },
-    });
   });
 
   it("playback 응답을 분리된 현재 재생 객체로 파싱한다", async () => {
@@ -152,7 +124,13 @@ describe("v26.7.1 방 조회 API", () => {
       .mockResolvedValueOnce({
         data: {
           result: {
-            items: [{ nickname: "A", participantId: "a" }],
+            items: [{
+              nickname: "A",
+              participantId: "a",
+              participantType: "GUEST",
+              userSlug: null,
+              profileImageUrl: null,
+            }],
             hasNext: true,
             nextCursor: "a",
           },
@@ -161,7 +139,13 @@ describe("v26.7.1 방 조회 API", () => {
       .mockResolvedValueOnce({
         data: {
           result: {
-            items: [{ nickname: "B", participantId: "b" }],
+            items: [{
+              nickname: "B",
+              participantId: "b",
+              participantType: "GUEST",
+              userSlug: null,
+              profileImageUrl: null,
+            }],
             hasNext: false,
             nextCursor: null,
           },

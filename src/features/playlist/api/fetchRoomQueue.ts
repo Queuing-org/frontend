@@ -7,11 +7,29 @@ import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
   RoomQueuePage,
   RoomQueueRequestParams,
-  RoomQueueResult,
 } from "../model/types";
 
 const QUEUE_PAGE_SIZE = 100;
-const QUEUE_CONFLICT_CODE = "room.queue-mutation-conflict";
+export const QUEUE_CONFLICT_CODE = "room.queue-mutation-conflict";
+
+export function getNextRoomQueuePageParam(page: RoomQueuePage) {
+  if (!page.hasNext) {
+    return undefined;
+  }
+
+  if (!page.nextCursor) {
+    throw new ApiError({
+      status: 500,
+      code: "invalid-queue-page",
+      message: "다음 큐 페이지 커서가 없습니다.",
+    });
+  }
+
+  return {
+    cursor: page.nextCursor,
+    queueRevision: page.queueRevision,
+  };
+}
 
 export async function fetchRoomQueuePage({
   slug,
@@ -36,56 +54,4 @@ export async function fetchRoomQueuePage({
   );
 
   return unwrapApiResponse(res.data);
-}
-
-async function fetchEveryQueuePage(
-  params: PlaylistProtectedParams,
-): Promise<RoomQueueResult> {
-  const items: RoomQueueResult = [];
-  let cursor: string | null = null;
-  let queueRevision: number | null = null;
-
-  do {
-    const page = await fetchRoomQueuePage({
-      ...params,
-      cursor,
-      queueRevision,
-      size: QUEUE_PAGE_SIZE,
-    });
-    items.push(...page.items);
-
-    if (!page.hasNext) {
-      return items;
-    }
-
-    if (!page.nextCursor) {
-      throw new ApiError({
-        status: 500,
-        code: "invalid-queue-page",
-        message: "다음 큐 페이지 커서가 없습니다.",
-      });
-    }
-
-    cursor = page.nextCursor;
-    queueRevision = page.queueRevision;
-  } while (true);
-}
-
-type PlaylistProtectedParams = Pick<
-  RoomQueueRequestParams,
-  "slug" | "password" | "mine"
->;
-
-export async function fetchRoomQueue(
-  params: PlaylistProtectedParams,
-): Promise<RoomQueueResult> {
-  try {
-    return await fetchEveryQueuePage(params);
-  } catch (error) {
-    if (!(error instanceof ApiError) || error.code !== QUEUE_CONFLICT_CODE) {
-      throw error;
-    }
-
-    return fetchEveryQueuePage(params);
-  }
 }
