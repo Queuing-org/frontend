@@ -52,4 +52,5 @@
 - 원인: `canvas-confetti` 추가 시 `package.json`과 `package-lock.json`만 갱신하고 추적 중인 `pnpm-lock.yaml`을 누락했다.
 - 수정: `pnpm install --lockfile-only`로 동기화하고 `pnpm install --frozen-lockfile` 통과를 확인했다.
 - pnpm install 이후 final gate: lint pass, 51 files / 125 tests pass, build pass.
+- fix commit `caf7669`: GitHub Actions와 Vercel preview 모두 pass.
 - durable incident: `docs/agent-harness/incidents/2026-08-04-dual-lockfile-vercel-failure.md`

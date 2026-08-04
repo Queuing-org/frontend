@@ -51,7 +51,7 @@ pnpm install --frozen-lockfile
 
 ## Result
 
-`pnpm-lock.yaml`에 새 dependency specifier와 resolution을 기록했고 frozen install이 통과했다. 새 commit으로 Vercel preview를 다시 실행한다.
+`pnpm-lock.yaml`에 새 dependency specifier와 resolution을 기록했고 frozen install이 통과했다. fix commit `caf7669`의 Vercel preview와 GitHub Actions가 모두 통과했다.
 
 ## Reusable Rule
 
@@ -68,4 +68,6 @@ pnpm install --frozen-lockfile
 - 후속 `npm run lint`: pass
 - 후속 `npm run test`: 51 files / 125 tests pass
 - 후속 `npm run build`: pass
+- fix head Vercel preview: pass
+- fix head GitHub Actions `Lint, test, and build`: pass
 - residual risk: npm/pnpm lock 동시 추적 자체는 유지되므로 package manager 단일화 전까지 두 lock 동기화가 필요하다.
