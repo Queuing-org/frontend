@@ -30,3 +30,10 @@
 - 사연은 컨테이너보다 긴 경우에만 같은 문장을 두 번 배치해 연속 순환하고 hover/focus에서 잠시 멈춘다.
 - reduced motion 사용자는 사연 애니메이션과 confetti를 보지 않는다.
 - badge modal은 새 칭호가 queue 선두가 될 때마다 한 번 confetti를 실행하고 기존 순차 닫기 동작을 유지한다.
+
+## Track Title And Now Playing
+
+- 현재 재생 신청자 카드와 queue 카드의 곡 제목은 컨테이너보다 긴 경우에만 기존 marquee로 연속 순환한다.
+- 신청자 닉네임과 구분자는 고정하고 곡 제목 영역만 순환한다.
+- 현재 재생 queue 항목의 썸네일은 `PLAY` 문자열 대신 세 막대 equalizer를 표시한다.
+- reduced motion 사용자는 제목을 직접 가로 스크롤할 수 있고 equalizer는 정적인 막대로 본다.

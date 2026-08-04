@@ -11,3 +11,5 @@
 - 칭호 모달은 `canvas-confetti`를 동적 import하며 모션 감소 설정과 effect 취소를 존중한다. 장식 로드 실패는 모달 흐름과 분리했다.
 - 차단 목록은 20개 커서 infinite query와 명시적 더 보기 버튼을 사용한다. 차단 해제는 boolean 결과를 검증하고 follow/search cache를 재검증한다.
 - follower/following 목록이 한 개의 expanded slug와 block target만 로컬로 소유하며, 공용 카드 shell의 본문 버튼과 방 링크를 sibling action으로 분리했다.
+- 곡 제목은 신청자명과 구분자를 고정하고 기존 `OverflowMarquee`에 제목만 전달한다. queue와 현재 재생 신청자 카드가 같은 overflow/reduced-motion 동작을 공유한다.
+- 활성 queue 썸네일은 접근 가능한 `role="img"` equalizer를 표시한다. 세 막대는 CSS animation만 사용하며 reduced motion에서는 서로 다른 정적 높이를 유지한다.

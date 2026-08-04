@@ -10,6 +10,8 @@
 - 칭호 획득 모달을 축하 UI와 접근성 설정을 존중하는 confetti 효과로 개선한다.
 - 방 프로필의 최애곡 카드를 한 줄 소개로 교체하고 음악력 1시간 안내 문구를 제거한다.
 - 차단 목록 조회/해제를 연결하고 팔로워·팔로잉 카드 클릭 시 관계/차단 액션을 연다.
+- 현재 재생 카드와 queue 카드의 긴 곡 제목도 실제 overflow가 있을 때 연속 가로 스크롤로 표시한다.
+- 현재 재생 곡 썸네일의 `PLAY` 문구를 reduced motion을 존중하는 equalizer 애니메이션으로 교체한다.
 
 ## Selected Skills
 
@@ -31,6 +33,8 @@
 - 칭호 축하 효과: badge modal의 client-only side effect
 - 차단 목록/해제: follow blocked API와 TanStack Query infinite cache
 - 팔로우 카드 확장 상태: follower/following 목록 컴포넌트의 로컬 상태
+- 곡 제목 overflow 측정/애니메이션: 기존 room feature 공용 marquee leaf component
+- 현재 재생 표시: room queue card의 표현 전용 CSS animation
 
 ## Commit Slices
 
@@ -42,6 +46,7 @@
 6. `feat(badge): 칭호 획득 축하 모달 개선`
 7. `feat(follow): 차단 목록과 카드 액션 연결`
 8. `docs(delivery): 후속 UI와 차단 기능 검증 기록`
+9. `feat(room): 긴 곡 제목 순환과 재생 애니메이션 추가`
 
 ## Acceptance Criteria
 
@@ -51,8 +56,10 @@
 - 음악력은 UP/DOWN PUT만 제공하고 선택/취소/로컬 쿨다운 상태가 없다.
 - 대표 칭호가 있는 상태에서 `칭호 없음`을 선택하면 DELETE 해제 요청과 캐시 무효화가 실행된다.
 - 설정의 최애 곡과 queue의 지난 곡 관련 기능이 제거된다.
-- 전체 트랙 첫 항목에 현재 재생 곡이 중복 없이 `PLAY`로 표시되며 pending count에는 포함되지 않는다.
+- 전체 트랙 첫 항목에 현재 재생 곡이 중복 없이 equalizer로 표시되며 pending count에는 포함되지 않는다.
 - 현재 재생 카드와 queue 카드의 긴 사연은 overflow일 때만 끊김 없이 순환 표시되고 reduced motion에서는 움직이지 않는다.
+- 현재 재생 카드와 queue 카드의 긴 곡 제목은 overflow일 때만 끊김 없이 순환 표시되고 reduced motion에서는 움직이지 않는다.
+- 현재 재생 곡의 equalizer는 세 막대가 서로 다른 위상으로 움직이고 reduced motion에서는 정적인 막대로 표시된다.
 - 칭호 획득 모달은 badge별 축하 효과를 한 번 실행하고 기존 확인/Escape/배경 닫기를 유지한다.
 - 방 프로필은 최애곡 대신 한 줄 소개를 표시하며 1시간 음악력 안내 문구가 없다.
 - 차단 탭은 커서 페이지를 합쳐 표시하고 차단 해제 성공 시 목록/팔로우/검색 cache를 재검증한다.
@@ -73,6 +80,9 @@
 - [x] 후속 targeted/full QA
 - [x] 기능 단위 commit/push와 Draft PR 갱신
 - [x] Vercel stale pnpm lock 실패 수정 및 frozen install 검증
+- [x] 긴 곡 제목 순환/equalizer 구현
+- [x] 후속 targeted/full QA와 fresh QA
+- [x] 기능 commit/push와 Draft PR 갱신
 
 ## Residual Risk
 

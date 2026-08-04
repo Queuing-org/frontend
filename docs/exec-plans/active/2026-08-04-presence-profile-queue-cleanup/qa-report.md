@@ -27,7 +27,7 @@
 ## Residual Risk
 
 - live backend에서 음악력 1시간 제한 오류와 대표 칭호 DELETE를 직접 실행하지 않았다.
-- 브라우저 자동화가 실행 환경의 sandbox metadata 오류로 시작되지 않아 presence 점/화살표, 모바일 줄임표, `PLAY` 배치의 픽셀 QA가 남아 있다.
+- 브라우저 자동화가 실행 환경의 sandbox metadata 오류로 시작되지 않아 presence 점/화살표와 모바일 줄임표의 픽셀 QA가 남아 있다.
 
 ## Follow-up QA
 
@@ -54,3 +54,18 @@
 - pnpm install 이후 final gate: lint pass, 51 files / 125 tests pass, build pass.
 - fix commit `caf7669`: GitHub Actions와 Vercel preview 모두 pass.
 - durable incident: `docs/agent-harness/incidents/2026-08-04-dual-lockfile-vercel-failure.md`
+
+## Track Title And Equalizer QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- targeted: 3 files / 6 tests pass
+- full: 52 files / 126 tests pass
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
+- 두 카드가 기존 overflow-only marquee를 공유하고 신청자명/구분자는 고정되는지 확인했다.
+- `PLAY` 문구 제거, 접근 가능한 3-bar equalizer, reduced-motion 정지 동작을 확인했다.
+
+## Track Title And Equalizer Residual Risk
+
+- 브라우저 연결 도구의 기존 sandbox metadata 오류 때문에 실제 썸네일 위 bar 대비/위치와 모바일 줄바꿈의 픽셀 QA는 수행하지 못했다.
