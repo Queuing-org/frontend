@@ -1,17 +1,49 @@
 .card {
-  display: flex;
-  align-items: center;
-  gap: 14px;
   min-width: 0;
-  min-height: 72px;
-  padding: 12px 24px;
   border-bottom: 1px solid #f5f5f7;
-  box-sizing: border-box;
   background: #ffffff;
+  transition: background-color 160ms ease;
 }
 
-.card:hover {
+.card:hover,
+.card[data-expanded="true"] {
   background: #f8f8fa;
+}
+
+.summary {
+  display: flex;
+  min-width: 0;
+  min-height: 72px;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  padding: 12px 24px;
+}
+
+.profile,
+.profileButton {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.profileButton {
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profileButton:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid #2f86ed;
+  outline-offset: 3px;
 }
 
 .avatarWrap {
@@ -46,8 +78,10 @@
 }
 
 .meta {
+  display: flex;
   flex: 1 1 auto;
   min-width: 0;
+  flex-direction: column;
 }
 
 .nickname,
@@ -79,10 +113,10 @@
 .roomAction {
   display: inline-flex;
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
   width: 40px;
   height: 40px;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   opacity: 0.72;
   transition:
@@ -99,4 +133,27 @@
 .roomAction:focus-visible {
   outline: 2px solid #2f86ed;
   outline-offset: 2px;
+}
+
+.trailingAction {
+  flex: 0 0 auto;
+}
+
+.actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 0 24px 14px 78px;
+}
+
+@media (max-width: 760px) {
+  .summary {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .actions {
+    padding-right: 16px;
+    padding-left: 70px;
+  }
 }

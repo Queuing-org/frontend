@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { FollowUser } from "../model/types";
 import FollowPresenceCard from "./FollowPresenceCard";
@@ -65,5 +66,37 @@ describe("FollowPresenceCard", () => {
     expect(
       container.querySelector('[data-online="false"][aria-hidden="true"]'),
     ).toBeInTheDocument();
+  });
+
+  it("카드 본문을 누르면 액션을 열고 방 화살표는 별도 링크로 유지한다", async () => {
+    const user = userEvent.setup();
+    const onToggle = vi.fn();
+    const { rerender } = render(
+      <FollowPresenceCard
+        actions={<button type="button">차단</button>}
+        expanded={false}
+        onToggle={onToggle}
+        user={{
+          ...baseUser,
+          room: { slug: "late-night-jazz", title: "새벽 재즈" },
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "민지 사용자 메뉴" }));
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(
+      screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
+    ).toBeInTheDocument();
+
+    rerender(
+      <FollowPresenceCard
+        actions={<button type="button">차단</button>}
+        expanded
+        onToggle={onToggle}
+        user={baseUser}
+      />,
+    );
+    expect(screen.getByRole("button", { name: "차단" })).toBeInTheDocument();
   });
 });

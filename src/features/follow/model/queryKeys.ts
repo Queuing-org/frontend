@@ -1,6 +1,7 @@
 export const followKeys = {
   all: () => ["follows"] as const,
   block: () => ["follows", "block"] as const,
+  blocked: (size?: number) => ["follows", "blocked", size ?? null] as const,
   follow: () => ["follows", "follow"] as const,
   followers: (lastId?: number, size?: number) =>
     ["follows", "followers", lastId ?? null, size ?? null] as const,
@@ -9,4 +10,5 @@ export const followKeys = {
     ["follows", "followings", lastId ?? null, size ?? null] as const,
   followingsRoot: () => ["follows", "followings"] as const,
   unfollow: () => ["follows", "unfollow"] as const,
+  unblock: () => ["follows", "unblock"] as const,
 };
