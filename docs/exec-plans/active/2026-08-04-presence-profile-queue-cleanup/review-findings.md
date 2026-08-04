@@ -80,3 +80,9 @@
 
 - 같은 room slug가 로비, 검색, 방 내부에서 같은 fallback path를 반환하는 단위 테스트
 - targeted test, full test, lint, build, diff-check, fresh read-only QA
+
+## PR #33 Recent V2 Thumbnail Replacement
+
+- 사용자 최신 요청에 따라 첫 PNG 10장을 제거하고 2026-08-05 05:32:40에 함께 다운로드된 `*-v2.png` 10장으로 교체한다.
+- 브라우저/CDN에 이전 URL이 남지 않도록 새 v2 파일명을 fallback 목록에 사용한다.
+- slug 기반 surface 일치 수정은 유지한다.

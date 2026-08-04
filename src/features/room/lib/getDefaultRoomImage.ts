@@ -1,16 +1,16 @@
 import type { ThumbnailUrls } from "../model/types";
 
 const DEFAULT_ROOM_IMAGES = [
-  "/room-defaults/queuing-default-thumbnail-citypop-night-drive.png",
-  "/room-defaults/queuing-default-thumbnail-classical-library.png",
-  "/room-defaults/queuing-default-thumbnail-hiphop-rnb-lounge.png",
-  "/room-defaults/queuing-default-thumbnail-indie-sunset.png",
-  "/room-defaults/queuing-default-thumbnail-jazz.png",
-  "/room-defaults/queuing-default-thumbnail-live-rock.png",
-  "/room-defaults/queuing-default-thumbnail-lofi-rain.png",
-  "/room-defaults/queuing-default-thumbnail-retro-vinyl-funk.png",
-  "/room-defaults/queuing-default-thumbnail-starlight-random.png",
-  "/room-defaults/queuing-default-thumbnail-summer-pop-beach.png",
+  "/room-defaults/queuing-default-thumbnail-coastal-tram-citypop-v2.png",
+  "/room-defaults/queuing-default-thumbnail-conservatory-classical-v2.png",
+  "/room-defaults/queuing-default-thumbnail-forest-rock-v2.png",
+  "/room-defaults/queuing-default-thumbnail-jazz-cafe-v2.png",
+  "/room-defaults/queuing-default-thumbnail-meadow-acoustic-v2.png",
+  "/room-defaults/queuing-default-thumbnail-pastel-neon-rnb-v2.png",
+  "/room-defaults/queuing-default-thumbnail-rainy-lofi-v2.png",
+  "/room-defaults/queuing-default-thumbnail-retro-vinyl-cafe-v2.png",
+  "/room-defaults/queuing-default-thumbnail-seaside-summer-pop-v2.png",
+  "/room-defaults/queuing-default-thumbnail-starlight-animals-v2.png",
 ] as const;
 
 export function getDefaultRoomImage(roomIndex: number) {

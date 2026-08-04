@@ -117,3 +117,15 @@
 - full: 56 files / 140 tests pass
 - `npm run lint`, `npm run build`, `git diff --check`: pass
 - 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.
+
+## Recent V2 Thumbnail Replacement QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- Downloads의 2026-08-05 05:32:40 `*-v2.png` 10장과 저장소 복사본이 SHA-256 및 `cmp` 기준 모두 byte-identical하다.
+- `public/room-defaults`에는 동일 basename의 v2 PNG 10장만 존재하며 모두 1254×1254 RGB PNG다.
+- 구현과 테스트 fallback 목록은 v2 경로 10개만 사용하고 이전 이미지 경로는 남지 않았다.
+- slug 기반 surface 일치와 서버 thumbnail variant/url 우선순위는 유지된다.
+- targeted: 1 file / 5 tests pass
+- full: 56 files / 140 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.
