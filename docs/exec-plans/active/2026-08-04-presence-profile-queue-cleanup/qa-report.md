@@ -94,3 +94,14 @@
 - blocked DTO identity mapper와 이미 반영된 dual-lockfile nitpick은 코드 변경 없이 근거를 기록했다.
 - 잔여 위험: 전용 관계 API가 없어 큰 팔로잉 계정의 첫 관계 확인 비용이 크고, 모달/confetti 실제 브라우저 QA는 수행하지 못했다.
 - review fix `009eca3`: GitHub Actions, Vercel, CodeRabbit success. CodeRabbit actionable thread 7개가 자동 resolved됐다.
+
+## Default Room Thumbnail QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- 다운로드 원본과 저장소 복사본 PNG 10장이 모두 byte-identical이고, `public/room-defaults`에는 새 파일 10장만 남았다.
+- 기존 fallback 이미지 6개는 삭제됐고 런타임 경로 참조도 남지 않았다.
+- targeted: 1 file / 4 tests pass
+- full: 56 files / 139 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- fallback seed의 10장 순환과 서버 thumbnail variant/url 우선순위 유지 여부를 확인했다.
+- 사용자 소유 `CurrentRequesterCard.module.css` 변경은 이번 변경과 무관하므로 staging 대상에서 제외한다.

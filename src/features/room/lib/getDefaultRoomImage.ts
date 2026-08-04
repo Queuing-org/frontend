@@ -1,12 +1,16 @@
 import type { ThumbnailUrls } from "../model/types";
 
 const DEFAULT_ROOM_IMAGES = [
-  "/room-defaults/pl.jpg",
-  "/room-defaults/qss.jpg",
-  "/room-defaults/jz.jpg",
-  "/room-defaults/chii.webp",
-  "/room-defaults/jjh.jpg",
-  "/room-defaults/nohong.png",
+  "/room-defaults/queuing-default-thumbnail-citypop-night-drive.png",
+  "/room-defaults/queuing-default-thumbnail-classical-library.png",
+  "/room-defaults/queuing-default-thumbnail-hiphop-rnb-lounge.png",
+  "/room-defaults/queuing-default-thumbnail-indie-sunset.png",
+  "/room-defaults/queuing-default-thumbnail-jazz.png",
+  "/room-defaults/queuing-default-thumbnail-live-rock.png",
+  "/room-defaults/queuing-default-thumbnail-lofi-rain.png",
+  "/room-defaults/queuing-default-thumbnail-retro-vinyl-funk.png",
+  "/room-defaults/queuing-default-thumbnail-starlight-random.png",
+  "/room-defaults/queuing-default-thumbnail-summer-pop-beach.png",
 ] as const;
 
 export function getDefaultRoomImage(roomIndex: number) {
