@@ -49,11 +49,21 @@ const DEFAULT_ROOM_IMAGE_VARIANTS = [
 ] as const;
 
 type GetRoomImageSrcParams = {
-  fallbackSeed: number;
+  fallbackRoomSlug: string;
   preferredVariants?: readonly (keyof ThumbnailUrls)[];
   thumbnailUrl?: string | null;
   thumbnailUrls?: ThumbnailUrls | null;
 };
+
+function getStableRoomImageIndex(roomSlug: string) {
+  let hash = 0;
+
+  for (let index = 0; index < roomSlug.length; index += 1) {
+    hash += roomSlug.charCodeAt(index);
+  }
+
+  return hash;
+}
 
 function normalizeImageUrl(imageUrl: string | null | undefined) {
   const normalizedImageUrl = imageUrl?.trim();
@@ -81,7 +91,7 @@ function getRoomThumbnailVariantUrl(
 }
 
 export function getRoomImageSrc({
-  fallbackSeed,
+  fallbackRoomSlug,
   preferredVariants = DEFAULT_ROOM_IMAGE_VARIANTS,
   thumbnailUrl,
   thumbnailUrls,
@@ -93,6 +103,8 @@ export function getRoomImageSrc({
   const normalizedThumbnailUrl = normalizeImageUrl(thumbnailUrl);
 
   return (
-    variantImageUrl ?? normalizedThumbnailUrl ?? getDefaultRoomImage(fallbackSeed)
+    variantImageUrl ??
+    normalizedThumbnailUrl ??
+    getDefaultRoomImage(getStableRoomImageIndex(fallbackRoomSlug))
   );
 }

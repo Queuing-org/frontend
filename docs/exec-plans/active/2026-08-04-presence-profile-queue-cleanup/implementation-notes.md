@@ -18,3 +18,4 @@
 - 칭호 confetti는 modal-scoped instance를 사용하며 AbortSignal이 실행 중 instance를 reset한다. 모달은 짧은 viewport에서 세로 스크롤되고 13px 설명 색상 대비를 높였다.
 - marquee test teardown은 global `ResizeObserver` stub까지 복원한다.
 - `public/room-defaults`의 기존 6개 fallback asset을 제거하고 2026-08-05 다운로드 PNG 10장을 원본 바이트 그대로 복사했다. `getDefaultRoomImage`는 새 목록을 seed 기준으로 결정적으로 순환하며 서버 thumbnail variant/url 우선순위는 유지한다.
+- 기본 이미지 선택 입력을 화면별 목록 index에서 공용 `fallbackRoomSlug`로 교체했다. 기존 방 내부의 slug 문자합 알고리즘을 공용 helper로 이동해 방 내부 배정은 유지하면서 desktop/mobile lobby와 search hero를 같은 이미지로 맞췄다.

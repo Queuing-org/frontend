@@ -74,6 +74,7 @@
 - 칭호 모달은 짧은 viewport에서 세로 스크롤 가능하고 설명 대비를 충족하며, 닫힐 때 실행 중 confetti를 즉시 정리한다.
 - marquee 테스트는 `ResizeObserver` 전역 stub을 테스트마다 복원한다.
 - 기본 방 썸네일 디렉터리에는 새 PNG 10장만 남고, 방 fallback seed는 10장을 결정적으로 순환한다.
+- 같은 방 slug는 로비·모바일·검색·방 내부에서 같은 기본 썸네일을 사용하며 목록 위치 변경에도 이미지가 바뀌지 않는다.
 - `npm run lint`, `npm run test`, `npm run build`, fresh QA가 통과한다.
 
 ## Progress
@@ -102,6 +103,8 @@
 - [x] 기본 방 썸네일 10장 교체 및 fallback 테스트
 - [x] 썸네일 교체 targeted/full QA
 - [x] 썸네일 교체 commit/push와 새 Draft PR 생성
+- [x] 기본 썸네일 surface 불일치 수정과 회귀 테스트
+- [ ] 불일치 수정 QA, commit/push, PR #33 checks 재확인
 
 ## Residual Risk
 

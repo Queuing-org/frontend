@@ -244,7 +244,7 @@ function SearchRoomsContent({
   const selectedRoom =
     selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
   const backgroundImageSrc = getRoomImageSrc({
-    fallbackSeed: selectedRoomIndex >= 0 ? selectedRoomIndex : 0,
+    fallbackRoomSlug: selectedRoom?.slug ?? selectedRoomSlug ?? "",
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
     thumbnailUrl: selectedRoom?.thumbnailUrl,
     thumbnailUrls: selectedRoom?.thumbnailUrls,

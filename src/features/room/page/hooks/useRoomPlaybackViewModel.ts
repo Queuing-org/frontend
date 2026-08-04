@@ -60,16 +60,6 @@ function getCurrentVideoId(
   return null;
 }
 
-function getStableRoomImageIndex(slug: string) {
-  let hash = 0;
-
-  for (let index = 0; index < slug.length; index += 1) {
-    hash += slug.charCodeAt(index);
-  }
-
-  return hash;
-}
-
 function getCurrentRequesterProfile(
   roomPlayback: RoomPlayback | undefined,
   participants: PlaylistParticipant[],
@@ -111,7 +101,7 @@ export function useRoomPlaybackViewModel({
   slug,
 }: UseRoomPlaybackViewModelParams) {
   const backgroundImageSrc = getRoomImageSrc({
-    fallbackSeed: getStableRoomImageIndex(slug),
+    fallbackRoomSlug: slug,
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
     thumbnailUrl: roomMeta?.thumbnailUrl,
     thumbnailUrls: roomMeta?.thumbnailUrls,

@@ -67,3 +67,16 @@
 - outdated unresolved plan thread: 1
 - live unresolved Codex thread: 1, CodeRabbit의 같은 관계 pagination thread와 중복이며 코드는 수정 완료
 - 사용자 요청에 thread resolve 권한은 포함되지 않아 직접 resolve하지 않았다.
+
+## PR #33 Default Thumbnail Consistency
+
+### Actionable
+
+- 사용자 재현: 기본 썸네일 방의 로비 이미지와 방 내부 이미지가 서로 다르다.
+- 원인: desktop/mobile lobby와 search hero는 목록 index를 fallback seed로 사용하지만 방 내부는 room slug 문자 합을 사용한다. 업로드 이미지 URL이 있으면 fallback이 실행되지 않으므로 기본 썸네일 방에만 발생한다.
+- 수정: fallback 선택 API가 목록 위치를 받지 않고 room slug를 직접 받도록 바꾸고 모든 화면을 같은 slug 기반 선택으로 통일한다.
+
+### Verification Plan
+
+- 같은 room slug가 로비, 검색, 방 내부에서 같은 fallback path를 반환하는 단위 테스트
+- targeted test, full test, lint, build, diff-check, fresh read-only QA

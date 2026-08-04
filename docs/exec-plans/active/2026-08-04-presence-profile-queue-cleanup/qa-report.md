@@ -106,3 +106,14 @@
 - fallback seed의 10장 순환과 서버 thumbnail variant/url 우선순위 유지 여부를 확인했다.
 - 사용자 소유 `CurrentRequesterCard.module.css` 변경은 이번 변경과 무관하므로 staging 대상에서 제외한다.
 - 기능 commit `d89b007`과 문서 commit `54fbe36`을 push하고 새 Draft PR #33을 생성했다. 최종 implementation/docs head에서 GitHub Actions와 Vercel이 모두 통과했다.
+
+## Default Thumbnail Surface Consistency QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- 원인은 기본 이미지 선택에만 존재했다. 업로드 thumbnail variant/url 우선순위는 유지되어 실제 방 이미지에는 영향이 없다.
+- desktop lobby, mobile lobby, search hero, room interior 네 호출부가 모두 room slug를 fallback identity로 사용한다.
+- 기존 방 내부의 slug 문자합 알고리즘을 그대로 공용 helper로 이동했으므로 방 내부의 기존 기본 이미지 배정은 유지된다.
+- targeted: 1 file / 5 tests pass
+- full: 56 files / 140 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.

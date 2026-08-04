@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getDefaultRoomImage, getRoomImageSrc } from "./getDefaultRoomImage";
+import {
+  getDefaultRoomImage,
+  getRoomImageSrc,
+  ROOM_CARD_IMAGE_VARIANTS,
+  ROOM_HERO_IMAGE_VARIANTS,
+} from "./getDefaultRoomImage";
 
 const DEFAULT_ROOM_IMAGES = [
   "/room-defaults/queuing-default-thumbnail-citypop-night-drive.png",
@@ -31,17 +36,34 @@ describe("getDefaultRoomImage", () => {
   it("방 이미지가 없을 때 새 기본 썸네일을 사용한다", () => {
     expect(
       getRoomImageSrc({
-        fallbackSeed: 3,
+        fallbackRoomSlug: "room-9f3a2b",
         thumbnailUrl: null,
         thumbnailUrls: null,
       }),
-    ).toBe(DEFAULT_ROOM_IMAGES[3]);
+    ).toBe(DEFAULT_ROOM_IMAGES[5]);
+  });
+
+  it("같은 방 slug는 화면과 목록 위치에 관계없이 같은 기본 썸네일을 사용한다", () => {
+    const lobbyImage = getRoomImageSrc({
+      fallbackRoomSlug: "stable-room",
+      preferredVariants: ROOM_CARD_IMAGE_VARIANTS,
+      thumbnailUrl: null,
+      thumbnailUrls: null,
+    });
+    const roomImage = getRoomImageSrc({
+      fallbackRoomSlug: "stable-room",
+      preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
+      thumbnailUrl: null,
+      thumbnailUrls: null,
+    });
+
+    expect(lobbyImage).toBe(roomImage);
   });
 
   it("서버가 제공한 방 이미지를 기본 썸네일보다 우선한다", () => {
     expect(
       getRoomImageSrc({
-        fallbackSeed: 0,
+        fallbackRoomSlug: "room-with-thumbnail",
         thumbnailUrl: "https://cdn.example.com/original.png",
         thumbnailUrls: {
           thumb256: "https://cdn.example.com/256.png",

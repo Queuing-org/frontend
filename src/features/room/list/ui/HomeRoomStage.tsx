@@ -252,7 +252,7 @@ export default function HomeRoomStage({
                   slug={room.slug}
                   title={room.title}
                   imageSrc={getRoomImageSrc({
-                    fallbackSeed: index,
+                    fallbackRoomSlug: room.slug,
                     preferredVariants: ROOM_STAGE_IMAGE_VARIANTS,
                     thumbnailUrl: room.thumbnailUrl,
                     thumbnailUrls: room.thumbnailUrls,
