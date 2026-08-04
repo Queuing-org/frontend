@@ -7,6 +7,7 @@ import {
   getUserBadgeItems,
 } from "@/src/features/badge/model/badgeDisplay";
 import { useMyBadges } from "@/src/features/badge/hooks/useMyBadges";
+import { useClearRepresentativeBadge } from "@/src/features/badge/hooks/useClearRepresentativeBadge";
 import { useSetRepresentativeBadge } from "@/src/features/badge/hooks/useSetRepresentativeBadge";
 import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsForm from "./components/ProfileSettingsForm";
@@ -16,6 +17,7 @@ import styles from "./ProfileSettingsTab.module.css";
 export default function ProfileSettingsTab() {
   const form = useProfileSettingsForm();
   const myBadgesQuery = useMyBadges(Boolean(form.me));
+  const clearRepresentativeBadge = useClearRepresentativeBadge();
   const setRepresentativeBadge = useSetRepresentativeBadge();
   const badgeOptions = useMemo(
     () =>
@@ -36,12 +38,17 @@ export default function ProfileSettingsTab() {
       return "칭호를 불러오지 못했습니다.";
     }
 
-    if (setRepresentativeBadge.isPending) {
+    if (
+      setRepresentativeBadge.isPending ||
+      clearRepresentativeBadge.isPending
+    ) {
       return "대표 칭호 저장 중";
     }
 
-    if (setRepresentativeBadge.error) {
-      return `대표 칭호 저장 실패: ${setRepresentativeBadge.error.message}`;
+    const badgeMutationError =
+      setRepresentativeBadge.error ?? clearRepresentativeBadge.error;
+    if (badgeMutationError) {
+      return `대표 칭호 저장 실패: ${badgeMutationError.message}`;
     }
 
     return null;
@@ -90,22 +97,30 @@ export default function ProfileSettingsTab() {
             isBadgeLoading ||
             myBadgesQuery.isError ||
             setRepresentativeBadge.isPending ||
-            badgeOptions.length === 0
+            clearRepresentativeBadge.isPending
           }
           badgeOptions={badgeOptions}
           badgeStatusMessage={badgeStatusMessage}
           badgeValue={representativeBadge?.badgeCode ?? ""}
           isBadgeStatusError={Boolean(
-            myBadgesQuery.isError || setRepresentativeBadge.error,
+            myBadgesQuery.isError ||
+              setRepresentativeBadge.error ||
+              clearRepresentativeBadge.error,
           )}
           onBadgeChange={(badgeCode) => {
-            if (
-              !badgeCode ||
-              badgeCode === representativeBadge?.badgeCode
-            ) {
+            if (badgeCode === representativeBadge?.badgeCode) {
               return;
             }
 
+            if (!badgeCode) {
+              if (representativeBadge) {
+                setRepresentativeBadge.reset();
+                clearRepresentativeBadge.mutate();
+              }
+              return;
+            }
+
+            clearRepresentativeBadge.reset();
             setRepresentativeBadge.mutate({ badgeCode });
           }}
           onNicknameChange={form.updateNicknameDraft}

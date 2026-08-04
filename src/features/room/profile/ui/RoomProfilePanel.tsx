@@ -123,7 +123,7 @@ export default function RoomProfilePanel({
     musicPowerVote.mutate({
       roomSlug,
       password: roomPassword,
-      vote: musicPowerQuery.data.myVote === vote ? null : vote,
+      vote,
     });
   };
 
@@ -150,9 +150,6 @@ export default function RoomProfilePanel({
             </div>
             <div className={styles.nameBlock}>
               <div className={styles.name}>{displayNickname}</div>
-              {statusMessage ? (
-                <div className={styles.statusMessage}>{statusMessage}</div>
-              ) : null}
             </div>
             {shouldShowFollowAction ? (
               <FollowToggleButton
@@ -174,8 +171,13 @@ export default function RoomProfilePanel({
               </div>
             </div>
             <div className={styles.card}>
-              <div className={styles.cardTitle}>최애곡</div>
-              <div className={styles.cardValue}>-</div>
+              <div className={styles.cardTitle}>한 줄 소개</div>
+              <div
+                className={`${styles.cardValue} ${styles.statusCardValue}`}
+                title={statusMessage || undefined}
+              >
+                {statusMessage || "-"}
+              </div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>큐잉 횟수</div>
@@ -204,7 +206,6 @@ export default function RoomProfilePanel({
               type="button"
               className={styles.musicPowerButton}
               aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-              aria-pressed={musicPowerQuery.data?.myVote === "UPVOTE"}
               title={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
               disabled={isMusicPowerVoteDisabled}
               onClick={() => handleMusicPowerVote("UPVOTE")}
@@ -215,7 +216,6 @@ export default function RoomProfilePanel({
               type="button"
               className={styles.musicPowerButton}
               aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-              aria-pressed={musicPowerQuery.data?.myVote === "DOWNVOTE"}
               title={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
               disabled={isMusicPowerVoteDisabled}
               onClick={() => handleMusicPowerVote("DOWNVOTE")}

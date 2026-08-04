@@ -537,6 +537,7 @@ function RoomPlaybackJoinedContent({
             {mobileTab === "queue" ? (
               <section className={styles.mobilePanel} aria-label="큐">
                 <RoomQueuePanel
+                  currentEntry={roomPlayback?.currentEntry ?? null}
                   currentUser={currentUser ?? null}
                   isCurrentUserLoading={isCurrentUserLoading}
                   roomMeta={roomMeta}
@@ -674,6 +675,7 @@ function RoomPlaybackJoinedContent({
         chatDisabledReason={chatDisabledReason}
         chatErrorMessage={chatSendErrorMessage}
         currentRequester={playback.currentRequester}
+        currentEntry={roomPlayback?.currentEntry ?? null}
         currentTrackTitle={playback.currentTrackTitle}
         currentUser={currentUser}
         isChatSending={isChatSending}

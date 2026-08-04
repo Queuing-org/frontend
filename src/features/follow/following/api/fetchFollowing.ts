@@ -6,10 +6,11 @@ import type { FetchFollowingParams } from "../model/types";
 
 export async function fetchFollowing(
   params?: FetchFollowingParams,
+  signal?: AbortSignal,
 ): Promise<FollowingListResponse> {
   const res = await axiosInstance.get<ApiResponse<FollowingListResponse>>(
     "/api/v1/follows/followings",
-    { params },
+    { params, signal },
   );
 
   return unwrapApiResponse(res.data);

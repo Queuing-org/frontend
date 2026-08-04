@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
+import OverflowMarquee from "@/src/features/room/ui/OverflowMarquee";
 import styles from "./CurrentRequesterCard.module.css";
 
 type CurrentRequesterCardProps = {
@@ -71,7 +72,10 @@ export default function CurrentRequesterCard({
           {trackTitle ? (
             <>
               <span className={styles.separator}>-</span>
-              <span className={styles.trackTitle}>{trackTitle}</span>
+              <OverflowMarquee
+                className={styles.trackTitle}
+                text={trackTitle}
+              />
             </>
           ) : null}
         </div>
@@ -81,7 +85,10 @@ export default function CurrentRequesterCard({
         >
           {storyText ? (
             <>
-              <span className={styles.story}>“{storyText}”</span>
+              <OverflowMarquee
+                className={styles.story}
+                text={`“${storyText}”`}
+              />
               <span className={styles.dot}>·</span>
             </>
           ) : null}

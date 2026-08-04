@@ -100,17 +100,20 @@ describe("RoomProfilePanel", () => {
     } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
   });
 
-  it("통계와 상태 메시지, 양방향 음악력 버튼을 표시한다", () => {
+  it("통계와 한 줄 소개, 양방향 음악력 버튼을 표시한다", () => {
     renderPanel();
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
+    expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
+    expect(screen.queryByText("최애곡")).not.toBeInTheDocument();
+    expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("미투표에서 UPVOTE를 보내고 선택 방향 재클릭은 DELETE 상태를 보낸다", async () => {
+  it("기존 투표 상태와 무관하게 클릭한 방향을 PUT mutation에 전달한다", async () => {
     const user = userEvent.setup();
     const { rerender } = renderPanel();
 
@@ -138,12 +141,12 @@ describe("RoomProfilePanel", () => {
     );
 
     const upButton = screen.getByRole("button", { name: "음악력 올리기" });
-    expect(upButton).toHaveAttribute("aria-pressed", "true");
+    expect(upButton).not.toHaveAttribute("aria-pressed");
     await user.click(upButton);
     expect(mutate).toHaveBeenLastCalledWith({
       roomSlug: "room",
       password: "secret",
-      vote: null,
+      vote: "UPVOTE",
     });
   });
 

@@ -12,7 +12,4 @@ export const playlistKeys = {
     ["roomParticipants", slug, password ?? null] as const,
   roomParticipantsPrefix: (slug: string) =>
     ["roomParticipants", slug] as const,
-  roomHistory: (slug: string | null, password?: string | null) =>
-    ["roomHistory", slug, password ?? null] as const,
-  roomHistoryPrefix: (slug: string) => ["roomHistory", slug] as const,
 };

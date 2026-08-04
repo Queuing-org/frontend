@@ -4,7 +4,6 @@ import { useState } from "react";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
-import { useRoomHistory } from "@/src/features/playlist/model/useRoomHistory";
 import { useMoveMyQueueEntry } from "@/src/features/playlist/model/useMoveMyQueueEntry";
 import { useMoveRoomQueueEntry } from "@/src/features/playlist/model/useMoveRoomQueueEntry";
 import { useDeleteMyQueueEntry } from "@/src/features/playlist/model/useDeleteMyQueueEntry";
@@ -18,10 +17,12 @@ import {
   getMovablePersonalQueueEntryIds,
   isPendingQueueEntry,
   isValidPersonalQueueMove,
+  mergeCurrentEntryWithQueue,
   type QueueTab,
 } from "../model/roomQueue";
 
 type UseRoomQueuePanelParams = {
+  currentEntry?: PlaylistEntry | null;
   currentUser: User | null;
   isCurrentUserLoading: boolean;
   roomMeta: RoomMeta | null;
@@ -47,6 +48,7 @@ function getQueueErrorMessage(error: unknown) {
 }
 
 export function useRoomQueuePanel({
+  currentEntry,
   currentUser,
   isCurrentUserLoading,
   roomMeta,
@@ -66,11 +68,6 @@ export function useRoomQueuePanel({
     isLoading: isMyQueueLoading,
     isRefetching: isMyRefetching,
   } = useMyRoomQueue(roomSlug, roomPassword, Boolean(currentUser));
-  const historyQuery = useRoomHistory(
-    roomSlug,
-    roomPassword,
-    activeTab === "history",
-  );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
   const deleteMyQueueEntry = useDeleteMyQueueEntry();
@@ -79,11 +76,12 @@ export function useRoomQueuePanel({
   const queueErrorMessage =
     activeTab === "all"
       ? getQueueErrorMessage(allQueueQuery.error)
-      : activeTab === "mine"
-        ? getQueueErrorMessage(myQueueError)
-        : "";
+      : getQueueErrorMessage(myQueueError);
 
-  const allEntries = allQueueQuery.data.pages.flatMap((page) => page.items);
+  const allEntries = mergeCurrentEntryWithQueue(
+    currentEntry,
+    allQueueQuery.data.pages.flatMap((page) => page.items),
+  );
   const allPendingCount =
     allQueueQuery.data.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
@@ -105,8 +103,6 @@ export function useRoomQueuePanel({
     } else {
       emptyMessage = "내가 신청한 곡이 아직 없습니다.";
     }
-  } else if (activeTab === "history") {
-    emptyMessage = "아직 지난 곡이 없습니다.";
   }
 
   const handleDeleteRoomEntry = (entryId: string) => {
@@ -222,13 +218,8 @@ export function useRoomQueuePanel({
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
-    hasNextHistoryPage: historyQuery.hasNextPage,
     hasNextAllQueuePage: allQueueQuery.hasNextPage,
     hasNextMyQueuePage,
-    historyEntries:
-      historyQuery.data?.flatMap((page) => page.items) ?? [],
-    historyErrorMessage: historyQuery.error?.message ?? "",
-    isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
     isOwner,
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,
@@ -244,9 +235,6 @@ export function useRoomQueuePanel({
     },
     loadNextMyQueuePage: () => {
       void fetchNextMyQueuePage();
-    },
-    loadNextHistoryPage: () => {
-      void historyQuery.fetchNextPage();
     },
     setActiveTab,
   };

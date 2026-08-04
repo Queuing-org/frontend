@@ -14,4 +14,5 @@ it("로드된 행 수와 무관한 서버 totalPendingCount를 탭 수로 표시
 
   expect(screen.getByRole("tab", { name: /전체 트랙\s*237/ })).toBeVisible();
   expect(screen.getByRole("tab", { name: /내 신청곡\s*104/ })).toBeVisible();
+  expect(screen.queryByRole("tab", { name: "지난 곡" })).not.toBeInTheDocument();
 });

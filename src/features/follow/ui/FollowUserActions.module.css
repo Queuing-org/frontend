@@ -1,0 +1,28 @@
+.relationshipButton,
+.blockButton {
+  min-width: 82px;
+  height: 34px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: var(--fw-bold);
+}
+
+.blockButton {
+  padding: 0 16px;
+  border: 1px solid #efcaca;
+  background: #fffafa;
+  color: #c73939;
+  cursor: pointer;
+}
+
+.blockButton:hover,
+.blockButton:focus-visible {
+  border-color: #c73939;
+  background: #fff1f1;
+}
+
+.blockButton:focus-visible {
+  outline: 2px solid #c73939;
+  outline-offset: 2px;
+}

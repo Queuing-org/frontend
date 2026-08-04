@@ -7,13 +7,12 @@ import type {
   MusicPowerVote,
 } from "@/src/features/user/profile/model/types";
 import { syncMusicPowerCaches } from "@/src/features/user/profile/model/syncMusicPowerCaches";
-import { cancelCurrentTrackMusicPowerVote } from "../api/cancelCurrentTrackMusicPowerVote";
 import { setCurrentTrackMusicPowerVote } from "../api/setCurrentTrackMusicPowerVote";
 
 type CurrentTrackVoteVariables = {
   roomSlug: string;
   password?: string | null;
-  vote: MusicPowerVote | null;
+  vote: MusicPowerVote;
 };
 
 export function useCurrentTrackMusicPowerVote() {
@@ -21,9 +20,7 @@ export function useCurrentTrackMusicPowerVote() {
 
   return useMutation<MusicPowerResponse, ApiError, CurrentTrackVoteVariables>({
     mutationFn: ({ roomSlug, password, vote }) =>
-      vote
-        ? setCurrentTrackMusicPowerVote({ roomSlug, password, vote })
-        : cancelCurrentTrackMusicPowerVote({ roomSlug, password }),
+      setCurrentTrackMusicPowerVote({ roomSlug, password, vote }),
     onSuccess: (musicPower) => {
       syncMusicPowerCaches(queryClient, musicPower);
     },

@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { fetchBadges } from "./fetchBadges";
 import { fetchMyBadges } from "./fetchMyBadges";
+import { clearRepresentativeBadge } from "./clearRepresentativeBadge";
 import { updateRepresentativeBadge } from "./updateRepresentativeBadge";
 
 vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: {
     get: vi.fn(),
     put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -75,6 +77,27 @@ describe("칭호 API 계약", () => {
     expect(axiosInstance.put).toHaveBeenCalledWith(
       "/api/v1/users/me/badges/representative",
       { badgeCode: "ROOM_CREATE_00001" },
+    );
+  });
+
+  it("대표 칭호를 동일 경로 DELETE로 해제한다", async () => {
+    vi.mocked(axiosInstance.delete).mockResolvedValue({
+      data: { result: true },
+    });
+
+    await expect(clearRepresentativeBadge()).resolves.toBe(true);
+    expect(axiosInstance.delete).toHaveBeenCalledWith(
+      "/api/v1/users/me/badges/representative",
+    );
+  });
+
+  it("대표 칭호 해제 result가 false면 실패로 처리한다", async () => {
+    vi.mocked(axiosInstance.delete).mockResolvedValue({
+      data: { result: false },
+    });
+
+    await expect(clearRepresentativeBadge()).rejects.toThrow(
+      "대표 칭호를 해제하지 못했습니다.",
     );
   });
 });

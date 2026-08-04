@@ -37,6 +37,7 @@
 }
 
 .meta {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -74,11 +75,11 @@
 .story {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .trackTitle {
+  flex: 1 1 auto;
   max-width: min(410px, 34vw);
 }
 

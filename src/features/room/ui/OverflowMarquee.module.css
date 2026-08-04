@@ -1,0 +1,56 @@
+.viewport {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 32px;
+}
+
+.viewport[data-overflowing="true"] .track {
+  animation: marquee-scroll var(--marquee-duration) linear infinite;
+}
+
+.copy {
+  flex: 0 0 auto;
+}
+
+.viewport[data-overflowing="true"]:hover .track,
+.viewport[data-overflowing="true"]:focus .track {
+  animation-play-state: paused;
+}
+
+.viewport:focus-visible {
+  outline: 2px solid #2f86ed;
+  outline-offset: 2px;
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(var(--marquee-offset));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewport[data-overflowing="true"] {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .viewport[data-overflowing="true"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  .viewport[data-overflowing="true"] .track {
+    animation: none;
+  }
+}

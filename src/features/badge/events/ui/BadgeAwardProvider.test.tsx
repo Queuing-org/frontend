@@ -39,6 +39,9 @@ vi.mock("@/src/features/user/session/hooks/useMe", () => ({
 vi.mock("@/src/shared/api/config", () => ({
   API_BASE_URL: "https://api.example.com",
 }));
+vi.mock("./badgeAwardConfetti", () => ({
+  launchBadgeAwardConfetti: vi.fn().mockResolvedValue(undefined),
+}));
 
 function Wrapper({ children }: PropsWithChildren) {
   const queryClient = new QueryClient();
@@ -89,16 +92,22 @@ describe("BadgeAwardProvider", () => {
       MockEventSource.latest?.emit("badge-awarded", rawEvent);
     });
 
-    expect(screen.getByText("첫 칭호 칭호 획득하셨습니다!")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "확인" }));
     expect(
-      screen.getByText("둘째 칭호 칭호 획득하셨습니다!"),
+      screen.getByRole("dialog", {
+        name: /첫 칭호.*칭호 획득하셨습니다!/,
+      }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "멋진데요!" }));
+    expect(
+      screen.getByRole("dialog", {
+        name: /둘째 칭호.*칭호 획득하셨습니다!/,
+      }),
     ).toBeInTheDocument();
 
     act(() => {
       MockEventSource.latest?.emit("badge-awarded", rawEvent);
     });
-    await user.click(screen.getByRole("button", { name: "확인" }));
+    await user.click(screen.getByRole("button", { name: "멋진데요!" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 

@@ -2,10 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
-import { userKeys } from "@/src/features/user/model/queryKeys";
-import type { User } from "@/src/features/user/model/types";
 import { updateRepresentativeBadge } from "../api/updateRepresentativeBadge";
-import { badgeKeys } from "../model/queryKeys";
+import { invalidateRepresentativeBadgeQueries } from "../model/invalidateRepresentativeBadgeQueries";
 import type { SetRepresentativeBadgePayload } from "../model/types";
 
 export function useSetRepresentativeBadge() {
@@ -14,17 +12,7 @@ export function useSetRepresentativeBadge() {
   return useMutation<void, ApiError, SetRepresentativeBadgePayload>({
     mutationFn: updateRepresentativeBadge,
     onSuccess: async () => {
-      const me = qc.getQueryData<User | null>(userKeys.me());
-
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: badgeKeys.me() }),
-        qc.invalidateQueries({ queryKey: userKeys.me() }),
-        me?.slug
-          ? qc.invalidateQueries({
-              queryKey: badgeKeys.publicUser(me.slug),
-            })
-          : Promise.resolve(),
-      ]);
+      await invalidateRepresentativeBadgeQueries(qc);
     },
   });
 }

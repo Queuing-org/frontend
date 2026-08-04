@@ -23,12 +23,6 @@ export function useSkipTrackAction(slug: string | null) {
       void queryClient.invalidateQueries({
         queryKey: playlistKeys.roomPlaybackPrefix(slug),
       });
-      void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomHistoryPrefix(slug),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomPlaybackPrefix(slug),
-      });
     } catch (error) {
       setErrorMessage(
         error instanceof Error
