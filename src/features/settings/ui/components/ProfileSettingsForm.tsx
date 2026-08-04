@@ -1,6 +1,6 @@
 "use client";
 
-import type { FormEvent } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import type { ApiError } from "@/src/shared/api/api-error";
 import styles from "../ProfileSettingsTab.module.css";
 
@@ -8,12 +8,12 @@ type ProfileSettingsFormProps = {
   badgeDisabled: boolean;
   badgeOptions: Array<{
     badgeCode: string;
-    isAcquired: boolean;
     name: string;
   }>;
   badgeStatusMessage: string | null;
   badgeValue: string;
-  canUpdateProfile: boolean;
+  canUpdateNickname: boolean;
+  canUpdateStatusMessage: boolean;
   hasProfile: boolean;
   isBadgeStatusError: boolean;
   isMeError: boolean;
@@ -25,16 +25,27 @@ type ProfileSettingsFormProps = {
   updateError: ApiError | null;
   onBadgeChange: (badgeCode: string) => void;
   onNicknameChange: (value: string) => void;
+  onNicknameSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onStatusMessageChange: (value: string) => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onStatusMessageSubmit: (event: FormEvent<HTMLFormElement>) => void;
 };
+
+function preventSubmitWhileComposing(event: KeyboardEvent<HTMLInputElement>) {
+  if (
+    event.key === "Enter" &&
+    (event.nativeEvent.isComposing || event.keyCode === 229)
+  ) {
+    event.preventDefault();
+  }
+}
 
 export default function ProfileSettingsForm({
   badgeDisabled,
   badgeOptions,
   badgeStatusMessage,
   badgeValue,
-  canUpdateProfile,
+  canUpdateNickname,
+  canUpdateStatusMessage,
   hasProfile,
   isBadgeStatusError,
   isMeError,
@@ -46,8 +57,9 @@ export default function ProfileSettingsForm({
   updateError,
   onBadgeChange,
   onNicknameChange,
+  onNicknameSubmit,
   onStatusMessageChange,
-  onSubmit,
+  onStatusMessageSubmit,
 }: ProfileSettingsFormProps) {
   const nicknameInputValue = isMeLoading
     ? "프로필 확인 중"
@@ -56,48 +68,63 @@ export default function ProfileSettingsForm({
       : "로그인이 필요합니다";
 
   return (
-    <form className={styles.profileForm} onSubmit={onSubmit}>
-      <div className={styles.formRow}>
+    <div className={styles.profileForm}>
+      <form className={styles.formRow} onSubmit={onNicknameSubmit}>
         <label className={styles.fieldLabel} htmlFor="settings-nickname">
           사용자 이름
         </label>
-        <div className={styles.nicknameControl}>
+        <div className={styles.editableControl}>
           <input
             id="settings-nickname"
             className={styles.textInput}
             value={nicknameInputValue}
             onChange={(event) => onNicknameChange(event.target.value)}
+            onKeyDown={preventSubmitWhileComposing}
             placeholder="사용자 이름"
+            minLength={2}
+            maxLength={20}
             disabled={!hasProfile || isUpdatingProfile || isMeLoading}
             autoComplete="nickname"
           />
           <button
             type="submit"
             className={styles.primaryButton}
-            disabled={!canUpdateProfile}
+            disabled={!canUpdateNickname}
+            aria-label="사용자 이름 수정"
           >
-            {isUpdatingProfile ? "변경 중" : "저장"}
+            {isUpdatingProfile ? "변경 중" : "수정"}
           </button>
         </div>
-      </div>
-      <div className={styles.formRow}>
+      </form>
+      <form className={styles.formRow} onSubmit={onStatusMessageSubmit}>
         <label className={styles.fieldLabel} htmlFor="settings-status-message">
           한 줄 메시지
         </label>
-        <input
-          id="settings-status-message"
-          className={styles.textInput}
-          value={isMeLoading ? "" : statusMessage}
-          onChange={(event) => onStatusMessageChange(event.target.value)}
-          placeholder="한 줄 메시지를 입력하세요"
-          maxLength={255}
-          disabled={!hasProfile || isUpdatingProfile || isMeLoading}
-          aria-describedby="settings-status-message-hint"
-        />
+        <div className={styles.editableControl}>
+          <input
+            id="settings-status-message"
+            className={styles.textInput}
+            value={isMeLoading ? "" : statusMessage}
+            onChange={(event) => onStatusMessageChange(event.target.value)}
+            onKeyDown={preventSubmitWhileComposing}
+            placeholder="한 줄 메시지를 입력하세요"
+            maxLength={255}
+            disabled={!hasProfile || isUpdatingProfile || isMeLoading}
+            aria-describedby="settings-status-message-hint"
+          />
+          <button
+            type="submit"
+            className={styles.primaryButton}
+            disabled={!canUpdateStatusMessage}
+            aria-label="한 줄 메시지 수정"
+          >
+            {isUpdatingProfile ? "변경 중" : "수정"}
+          </button>
+        </div>
         <span id="settings-status-message-hint" className={styles.srOnly}>
           최대 255자, 빈 문자열로 저장하면 삭제됩니다.
         </span>
-      </div>
+      </form>
       <div className={styles.formRow}>
         <span className={styles.fieldLabel}>최애 곡</span>
         <div className={styles.readonlyField}>개발중입니다.</div>
@@ -121,13 +148,7 @@ export default function ProfileSettingsForm({
               <option
                 key={badge.badgeCode}
                 value={badge.badgeCode}
-                disabled={!badge.isAcquired}
-                className={
-                  badge.isAcquired
-                    ? styles.badgeOptionOwned
-                    : styles.badgeOptionLocked
-                }
-                data-owned={badge.isAcquired}
+                className={styles.badgeOptionOwned}
               >
                 {badge.name}
               </option>
@@ -157,6 +178,6 @@ export default function ProfileSettingsForm({
       {isMeError ? (
         <p className={styles.errorText}>로그인 정보를 확인하지 못했습니다.</p>
       ) : null}
-    </form>
+    </div>
   );
 }

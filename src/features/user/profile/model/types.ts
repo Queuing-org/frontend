@@ -1,9 +1,8 @@
 import type { BadgeSummary } from "@/src/features/badge/model/types";
 
 export type UpdateMePayload = {
-  nickname?: string;
-  profileImageUrl?: string | null;
-  statusMessage?: string;
+  nickname: string;
+  statusMessage?: string | null;
 };
 
 export type UserProfile = {

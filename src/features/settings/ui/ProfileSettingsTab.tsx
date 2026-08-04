@@ -2,8 +2,11 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { getBadgeCatalogItems } from "@/src/features/badge/model/badgeDisplay";
-import { useBadgeCatalog } from "@/src/features/badge/hooks/useBadgeCatalog";
+import {
+  getRepresentativeBadge,
+  getUserBadgeItems,
+} from "@/src/features/badge/model/badgeDisplay";
+import { useMyBadges } from "@/src/features/badge/hooks/useMyBadges";
 import { useSetRepresentativeBadge } from "@/src/features/badge/hooks/useSetRepresentativeBadge";
 import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsForm from "./components/ProfileSettingsForm";
@@ -12,38 +15,24 @@ import styles from "./ProfileSettingsTab.module.css";
 
 export default function ProfileSettingsTab() {
   const form = useProfileSettingsForm();
-  const catalogQuery = useBadgeCatalog();
+  const myBadgesQuery = useMyBadges(Boolean(form.me));
   const setRepresentativeBadge = useSetRepresentativeBadge();
-  const catalogItems = useMemo(
-    () => (catalogQuery.data ? getBadgeCatalogItems(catalogQuery.data) : []),
-    [catalogQuery.data],
-  );
   const badgeOptions = useMemo(
     () =>
-      catalogItems
-        .map((badge, index) => ({
-          index,
-          badgeCode: badge.badgeCode,
-          isAcquired: badge.acquired,
-          name: badge.name,
-        }))
-        .sort((left, right) => {
-          if (left.isAcquired === right.isAcquired) {
-            return left.index - right.index;
-          }
-
-          return left.isAcquired ? -1 : 1;
-        }),
-    [catalogItems],
+      getUserBadgeItems(myBadgesQuery.data).map((badge) => ({
+        badgeCode: badge.badgeCode,
+        name: badge.name,
+      })),
+    [myBadgesQuery.data],
   );
-  const representativeBadge = form.me?.representativeBadge ?? null;
-  const isBadgeLoading = catalogQuery.isLoading;
+  const representativeBadge = getRepresentativeBadge(myBadgesQuery.data);
+  const isBadgeLoading = myBadgesQuery.isLoading;
   const badgeStatusMessage = (() => {
     if (isBadgeLoading) {
       return "칭호 불러오는 중";
     }
 
-    if (catalogQuery.isError) {
+    if (myBadgesQuery.isError) {
       return "칭호를 불러오지 못했습니다.";
     }
 
@@ -86,7 +75,8 @@ export default function ProfileSettingsTab() {
           </p>
         </div>
         <ProfileSettingsForm
-          canUpdateProfile={form.canUpdateProfile}
+          canUpdateNickname={form.canUpdateNickname}
+          canUpdateStatusMessage={form.canUpdateStatusMessage}
           hasProfile={form.hasProfile}
           isMeError={form.isMeError}
           isMeLoading={form.isMeLoading}
@@ -98,7 +88,7 @@ export default function ProfileSettingsTab() {
           badgeDisabled={
             !form.me ||
             isBadgeLoading ||
-            catalogQuery.isError ||
+            myBadgesQuery.isError ||
             setRepresentativeBadge.isPending ||
             badgeOptions.length === 0
           }
@@ -106,7 +96,7 @@ export default function ProfileSettingsTab() {
           badgeStatusMessage={badgeStatusMessage}
           badgeValue={representativeBadge?.badgeCode ?? ""}
           isBadgeStatusError={Boolean(
-            catalogQuery.isError || setRepresentativeBadge.error,
+            myBadgesQuery.isError || setRepresentativeBadge.error,
           )}
           onBadgeChange={(badgeCode) => {
             if (
@@ -119,8 +109,9 @@ export default function ProfileSettingsTab() {
             setRepresentativeBadge.mutate({ badgeCode });
           }}
           onNicknameChange={form.updateNicknameDraft}
+          onNicknameSubmit={form.handleNicknameSubmit}
           onStatusMessageChange={form.updateStatusMessageDraft}
-          onSubmit={form.handleProfileSubmit}
+          onStatusMessageSubmit={form.handleStatusMessageSubmit}
         />
       </div>
       <ProfileStats

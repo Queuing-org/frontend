@@ -1,13 +1,13 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import type { User } from "@/src/features/user/model/types";
 import type { UpdateMePayload } from "../model/types";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
-import { ApiResponse } from "@/src/shared/api/types";
+import type { ApiResponse } from "@/src/shared/api/types";
 
-export async function updateMe(payload: UpdateMePayload): Promise<User> {
-  const { data } = await axiosInstance.patch<ApiResponse<User>>(
+export async function updateMe(payload: UpdateMePayload): Promise<boolean> {
+  const { data } = await axiosInstance.patch<ApiResponse<boolean>>(
     "/api/v1/user-profiles/me",
-    payload
+    payload,
   );
+
   return unwrapApiResponse(data);
 }

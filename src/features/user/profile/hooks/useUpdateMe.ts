@@ -10,11 +10,17 @@ import { userKeys } from "@/src/features/user/model/queryKeys";
 export function useUpdateMe() {
   const qc = useQueryClient();
 
-  return useMutation<User, ApiError, UpdateMePayload>({
+  return useMutation<boolean, ApiError, UpdateMePayload>({
     mutationFn: (payload) => updateMe(payload),
-    onSuccess: async (updatedUser) => {
-      qc.setQueryData(userKeys.me(), updatedUser);
-      await qc.invalidateQueries({ queryKey: userKeys.me() });
+    onSuccess: async () => {
+      const me = qc.getQueryData<User | null>(userKeys.me());
+
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: userKeys.me() }),
+        me?.slug
+          ? qc.invalidateQueries({ queryKey: userKeys.profile(me.slug) })
+          : Promise.resolve(),
+      ]);
     },
   });
 }

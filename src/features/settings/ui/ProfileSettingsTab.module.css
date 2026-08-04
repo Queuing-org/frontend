@@ -111,9 +111,13 @@
   border: 0;
 }
 
-.nicknameControl {
+.editableControl {
   position: relative;
   min-width: 0;
+}
+
+.editableControl .textInput {
+  padding-right: 80px;
 }
 
 .textInput,
@@ -171,11 +175,6 @@
 .badgeOptionOwned {
   color: #3c3c3c;
   font-weight: var(--fw-bold);
-}
-
-.badgeOptionLocked {
-  color: #b0b0b5;
-  font-weight: var(--fw-regular);
 }
 
 .textInput::placeholder {

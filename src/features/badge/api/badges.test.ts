@@ -62,6 +62,9 @@ describe("칭호 API 계약", () => {
     });
 
     await expect(fetchMyBadges()).resolves.toEqual(response);
+    expect(axiosInstance.get).toHaveBeenCalledWith(
+      "/api/v1/users/me/badges",
+    );
   });
 
   it("대표 칭호 설정 payload는 badgeCode만 전송한다", async () => {

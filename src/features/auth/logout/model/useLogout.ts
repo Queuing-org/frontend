@@ -4,6 +4,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { logoutApi } from "../api/logout";
 import { userKeys } from "@/src/features/user/model/queryKeys";
+import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 
 export function useLogout() {
   const qc = useQueryClient();
@@ -12,6 +13,7 @@ export function useLogout() {
     mutationFn: () => logoutApi(),
     onSuccess: () => {
       qc.setQueryData(userKeys.me(), null);
+      qc.removeQueries({ queryKey: badgeKeys.me() });
     },
   });
 }
