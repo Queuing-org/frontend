@@ -38,7 +38,7 @@
 - [x] commit, push, Draft PR
 - [x] 사용자 계약 정정 구현
 - [x] 정정 후 전체 검증 및 fresh QA
-- [ ] PR #31 update
+- [x] PR #31 update
 
 ## Verification
 
