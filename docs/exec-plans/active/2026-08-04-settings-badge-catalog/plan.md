@@ -31,7 +31,7 @@
 - [x] 설정 칭호 데이터 흐름 전환
 - [x] 대상 테스트 및 전체 검증
 - [x] fresh QA review
-- [ ] commit, push, Draft PR
+- [x] commit, push, Draft PR
 
 ## Verification
 
