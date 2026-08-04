@@ -72,6 +72,7 @@
 - [x] 후속 room/badge/follow 구현
 - [x] 후속 targeted/full QA
 - [x] 기능 단위 commit/push와 Draft PR 갱신
+- [x] Vercel stale pnpm lock 실패 수정 및 frozen install 검증
 
 ## Residual Risk
 

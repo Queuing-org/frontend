@@ -40,6 +40,7 @@ Run a bounded delivery pipeline from request to draft PR. Read `references/deliv
    - `redo`: stop before publishing and report the direction-level conflict.
 9. Inspect each planned feature slice and stage only files belonging to that slice and run. Follow the commit policy in `references/delivery-policy.md`, and run the relevant verification before every commit.
 10. Before publishing, run `npm run lint`, `npm run test`, and `npm run build` for code changes. Confirm `gh --version` and `gh auth status`, then push the branch and open a draft PR.
+    - When `package.json` changes, synchronize every tracked lockfile. This repository currently tracks both `package-lock.json` and `pnpm-lock.yaml`; run the frozen install used by the deployer before push so local npm checks cannot hide a stale pnpm lock.
     - Use the installed GitHub publish skill when available, but preserve this skill's branch policy and explicit staging scope.
     - Populate `.github/pull_request_template.md` with the request, impact, feature-by-feature commits, verification, selected skills, QA result, execution-plan path, and residual risk.
 11. Set delivery state to `ci-pending`, store the PR URL, and return branch, commit, PR, checks run, and remaining risks.

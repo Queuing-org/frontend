@@ -9,3 +9,4 @@
 - 칭호 획득 모달을 새 축하 디자인과 lazy-loaded confetti 효과로 개선했다.
 - 차단 목록 cursor 조회/해제를 추가하고 follower/following 카드 확장 액션에 관계 토글과 차단을 연결했다.
 - 후속 범위까지 lint, 51 files / 125 tests, build, diff-check, fresh QA를 통과했다.
+- 첫 Vercel preview의 stale pnpm lock 실패를 수정하고 deployer와 같은 frozen install을 publish gate에 추가했다.

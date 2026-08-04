@@ -45,3 +45,11 @@
 - 브라우저 연결 도구가 sandbox metadata 오류로 시작되지 않아 marquee 속도/방향과 confetti layer의 pixel QA는 수행하지 못했다.
 - follower 관계 판별은 기존 `useFollowingRelationship`의 최대 200명 단일 조회를 사용한다. 200명 초과 계정의 완전한 정확성은 전용 관계 API 또는 cursor pagination 정책이 필요하다.
 - badge dialog는 기존과 동일하게 초기 focus와 Escape/backdrop close를 보장하지만 완전한 focus trap은 제공하지 않는다.
+
+## Vercel Lockfile Fix
+
+- 첫 후속 push의 GitHub Actions는 success였지만 Vercel은 `ERR_PNPM_OUTDATED_LOCKFILE`로 dependency install 전에 실패했다.
+- 원인: `canvas-confetti` 추가 시 `package.json`과 `package-lock.json`만 갱신하고 추적 중인 `pnpm-lock.yaml`을 누락했다.
+- 수정: `pnpm install --lockfile-only`로 동기화하고 `pnpm install --frozen-lockfile` 통과를 확인했다.
+- pnpm install 이후 final gate: lint pass, 51 files / 125 tests pass, build pass.
+- durable incident: `docs/agent-harness/incidents/2026-08-04-dual-lockfile-vercel-failure.md`
