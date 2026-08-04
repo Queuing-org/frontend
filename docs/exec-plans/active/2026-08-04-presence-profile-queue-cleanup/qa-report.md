@@ -105,4 +105,4 @@
 - `npm run lint`, `npm run build`, `git diff --check`: pass
 - fallback seed의 10장 순환과 서버 thumbnail variant/url 우선순위 유지 여부를 확인했다.
 - 사용자 소유 `CurrentRequesterCard.module.css` 변경은 이번 변경과 무관하므로 staging 대상에서 제외한다.
-- 기능 commit `d89b007`을 push하고 새 Draft PR #33을 생성했다. 최초 확인 시 Vercel은 pass, GitHub Actions는 진행 중이다.
+- 기능 commit `d89b007`과 문서 commit `54fbe36`을 push하고 새 Draft PR #33을 생성했다. 최종 implementation/docs head에서 GitHub Actions와 Vercel이 모두 통과했다.
