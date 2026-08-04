@@ -45,17 +45,6 @@ export function getRepresentativeBadge(
   return getBadgeSummaryFromUserBadge(representativeUserBadge);
 }
 
-export function getBadgeCode(userBadge: UserBadge) {
-  return userBadge.badgeCode;
-}
-
 export function getCatalogBadgeHint(badge: BadgeCatalogItem) {
   return badge.acquisitionHint;
-}
-
-export function isCatalogBadgeAcquired(
-  badge: BadgeCatalogItem,
-  acquiredBadgeCodes: ReadonlySet<string>,
-) {
-  return badge.acquired || acquiredBadgeCodes.has(badge.badgeCode);
 }

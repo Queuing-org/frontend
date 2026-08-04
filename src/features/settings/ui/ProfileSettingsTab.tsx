@@ -2,15 +2,8 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import {
-  getBadgeCatalogItems,
-  getBadgeCode,
-  getRepresentativeBadge,
-  getUserBadgeItems,
-  isCatalogBadgeAcquired,
-} from "@/src/features/badge/model/badgeDisplay";
+import { getBadgeCatalogItems } from "@/src/features/badge/model/badgeDisplay";
 import { useBadgeCatalog } from "@/src/features/badge/hooks/useBadgeCatalog";
-import { useMyBadges } from "@/src/features/badge/hooks/useMyBadges";
 import { useSetRepresentativeBadge } from "@/src/features/badge/hooks/useSetRepresentativeBadge";
 import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsForm from "./components/ProfileSettingsForm";
@@ -20,24 +13,18 @@ import styles from "./ProfileSettingsTab.module.css";
 export default function ProfileSettingsTab() {
   const form = useProfileSettingsForm();
   const catalogQuery = useBadgeCatalog();
-  const myBadgesQuery = useMyBadges(Boolean(form.me));
   const setRepresentativeBadge = useSetRepresentativeBadge();
   const catalogItems = useMemo(
     () => (catalogQuery.data ? getBadgeCatalogItems(catalogQuery.data) : []),
     [catalogQuery.data],
   );
-  const acquiredBadgeCodes = useMemo(() => {
-    const badgeCodes = getUserBadgeItems(myBadgesQuery.data).map(getBadgeCode);
-
-    return new Set(badgeCodes);
-  }, [myBadgesQuery.data]);
   const badgeOptions = useMemo(
     () =>
       catalogItems
         .map((badge, index) => ({
           index,
           badgeCode: badge.badgeCode,
-          isAcquired: isCatalogBadgeAcquired(badge, acquiredBadgeCodes),
+          isAcquired: badge.acquired,
           name: badge.name,
         }))
         .sort((left, right) => {
@@ -47,16 +34,16 @@ export default function ProfileSettingsTab() {
 
           return left.isAcquired ? -1 : 1;
         }),
-    [acquiredBadgeCodes, catalogItems],
+    [catalogItems],
   );
-  const representativeBadge = getRepresentativeBadge(myBadgesQuery.data);
-  const isBadgeLoading = catalogQuery.isLoading || myBadgesQuery.isLoading;
+  const representativeBadge = form.me?.representativeBadge ?? null;
+  const isBadgeLoading = catalogQuery.isLoading;
   const badgeStatusMessage = (() => {
     if (isBadgeLoading) {
       return "칭호 불러오는 중";
     }
 
-    if (catalogQuery.isError || myBadgesQuery.isError) {
+    if (catalogQuery.isError) {
       return "칭호를 불러오지 못했습니다.";
     }
 
@@ -112,7 +99,6 @@ export default function ProfileSettingsTab() {
             !form.me ||
             isBadgeLoading ||
             catalogQuery.isError ||
-            myBadgesQuery.isError ||
             setRepresentativeBadge.isPending ||
             badgeOptions.length === 0
           }
@@ -120,9 +106,7 @@ export default function ProfileSettingsTab() {
           badgeStatusMessage={badgeStatusMessage}
           badgeValue={representativeBadge?.badgeCode ?? ""}
           isBadgeStatusError={Boolean(
-            catalogQuery.isError ||
-              myBadgesQuery.isError ||
-              setRepresentativeBadge.error,
+            catalogQuery.isError || setRepresentativeBadge.error,
           )}
           onBadgeChange={(badgeCode) => {
             if (

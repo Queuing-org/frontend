@@ -11,7 +11,7 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
   },
 }));
 
-describe("v26.7.1 칭호 계약", () => {
+describe("칭호 API 계약", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -36,6 +36,7 @@ describe("v26.7.1 칭호 계약", () => {
     });
 
     await expect(fetchBadges()).resolves.toEqual(response);
+    expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/badges");
   });
 
   it("획득 칭호의 representative/acquiredAt과 대표 badgeCode를 파싱한다", async () => {
