@@ -7,7 +7,10 @@ import type {
   FloatingWidgetsView,
   WidgetId,
 } from "@/src/features/room/floating/model/useFloatingWidgetsState";
-import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type {
+  PlaylistEntry,
+  PlaylistParticipant,
+} from "@/src/features/playlist/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
@@ -22,6 +25,7 @@ type Props = {
   chatDisabledReason?: string;
   chatErrorMessage?: string;
   currentRequester: CurrentRequesterProfile | null;
+  currentEntry?: PlaylistEntry | null;
   currentTrackTitle?: string | null;
   currentUser: User | null;
   isChatSending: boolean;
@@ -41,6 +45,7 @@ export default function RoomFloatingWidgets({
   chatDisabledReason,
   chatErrorMessage,
   currentRequester,
+  currentEntry,
   currentTrackTitle,
   currentUser,
   isChatSending,
@@ -152,6 +157,7 @@ export default function RoomFloatingWidgets({
                 width={widgets.queue.width}
               >
                 <RoomQueuePanel
+                  currentEntry={currentEntry}
                   currentUser={currentUser}
                   isCurrentUserLoading={isCurrentUserLoading}
                   roomMeta={roomMeta}

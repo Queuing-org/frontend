@@ -66,4 +66,24 @@ describe("RoomQueueSortableList", () => {
 
     expect(screen.getByLabelText("locked 순서 변경")).toBeInTheDocument();
   });
+
+  it("현재 재생 곡은 목록 맨 위에 PLAY로 표시하고 이동 기능에서 제외한다", () => {
+    const playingEntry = entry("playing", false);
+    playingEntry.status.isActive = true;
+
+    const { container } = render(
+      <RoomQueueSortableList
+        emptyMessage="비었음"
+        entries={[entry("next", false), playingEntry]}
+        moveMode="owner"
+      />,
+    );
+
+    const rows = [...container.querySelectorAll("li")];
+    expect(rows[0]).toHaveTextContent("playing");
+    expect(rows[0]).toHaveTextContent("PLAY");
+    expect(
+      screen.queryByLabelText("playing 순서 변경"),
+    ).not.toBeInTheDocument();
+  });
 });

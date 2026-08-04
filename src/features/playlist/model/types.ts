@@ -18,11 +18,6 @@ export type RoomParticipantsRequestParams =
     size?: number;
   };
 
-export type RoomHistoryRequestParams = PlaylistProtectedRequestParams & {
-  cursorId?: number | null;
-  size?: number;
-};
-
 export type MoveMyQueueEntryPayload = {
   movedEntryId: string;
   beforeEntryId: string | null;
@@ -115,25 +110,4 @@ export type RoomParticipantsPage = {
   items: PlaylistParticipant[];
   hasNext: boolean;
   nextCursor: string | null;
-};
-
-export type RoomHistoryEntry = {
-  id: number;
-  title: string;
-  entryId: string;
-  skipped: boolean;
-  videoId: string;
-  provider: TrackProvider;
-  endedAtMs: number;
-  durationMs: number;
-  queuedAtMs: number | null;
-  startedAtMs: number | null;
-  thumbnailUrl: string;
-  addedByUserSlug: string | null;
-};
-
-export type RoomHistoryPage = {
-  items: RoomHistoryEntry[];
-  hasNext: boolean;
-  nextCursor: number | null;
 };

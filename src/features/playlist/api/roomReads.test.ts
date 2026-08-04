@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { fetchRoomHistory } from "./fetchRoomHistory";
 import { fetchRoomParticipants } from "./fetchRoomParticipants";
 import { fetchRoomPlayback } from "./fetchRoomPlayback";
 import { fetchRoomQueuePage } from "./fetchRoomQueue";
@@ -158,28 +157,5 @@ describe("v26.8.0 방 조회 API", () => {
     expect(vi.mocked(axiosInstance.get).mock.calls[1]?.[1]).toMatchObject({
       params: { cursor: "a", size: 100 },
     });
-  });
-
-  it("history 다음 페이지 요청에 cursorId를 사용한다", async () => {
-    vi.mocked(axiosInstance.get).mockResolvedValue({
-      data: {
-        result: { items: [], hasNext: false, nextCursor: null },
-      },
-    });
-
-    await fetchRoomHistory({
-      slug: "room",
-      password: "secret",
-      cursorId: 41,
-      size: 100,
-    });
-
-    expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/rooms/room/queue-history",
-      {
-        params: { cursorId: 41, size: 100 },
-        headers: { "X-Room-Password": "secret" },
-      },
-    );
   });
 });

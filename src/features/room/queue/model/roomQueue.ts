@@ -1,7 +1,7 @@
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 
-export type QueueTab = "all" | "mine" | "history";
+export type QueueTab = "all" | "mine";
 export type QueueEntryStatusTone = "active" | "played" | "queued" | "skipped";
 
 export function formatQueueDuration(durationMs: number) {
@@ -33,6 +33,30 @@ export function getQueueEntryStatus(entry: PlaylistEntry): {
 
 export function isPendingQueueEntry(entry: PlaylistEntry) {
   return !entry.status.isActive && !entry.status.isPlayed && !entry.status.skipped;
+}
+
+export function mergeCurrentEntryWithQueue(
+  currentEntry: PlaylistEntry | null | undefined,
+  queueEntries: PlaylistEntry[],
+) {
+  if (!currentEntry) {
+    return queueEntries;
+  }
+
+  const activeCurrentEntry: PlaylistEntry = {
+    ...currentEntry,
+    status: {
+      ...currentEntry.status,
+      isActive: true,
+      isPlayed: false,
+      skipped: false,
+    },
+  };
+
+  return [
+    activeCurrentEntry,
+    ...queueEntries.filter((entry) => entry.entryId !== currentEntry.entryId),
+  ];
 }
 
 export function getMovablePersonalQueueEntryIds(entries: PlaylistEntry[]) {

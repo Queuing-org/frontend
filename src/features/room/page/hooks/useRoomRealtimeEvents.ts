@@ -257,9 +257,6 @@ export function useRoomRealtimeEvents({
         void queryClient.invalidateQueries({
           queryKey: playlistKeys.roomQueuePrefix(roomSlug),
         });
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomHistoryPrefix(roomSlug),
-        });
         return;
       }
 
@@ -275,11 +272,6 @@ export function useRoomRealtimeEvents({
         void queryClient.invalidateQueries({
           queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
         });
-        if (event.type === "TRACK_ENDED") {
-          void queryClient.invalidateQueries({
-            queryKey: playlistKeys.roomHistoryPrefix(roomSlug),
-          });
-        }
         return;
       }
 

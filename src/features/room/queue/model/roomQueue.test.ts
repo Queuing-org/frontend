@@ -4,6 +4,7 @@ import {
   getMovablePersonalQueueEntryIds,
   isEntryRequestedByUser,
   isValidPersonalQueueMove,
+  mergeCurrentEntryWithQueue,
 } from "./roomQueue";
 
 const entry = (
@@ -53,5 +54,20 @@ describe("개인 큐 순서와 공개 식별", () => {
     };
     expect(isEntryRequestedByUser(entry("mine", false), me)).toBe(true);
     expect(isEntryRequestedByUser(entry("guest", false, null), me)).toBe(false);
+  });
+
+  it("현재 곡을 전체 queue 앞에 active로 합치고 중복 entry를 제거한다", () => {
+    const currentEntry = entry("playing", false);
+    const merged = mergeCurrentEntryWithQueue(currentEntry, [
+      entry("playing", false),
+      entry("next", false),
+    ]);
+
+    expect(merged.map((item) => item.entryId)).toEqual(["playing", "next"]);
+    expect(merged[0]?.status).toMatchObject({
+      isActive: true,
+      isPlayed: false,
+      skipped: false,
+    });
   });
 });

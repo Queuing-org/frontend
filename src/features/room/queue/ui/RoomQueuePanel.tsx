@@ -1,5 +1,6 @@
 "use client";
 
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
@@ -8,6 +9,7 @@ import RoomQueuePanelView from "./RoomQueuePanelView";
 import styles from "./RoomQueuePanel.module.css";
 
 type Props = {
+  currentEntry?: PlaylistEntry | null;
   currentUser: User | null;
   isCurrentUserLoading: boolean;
   roomMeta: RoomMeta | null;
@@ -16,6 +18,7 @@ type Props = {
 };
 
 export default function RoomQueuePanel({
+  currentEntry,
   currentUser,
   isCurrentUserLoading,
   roomMeta,
@@ -37,6 +40,7 @@ export default function RoomQueuePanel({
       resetKeys={[roomSlug, roomPassword ?? null]}
     >
       <RoomQueuePanelContent
+        currentEntry={currentEntry}
         currentUser={currentUser}
         isCurrentUserLoading={isCurrentUserLoading}
         roomMeta={roomMeta}
@@ -48,6 +52,7 @@ export default function RoomQueuePanel({
 }
 
 function RoomQueuePanelContent({
+  currentEntry,
   currentUser,
   isCurrentUserLoading,
   roomMeta,
@@ -55,6 +60,7 @@ function RoomQueuePanelContent({
   roomSlug,
 }: Props) {
   const queuePanel = useRoomQueuePanel({
+    currentEntry,
     currentUser,
     isCurrentUserLoading,
     roomMeta,
@@ -71,18 +77,14 @@ function RoomQueuePanelContent({
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
       deleteErrorMessage={queuePanel.deleteErrorMessage}
       emptyMessage={queuePanel.emptyMessage}
-      hasNextHistoryPage={queuePanel.hasNextHistoryPage}
       hasNextAllQueuePage={queuePanel.hasNextAllQueuePage}
       hasNextMyQueuePage={queuePanel.hasNextMyQueuePage}
-      historyEntries={queuePanel.historyEntries}
-      historyErrorMessage={queuePanel.historyErrorMessage}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
       isMoveMyPending={queuePanel.moveMyQueueEntry.isPending}
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}
       isRefetching={queuePanel.isRefetching}
-      isFetchingNextHistoryPage={queuePanel.isFetchingNextHistoryPage}
       isFetchingNextAllQueuePage={queuePanel.isFetchingNextAllQueuePage}
       isFetchingNextMyQueuePage={queuePanel.isFetchingNextMyQueuePage}
       moveErrorMessage={queuePanel.moveErrorMessage}
@@ -96,7 +98,6 @@ function RoomQueuePanelContent({
       onDeleteRoomEntry={queuePanel.handleDeleteRoomEntry}
       onMoveMyEntry={queuePanel.handleMoveMyEntry}
       onMoveRoomEntry={queuePanel.handleMoveRoomEntry}
-      onLoadMoreHistory={queuePanel.loadNextHistoryPage}
       onLoadMoreAllQueue={queuePanel.loadNextAllQueuePage}
       onLoadMoreMyQueue={queuePanel.loadNextMyQueuePage}
     />
