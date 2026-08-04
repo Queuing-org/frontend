@@ -51,7 +51,7 @@
 - [x] queue history 제거 및 현재 곡 병합
 - [x] targeted/full QA
 - [x] 기능 단위 commit
-- [ ] push/Draft PR
+- [x] push/Draft PR
 
 ## Residual Risk
 

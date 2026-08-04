@@ -1,12 +1,12 @@
 # Delivery State
 
-- status: publishing
+- status: ci-pending
 - branch: dev
 - base: main
 - issue:
-- pr:
+- pr: https://github.com/Queuing-org/frontend/pull/32
 - selected_skills: queuing-feature-delivery, queuing-orchestrator, queuing-api-boundary, queuing-ui-flow, frontend-architecture-guardrails, queuing-qa-reviewer
 - local_qa: targeted pass; lint pass; 46 files / 113 tests pass; build pass; fresh QA pass
-- ci: not-started
+- ci: pending on final delivery-state commit
 - review_threads: none
-- next_action: dev를 push하고 Draft PR을 생성한다.
+- next_action: PR #32 CI와 human review를 확인한다.
