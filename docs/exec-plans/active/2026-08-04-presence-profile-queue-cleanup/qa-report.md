@@ -70,3 +70,13 @@
 ## Track Title And Equalizer Residual Risk
 
 - 브라우저 연결 도구의 기존 sandbox metadata 오류 때문에 실제 썸네일 위 bar 대비/위치와 모바일 줄바꿈의 픽셀 QA는 수행하지 못했다.
+
+## Equalizer Overlay QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- targeted: 1 file / 3 tests pass
+- full: 52 files / 126 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- `inset: 0`으로 썸네일 전체를 덮고 `rgba(255, 255, 255, 0.6)`와 `#3c3c3c`가 요청값과 일치하는지 확인했다.
+- 기존 active-only 렌더링, 접근 가능한 이름, 막대 animation과 reduced-motion 정지 동작이 유지된다.
+- 실제 썸네일별 합성 결과의 브라우저 픽셀 QA는 수행하지 못했다.

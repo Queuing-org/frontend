@@ -47,6 +47,7 @@
 7. `feat(follow): 차단 목록과 카드 액션 연결`
 8. `docs(delivery): 후속 UI와 차단 기능 검증 기록`
 9. `feat(room): 긴 곡 제목 순환과 재생 애니메이션 추가`
+10. `style(queue): 현재 재생 썸네일 오버레이 조정`
 
 ## Acceptance Criteria
 
@@ -60,6 +61,7 @@
 - 현재 재생 카드와 queue 카드의 긴 사연은 overflow일 때만 끊김 없이 순환 표시되고 reduced motion에서는 움직이지 않는다.
 - 현재 재생 카드와 queue 카드의 긴 곡 제목은 overflow일 때만 끊김 없이 순환 표시되고 reduced motion에서는 움직이지 않는다.
 - 현재 재생 곡의 equalizer는 세 막대가 서로 다른 위상으로 움직이고 reduced motion에서는 정적인 막대로 표시된다.
+- 현재 재생 곡 썸네일 전체에 `#ffffff` 60% 오버레이가 표시되고 막대는 `#3c3c3c`를 사용한다.
 - 칭호 획득 모달은 badge별 축하 효과를 한 번 실행하고 기존 확인/Escape/배경 닫기를 유지한다.
 - 방 프로필은 최애곡 대신 한 줄 소개를 표시하며 1시간 음악력 안내 문구가 없다.
 - 차단 탭은 커서 페이지를 합쳐 표시하고 차단 해제 성공 시 목록/팔로우/검색 cache를 재검증한다.
@@ -83,6 +85,9 @@
 - [x] 긴 곡 제목 순환/equalizer 구현
 - [x] 후속 targeted/full QA와 fresh QA
 - [x] 기능 commit/push와 Draft PR 갱신
+- [x] 현재 재생 썸네일 오버레이 스타일 조정
+- [x] 스타일 QA
+- [ ] 스타일 commit/push와 Draft PR 갱신
 
 ## Residual Risk
 

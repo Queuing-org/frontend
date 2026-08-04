@@ -12,3 +12,4 @@
 - 첫 Vercel preview의 stale pnpm lock 실패를 수정하고 deployer와 같은 frozen install을 publish gate에 추가했다.
 - 재생목록과 현재 재생 신청자 카드의 긴 곡 제목에 overflow-only marquee를 적용하고, 활성 곡 썸네일의 `PLAY` 문구를 reduced-motion 대응 3-bar equalizer로 교체했다.
 - 최종 lint, 52 files / 126 tests, build, diff-check, fresh read-only QA를 통과했다.
+- 현재 재생 썸네일 전체에 `#ffffff` 60% 오버레이를 적용하고 equalizer 막대를 `#3c3c3c`로 중앙 정렬했다.
