@@ -8,15 +8,18 @@ import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBad
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
-import { useRecommendMusicPower } from "@/src/features/user/profile/hooks/useRecommendMusicPower";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
+import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import type { CurrentRequesterProfile } from "../model/types";
 import styles from "./RoomProfilePanel.module.css";
 
 type Props = {
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
+  roomPassword?: string | null;
+  roomSlug: string;
 };
 
 function isCurrentUserProfile(
@@ -27,22 +30,16 @@ function isCurrentUserProfile(
     return false;
   }
 
-  if (currentRequester.slug) {
-    return me.slug === currentRequester.slug;
-  }
-
-  if (
-    typeof me.userId === "number" &&
-    typeof currentRequester.userId === "number" &&
-    me.userId === currentRequester.userId
-  ) {
-    return true;
-  }
-
-  return me.nickname === currentRequester.nickname;
+  return Boolean(
+    currentRequester.slug && me.slug === currentRequester.slug,
+  );
 }
 
-export default function RoomProfilePanel({ currentRequester }: Props) {
+export default function RoomProfilePanel({
+  currentRequester,
+  roomPassword,
+  roomSlug,
+}: Props) {
   const {
     data: me,
     isError: isCurrentUserError,
@@ -52,7 +49,7 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
   const { data: publicProfile, isLoading: isPublicProfileLoading } =
     useUserProfile(targetSlug);
   const musicPowerQuery = useMusicPower(targetSlug);
-  const recommendMusicPower = useRecommendMusicPower();
+  const musicPowerVote = useCurrentTrackMusicPowerVote();
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
     usePublicUserBadges(targetSlug);
 
@@ -82,39 +79,53 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
     publicProfile?.nickname ?? currentRequester?.nickname ?? "";
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
+  const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
   const badgeValue = isPublicProfileLoading || isPublicBadgesLoading
     ? "불러오는 중..."
     : representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
-  const isRecommendationDisabled =
+  const isMusicPowerVoteDisabled =
     !me ||
     isSelf ||
     !targetSlug ||
+    !roomSlug ||
     musicPowerQuery.isLoading ||
-    musicPowerQuery.data?.recommendedByMe !== false ||
-    recommendMusicPower.isPending;
-  const recommendationLabel = (() => {
+    !musicPowerQuery.data ||
+    musicPowerVote.isPending;
+  const musicPowerVoteDisabledLabel = (() => {
     if (!me) {
-      return "로그인 후 음악력을 추천할 수 있습니다";
+      return "로그인 후 음악력에 투표할 수 있습니다";
+    }
+    if (isSelf) {
+      return "본인의 음악력에는 투표할 수 없습니다";
     }
     if (!targetSlug) {
-      return "추천 대상 정보를 준비 중입니다";
+      return "투표 대상은 회원 신청자만 가능합니다";
     }
     if (musicPowerQuery.isLoading) {
-      return "음악력 추천 상태 확인 중";
+      return "음악력 투표 상태 확인 중";
     }
     if (!musicPowerQuery.data) {
-      return "음악력 추천 상태를 확인할 수 없습니다";
+      return "음악력 투표 상태를 확인할 수 없습니다";
     }
-    if (musicPowerQuery.data.recommendedByMe) {
-      return "이미 음악력을 추천했습니다";
+    if (musicPowerVote.isPending) {
+      return "음악력 투표 처리 중";
     }
-    if (recommendMusicPower.isPending) {
-      return "음악력 추천 중";
-    }
-    return "음악력 추천";
+    return null;
   })();
+
+  const handleMusicPowerVote = (vote: MusicPowerVote) => {
+    if (isMusicPowerVoteDisabled || !musicPowerQuery.data) {
+      return;
+    }
+
+    musicPowerVote.mutate({
+      roomSlug,
+      password: roomPassword,
+      vote: musicPowerQuery.data.myVote === vote ? null : vote,
+    });
+  };
 
   return (
     <div className={styles.root}>
@@ -139,6 +150,9 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
             </div>
             <div className={styles.nameBlock}>
               <div className={styles.name}>{displayNickname}</div>
+              {statusMessage ? (
+                <div className={styles.statusMessage}>{statusMessage}</div>
+              ) : null}
             </div>
             {shouldShowFollowAction ? (
               <FollowToggleButton
@@ -178,40 +192,37 @@ export default function RoomProfilePanel({ currentRequester }: Props) {
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
-              {recommendMusicPower.error ? (
+              {musicPowerVote.error ? (
                 <p className={styles.recommendationError} role="alert">
-                  {recommendMusicPower.error.message}
+                  {musicPowerVote.error.message}
                 </p>
               ) : null}
             </div>
           </div>
-          {!isSelf ? (
-            <div className={styles.musicPowerActions}>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label={recommendationLabel}
-                title={recommendationLabel}
-                disabled={isRecommendationDisabled}
-                onClick={() => {
-                  if (targetSlug) {
-                    recommendMusicPower.mutate(targetSlug);
-                  }
-                }}
-              >
-                <ArrowUp aria-hidden="true" size={15} />
-              </button>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label="음악력 추천 취소는 아직 지원하지 않습니다"
-                title="추천 취소 API가 없어 아직 사용할 수 없습니다."
-                disabled
-              >
-                <ArrowDown aria-hidden="true" size={15} />
-              </button>
-            </div>
-          ) : null}
+          <div className={styles.musicPowerActions}>
+            <button
+              type="button"
+              className={styles.musicPowerButton}
+              aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
+              aria-pressed={musicPowerQuery.data?.myVote === "UPVOTE"}
+              title={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
+              disabled={isMusicPowerVoteDisabled}
+              onClick={() => handleMusicPowerVote("UPVOTE")}
+            >
+              <ArrowUp aria-hidden="true" size={15} />
+            </button>
+            <button
+              type="button"
+              className={styles.musicPowerButton}
+              aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
+              aria-pressed={musicPowerQuery.data?.myVote === "DOWNVOTE"}
+              title={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
+              disabled={isMusicPowerVoteDisabled}
+              onClick={() => handleMusicPowerVote("DOWNVOTE")}
+            >
+              <ArrowDown aria-hidden="true" size={15} />
+            </button>
+          </div>
         </>
       ) : (
         <div className={styles.empty}>

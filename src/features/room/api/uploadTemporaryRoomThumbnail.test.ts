@@ -12,6 +12,12 @@ it("선택한 파일을 방 생성 전 임시 썸네일 API에 업로드한다",
   const uploadResult = {
     uploadToken: "rtu_test",
     thumbnailUrl: "https://example.com/thumbnail.png",
+    thumbnailUrls: null,
+    contentType: "image/png",
+    sizeBytes: 9,
+    width: 100,
+    height: 100,
+    expiresAt: "2026-08-02T08:00:00Z",
   };
   vi.mocked(axiosInstance.post).mockResolvedValue({
     data: { result: uploadResult },
@@ -27,7 +33,7 @@ it("선택한 파일을 방 생성 전 임시 썸네일 API에 업로드한다",
   expect(result).toEqual(uploadResult);
 });
 
-it("성공 응답에 uploadToken이 없으면 계약 오류로 처리한다", async () => {
+it("성공 응답에 필수 메타데이터가 없으면 계약 오류로 처리한다", async () => {
   const file = new File(["thumbnail"], "cover.png", { type: "image/png" });
   vi.mocked(axiosInstance.post).mockResolvedValue({
     data: {

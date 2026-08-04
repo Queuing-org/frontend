@@ -21,7 +21,10 @@ export function useSkipTrackAction(slug: string | null) {
         queryKey: playlistKeys.roomQueuePrefix(slug),
       });
       void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(slug),
+        queryKey: playlistKeys.roomPlaybackPrefix(slug),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: playlistKeys.roomHistoryPrefix(slug),
       });
       void queryClient.invalidateQueries({
         queryKey: playlistKeys.roomPlaybackPrefix(slug),

@@ -6,7 +6,6 @@ const ROOM_TAGS_QUERY_OPTIONS = {
   queryKey: roomKeys.tags(),
   queryFn: fetchRoomTags,
   staleTime: 5 * 60 * 1000,
-  retry: false,
 };
 
 export function useRoomTags() {

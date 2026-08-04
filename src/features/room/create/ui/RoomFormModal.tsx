@@ -47,7 +47,6 @@ type RoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
-  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -124,7 +123,6 @@ export default function RoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
-  initialThumbnailUrl = null,
   onClose,
 }: RoomFormModalProps) {
   if (!open || typeof document === "undefined") {
@@ -142,7 +140,6 @@ export default function RoomFormModal({
         initialTagSlugs={initialTagSlugs}
         initialHasPassword={initialHasPassword}
         initialMaxParticipants={initialMaxParticipants}
-        initialThumbnailUrl={initialThumbnailUrl}
         onClose={onClose}
       />,
       portalRoot,

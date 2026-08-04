@@ -87,6 +87,8 @@ export default function RoomFloatingWidgets({
                 <RoomProfilePanel
                   currentRequester={currentRequester}
                   currentTrackTitle={currentTrackTitle}
+                  roomPassword={roomPassword}
+                  roomSlug={roomSlug}
                 />
               </FloatingRoomPanelShell>
             </div>

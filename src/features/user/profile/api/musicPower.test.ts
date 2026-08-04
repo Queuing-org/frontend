@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
+import { cancelMusicPowerVote } from "./cancelMusicPowerVote";
 import { fetchMusicPower } from "./fetchMusicPower";
-import { recommendMusicPower } from "./recommendMusicPower";
+import { setMusicPowerVote } from "./setMusicPowerVote";
 
 vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: {
     get: vi.fn(),
-    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
 const response = {
   musicPower: 12,
-  recommendedByMe: false,
+  myVote: null,
   targetUserSlug: "target/user",
 };
 
@@ -32,14 +34,30 @@ describe("음악력 API", () => {
     );
   });
 
-  it("인코딩한 사용자 slug로 음악력을 추천한다", async () => {
-    const result = { ...response, musicPower: 13, recommendedByMe: true };
-    vi.mocked(axiosInstance.post).mockResolvedValue({
+  it("PUT 요청에 vote만 전송한다", async () => {
+    const result = { ...response, musicPower: 13, myVote: "UPVOTE" as const };
+    vi.mocked(axiosInstance.put).mockResolvedValue({
       data: { result },
     });
 
-    await expect(recommendMusicPower("target/user")).resolves.toEqual(result);
-    expect(axiosInstance.post).toHaveBeenCalledWith(
+    await expect(
+      setMusicPowerVote({ userSlug: "target/user", vote: "UPVOTE" }),
+    ).resolves.toEqual(result);
+    expect(axiosInstance.put).toHaveBeenCalledWith(
+      "/api/v1/user-profiles/target%2Fuser/music-power",
+      { vote: "UPVOTE" },
+    );
+  });
+
+  it("DELETE 요청으로 투표를 취소한다", async () => {
+    vi.mocked(axiosInstance.delete).mockResolvedValue({
+      data: { result: response },
+    });
+
+    await expect(cancelMusicPowerVote("target/user")).resolves.toEqual(
+      response,
+    );
+    expect(axiosInstance.delete).toHaveBeenCalledWith(
       "/api/v1/user-profiles/target%2Fuser/music-power",
     );
   });

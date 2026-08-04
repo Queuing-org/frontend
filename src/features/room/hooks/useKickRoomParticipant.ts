@@ -16,7 +16,7 @@ export function useKickRoomParticipant() {
     mutationFn: kickRoomParticipant,
     onSuccess: async (_result, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(variables.slug),
+        queryKey: playlistKeys.roomParticipantsPrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
         queryKey: roomKeys.meta(variables.slug),

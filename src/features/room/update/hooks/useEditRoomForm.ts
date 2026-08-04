@@ -3,8 +3,6 @@
 import { useState, type FormEvent } from "react";
 import { useUpdateRoom } from "../model/useUpdateRoom";
 import { buildUpdateRoomPayload } from "../model/buildUpdateRoomPayload";
-import { useRoomThumbnailSelection } from "../../hooks/useRoomThumbnailSelection";
-import { useUploadRoomThumbnail } from "../../hooks/useUploadRoomThumbnail";
 import { ROOM_TAG_LIMIT } from "../../model/roomFormLimits";
 
 const MAX_ROOM_TITLE_LENGTH = 255;
@@ -71,8 +69,6 @@ export function useEditRoomForm({
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
-  const uploadRoomThumbnailMutation = useUploadRoomThumbnail();
-  const thumbnailSelection = useRoomThumbnailSelection();
   const normalizedInitialMaxParticipants =
     typeof initialMaxParticipants === "number" ? initialMaxParticipants : null;
   const [savedTitle, setSavedTitle] = useState(() => initialTitle);
@@ -94,19 +90,16 @@ export function useEditRoomForm({
     initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
 
-  const isSubmitting =
-    updateRoomMutation.isPending || uploadRoomThumbnailMutation.isPending;
+  const isSubmitting = updateRoomMutation.isPending;
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
   const parsedMaxParticipants = parseMaxParticipants(maxParticipants);
-  const hasThumbnailBlockingError = Boolean(thumbnailSelection.errorMessage);
   const isPasswordRequired =
     isPasswordChangeEnabled && trimmedPassword.length === 0;
   const canSubmit =
     trimmedTitle.length > 0 &&
     !isPasswordRequired &&
     !parsedMaxParticipants.error &&
-    !hasThumbnailBlockingError &&
     !isSubmitting &&
     !!roomSlug;
 
@@ -182,9 +175,7 @@ export function useEditRoomForm({
       selectedTagSlugs,
       title,
     });
-    const thumbnailFile = thumbnailSelection.file;
-
-    if (!payload && !thumbnailFile) {
+    if (!payload) {
       onClose();
       return;
     }
@@ -204,40 +195,20 @@ export function useEditRoomForm({
         setPassword("");
       }
 
-      if (thumbnailFile) {
-        await uploadRoomThumbnailMutation.mutateAsync({
-          slug: roomSlug,
-          file: thumbnailFile,
-        });
-        thumbnailSelection.clearSelection();
-      }
-
       onClose();
     } catch {
       // Mutation hooks expose the actionable error state to the modal.
     }
   };
 
-  const updateThumbnailFiles = (files: FileList | null) => {
-    uploadRoomThumbnailMutation.reset();
-    thumbnailSelection.selectFile(files);
-  };
-
-  const clearThumbnailSelection = () => {
-    uploadRoomThumbnailMutation.reset();
-    thumbnailSelection.clearSelection();
-  };
-
   return {
     canSubmit,
     clearMaxParticipants,
-    clearThumbnailSelection,
     handleSubmit,
     isPasswordClearEnabled,
     isPasswordChangeEnabled,
     isPasswordRequired,
     isSubmitting,
-    isThumbnailPreviewUnavailable: thumbnailSelection.isPreviewUnavailable,
     maxParticipants,
     maxParticipantsError: parsedMaxParticipants.error,
     maxParticipantsLimit: MAX_PARTICIPANTS,
@@ -247,17 +218,11 @@ export function useEditRoomForm({
     selectedTagSlugs,
     setPassword,
     submitError: updateRoomMutation.error,
-    thumbnailErrorMessage: thumbnailSelection.errorMessage,
-    thumbnailFileName: thumbnailSelection.fileName,
-    thumbnailPreviewUrl: thumbnailSelection.previewUrl,
-    thumbnailSubmitError: uploadRoomThumbnailMutation.error,
     title,
     toggleTag,
     updateMaxParticipants,
     updatePasswordClearEnabled,
     updatePasswordChangeEnabled,
-    updateThumbnailFiles,
-    onThumbnailPreviewError: thumbnailSelection.markPreviewUnavailable,
     updateTitle,
   };
 }

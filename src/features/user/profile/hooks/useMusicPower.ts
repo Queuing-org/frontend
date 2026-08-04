@@ -11,6 +11,5 @@ export function useMusicPower(userSlug: string | null | undefined) {
     queryKey: userKeys.musicPower(userSlug),
     queryFn: () => fetchMusicPower(userSlug!),
     enabled: Boolean(userSlug),
-    retry: false,
   });
 }

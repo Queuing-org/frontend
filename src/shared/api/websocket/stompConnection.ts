@@ -1,6 +1,11 @@
-import { Client, type IFrame } from "@stomp/stompjs";
+import type { IFrame } from "@stomp/stompjs";
+import {
+  createStompClient,
+  DEFAULT_STOMP_RECONNECT_DELAY_MS,
+} from "./createStompClient";
 
 type SocketListener = {
+  onConnect?: (frame: IFrame) => void;
   onStompError?: (frame: IFrame) => void;
   onWebSocketClose?: (event: CloseEvent) => void;
   onWebSocketError?: (event: Event) => void;
@@ -8,18 +13,13 @@ type SocketListener = {
 
 const socketListeners = new Set<SocketListener>();
 
-const client = new Client({
-  brokerURL: process.env.NEXT_PUBLIC_WS_URL,
-  reconnectDelay: 5000,
-  heartbeatIncoming: 4000,
-  heartbeatOutgoing: 4000,
-  debug: (message) => {
-    console.log("[STOMP]", message);
-  },
-});
+const client = createStompClient();
 
-client.onConnect = () => {
+client.onConnect = (frame) => {
   console.log("STOMP connected");
+  for (const listener of socketListeners) {
+    listener.onConnect?.(frame);
+  }
 };
 
 client.onStompError = (frame) => {
@@ -49,11 +49,17 @@ client.onWebSocketClose = (event) => {
 };
 
 export function connectSocket() {
+  client.reconnectDelay = DEFAULT_STOMP_RECONNECT_DELAY_MS;
   client.activate();
 }
 
 export function disconnectSocket() {
   client.deactivate();
+}
+
+export function stopSocketAutoReconnect() {
+  client.reconnectDelay = 0;
+  void client.deactivate();
 }
 
 export function getSocketClient() {

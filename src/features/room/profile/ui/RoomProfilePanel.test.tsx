@@ -1,11 +1,12 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
-import { useRecommendMusicPower } from "@/src/features/user/profile/hooks/useRecommendMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
+import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import RoomProfilePanel from "./RoomProfilePanel";
 
 vi.mock("next/image", () => ({
@@ -20,14 +21,14 @@ vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => 
 vi.mock("@/src/features/user/profile/hooks/useMusicPower", () => ({
   useMusicPower: vi.fn(),
 }));
-vi.mock("@/src/features/user/profile/hooks/useRecommendMusicPower", () => ({
-  useRecommendMusicPower: vi.fn(),
-}));
 vi.mock("@/src/features/user/profile/hooks/useUserProfile", () => ({
   useUserProfile: vi.fn(),
 }));
 vi.mock("@/src/features/user/session/hooks/useMe", () => ({
   useMe: vi.fn(),
+}));
+vi.mock("../hooks/useCurrentTrackMusicPowerVote", () => ({
+  useCurrentTrackMusicPowerVote: vi.fn(),
 }));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
   default: () => <button type="button">팔로우</button>,
@@ -39,11 +40,20 @@ const requester = {
   slug: "target-user",
   userId: 2,
 };
-const recommendMutation: Partial<ReturnType<typeof useRecommendMusicPower>> = {
-  error: null,
-  isPending: false,
-  mutate: vi.fn(),
-};
+const mutate = vi.fn();
+
+function renderPanel(
+  currentRequester: typeof requester | (typeof requester & { slug: null }) =
+    requester,
+) {
+  return render(
+    <RoomProfilePanel
+      currentRequester={currentRequester}
+      roomPassword="secret"
+      roomSlug="room"
+    />,
+  );
+}
 
 describe("RoomProfilePanel", () => {
   beforeEach(() => {
@@ -64,6 +74,7 @@ describe("RoomProfilePanel", () => {
         profileImageUrl: null,
         queuingCount: 1234,
         slug: "target-user",
+        statusMessage: "좋은 음악 같이 들어요",
       },
       isLoading: false,
     } as ReturnType<typeof useUserProfile>);
@@ -77,32 +88,86 @@ describe("RoomProfilePanel", () => {
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
         musicPower: 55,
-        recommendedByMe: false,
+        myVote: null,
         targetUserSlug: "target-user",
       },
       isLoading: false,
     } as ReturnType<typeof useMusicPower>);
-    vi.mocked(useRecommendMusicPower).mockReturnValue(
-      recommendMutation as ReturnType<typeof useRecommendMusicPower>,
-    );
+    vi.mocked(useCurrentTrackMusicPowerVote).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate,
+    } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
   });
 
-  it("방 프로필에 실제 통계와 하드코딩 이용 시간을 표시한다", () => {
-    render(<RoomProfilePanel currentRequester={requester} />);
+  it("통계와 상태 메시지, 양방향 음악력 버튼을 표시한다", () => {
+    renderPanel();
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
-    expect(screen.getByText("이용 시간")).toBeInTheDocument();
-    expect(screen.getByText("개발중입니다.")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "음악력 추천" })).toBeEnabled();
-    expect(
-      screen.getByRole("button", {
-        name: "음악력 추천 취소는 아직 지원하지 않습니다",
-      }),
-    ).toBeDisabled();
+    expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("본인 프로필에서는 추천 버튼을 숨긴다", () => {
+  it("미투표에서 UPVOTE를 보내고 선택 방향 재클릭은 DELETE 상태를 보낸다", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    expect(mutate).toHaveBeenLastCalledWith({
+      roomSlug: "room",
+      password: "secret",
+      vote: "UPVOTE",
+    });
+
+    vi.mocked(useMusicPower).mockReturnValue({
+      data: {
+        musicPower: 56,
+        myVote: "UPVOTE",
+        targetUserSlug: "target-user",
+      },
+      isLoading: false,
+    } as ReturnType<typeof useMusicPower>);
+    rerender(
+      <RoomProfilePanel
+        currentRequester={requester}
+        roomPassword="secret"
+        roomSlug="room"
+      />,
+    );
+
+    const upButton = screen.getByRole("button", { name: "음악력 올리기" });
+    expect(upButton).toHaveAttribute("aria-pressed", "true");
+    await user.click(upButton);
+    expect(mutate).toHaveBeenLastCalledWith({
+      roomSlug: "room",
+      password: "secret",
+      vote: null,
+    });
+  });
+
+  it("반대 방향 클릭은 DOWNVOTE로 교체한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useMusicPower).mockReturnValue({
+      data: {
+        musicPower: 56,
+        myVote: "UPVOTE",
+        targetUserSlug: "target-user",
+      },
+      isLoading: false,
+    } as ReturnType<typeof useMusicPower>);
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
+    expect(mutate).toHaveBeenCalledWith({
+      roomSlug: "room",
+      password: "secret",
+      vote: "DOWNVOTE",
+    });
+  });
+
+  it("본인과 게스트 신청자는 투표할 수 없다", () => {
     vi.mocked(useMe).mockReturnValue({
       data: {
         nickname: "대상",
@@ -113,23 +178,16 @@ describe("RoomProfilePanel", () => {
       isError: false,
       isLoading: false,
     } as ReturnType<typeof useMe>);
-
-    render(<RoomProfilePanel currentRequester={requester} />);
-
-    expect(screen.queryByRole("button", { name: "음악력 추천" })).not.toBeInTheDocument();
-  });
-
-  it("비로그인 또는 이미 추천한 경우 위 화살표를 비활성화한다", () => {
-    vi.mocked(useMe).mockReturnValue({
-      data: null,
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useMe>);
-    const { rerender } = render(<RoomProfilePanel currentRequester={requester} />);
+    const { rerender } = renderPanel();
     expect(
-      screen.getByRole("button", {
-        name: "로그인 후 음악력을 추천할 수 있습니다",
+      screen.getAllByRole("button", {
+        name: "본인의 음악력에는 투표할 수 없습니다",
       }),
+    ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", {
+        name: "본인의 음악력에는 투표할 수 없습니다",
+      })[0],
     ).toBeDisabled();
 
     vi.mocked(useMe).mockReturnValue({
@@ -141,51 +199,16 @@ describe("RoomProfilePanel", () => {
       isError: false,
       isLoading: false,
     } as ReturnType<typeof useMe>);
-    vi.mocked(useMusicPower).mockReturnValue({
-      data: {
-        musicPower: 55,
-        recommendedByMe: true,
-        targetUserSlug: "target-user",
-      },
-      isLoading: false,
-    } as ReturnType<typeof useMusicPower>);
-    rerender(<RoomProfilePanel currentRequester={requester} />);
-
-    expect(
-      screen.getByRole("button", { name: "이미 음악력을 추천했습니다" }),
-    ).toBeDisabled();
-  });
-
-  it("추천 상태 조회에 실패하면 위 화살표를 비활성화한다", () => {
-    vi.mocked(useMusicPower).mockReturnValue({
-      data: undefined,
-      isError: true,
-      isLoading: false,
-    } as ReturnType<typeof useMusicPower>);
-
-    render(<RoomProfilePanel currentRequester={requester} />);
-
-    expect(
-      screen.getByRole("button", {
-        name: "음악력 추천 상태를 확인할 수 없습니다",
-      }),
-    ).toBeDisabled();
-  });
-
-  it("대상 slug가 아직 없으면 준비 중 안내로 추천을 비활성화한다", () => {
-    vi.mocked(useMusicPower).mockReturnValue({
-      data: undefined,
-      isLoading: false,
-    } as ReturnType<typeof useMusicPower>);
-
-    render(
+    rerender(
       <RoomProfilePanel
-        currentRequester={{ ...requester, slug: null, userId: 3 }}
+        currentRequester={{ ...requester, slug: null }}
+        roomSlug="room"
       />,
     );
-
     expect(
-      screen.getByRole("button", { name: "추천 대상 정보를 준비 중입니다" }),
-    ).toBeDisabled();
+      screen.getAllByRole("button", {
+        name: "투표 대상은 회원 신청자만 가능합니다",
+      }),
+    ).toHaveLength(2);
   });
 });

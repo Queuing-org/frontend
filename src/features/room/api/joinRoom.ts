@@ -8,39 +8,106 @@ import {
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
 import { publishJoinRequest } from "./websocket/publishJoinRequest";
+import { publishLeaveRequest } from "./websocket/publishLeaveRequest";
 import { subscribeUserJoinEvents } from "./websocket/subscribeUserJoinEvents";
 
 export type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
 
-// STOMP 연결을 기다리는 함수
-async function waitForSocketConnected(timeoutMs = 5000) {
+type JoinRoomOptions = {
+  leaveOnAbort?: boolean;
+  signal?: AbortSignal;
+};
+
+const SOCKET_CONNECT_TIMEOUT_MS = 12_000;
+const ROOM_JOIN_TIMEOUT_MS = 8_000;
+
+function createJoinCancelledError() {
+  return new ApiError({
+    status: 499,
+    code: "room.join-cancelled",
+    message: "방 참가 요청이 취소되었습니다.",
+  });
+}
+
+// 전역 STOMP client가 재연결 중이어도 다음 onConnect까지 기다린다.
+async function waitForSocketConnected(
+  signal?: AbortSignal,
+  timeoutMs = SOCKET_CONNECT_TIMEOUT_MS,
+) {
   const client = getSocketClient();
   if (client.connected) return;
 
-  if (!client.active) {
-    connectSocket();
+  if (signal?.aborted) {
+    throw createJoinCancelledError();
   }
 
   await new Promise<void>((resolve, reject) => {
-    const startedAt = Date.now();
-    const poller = setInterval(() => {
-      if (client.connected) {
-        clearInterval(poller);
-        resolve();
-        return;
-      }
+    let settled = false;
+    let removeSocketListener = () => {};
 
-      if (Date.now() - startedAt >= timeoutMs) {
-        clearInterval(poller);
-        reject(
+    const cleanup = () => {
+      clearTimeout(timeoutId);
+      removeSocketListener();
+      signal?.removeEventListener("abort", handleAbort);
+    };
+
+    const finishResolve = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve();
+    };
+
+    const finishReject = (error: ApiError) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+
+    const handleAbort = () => {
+      finishReject(createJoinCancelledError());
+    };
+
+    const timeoutId = setTimeout(() => {
+      finishReject(
+        new ApiError({
+          status: 408,
+          code: "socket.connect-timeout",
+          message: "웹소켓 연결 시간이 초과되었습니다.",
+        }),
+      );
+    }, timeoutMs);
+
+    removeSocketListener = addSocketListener({
+      onConnect: finishResolve,
+      onStompError: (frame) => {
+        finishReject(createStompError(frame));
+      },
+    });
+    signal?.addEventListener("abort", handleAbort, { once: true });
+
+    if (client.connected) {
+      finishResolve();
+      return;
+    }
+
+    if (!client.active) {
+      try {
+        connectSocket();
+      } catch (error) {
+        finishReject(
           new ApiError({
-            status: 408,
-            code: "socket.connect-timeout",
-            message: "웹소켓 연결 시간이 초과되었습니다.",
+            status: 503,
+            code: "socket.connect-failed",
+            message:
+              error instanceof Error
+                ? error.message
+                : "웹소켓 연결을 시작하지 못했습니다.",
           }),
         );
       }
-    }, 50);
+    }
   });
 }
 
@@ -74,6 +141,7 @@ function createSocketError() {
 export async function joinRoom(
   slug: string,
   payload: JoinRoomPayload = {},
+  options: JoinRoomOptions = {},
 ): Promise<JoinRoomResult> {
   const safeSlug = normalizeRoomSlug(slug);
   if (!safeSlug) {
@@ -84,11 +152,13 @@ export async function joinRoom(
     });
   }
 
-  await waitForSocketConnected();
+  await waitForSocketConnected(options.signal);
 
   return new Promise<JoinRoomResult>((resolve, reject) => {
     let settled = false;
+    let joinPublished = false;
     let subscription: StompSubscription | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const removeSocketListener = addSocketListener({
       onStompError: (frame) => {
         finishReject(createStompError(frame), { unsubscribe: false });
@@ -101,21 +171,21 @@ export async function joinRoom(
       },
     });
 
-    const timeoutId = setTimeout(() => {
-      finishReject(
-        new ApiError({
-          status: 408,
-          code: "room.join-timeout",
-          message: "방 참가 응답 대기 시간이 초과되었습니다.",
-        }),
-      );
-    }, 8000);
+    const handleAbort = () => {
+      finishReject(createJoinCancelledError(), {
+        leave: options.leaveOnAbort ?? true,
+      });
+    };
 
-    const cleanup = (options: { unsubscribe?: boolean } = {}) => {
-      clearTimeout(timeoutId);
+    const cleanup = (cleanupOptions: { unsubscribe?: boolean } = {}) => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       removeSocketListener();
+      options.signal?.removeEventListener("abort", handleAbort);
 
-      if (!options.unsubscribe || !subscription) {
+      if (!cleanupOptions.unsubscribe || !subscription) {
         return;
       }
 
@@ -140,20 +210,39 @@ export async function joinRoom(
 
     const finishReject = (
       error: ApiError,
-      options: { unsubscribe?: boolean } = {},
+      rejectOptions: { leave?: boolean; unsubscribe?: boolean } = {},
     ) => {
       if (settled) return;
       settled = true;
-      cleanup({ unsubscribe: options.unsubscribe ?? true });
+      if (joinPublished && (rejectOptions.leave ?? true)) {
+        publishLeaveRequest(safeSlug);
+      }
+      cleanup({ unsubscribe: rejectOptions.unsubscribe ?? true });
       reject(error);
     };
 
     try {
+      if (options.signal?.aborted) {
+        finishReject(createJoinCancelledError());
+        return;
+      }
+
+      options.signal?.addEventListener("abort", handleAbort, { once: true });
       subscription = subscribeUserJoinEvents(safeSlug, {
         onJoined: finishResolve,
         onError: finishReject,
       });
       publishJoinRequest(safeSlug, payload);
+      joinPublished = true;
+      timeoutId = setTimeout(() => {
+        finishReject(
+          new ApiError({
+            status: 408,
+            code: "room.join-timeout",
+            message: "방 참가 응답 대기 시간이 초과되었습니다.",
+          }),
+        );
+      }, ROOM_JOIN_TIMEOUT_MS);
     } catch (error) {
       finishReject(
         new ApiError({

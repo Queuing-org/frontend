@@ -110,7 +110,7 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
         queryKey: playlistKeys.roomQueuePrefix(roomSlug),
       });
       void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(roomSlug),
+        queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
       });
     },
     [queryClient],

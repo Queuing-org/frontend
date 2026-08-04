@@ -9,17 +9,13 @@ import type {
 export function getBadgeCatalogItems(
   response: BadgeCatalogResponse,
 ): BadgeCatalogItem[] {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  return response.items ?? response.badges ?? [];
+  return response.badges;
 }
 
 export function getUserBadgeItems(
   response: UserBadgeList | null | undefined,
 ): UserBadge[] {
-  return response?.items ?? response?.badges ?? [];
+  return response?.badges ?? [];
 }
 
 export function getBadgeSummaryFromUserBadge(
@@ -29,21 +25,10 @@ export function getBadgeSummaryFromUserBadge(
     return null;
   }
 
-  if (userBadge.badge?.slug && userBadge.badge.name) {
-    return userBadge.badge;
-  }
-
-  if (userBadge.slug && userBadge.name) {
-    return {
-      slug: userBadge.slug,
-      name: userBadge.name,
-      description: userBadge.description,
-      imageUrl: userBadge.imageUrl,
-      iconUrl: userBadge.iconUrl,
-    };
-  }
-
-  return null;
+  return {
+    badgeCode: userBadge.badgeCode,
+    name: userBadge.name,
+  };
 }
 
 export function getRepresentativeBadge(
@@ -54,28 +39,23 @@ export function getRepresentativeBadge(
   }
 
   const representativeUserBadge = getUserBadgeItems(response).find(
-    (userBadge) => userBadge.isRepresentative,
+    (userBadge) => userBadge.representative,
   );
 
   return getBadgeSummaryFromUserBadge(representativeUserBadge);
 }
 
-export function getBadgeSlug(userBadge: UserBadge) {
-  return userBadge.badge?.slug ?? userBadge.slug ?? null;
+export function getBadgeCode(userBadge: UserBadge) {
+  return userBadge.badgeCode;
 }
 
 export function getCatalogBadgeHint(badge: BadgeCatalogItem) {
-  return badge.hint ?? badge.acquisitionHint ?? badge.condition ?? null;
+  return badge.acquisitionHint;
 }
 
 export function isCatalogBadgeAcquired(
   badge: BadgeCatalogItem,
-  acquiredBadgeSlugs: ReadonlySet<string>,
+  acquiredBadgeCodes: ReadonlySet<string>,
 ) {
-  return (
-    badge.owned === true ||
-    badge.acquired === true ||
-    badge.isAcquired === true ||
-    acquiredBadgeSlugs.has(badge.slug)
-  );
+  return badge.acquired || acquiredBadgeCodes.has(badge.badgeCode);
 }

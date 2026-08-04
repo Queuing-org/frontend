@@ -4,20 +4,23 @@ import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
-  PlaylistProtectedRequestParams,
-  RoomStateSnapshot,
+  RoomHistoryPage,
+  RoomHistoryRequestParams,
 } from "../model/types";
 
-export async function fetchRoomState({
+export async function fetchRoomHistory({
   slug,
   password,
-}: PlaylistProtectedRequestParams): Promise<RoomStateSnapshot> {
-  const res = await axiosInstance.get<ApiResponse<RoomStateSnapshot>>(
-    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/state`,
+  cursorId,
+  size = 100,
+}: RoomHistoryRequestParams): Promise<RoomHistoryPage> {
+  const { data } = await axiosInstance.get<ApiResponse<RoomHistoryPage>>(
+    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/queue-history`,
     {
+      params: { ...(cursorId != null ? { cursorId } : {}), size },
       headers: buildRoomPasswordHeaders(password),
     },
   );
 
-  return unwrapApiResponse(res.data);
+  return unwrapApiResponse(data);
 }

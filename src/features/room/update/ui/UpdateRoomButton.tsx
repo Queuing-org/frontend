@@ -41,7 +41,6 @@ export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
           initialTagSlugs={initialTagSlugs}
           initialHasPassword={roomMeta.hasPassword}
           initialMaxParticipants={roomMeta.maxParticipants ?? null}
-          initialThumbnailUrl={roomMeta.thumbnailUrl}
           onClose={() => setIsModalOpen(false)}
         />
       ) : null}

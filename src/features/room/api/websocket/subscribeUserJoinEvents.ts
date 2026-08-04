@@ -1,14 +1,15 @@
 import type { StompSubscription } from "@stomp/stompjs";
 import { ApiError } from "@/src/shared/api/api-error";
-import type {
-  RoomJoinedData,
-  WsErrorData,
-  WsEvent,
-} from "@/src/features/room/model/types";
+import type { RoomJoinedData, WsErrorData } from "@/src/features/room/model/types";
 import type { JoinRoomResult } from "../joinRoom.types";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
 
-type RoomJoinEvent = Partial<WsEvent>;
+export type RoomJoinEvent = {
+  type: "ROOM_JOINED" | "ERROR";
+  roomSlug: string;
+  timestamp: number;
+  data: unknown;
+};
 
 export type JoinHandlers = {
   onJoined: (result: JoinRoomResult) => void;
@@ -25,6 +26,50 @@ function getRoomJoinedData(data: unknown): RoomJoinedData | null {
   return data as RoomJoinedData;
 }
 
+function getWsErrorData(data: unknown): WsErrorData | null {
+  if (!data || typeof data !== "object") {
+    return null;
+  }
+
+  const candidate = data as Partial<WsErrorData>;
+  if (
+    typeof candidate.statusCode !== "number" ||
+    typeof candidate.code !== "string" ||
+    typeof candidate.message !== "string"
+  ) {
+    return null;
+  }
+
+  return candidate as WsErrorData;
+}
+
+export function parseRoomJoinEvent(body: string): RoomJoinEvent | null {
+  let candidate: unknown;
+  try {
+    candidate = JSON.parse(body) as unknown;
+  } catch {
+    return null;
+  }
+
+  if (!candidate || typeof candidate !== "object") {
+    return null;
+  }
+
+  const event = candidate as Partial<RoomJoinEvent>;
+  if (
+    (event.type !== "ROOM_JOINED" && event.type !== "ERROR") ||
+    typeof event.roomSlug !== "string" ||
+    !event.roomSlug.trim() ||
+    typeof event.timestamp !== "number" ||
+    !Number.isFinite(event.timestamp) ||
+    !("data" in event)
+  ) {
+    return null;
+  }
+
+  return event as RoomJoinEvent;
+}
+
 // 유저 전용 토픽에서 현재 방 join 결과만 골라서 전달한다.
 export function subscribeUserJoinEvents(
   safeSlug: string,
@@ -35,29 +80,25 @@ export function subscribeUserJoinEvents(
   return client.subscribe(USER_EVENTS_DESTINATION, ({ body }) => {
     if (!body) return;
 
-    let event: RoomJoinEvent;
-    try {
-      event = JSON.parse(body) as RoomJoinEvent;
-    } catch {
-      return;
-    }
-
-    const eventRoomSlug = event.roomSlug ?? safeSlug;
-    if (eventRoomSlug !== safeSlug) {
+    const event = parseRoomJoinEvent(body);
+    if (!event || event.roomSlug !== safeSlug) {
       return;
     }
 
     if (event.type === "ROOM_JOINED") {
       handlers.onJoined({
-        roomSlug: eventRoomSlug,
-        timestamp: event.timestamp ?? Date.now(),
+        roomSlug: event.roomSlug,
+        timestamp: event.timestamp,
         data: getRoomJoinedData(event.data),
       });
       return;
     }
 
-    if (event.type === "ERROR" || event.type === "ROOM_JOIN_FAILED") {
-      const errorData = event.data as WsErrorData;
+    if (event.type === "ERROR") {
+      const errorData = getWsErrorData(event.data);
+      if (!errorData) {
+        return;
+      }
       handlers.onError(
         new ApiError({
           status: errorData.statusCode,

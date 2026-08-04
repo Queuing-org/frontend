@@ -11,7 +11,6 @@ export function useRoomMeta(slug: string) {
   return useSuspenseQuery<RoomMeta, ApiError>({
     queryKey: roomKeys.meta(slug),
     queryFn: () => fetchRoomMeta(slug),
-    retry: false,
   });
 }
 
@@ -22,6 +21,5 @@ export function useRoomMetaQuery(slug: string | null | undefined) {
     queryKey: roomKeys.meta(normalizedSlug || null),
     queryFn: () => fetchRoomMeta(normalizedSlug),
     enabled: normalizedSlug.length > 0,
-    retry: false,
   });
 }

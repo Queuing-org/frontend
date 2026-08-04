@@ -3,7 +3,6 @@
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
-import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -15,7 +14,6 @@ type EditRoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
-  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -26,7 +24,6 @@ export default function EditRoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
-  initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
   const form = useEditRoomForm({
@@ -64,21 +61,6 @@ export default function EditRoomFormModal({
           <h2 id="room-edit-modal-title" className={styles.modeBadge}>
             EDIT
           </h2>
-
-          <RoomThumbnailUploadField
-            actionLabel="THUMBNAIL"
-            currentImageUrl={initialThumbnailUrl}
-            disabled={form.isSubmitting}
-            errorMessage={form.thumbnailErrorMessage}
-            fileName={form.thumbnailFileName}
-            inputId="edit-room-thumbnail"
-            isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
-            previewUrl={form.thumbnailPreviewUrl}
-            variant="edit"
-            onClearSelection={form.clearThumbnailSelection}
-            onFileChange={form.updateThumbnailFiles}
-            onPreviewError={form.onThumbnailPreviewError}
-          />
 
           <label className={styles.field}>
             <span className={styles.label}>큐 이름</span>
@@ -252,13 +234,6 @@ export default function EditRoomFormModal({
               수정 실패: ({form.submitError.status}) {form.submitError.message}
             </p>
           ) : null}
-          {form.thumbnailSubmitError ? (
-            <p className={styles.errorText}>
-              썸네일 업로드 실패: ({form.thumbnailSubmitError.status}){" "}
-              {form.thumbnailSubmitError.message}
-            </p>
-          ) : null}
-
           <button
             type="submit"
             className={styles.submitButton}

@@ -2,14 +2,15 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deleteRoomQueueEntries } from "../api/deleteRoomQueueEntries";
-import type {
-  DeleteRoomQueueEntriesParams,
-  RoomQueueResult,
-} from "./types";
+import type { DeleteRoomQueueEntriesParams } from "./types";
 import type { ApiError } from "@/src/shared/api/api-error";
+import {
+  removeQueueEntries,
+  type RoomQueueData,
+} from "./queueOrderOptimistic";
 import { playlistKeys } from "./queryKeys";
 
-type RoomQueueSnapshot = [readonly unknown[], RoomQueueResult | undefined];
+type RoomQueueSnapshot = [readonly unknown[], RoomQueueData | undefined];
 
 export function useDeleteRoomQueueEntries() {
   const queryClient = useQueryClient();
@@ -24,15 +25,14 @@ export function useDeleteRoomQueueEntries() {
       });
 
       const previousRoomQueueSnapshots =
-        queryClient.getQueriesData<RoomQueueResult>({
+        queryClient.getQueriesData<RoomQueueData>({
           queryKey: playlistKeys.roomQueuePrefix(slug),
         });
 
       const entryIdSet = new Set(entryIds);
-      queryClient.setQueriesData<RoomQueueResult>(
+      queryClient.setQueriesData<RoomQueueData>(
         { queryKey: playlistKeys.roomQueuePrefix(slug) },
-        (currentEntries) =>
-          currentEntries?.filter((entry) => !entryIdSet.has(entry.entryId)),
+        (currentData) => removeQueueEntries(currentData, entryIdSet),
       );
 
       return { previousRoomQueueSnapshots };
@@ -47,11 +47,11 @@ export function useDeleteRoomQueueEntries() {
       });
     },
     onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({
+      await queryClient.resetQueries({
         queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(variables.slug),
+        queryKey: playlistKeys.roomPlaybackPrefix(variables.slug),
       });
     },
   });

@@ -23,11 +23,6 @@ export type RoomsQueryParams = Partial<RoomListQueryParams>;
 
 type RoomsPageParam =
   | {
-      type: "legacy";
-      lastId: number;
-    }
-  | {
-      type: "cursor";
       cursorLastCreatedAt?: string;
       cursorLastId?: number;
       cursorLastParticipantCount?: number;
@@ -67,10 +62,6 @@ export function normalizeRoomsQueryParams(
   };
 }
 
-function isLegacyPaginationMode(params: RoomListQueryParams) {
-  return params.createdOrder === "NEW" && params.participantOrder === "RANDOM";
-}
-
 function hasCursorValue(value: unknown): value is number | string {
   if (typeof value === "number") {
     return Number.isFinite(value);
@@ -81,7 +72,6 @@ function hasCursorValue(value: unknown): value is number | string {
 
 function getCursorPageParam(lastPage: RoomsResponse): RoomsPageParam {
   const cursorPageParam = {
-    type: "cursor" as const,
     ...(hasCursorValue(lastPage.nextCursorSeed)
       ? { cursorSeed: lastPage.nextCursorSeed }
       : {}),
@@ -99,25 +89,16 @@ function getCursorPageParam(lastPage: RoomsResponse): RoomsPageParam {
       : {}),
   };
 
-  return Object.keys(cursorPageParam).length > 1
+  return Object.keys(cursorPageParam).length > 0
     ? cursorPageParam
     : undefined;
 }
 
 function getNextRoomsPageParam(
   lastPage: RoomsResponse,
-  params: RoomListQueryParams,
 ): RoomsPageParam {
   if (!lastPage.hasNext) {
     return undefined;
-  }
-
-  if (isLegacyPaginationMode(params)) {
-    const lastRoomId = lastPage.rooms.at(-1)?.id;
-
-    return typeof lastRoomId === "number"
-      ? { type: "legacy", lastId: lastRoomId }
-      : undefined;
   }
 
   return getCursorPageParam(lastPage);
@@ -126,12 +107,6 @@ function getNextRoomsPageParam(
 function getPageFetchParams(pageParam: RoomsPageParam): FetchRoomsParams {
   if (!pageParam) {
     return {};
-  }
-
-  if (pageParam.type === "legacy") {
-    return {
-      lastId: pageParam.lastId,
-    };
   }
 
   return {
@@ -163,7 +138,6 @@ export function useRoomsQuery(params: RoomsQueryParams = {}) {
       }),
     initialPageParam: undefined,
     getNextPageParam: (lastPage) =>
-      getNextRoomsPageParam(lastPage, normalizedParams),
-    retry: false,
+      getNextRoomsPageParam(lastPage),
   });
 }

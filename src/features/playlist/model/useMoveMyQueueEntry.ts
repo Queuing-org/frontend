@@ -2,11 +2,12 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { moveMyQueueEntry } from "../api/moveMyQueueEntry";
-import type { MoveMyQueueEntryParams, RoomQueueResult } from "./types";
+import type { MoveMyQueueEntryParams } from "./types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import {
   applyPendingEntryOrder,
   type QueueOrderSnapshot,
+  type RoomQueueData,
 } from "./queueOrderOptimistic";
 import { playlistKeys } from "./queryKeys";
 
@@ -33,11 +34,11 @@ export function useMoveMyQueueEntry() {
       });
 
       const previousRoomQueueSnapshots =
-        queryClient.getQueriesData<RoomQueueResult>({
+        queryClient.getQueriesData<RoomQueueData>({
           queryKey: playlistKeys.roomQueuePrefix(slug),
         });
 
-      queryClient.setQueriesData<RoomQueueResult>(
+      queryClient.setQueriesData<RoomQueueData>(
         { queryKey: playlistKeys.roomQueuePrefix(slug) },
         (currentEntries) =>
           applyPendingEntryOrder(currentEntries, orderedPendingEntryIds),
@@ -55,11 +56,11 @@ export function useMoveMyQueueEntry() {
       });
     },
     onSuccess: async (_result, variables) => {
-      await queryClient.invalidateQueries({
+      await queryClient.resetQueries({
         queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
       await queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomStatePrefix(variables.slug),
+        queryKey: playlistKeys.roomPlaybackPrefix(variables.slug),
       });
     },
   });

@@ -11,6 +11,5 @@ export function useUserProfile(userSlug: string | null | undefined) {
     queryKey: userKeys.profile(userSlug),
     queryFn: () => fetchUserProfile(userSlug!),
     enabled: Boolean(userSlug),
-    retry: false,
   });
 }

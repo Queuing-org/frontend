@@ -29,23 +29,17 @@ export type RoomMeta = {
 };
 
 export type ThumbnailUrls = {
-  thumb256?: string | null;
-  thumb384?: string | null;
-  thumb640?: string | null;
-  thumb828?: string | null;
-  thumb1200?: string | null;
-  original?: string | null;
-  small?: string | null;
-  medium?: string | null;
-  large?: string | null;
-  [key: string]: string | null | undefined;
+  thumb256: string;
+  thumb384: string;
+  thumb640: string;
+  thumb828: string;
+  thumb1200: string;
 };
 
 export type RoomOwner = {
   slug: string;
-  userId?: number | null;
   nickname: string;
-  profileImageUrl?: string | null;
+  profileImageUrl: string | null;
 };
 
 export type RoomsResponse = {
@@ -87,8 +81,6 @@ export type ChatMessage = {
   messageType: "TEXT" | string;
   content: string;
   senderSlug: string | null;
-  // Legacy compatibility: current public chat contract uses senderSlug.
-  senderId?: number | null;
   senderNickname: string;
   senderProfileImageUrl: string | null;
   sentAt: number;
@@ -102,13 +94,11 @@ export type ChatHistoryResponse = {
 
 export type RoomJoinedData = {
   participant: {
-    participantType?: "USER" | "GUEST" | (string & {});
-    participantId?: string | null;
-    userSlug?: string | null;
-    slug?: string | null;
-    userId?: number | null;
+    participantType: "USER" | "GUEST";
+    participantId: string;
+    userSlug: string | null;
     nickname: string;
-    profileImageUrl?: string | null;
+    profileImageUrl: string | null;
   };
   recentChatMessages: ChatMessage[];
 };

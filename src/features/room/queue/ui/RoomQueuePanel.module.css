@@ -46,6 +46,25 @@
   text-align: center;
 }
 
+.loadMoreButton {
+  flex-shrink: 0;
+  margin: 8px 16px 0;
+  padding: 10px 12px;
+  border: 1px solid #dedfe3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #555b66;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.loadMoreButton:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
 .error {
   flex-shrink: 0;
   padding: 8px 12px;

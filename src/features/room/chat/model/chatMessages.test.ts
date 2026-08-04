@@ -19,7 +19,6 @@ function message(overrides: Partial<ChatMessage>): ChatMessage {
     messageId: 1,
     messageKey: "message-key",
     messageType: "TEXT",
-    senderId: 2,
     senderNickname: "대상",
     senderProfileImageUrl: null,
     senderSlug: "target-user",
@@ -32,7 +31,7 @@ describe("getChatMessageManagementActions", () => {
   it("본인 메시지에는 관리 액션을 제공하지 않는다", () => {
     expect(
       getChatMessageManagementActions(
-        message({ senderId: 1, senderNickname: "나", senderSlug: "me" }),
+        message({ senderNickname: "나", senderSlug: "me" }),
         currentUser,
       ),
     ).toEqual([]);
@@ -52,7 +51,7 @@ describe("getChatMessageManagementActions", () => {
   it("비회원 메시지는 messageKey가 있을 때 신고만 제공한다", () => {
     expect(
       getChatMessageManagementActions(
-        message({ senderId: null, senderSlug: null }),
+        message({ senderSlug: null }),
         currentUser,
       ),
     ).toEqual(["report"]);

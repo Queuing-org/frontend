@@ -22,6 +22,8 @@ type RoomQueueListSectionProps = {
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
+  hasNextAllQueuePage: boolean;
+  hasNextMyQueuePage: boolean;
   myEntries: PlaylistEntry[];
   onDeleteMyEntry: (entryId: string) => void;
   onDeleteRoomEntry: (entryId: string) => void;
@@ -40,6 +42,8 @@ export default function RoomQueueListSection({
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
+  hasNextAllQueuePage,
+  hasNextMyQueuePage,
   myEntries,
   onDeleteMyEntry,
   onDeleteRoomEntry,
@@ -54,6 +58,8 @@ export default function RoomQueueListSection({
         entries={myEntries}
         isDeletePending={isDeleteMyPending}
         isMovePending={isMoveMyPending}
+        hasUnloadedEntries={hasNextMyQueuePage}
+        moveMode="self"
         onDelete={onDeleteMyEntry}
         onMove={onMoveMyEntry}
       />
@@ -68,6 +74,8 @@ export default function RoomQueueListSection({
         entries={allEntries}
         isDeletePending={isDeleteRoomPending}
         isMovePending={isMoveRoomPending}
+        hasUnloadedEntries={hasNextAllQueuePage}
+        moveMode="owner"
         onDelete={onDeleteRoomEntry}
         onMove={onMoveRoomEntry}
       />

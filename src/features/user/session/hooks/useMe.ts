@@ -11,6 +11,5 @@ export function useMe() {
     queryKey: userKeys.me(),
     queryFn: fetchMe,
     staleTime: 0,
-    retry: false,
   });
 }

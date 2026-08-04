@@ -1,7 +1,7 @@
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 
-export type QueueTab = "all" | "mine";
+export type QueueTab = "all" | "mine" | "history";
 export type QueueEntryStatusTone = "active" | "played" | "queued" | "skipped";
 
 export function formatQueueDuration(durationMs: number) {
@@ -35,6 +35,26 @@ export function isPendingQueueEntry(entry: PlaylistEntry) {
   return !entry.status.isActive && !entry.status.isPlayed && !entry.status.skipped;
 }
 
+export function getMovablePersonalQueueEntryIds(entries: PlaylistEntry[]) {
+  return entries
+    .filter(
+      (entry) =>
+        isPendingQueueEntry(entry) && !entry.status.ownerOrderLocked,
+    )
+    .map((entry) => entry.entryId);
+}
+
+export function isValidPersonalQueueMove(
+  movableEntryIds: ReadonlySet<string>,
+  movedEntryId: string,
+  beforeEntryId: string | null,
+) {
+  return (
+    movableEntryIds.has(movedEntryId) &&
+    (beforeEntryId === null || movableEntryIds.has(beforeEntryId))
+  );
+}
+
 export function isEntryRequestedByUser(
   entry: PlaylistEntry,
   currentUser: User | null | undefined,
@@ -44,16 +64,5 @@ export function isEntryRequestedByUser(
   }
 
   const requesterSlug = entry.addedBy.slug?.trim();
-  if (requesterSlug) {
-    return requesterSlug === currentUser.slug;
-  }
-
-  if (
-    typeof currentUser.userId === "number" &&
-    typeof entry.addedBy.userId === "number"
-  ) {
-    return entry.addedBy.userId === currentUser.userId;
-  }
-
-  return entry.addedBy.nickname === currentUser.nickname;
+  return Boolean(requesterSlug && requesterSlug === currentUser.slug);
 }

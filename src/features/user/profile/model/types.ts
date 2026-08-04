@@ -3,6 +3,7 @@ import type { BadgeSummary } from "@/src/features/badge/model/types";
 export type UpdateMePayload = {
   nickname?: string;
   profileImageUrl?: string | null;
+  statusMessage?: string;
 };
 
 export type UserProfile = {
@@ -10,13 +11,16 @@ export type UserProfile = {
   nickname: string;
   slug: string;
   profileImageUrl: string | null;
+  statusMessage?: string | null;
   representativeBadge?: BadgeSummary | null;
   musicPower?: number;
   queuingCount?: number;
 };
 
+export type MusicPowerVote = "UPVOTE" | "DOWNVOTE";
+
 export type MusicPowerResponse = {
   musicPower: number;
-  recommendedByMe: boolean;
+  myVote: MusicPowerVote | null;
   targetUserSlug: string;
 };

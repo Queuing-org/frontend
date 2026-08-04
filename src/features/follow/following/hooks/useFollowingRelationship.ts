@@ -20,6 +20,5 @@ export function useFollowingRelationship(targetSlug: string | null) {
       }),
     select: (data) => data.items.some((user) => user.slug === targetSlug),
     enabled: Boolean(targetSlug),
-    retry: false,
   });
 }

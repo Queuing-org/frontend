@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
+import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
+import { useRoomHistory } from "@/src/features/playlist/model/useRoomHistory";
 import { useMoveMyQueueEntry } from "@/src/features/playlist/model/useMoveMyQueueEntry";
 import { useMoveRoomQueueEntry } from "@/src/features/playlist/model/useMoveRoomQueueEntry";
 import { useDeleteMyQueueEntry } from "@/src/features/playlist/model/useDeleteMyQueueEntry";
@@ -12,7 +15,9 @@ import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   isEntryRequestedByUser,
+  getMovablePersonalQueueEntryIds,
   isPendingQueueEntry,
+  isValidPersonalQueueMove,
   type QueueTab,
 } from "../model/roomQueue";
 
@@ -30,6 +35,17 @@ type MovePayload = {
   orderedPendingEntryIds: string[];
 };
 
+function getQueueErrorMessage(error: unknown) {
+  if (
+    error instanceof ApiError &&
+    error.code === "room.queue-mutation-conflict"
+  ) {
+    return "";
+  }
+
+  return error instanceof Error ? error.message : "";
+}
+
 export function useRoomQueuePanel({
   currentUser,
   isCurrentUserLoading,
@@ -40,22 +56,39 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const [moveErrorMessage, setMoveErrorMessage] = useState("");
   const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
-  const { data: entries, isRefetching } = useRoomQueue(
+  const allQueueQuery = useRoomQueue(roomSlug, roomPassword);
+  const {
+    data: myQueueData,
+    error: myQueueError,
+    fetchNextQueuePage: fetchNextMyQueuePage,
+    hasNextPage: hasNextMyQueuePage,
+    isFetchingNextPage: isFetchingNextMyQueuePage,
+    isLoading: isMyQueueLoading,
+    isRefetching: isMyRefetching,
+  } = useMyRoomQueue(roomSlug, roomPassword, Boolean(currentUser));
+  const historyQuery = useRoomHistory(
     roomSlug,
     roomPassword,
-    0,
-    200,
+    activeTab === "history",
   );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
   const deleteMyQueueEntry = useDeleteMyQueueEntry();
   const deleteRoomQueueEntries = useDeleteRoomQueueEntries();
 
-  const allEntries = entries;
+  const queueErrorMessage =
+    activeTab === "all"
+      ? getQueueErrorMessage(allQueueQuery.error)
+      : activeTab === "mine"
+        ? getQueueErrorMessage(myQueueError)
+        : "";
+
+  const allEntries = allQueueQuery.data.pages.flatMap((page) => page.items);
+  const allPendingCount =
+    allQueueQuery.data.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
-  const myEntries = allEntries.filter((entry) =>
-    isEntryRequestedByUser(entry, currentUser),
-  );
+  const myEntries = myQueueData?.pages.flatMap((page) => page.items) ?? [];
+  const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -65,11 +98,15 @@ export function useRoomQueuePanel({
   if (activeTab === "mine") {
     if (isCurrentUserLoading) {
       emptyMessage = "내 신청곡 정보를 확인하는 중입니다.";
+    } else if (isMyQueueLoading) {
+      emptyMessage = "내 신청곡을 불러오는 중입니다.";
     } else if (!currentUser) {
       emptyMessage = "내 신청곡을 확인할 수 없습니다.";
     } else {
       emptyMessage = "내가 신청한 곡이 아직 없습니다.";
     }
+  } else if (activeTab === "history") {
+    emptyMessage = "아직 지난 곡이 없습니다.";
   }
 
   const handleDeleteRoomEntry = (entryId: string) => {
@@ -138,11 +175,26 @@ export function useRoomQueuePanel({
     orderedPendingEntryIds,
   }: MovePayload) => {
     setMoveErrorMessage("");
+    const movableEntryIds = getMovablePersonalQueueEntryIds(myEntries);
+    const movableEntryIdSet = new Set(movableEntryIds);
+    if (!isValidPersonalQueueMove(
+      movableEntryIdSet,
+      movedEntryId,
+      beforeEntryId,
+    )) {
+      setMoveErrorMessage(
+        "방장이 순서를 지정한 곡은 변경할 수 없어요.",
+      );
+      return;
+    }
+
     moveMyQueueEntry.mutate(
       {
         beforeEntryId,
         movedEntryId,
-        orderedPendingEntryIds,
+        orderedPendingEntryIds: orderedPendingEntryIds.filter((entryId) =>
+          movableEntryIdSet.has(entryId),
+        ),
         password: roomPassword,
         slug: roomSlug,
       },
@@ -159,6 +211,7 @@ export function useRoomQueuePanel({
   return {
     activeTab,
     allEntries,
+    allPendingCount,
     canDeleteEntry,
     canDeleteEntryAsOwner,
     deleteErrorMessage,
@@ -169,12 +222,32 @@ export function useRoomQueuePanel({
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
+    hasNextHistoryPage: historyQuery.hasNextPage,
+    hasNextAllQueuePage: allQueueQuery.hasNextPage,
+    hasNextMyQueuePage,
+    historyEntries:
+      historyQuery.data?.flatMap((page) => page.items) ?? [],
+    historyErrorMessage: historyQuery.error?.message ?? "",
+    isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
     isOwner,
-    isRefetching,
+    isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
+    isFetchingNextMyQueuePage,
+    isRefetching: allQueueQuery.isRefetching || isMyRefetching,
     moveErrorMessage,
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,
+    myPendingCount,
+    queueErrorMessage,
+    loadNextAllQueuePage: () => {
+      void allQueueQuery.fetchNextQueuePage();
+    },
+    loadNextMyQueuePage: () => {
+      void fetchNextMyQueuePage();
+    },
+    loadNextHistoryPage: () => {
+      void historyQuery.fetchNextPage();
+    },
     setActiveTab,
   };
 }
