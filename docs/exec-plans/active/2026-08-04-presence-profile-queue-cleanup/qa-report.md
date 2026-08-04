@@ -117,6 +117,7 @@
 - full: 56 files / 140 tests pass
 - `npm run lint`, `npm run build`, `git diff --check`: pass
 - 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.
+- v2 교체 commit `50a64e9`의 GitHub Actions, Vercel, CodeRabbit이 모두 통과했다.
 
 ## Recent V2 Thumbnail Replacement QA
 

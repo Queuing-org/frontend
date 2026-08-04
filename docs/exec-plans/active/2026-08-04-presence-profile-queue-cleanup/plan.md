@@ -107,9 +107,9 @@
 - [x] 썸네일 교체 targeted/full QA
 - [x] 썸네일 교체 commit/push와 새 Draft PR 생성
 - [x] 기본 썸네일 surface 불일치 수정과 회귀 테스트
-- [ ] 불일치 수정 QA, commit/push, PR #33 checks 재확인
+- [x] 불일치 수정 QA, commit/push, PR #33 checks 재확인
 - [x] 최근 다운로드 v2 PNG 10장 재교체 및 무결성 검증
-- [ ] 이미지 재교체 QA, commit/push, PR #33 checks 재확인
+- [x] 이미지 재교체 QA, commit/push, PR #33 checks 재확인
 
 ## Residual Risk
 
