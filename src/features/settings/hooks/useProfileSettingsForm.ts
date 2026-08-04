@@ -6,6 +6,8 @@ import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
 import type { UpdateMePayload } from "@/src/features/user/profile/model/types";
 
 export const STATUS_MESSAGE_MAX_LENGTH = 255;
+export const NICKNAME_MIN_LENGTH = 2;
+export const NICKNAME_MAX_LENGTH = 20;
 
 export function useProfileSettingsForm() {
   const [nicknameDraft, setNicknameDraft] = useState<string | null>(null);
@@ -26,12 +28,18 @@ export function useProfileSettingsForm() {
   const nickname = nicknameDraft ?? currentNickname;
   const statusMessage = statusMessageDraft ?? currentStatusMessage;
   const trimmedNickname = nickname.trim();
-  const canUpdateProfile =
+  const isNicknameValid =
+    trimmedNickname.length >= NICKNAME_MIN_LENGTH &&
+    trimmedNickname.length <= NICKNAME_MAX_LENGTH;
+  const canUpdateNickname =
     Boolean(me) &&
-    trimmedNickname.length > 0 &&
-    (trimmedNickname !== currentNickname ||
-      (statusMessageDraft !== null &&
-        statusMessage !== currentStatusMessage)) &&
+    isNicknameValid &&
+    trimmedNickname !== currentNickname &&
+    !isUpdatingProfile;
+  const canUpdateStatusMessage =
+    Boolean(me) &&
+    statusMessageDraft !== null &&
+    statusMessage !== currentStatusMessage &&
     !isUpdatingProfile;
 
   const updateNicknameDraft = (value: string) => {
@@ -48,43 +56,52 @@ export function useProfileSettingsForm() {
     resetUpdateMe();
   };
 
-  const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleNicknameSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!me || !trimmedNickname) {
+    if (!me || !canUpdateNickname) {
       return;
     }
 
-    const payload: UpdateMePayload = {};
-    if (trimmedNickname !== currentNickname) {
-      payload.nickname = trimmedNickname;
-    }
-    if (
-      statusMessageDraft !== null &&
-      statusMessage !== currentStatusMessage
-    ) {
-      payload.statusMessage = statusMessage;
-    }
+    updateMe(
+      { nickname: trimmedNickname },
+      {
+        onSuccess: () => {
+          setNicknameDraft(null);
+          setSuccessMessage("사용자 이름이 변경되었습니다.");
+        },
+      },
+    );
+  };
 
-    if (Object.keys(payload).length === 0) {
+  const handleStatusMessageSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!me || !canUpdateStatusMessage) {
       return;
     }
+
+    const payload: UpdateMePayload = {
+      nickname: currentNickname,
+      statusMessage,
+    };
 
     updateMe(
       payload,
       {
         onSuccess: () => {
-          setNicknameDraft(null);
           setStatusMessageDraft(null);
-          setSuccessMessage("프로필이 변경되었습니다.");
+          setSuccessMessage("한 줄 메시지가 변경되었습니다.");
         },
       },
     );
   };
 
   return {
-    canUpdateProfile,
-    handleProfileSubmit,
+    canUpdateNickname,
+    canUpdateStatusMessage,
+    handleNicknameSubmit,
+    handleStatusMessageSubmit,
     hasProfile: Boolean(me),
     isMeError,
     isMeLoading,

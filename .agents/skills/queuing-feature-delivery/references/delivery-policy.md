@@ -1,6 +1,14 @@
 # Feature Delivery Policy
 
-## Branch Naming
+## Branch Selection
+
+Use the shared `dev` branch for normal feature, fix, refactor, and maintenance delivery. Do not create a per-feature branch unless the user explicitly requests one.
+
+- If `dev` does not exist locally or remotely, create it once from the latest remote default branch.
+- If work already has a published PR, finish that review cycle on its existing head branch rather than moving it to `dev`.
+- Do not implement directly on the remote default branch.
+
+When the user explicitly requests a scoped branch, choose its name from the request:
 
 Choose the prefix from the request:
 

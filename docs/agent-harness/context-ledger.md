@@ -1,6 +1,6 @@
 # Queuing Context Ledger
 
-Last refreshed: 2026-07-12
+Last refreshed: 2026-08-04
 
 ## Purpose
 
@@ -34,6 +34,7 @@ For simple one-file fixes, `AGENTS.md` plus direct code inspection is enough.
 - Server state is managed through TanStack Query.
 - The highest-risk boundary is API payload shape -> hook -> UI state -> query invalidation.
 - Modal, room, queue, websocket, password, and thumbnail flows need explicit error and loading paths.
+- Ongoing development uses the shared `dev` branch. Do not create per-feature branches unless explicitly requested; complete already-published PRs on their existing head branches.
 
 ## Harness Context
 

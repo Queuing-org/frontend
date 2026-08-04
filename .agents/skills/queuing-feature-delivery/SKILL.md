@@ -22,7 +22,7 @@ Run a bounded delivery pipeline from request to draft PR. Read `references/deliv
    - If unrelated changes are present, stop and ask which files belong to this delivery.
    - If all existing changes are explicitly in scope, preserve them and create the delivery branch without stashing or resetting.
 3. Create or resume `docs/exec-plans/active/YYYY-MM-DD-short-slug/` with `plan.md` and `delivery-state.md`.
-4. Create the branch named by the policy. Do not implement feature work directly on the default branch.
+4. Switch to or create the delivery branch selected by the policy. The repository default is the shared `dev` branch; use a scoped branch only when the user explicitly requests one. Do not implement feature work directly on the default branch.
 5. Classify boundaries and record `selected_skills` before editing.
    - Use `queuing-orchestrator` for complex or cross-boundary work.
    - Use `queuing-api-boundary` for API, payload, hook, type, header, or cache work.
@@ -55,7 +55,7 @@ Run a bounded delivery pipeline from request to draft PR. Read `references/deliv
 
 ## Outputs
 
-- scoped feature branch and intentional commit
+- shared `dev` branch or explicitly requested scoped branch, plus intentional commits
 - active execution-plan artifacts and QA evidence
 - draft pull request using the repository template
 - delivery-state update with branch, PR, CI state, and next action

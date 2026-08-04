@@ -12,7 +12,8 @@ Most project risk is at API/UI/state boundaries: API payload shape, React Query 
 
 - Use TanStack Query for server state and invalidate every query affected by a mutation.
 - Use local component state for transient UI state unless the state must be shared across screens.
-- For feature, fix, or refactor requests intended for repository delivery, use `.agents/skills/queuing-feature-delivery/SKILL.md`; it owns the branch, specialist routing, QA, commit, push, and draft PR flow. Skip Git/GitHub delivery only when the user explicitly requests local-only work.
+- For feature, fix, or refactor requests intended for repository delivery, use `.agents/skills/queuing-feature-delivery/SKILL.md`; it owns specialist routing, QA, commit, push, and draft PR flow. Skip Git/GitHub delivery only when the user explicitly requests local-only work.
+- Use the shared `dev` branch for ongoing development. Do not create per-feature branches unless the user explicitly asks for one. If `dev` does not exist, create it once from the latest remote default branch. Finish an already-published PR on its existing head branch instead of moving it mid-review.
 - For an existing PR with failing checks or review feedback, use `.agents/skills/queuing-pr-review-cycle/SKILL.md`.
 - For implementation, review, or refactoring, read `ARCHITECTURE.md` before editing and keep its documented boundaries in sync with structural changes.
 - For complex feature work, API troubleshooting, or repeated QA flows, start from `.agents/skills/queuing-orchestrator/SKILL.md`.

@@ -43,13 +43,13 @@ describe("프로필 상태 메시지 폼", () => {
 
     act(() => result.current.updateStatusMessageDraft(""));
     act(() =>
-      result.current.handleProfileSubmit({
+      result.current.handleStatusMessageSubmit({
         preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>),
     );
 
     expect(mutate).toHaveBeenCalledWith(
-      { statusMessage: "" },
+      { nickname: "민지", statusMessage: "" },
       expect.any(Object),
     );
   });
@@ -59,7 +59,7 @@ describe("프로필 상태 메시지 폼", () => {
 
     act(() => result.current.updateNicknameDraft("새 닉네임"));
     act(() =>
-      result.current.handleProfileSubmit({
+      result.current.handleNicknameSubmit({
         preventDefault: vi.fn(),
       } as unknown as React.FormEvent<HTMLFormElement>),
     );
@@ -68,6 +68,41 @@ describe("프로필 상태 메시지 폼", () => {
       { nickname: "새 닉네임" },
       expect.any(Object),
     );
+  });
+
+  it("닉네임과 한 줄 메시지의 수정 가능 상태를 독립적으로 계산한다", () => {
+    const { result } = renderHook(() => useProfileSettingsForm());
+
+    expect(result.current.canUpdateNickname).toBe(false);
+    expect(result.current.canUpdateStatusMessage).toBe(false);
+
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+
+    expect(result.current.canUpdateNickname).toBe(false);
+    expect(result.current.canUpdateStatusMessage).toBe(true);
+  });
+
+  it("한 줄 메시지 저장은 미저장 닉네임 draft를 전송하거나 초기화하지 않는다", () => {
+    const { result } = renderHook(() => useProfileSettingsForm());
+
+    act(() => result.current.updateNicknameDraft("미저장 닉네임"));
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    act(() =>
+      result.current.handleStatusMessageSubmit({
+        preventDefault: vi.fn(),
+      } as unknown as React.FormEvent<HTMLFormElement>),
+    );
+
+    expect(mutate).toHaveBeenCalledWith(
+      { nickname: "민지", statusMessage: "새 메시지" },
+      expect.any(Object),
+    );
+
+    const options = mutate.mock.calls[0][1] as { onSuccess: () => void };
+    act(() => options.onSuccess());
+
+    expect(result.current.nickname).toBe("미저장 닉네임");
+    expect(result.current.statusMessage).toBe("기존 메시지");
   });
 
   it("줄바꿈을 제거하고 255자로 제한한다", () => {

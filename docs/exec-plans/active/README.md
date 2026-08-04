@@ -1,5 +1,6 @@
 # Active Execution Plans
 
+- `2026-08-04-settings-badge-catalog`: ci-pending — Draft PR #31, 내 칭호 및 프로필 수정 계약 정정 push 완료
 - `2026-07-12-profile-stats-moderation`: ci-pending — PR #26 리뷰 대응 완료, CodeRabbit 재검토 대기
 - `2026-07-25-preupload-room-thumbnail`: ready — PR #27 태그 최대 3개 후속 변경 및 CI 통과, human review 대기
 - `2026-07-29-backend-core-v26-7-1`: ci-pending — Draft PR #28, backend-core v26.7.1 전체 프론트 마이그레이션
