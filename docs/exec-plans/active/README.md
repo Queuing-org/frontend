@@ -1,5 +1,6 @@
 # Active Execution Plans
 
+- `2026-08-04-presence-profile-queue-cleanup`: publishing — 팔로우 presence, 음악력, 설정 칭호, queue UI 정리 및 local QA pass
 - `2026-08-04-settings-badge-catalog`: ci-pending — Draft PR #31, 내 칭호 및 프로필 수정 계약 정정 push 완료
 - `2026-07-12-profile-stats-moderation`: ci-pending — PR #26 리뷰 대응 완료, CodeRabbit 재검토 대기
 - `2026-07-25-preupload-room-thumbnail`: ready — PR #27 태그 최대 3개 후속 변경 및 CI 통과, human review 대기
