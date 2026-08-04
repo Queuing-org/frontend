@@ -8,6 +8,8 @@ export const followKeys = {
   followersRoot: () => ["follows", "followers"] as const,
   followings: (lastId?: number, size?: number) =>
     ["follows", "followings", lastId ?? null, size ?? null] as const,
+  followingRelationships: () =>
+    ["follows", "relationships", "following"] as const,
   followingsRoot: () => ["follows", "followings"] as const,
   unfollow: () => ["follows", "unfollow"] as const,
   unblock: () => ["follows", "unblock"] as const,

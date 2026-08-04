@@ -48,6 +48,7 @@
 8. `docs(delivery): 후속 UI와 차단 기능 검증 기록`
 9. `feat(room): 긴 곡 제목 순환과 재생 애니메이션 추가`
 10. `style(queue): 현재 재생 썸네일 오버레이 조정`
+11. `fix(review): 봇 리뷰의 상태·접근성 결함 수정`
 
 ## Acceptance Criteria
 
@@ -66,6 +67,10 @@
 - 방 프로필은 최애곡 대신 한 줄 소개를 표시하며 1시간 음악력 안내 문구가 없다.
 - 차단 탭은 커서 페이지를 합쳐 표시하고 차단 해제 성공 시 목록/팔로우/검색 cache를 재검증한다.
 - 팔로워·팔로잉 카드 클릭은 관계 버튼과 차단 버튼을 열고 방 이동 화살표는 확장과 독립적으로 동작한다.
+- 팔로워 관계 확인은 `hasNext/nextCursor`를 끝까지 따라가 200명을 넘는 팔로잉도 정확히 판별한다.
+- 동시 차단 해제는 모든 요청별 pending 상태를 유지하고 cache invalidation 완료까지 mutation을 pending으로 유지한다.
+- 칭호 모달은 짧은 viewport에서 세로 스크롤 가능하고 설명 대비를 충족하며, 닫힐 때 실행 중 confetti를 즉시 정리한다.
+- marquee 테스트는 `ResizeObserver` 전역 stub을 테스트마다 복원한다.
 - `npm run lint`, `npm run test`, `npm run build`, fresh QA가 통과한다.
 
 ## Progress
@@ -88,10 +93,12 @@
 - [x] 현재 재생 썸네일 오버레이 스타일 조정
 - [x] 스타일 QA
 - [x] 스타일 commit/push와 Draft PR 갱신
+- [x] 봇 리뷰 분류와 타당한 지적 수정
+- [x] review targeted/full QA
+- [ ] review fix commit/push와 checks 재확인
 
 ## Residual Risk
 
 - 실제 1시간 음악력 제한 문구는 backend 오류 응답에 의존하며 프론트는 별도 타이머를 두지 않는다.
 - presence의 `room`은 공개 방만 제공된다는 기존 API 계약을 유지한다.
 - 브라우저 자동화 연결이 실행 환경 메타데이터 오류로 시작되지 않아 픽셀 단위 QA는 남아 있다.
-- 팔로워 카드의 관계 버튼은 기존 `useFollowingRelationship`의 최대 200명 조회를 사용하므로 200명을 넘는 계정은 전용 관계 API 또는 cursor 전체 조회 정책이 필요하다.

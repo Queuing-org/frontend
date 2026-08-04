@@ -2,20 +2,27 @@
 
 import { useCallback } from "react";
 import { useBlockedUsers } from "../hooks/useBlockedUsers";
-import { useUnblockUser } from "../hooks/useUnblockUser";
+import {
+  usePendingUnblockUserSlugs,
+  useUnblockUser,
+} from "../hooks/useUnblockUser";
 import BlockedUserCard from "./BlockedUserCard";
 import styles from "./BlockedUsersPanel.module.css";
 
 export default function BlockedUsersList() {
   const blockedUsers = useBlockedUsers();
   const unblockUser = useUnblockUser();
+  const pendingUnblockSlugs = usePendingUnblockUserSlugs();
   const users = blockedUsers.data.pages.flatMap((page) => page.items);
   const handleUnblock = useCallback(
     (slug: string) => {
+      if (pendingUnblockSlugs.includes(slug)) {
+        return;
+      }
       unblockUser.reset();
       unblockUser.mutate(slug);
     },
-    [unblockUser],
+    [pendingUnblockSlugs, unblockUser],
   );
 
   if (users.length === 0) {
@@ -28,9 +35,7 @@ export default function BlockedUsersList() {
         {users.map((user) => (
           <BlockedUserCard
             key={user.slug}
-            isPending={
-              unblockUser.isPending && unblockUser.variables === user.slug
-            }
+            isPending={pendingUnblockSlugs.includes(user.slug)}
             onUnblock={handleUnblock}
             user={user}
           />

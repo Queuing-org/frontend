@@ -72,4 +72,24 @@ describe("FollowUserActions", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "차단" })).toBeInTheDocument();
   });
+
+  it("전체 팔로잉 조회에서 대상이 발견되면 팔로워 카드도 언팔로우로 표시한다", () => {
+    vi.mocked(useFollowingRelationship).mockReturnValue({
+      data: true,
+      isError: false,
+      isLoading: false,
+    } as ReturnType<typeof useFollowingRelationship>);
+
+    render(
+      <FollowUserActions
+        initialRelationship={null}
+        onBlock={vi.fn()}
+        user={target}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "언팔로우" }),
+    ).toBeInTheDocument();
+  });
 });

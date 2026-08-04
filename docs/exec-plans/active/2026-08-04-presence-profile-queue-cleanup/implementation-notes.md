@@ -13,3 +13,7 @@
 - follower/following 목록이 한 개의 expanded slug와 block target만 로컬로 소유하며, 공용 카드 shell의 본문 버튼과 방 링크를 sibling action으로 분리했다.
 - 곡 제목은 신청자명과 구분자를 고정하고 기존 `OverflowMarquee`에 제목만 전달한다. queue와 현재 재생 신청자 카드가 같은 overflow/reduced-motion 동작을 공유한다.
 - 활성 queue 썸네일은 접근 가능한 `role="img"` equalizer를 표시한다. 세 막대는 CSS animation만 사용하며 reduced motion에서는 서로 다른 정적 높이를 유지한다.
+- review 수정에서 팔로잉 전체 cursor page를 합친 관계 전용 cache를 추가했다. presence updater가 `FollowListResponse`만 갱신하도록 관계 key는 list root 밖에 둔다.
+- 차단 해제 invalidation을 mutation lifecycle에 연결하고 `useMutationState`로 모든 pending slug를 표시한다.
+- 칭호 confetti는 modal-scoped instance를 사용하며 AbortSignal이 실행 중 instance를 reset한다. 모달은 짧은 viewport에서 세로 스크롤되고 13px 설명 색상 대비를 높였다.
+- marquee test teardown은 global `ResizeObserver` stub까지 복원한다.

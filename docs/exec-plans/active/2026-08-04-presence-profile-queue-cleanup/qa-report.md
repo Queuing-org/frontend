@@ -81,3 +81,15 @@
 - 기존 active-only 렌더링, 접근 가능한 이름, 막대 animation과 reduced-motion 정지 동작이 유지된다.
 - 실제 썸네일별 합성 결과의 브라우저 픽셀 QA는 수행하지 못했다.
 - overlay commit `07f0f32`: GitHub Actions와 Vercel preview pass.
+
+## Bot Review Fix QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- targeted: 8 files / 18 tests pass
+- relationship query-key/presence regression: 2 files / 2 tests pass
+- full: 55 files / 135 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- 전체 팔로잉 cursor pagination과 presence list updater 밖의 관계 cache key를 확인했다.
+- 동시 unblock mutation state, invalidation Promise 대기, confetti abort/reset, 짧은 viewport scroll/텍스트 대비, test global cleanup을 확인했다.
+- blocked DTO identity mapper와 이미 반영된 dual-lockfile nitpick은 코드 변경 없이 근거를 기록했다.
+- 잔여 위험: 전용 관계 API가 없어 큰 팔로잉 계정의 첫 관계 확인 비용이 크고, 모달/confetti 실제 브라우저 QA는 수행하지 못했다.

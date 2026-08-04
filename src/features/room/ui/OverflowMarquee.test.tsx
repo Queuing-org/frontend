@@ -17,6 +17,7 @@ class ResizeObserverMock {
 describe("OverflowMarquee", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     ResizeObserverMock.callback = null;
   });
 

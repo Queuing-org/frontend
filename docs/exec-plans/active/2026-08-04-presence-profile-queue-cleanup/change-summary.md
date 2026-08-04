@@ -13,3 +13,4 @@
 - 재생목록과 현재 재생 신청자 카드의 긴 곡 제목에 overflow-only marquee를 적용하고, 활성 곡 썸네일의 `PLAY` 문구를 reduced-motion 대응 3-bar equalizer로 교체했다.
 - 최종 lint, 52 files / 126 tests, build, diff-check, fresh read-only QA를 통과했다.
 - 현재 재생 썸네일 전체에 `#ffffff` 60% 오버레이를 적용하고 equalizer 막대를 `#3c3c3c`로 중앙 정렬했다.
+- 봇 리뷰 중 타당한 관계 pagination, 동시 차단 해제 상태, invalidation 대기, confetti cleanup, 짧은 화면 모달/대비, test global cleanup 지적을 수정했다.

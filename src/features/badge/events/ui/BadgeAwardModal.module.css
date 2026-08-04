@@ -14,10 +14,12 @@
   position: relative;
   display: flex;
   width: min(410px, 100%);
+  max-height: calc(100dvh - 48px);
   flex-direction: column;
   align-items: center;
   gap: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   box-sizing: border-box;
   padding: 30px 30px 28px;
   border: 1px solid rgba(124, 92, 255, 0.2);
@@ -99,7 +101,7 @@
 
 .description {
   margin: 10px 0 0;
-  color: #8d8d98;
+  color: #62626f;
   font-size: 13px;
   font-weight: var(--fw-medium);
   line-height: 1.5;

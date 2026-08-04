@@ -30,6 +30,7 @@
 - 사연은 컨테이너보다 긴 경우에만 같은 문장을 두 번 배치해 연속 순환하고 hover/focus에서 잠시 멈춘다.
 - reduced motion 사용자는 사연 애니메이션과 confetti를 보지 않는다.
 - badge modal은 새 칭호가 queue 선두가 될 때마다 한 번 confetti를 실행하고 기존 순차 닫기 동작을 유지한다.
+- 짧은 viewport에서는 badge modal 내부를 세로 스크롤해 확인 버튼까지 접근할 수 있고, 닫으면 실행 중 confetti도 즉시 정리한다.
 
 ## Track Title And Now Playing
 
