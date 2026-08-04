@@ -80,3 +80,4 @@
 - `inset: 0`으로 썸네일 전체를 덮고 `rgba(255, 255, 255, 0.6)`와 `#3c3c3c`가 요청값과 일치하는지 확인했다.
 - 기존 active-only 렌더링, 접근 가능한 이름, 막대 animation과 reduced-motion 정지 동작이 유지된다.
 - 실제 썸네일별 합성 결과의 브라우저 픽셀 QA는 수행하지 못했다.
+- overlay commit `07f0f32`: GitHub Actions와 Vercel preview pass.

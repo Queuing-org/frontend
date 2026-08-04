@@ -87,7 +87,7 @@
 - [x] 기능 commit/push와 Draft PR 갱신
 - [x] 현재 재생 썸네일 오버레이 스타일 조정
 - [x] 스타일 QA
-- [ ] 스타일 commit/push와 Draft PR 갱신
+- [x] 스타일 commit/push와 Draft PR 갱신
 
 ## Residual Risk
 
