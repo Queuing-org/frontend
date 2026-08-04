@@ -101,7 +101,7 @@
 - [x] review fix commit/push와 checks 재확인
 - [x] 기본 방 썸네일 10장 교체 및 fallback 테스트
 - [x] 썸네일 교체 targeted/full QA
-- [ ] 썸네일 교체 commit/push와 PR 갱신
+- [x] 썸네일 교체 commit/push와 새 Draft PR 생성
 
 ## Residual Risk
 
