@@ -106,11 +106,16 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "동일한 사용자에게는 1시간에 한 번만 음악력을 평가할 수 있습니다.",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("미투표에서 UPVOTE를 보내고 선택 방향 재클릭은 DELETE 상태를 보낸다", async () => {
+  it("기존 투표 상태와 무관하게 클릭한 방향을 PUT mutation에 전달한다", async () => {
     const user = userEvent.setup();
     const { rerender } = renderPanel();
 
@@ -138,12 +143,12 @@ describe("RoomProfilePanel", () => {
     );
 
     const upButton = screen.getByRole("button", { name: "음악력 올리기" });
-    expect(upButton).toHaveAttribute("aria-pressed", "true");
+    expect(upButton).not.toHaveAttribute("aria-pressed");
     await user.click(upButton);
     expect(mutate).toHaveBeenLastCalledWith({
       roomSlug: "room",
       password: "secret",
-      vote: null,
+      vote: "UPVOTE",
     });
   });
 

@@ -123,7 +123,7 @@ export default function RoomProfilePanel({
     musicPowerVote.mutate({
       roomSlug,
       password: roomPassword,
-      vote: musicPowerQuery.data.myVote === vote ? null : vote,
+      vote,
     });
   };
 
@@ -192,6 +192,10 @@ export default function RoomProfilePanel({
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
+              <p className={styles.musicPowerHint}>
+                동일한 사용자에게는 1시간에 한 번만 음악력을 평가할 수
+                있습니다.
+              </p>
               {musicPowerVote.error ? (
                 <p className={styles.recommendationError} role="alert">
                   {musicPowerVote.error.message}
@@ -204,7 +208,6 @@ export default function RoomProfilePanel({
               type="button"
               className={styles.musicPowerButton}
               aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-              aria-pressed={musicPowerQuery.data?.myVote === "UPVOTE"}
               title={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
               disabled={isMusicPowerVoteDisabled}
               onClick={() => handleMusicPowerVote("UPVOTE")}
@@ -215,7 +218,6 @@ export default function RoomProfilePanel({
               type="button"
               className={styles.musicPowerButton}
               aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-              aria-pressed={musicPowerQuery.data?.myVote === "DOWNVOTE"}
               title={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
               disabled={isMusicPowerVoteDisabled}
               onClick={() => handleMusicPowerVote("DOWNVOTE")}

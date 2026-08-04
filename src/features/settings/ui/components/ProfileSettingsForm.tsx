@@ -126,10 +126,6 @@ export default function ProfileSettingsForm({
         </span>
       </form>
       <div className={styles.formRow}>
-        <span className={styles.fieldLabel}>최애 곡</span>
-        <div className={styles.readonlyField}>개발중입니다.</div>
-      </div>
-      <div className={styles.formRow}>
         <label className={styles.fieldLabel} htmlFor="settings-badge">
           칭호
         </label>
@@ -142,7 +138,7 @@ export default function ProfileSettingsForm({
             disabled={badgeDisabled}
           >
             <option value="">
-              {hasProfile ? "대표 칭호 선택" : "로그인이 필요합니다"}
+              {hasProfile ? "칭호 없음" : "로그인이 필요합니다"}
             </option>
             {badgeOptions.map((badge) => (
               <option
