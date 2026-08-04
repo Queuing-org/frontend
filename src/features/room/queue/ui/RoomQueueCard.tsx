@@ -61,12 +61,25 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
           className={styles.thumbnail}
         />
         {entry.status.isActive ? (
-          <div className={styles.nowPlaying}>PLAY</div>
+          <div
+            className={styles.nowPlayingEqualizer}
+            role="img"
+            aria-label="현재 재생 중"
+          >
+            <span className={styles.equalizerBar} />
+            <span className={styles.equalizerBar} />
+            <span className={styles.equalizerBar} />
+          </div>
         ) : null}
       </div>
       <div className={styles.meta}>
-        <div className={styles.title}>
-          {entry.addedBy.nickname} - {entry.track.title}
+        <div className={styles.titleRow}>
+          <span className={styles.titleOwner}>{entry.addedBy.nickname}</span>
+          <span className={styles.titleSeparator}>-</span>
+          <OverflowMarquee
+            className={styles.title}
+            text={entry.track.title}
+          />
         </div>
         <div className={styles.detailRow} data-has-story={Boolean(story)}>
           {story ? (

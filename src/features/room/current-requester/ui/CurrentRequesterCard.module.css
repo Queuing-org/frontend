@@ -37,6 +37,7 @@
 }
 
 .meta {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -78,7 +79,7 @@
 }
 
 .trackTitle {
-  text-overflow: ellipsis;
+  flex: 1 1 auto;
   max-width: min(410px, 34vw);
 }
 

@@ -72,7 +72,10 @@ export default function CurrentRequesterCard({
           {trackTitle ? (
             <>
               <span className={styles.separator}>-</span>
-              <span className={styles.trackTitle}>{trackTitle}</span>
+              <OverflowMarquee
+                className={styles.trackTitle}
+                text={trackTitle}
+              />
             </>
           ) : null}
         </div>
