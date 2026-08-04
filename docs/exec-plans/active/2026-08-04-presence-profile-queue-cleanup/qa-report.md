@@ -65,6 +65,7 @@
 - `git diff --check`: pass
 - 두 카드가 기존 overflow-only marquee를 공유하고 신청자명/구분자는 고정되는지 확인했다.
 - `PLAY` 문구 제거, 접근 가능한 3-bar equalizer, reduced-motion 정지 동작을 확인했다.
+- PR head `73566a6`: GitHub Actions와 Vercel preview pass.
 
 ## Track Title And Equalizer Residual Risk
 
