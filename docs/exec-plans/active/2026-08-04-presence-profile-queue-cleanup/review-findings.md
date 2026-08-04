@@ -57,3 +57,13 @@
 
 - 단일 관계 조회 API가 없어 첫 관계 확인은 전체 팔로잉 page를 모은다. 정확성은 보장하지만 팔로잉이 매우 큰 계정은 전용 관계 API보다 요청 비용이 크다.
 - 실제 짧은 모바일 landscape와 confetti canvas cleanup은 브라우저 픽셀/런타임 QA를 수행하지 못했다.
+
+## Post-push State
+
+- fix commit: `009eca3`
+- GitHub Actions: success
+- Vercel: success
+- CodeRabbit: success; actionable CodeRabbit thread 7개 자동 resolved
+- outdated unresolved plan thread: 1
+- live unresolved Codex thread: 1, CodeRabbit의 같은 관계 pagination thread와 중복이며 코드는 수정 완료
+- 사용자 요청에 thread resolve 권한은 포함되지 않아 직접 resolve하지 않았다.

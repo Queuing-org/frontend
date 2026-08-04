@@ -93,3 +93,4 @@
 - 동시 unblock mutation state, invalidation Promise 대기, confetti abort/reset, 짧은 viewport scroll/텍스트 대비, test global cleanup을 확인했다.
 - blocked DTO identity mapper와 이미 반영된 dual-lockfile nitpick은 코드 변경 없이 근거를 기록했다.
 - 잔여 위험: 전용 관계 API가 없어 큰 팔로잉 계정의 첫 관계 확인 비용이 크고, 모달/confetti 실제 브라우저 QA는 수행하지 못했다.
+- review fix `009eca3`: GitHub Actions, Vercel, CodeRabbit success. CodeRabbit actionable thread 7개가 자동 resolved됐다.

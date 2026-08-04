@@ -95,7 +95,7 @@
 - [x] 스타일 commit/push와 Draft PR 갱신
 - [x] 봇 리뷰 분류와 타당한 지적 수정
 - [x] review targeted/full QA
-- [ ] review fix commit/push와 checks 재확인
+- [x] review fix commit/push와 checks 재확인
 
 ## Residual Risk
 
