@@ -150,9 +150,6 @@ export default function RoomProfilePanel({
             </div>
             <div className={styles.nameBlock}>
               <div className={styles.name}>{displayNickname}</div>
-              {statusMessage ? (
-                <div className={styles.statusMessage}>{statusMessage}</div>
-              ) : null}
             </div>
             {shouldShowFollowAction ? (
               <FollowToggleButton
@@ -174,8 +171,13 @@ export default function RoomProfilePanel({
               </div>
             </div>
             <div className={styles.card}>
-              <div className={styles.cardTitle}>최애곡</div>
-              <div className={styles.cardValue}>-</div>
+              <div className={styles.cardTitle}>한 줄 소개</div>
+              <div
+                className={`${styles.cardValue} ${styles.statusCardValue}`}
+                title={statusMessage || undefined}
+              >
+                {statusMessage || "-"}
+              </div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>큐잉 횟수</div>
@@ -192,10 +194,6 @@ export default function RoomProfilePanel({
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
-              <p className={styles.musicPowerHint}>
-                동일한 사용자에게는 1시간에 한 번만 음악력을 평가할 수
-                있습니다.
-              </p>
               {musicPowerVote.error ? (
                 <p className={styles.recommendationError} role="alert">
                   {musicPowerVote.error.message}

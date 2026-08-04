@@ -100,17 +100,15 @@ describe("RoomProfilePanel", () => {
     } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
   });
 
-  it("통계와 상태 메시지, 양방향 음악력 버튼을 표시한다", () => {
+  it("통계와 한 줄 소개, 양방향 음악력 버튼을 표시한다", () => {
     renderPanel();
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "동일한 사용자에게는 1시간에 한 번만 음악력을 평가할 수 있습니다.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
+    expect(screen.queryByText("최애곡")).not.toBeInTheDocument();
+    expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });

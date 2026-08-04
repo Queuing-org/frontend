@@ -74,11 +74,11 @@
 .story {
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .trackTitle {
+  text-overflow: ellipsis;
   max-width: min(410px, 34vw);
 }
 

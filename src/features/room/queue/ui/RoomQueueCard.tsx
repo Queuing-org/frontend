@@ -4,6 +4,7 @@ import type { ComponentPropsWithoutRef, PointerEvent } from "react";
 import { forwardRef } from "react";
 import Image from "next/image";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
+import OverflowMarquee from "@/src/features/room/ui/OverflowMarquee";
 import { formatQueueDuration } from "../model/roomQueue";
 import styles from "./RoomQueueCard.module.css";
 
@@ -68,7 +69,9 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
           {entry.addedBy.nickname} - {entry.track.title}
         </div>
         <div className={styles.detailRow} data-has-story={Boolean(story)}>
-          {story ? <div className={styles.story}>{story}</div> : null}
+          {story ? (
+            <OverflowMarquee className={styles.story} text={story} />
+          ) : null}
           <div className={styles.duration}>
             {formatQueueDuration(entry.track.durationMs)}
           </div>

@@ -91,14 +91,12 @@
 }
 
 .story {
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
   color: #8d8d8d;
   font-size: 12px;
   font-weight: var(--fw-regular);
   line-height: 1.4;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .duration {
