@@ -28,3 +28,20 @@
 
 - live backend에서 음악력 1시간 제한 오류와 대표 칭호 DELETE를 직접 실행하지 않았다.
 - 브라우저 자동화가 실행 환경의 sandbox metadata 오류로 시작되지 않아 presence 점/화살표, 모바일 줄임표, `PLAY` 배치의 픽셀 QA가 남아 있다.
+
+## Follow-up QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- targeted: 9 files / 23 tests pass
+- full: 51 files / 125 tests pass
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
+- 차단 API 첫/다음 page params, DELETE boolean 검증, follow/search cache 무효화를 확인했다.
+- 공용 follow card의 확장 버튼과 방 링크 분리, blocked card의 presence 제거, 사연 overflow-only 동작, badge 순차 모달/confetti 실패 격리를 확인했다.
+
+## Follow-up Residual Risk
+
+- 브라우저 연결 도구가 sandbox metadata 오류로 시작되지 않아 marquee 속도/방향과 confetti layer의 pixel QA는 수행하지 못했다.
+- follower 관계 판별은 기존 `useFollowingRelationship`의 최대 200명 단일 조회를 사용한다. 200명 초과 계정의 완전한 정확성은 전용 관계 API 또는 cursor pagination 정책이 필요하다.
+- badge dialog는 기존과 동일하게 초기 focus와 Escape/backdrop close를 보장하지만 완전한 focus trap은 제공하지 않는다.

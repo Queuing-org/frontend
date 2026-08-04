@@ -16,3 +16,10 @@
 - 설정: `PUT /api/v1/users/me/badges/representative` body `{ badgeCode }`
 - 해제: `DELETE /api/v1/users/me/badges/representative`, response `{ result: true }`
 - 성공 시 `badgeKeys.me`, `userKeys.me`, 로그인 사용자의 공개 badge 및 공개 profile query를 무효화한다.
+
+## Blocked Users
+
+- 목록: `GET /api/v1/user-profiles/me/blocks?size=20`, 다음 페이지는 `lastId={nextCursor}&size=20`을 보낸다.
+- 응답: `items`, `hasNext`, `nextCursor`; 항목은 `slug`, `cursorId`, `nickname`, `blockedAt`, `profileImageUrl`을 사용한다.
+- 해제: `DELETE /api/v1/user-profiles/{userSlug}/blocks`, `{ result: true }`를 검증한다.
+- 차단/해제 성공 시 blocked 목록, follower/following 목록, 사용자 검색 cache를 재검증한다.

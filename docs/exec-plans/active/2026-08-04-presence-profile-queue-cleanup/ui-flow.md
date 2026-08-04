@@ -18,3 +18,15 @@
 - 대표 칭호 선택 첫 옵션은 `칭호 없음`이며 현재 값이 있을 때 선택하면 DELETE한다.
 - 전체 트랙은 상위 playback의 current entry를 첫 위치에 합치고 중복 queue entry를 제거한다.
 - current entry는 active 표현만 하며 drag/delete와 pending count에서 제외한다.
+
+## Follow Card Actions
+
+- 카드 본문 클릭: 해당 카드만 확장해 현재 관계를 반영한 `팔로우/언팔로우` 버튼과 `차단` 버튼을 표시한다.
+- 방 이동 화살표 클릭: 카드 확장 상태를 바꾸지 않고 방으로 이동한다.
+- 차단 탭 카드: presence 없이 아바타와 닉네임만 표시하고 우측 `차단 해제` 버튼을 제공한다.
+
+## Story And Badge Award
+
+- 사연은 컨테이너보다 긴 경우에만 같은 문장을 두 번 배치해 연속 순환하고 hover/focus에서 잠시 멈춘다.
+- reduced motion 사용자는 사연 애니메이션과 confetti를 보지 않는다.
+- badge modal은 새 칭호가 queue 선두가 될 때마다 한 번 confetti를 실행하고 기존 순차 닫기 동작을 유지한다.

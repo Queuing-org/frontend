@@ -6,3 +6,8 @@
 - queue history API/query/type/UI와 실시간 무효화를 제거했다.
 - 이미 조회한 playback `currentEntry`를 mobile/floating queue panel에 전달하고 전체 queue 선두에 active 상태로 중복 없이 합쳤다. queue pending count와 내 신청곡은 바꾸지 않았다.
 - fresh QA의 공개 profile cache 누락과 false boolean 처리 지적을 한 번의 fix pass로 반영했다.
+- `OverflowMarquee`는 viewport와 실제 문장 너비를 `ResizeObserver`로 비교하고 overflow일 때만 복제 문장과 연속 애니메이션을 활성화한다. hover/focus는 일시 정지하고 reduced motion은 수동 가로 스크롤로 전환한다.
+- 방 프로필의 중복 상태 메시지를 hero에서 제거하고 기존 최애곡 카드를 한 줄 소개 카드로 교체했다. 정적 1시간 음악력 안내는 삭제하고 서버 오류만 유지했다.
+- 칭호 모달은 `canvas-confetti`를 동적 import하며 모션 감소 설정과 effect 취소를 존중한다. 장식 로드 실패는 모달 흐름과 분리했다.
+- 차단 목록은 20개 커서 infinite query와 명시적 더 보기 버튼을 사용한다. 차단 해제는 boolean 결과를 검증하고 follow/search cache를 재검증한다.
+- follower/following 목록이 한 개의 expanded slug와 block target만 로컬로 소유하며, 공용 카드 shell의 본문 버튼과 방 링크를 sibling action으로 분리했다.

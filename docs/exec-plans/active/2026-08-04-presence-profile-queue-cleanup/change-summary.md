@@ -5,3 +5,7 @@
 - 설정의 최애 곡을 제거하고 대표 칭호 해제 API 및 cache 동기화를 추가했다.
 - 지난 곡 기능을 제거하고 전체 트랙에 현재 재생 곡을 `PLAY`로 표시했다.
 - lint, 46 files / 113 tests, build, fresh QA를 통과했다.
+- 긴 사연을 overflow-only 순환 marquee로 바꾸고 방 프로필의 최애곡을 한 줄 소개로 교체했으며 정적 음악력 제한 문구를 제거했다.
+- 칭호 획득 모달을 새 축하 디자인과 lazy-loaded confetti 효과로 개선했다.
+- 차단 목록 cursor 조회/해제를 추가하고 follower/following 카드 확장 액션에 관계 토글과 차단을 연결했다.
+- 후속 범위까지 lint, 51 files / 125 tests, build, diff-check, fresh QA를 통과했다.

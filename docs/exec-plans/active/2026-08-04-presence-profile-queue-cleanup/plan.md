@@ -6,6 +6,10 @@
 - 음악력의 선택/취소 UI를 단발 PUT 평가로 단순화한다.
 - 설정의 최애 곡을 제거하고 대표 칭호 해제를 연결한다.
 - queue의 지난 곡 기능을 제거하고 전체 트랙에 현재 재생 곡을 표시한다.
+- 긴 신청 사연은 실제 overflow가 있을 때만 연속 가로 스크롤로 전체 내용을 보여준다.
+- 칭호 획득 모달을 축하 UI와 접근성 설정을 존중하는 confetti 효과로 개선한다.
+- 방 프로필의 최애곡 카드를 한 줄 소개로 교체하고 음악력 1시간 안내 문구를 제거한다.
+- 차단 목록 조회/해제를 연결하고 팔로워·팔로잉 카드 클릭 시 관계/차단 액션을 연다.
 
 ## Selected Skills
 
@@ -23,6 +27,10 @@
 - 음악력 mutation/cache: profile API hook, 유효 대상 및 오류 표현: room profile panel
 - 대표 칭호 설정/해제 mutation: badge feature, 선택 UI: settings feature
 - 현재 재생 곡: 상위 room playback query, queue 표현/정렬: room queue feature
+- 사연 overflow 측정/애니메이션: room feature의 공용 leaf component와 로컬 DOM 상태
+- 칭호 축하 효과: badge modal의 client-only side effect
+- 차단 목록/해제: follow blocked API와 TanStack Query infinite cache
+- 팔로우 카드 확장 상태: follower/following 목록 컴포넌트의 로컬 상태
 
 ## Commit Slices
 
@@ -30,6 +38,10 @@
 2. `feat(profile): 음악력 평가와 대표 칭호 해제 단순화`
 3. `refactor(queue): 지난 곡 제거와 현재 곡 표시`
 4. `docs(delivery): UI 정리 검증 결과 기록`
+5. `fix(room): 긴 사연 순환 표시와 프로필 소개 정리`
+6. `feat(badge): 칭호 획득 축하 모달 개선`
+7. `feat(follow): 차단 목록과 카드 액션 연결`
+8. `docs(delivery): 후속 UI와 차단 기능 검증 기록`
 
 ## Acceptance Criteria
 
@@ -40,6 +52,11 @@
 - 대표 칭호가 있는 상태에서 `칭호 없음`을 선택하면 DELETE 해제 요청과 캐시 무효화가 실행된다.
 - 설정의 최애 곡과 queue의 지난 곡 관련 기능이 제거된다.
 - 전체 트랙 첫 항목에 현재 재생 곡이 중복 없이 `PLAY`로 표시되며 pending count에는 포함되지 않는다.
+- 현재 재생 카드와 queue 카드의 긴 사연은 overflow일 때만 끊김 없이 순환 표시되고 reduced motion에서는 움직이지 않는다.
+- 칭호 획득 모달은 badge별 축하 효과를 한 번 실행하고 기존 확인/Escape/배경 닫기를 유지한다.
+- 방 프로필은 최애곡 대신 한 줄 소개를 표시하며 1시간 음악력 안내 문구가 없다.
+- 차단 탭은 커서 페이지를 합쳐 표시하고 차단 해제 성공 시 목록/팔로우/검색 cache를 재검증한다.
+- 팔로워·팔로잉 카드 클릭은 관계 버튼과 차단 버튼을 열고 방 이동 화살표는 확장과 독립적으로 동작한다.
 - `npm run lint`, `npm run test`, `npm run build`, fresh QA가 통과한다.
 
 ## Progress
@@ -52,9 +69,13 @@
 - [x] targeted/full QA
 - [x] 기능 단위 commit
 - [x] push/Draft PR
+- [x] 후속 room/badge/follow 구현
+- [x] 후속 targeted/full QA
+- [x] 기능 단위 commit/push와 Draft PR 갱신
 
 ## Residual Risk
 
 - 실제 1시간 음악력 제한 문구는 backend 오류 응답에 의존하며 프론트는 별도 타이머를 두지 않는다.
 - presence의 `room`은 공개 방만 제공된다는 기존 API 계약을 유지한다.
 - 브라우저 자동화 연결이 실행 환경 메타데이터 오류로 시작되지 않아 픽셀 단위 QA는 남아 있다.
+- 팔로워 카드의 관계 버튼은 기존 `useFollowingRelationship`의 최대 200명 조회를 사용하므로 200명을 넘는 계정은 전용 관계 API 또는 cursor 전체 조회 정책이 필요하다.
