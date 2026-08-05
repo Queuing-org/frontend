@@ -44,6 +44,7 @@
 - full: 57 files / 153 tests pass
 - lint, build, diff check: pass
 - fresh read-only QA: pass
+- profile row-gap CI: GitHub Actions, Vercel, CodeRabbit pass
 - icon follow-up CI: GitHub Actions, Vercel, CodeRabbit pass
 
 ## Profile Row-gap Follow-up
