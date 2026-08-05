@@ -10,7 +10,21 @@ import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowe
 import RoomProfilePanel from "./RoomProfilePanel";
 
 vi.mock("next/image", () => ({
-  default: () => <span data-testid="profile-image" />,
+  default: ({
+    height,
+    src,
+    width,
+  }: {
+    height?: number;
+    src: string;
+    width?: number;
+  }) => (
+    <span
+      data-testid={`image-${src}`}
+      data-height={height}
+      data-width={width}
+    />
+  ),
 }));
 vi.mock("@/src/features/badge/hooks/usePublicUserBadges", () => ({
   usePublicUserBadges: vi.fn(),
@@ -295,6 +309,25 @@ describe("RoomProfilePanel", () => {
       screen.getByRole("button", { name: "관리" }),
     );
     expect(screen.queryByText("온라인")).not.toBeInTheDocument();
+  });
+
+  it("관리와 음악력 버튼에 지정된 8x8 SVG 아이콘을 사용한다", () => {
+    renderPanel();
+
+    [
+      "/icons/manage-down.svg",
+      "/icons/music-power-up.svg",
+      "/icons/music-power-down.svg",
+    ].forEach((src) => {
+      expect(screen.getByTestId(`image-${src}`)).toHaveAttribute(
+        "data-width",
+        "8",
+      );
+      expect(screen.getByTestId(`image-${src}`)).toHaveAttribute(
+        "data-height",
+        "8",
+      );
+    });
   });
 
   it("일반 사용자의 관리 메뉴에는 신고와 차단만 표시한다", async () => {

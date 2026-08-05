@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import { ArrowDown, ArrowUp, ChevronDown } from "lucide-react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -267,7 +266,13 @@ export default function RoomProfilePanel({
                     }}
                   >
                     <span>관리</span>
-                    <ChevronDown aria-hidden="true" size={18} />
+                    <Image
+                      src="/icons/manage-down.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={8}
+                      height={8}
+                    />
                   </button>
                   <RoomProfileManagementMenu
                     canKick={canKick}
@@ -342,7 +347,13 @@ export default function RoomProfilePanel({
                 disabled={isMusicPowerVoteDisabled}
                 onClick={() => handleMusicPowerVote("UPVOTE")}
               >
-                <ArrowUp aria-hidden="true" size={15} />
+                <Image
+                  src="/icons/music-power-up.svg"
+                  alt=""
+                  aria-hidden="true"
+                  width={8}
+                  height={8}
+                />
               </button>
               <button
                 type="button"
@@ -352,7 +363,13 @@ export default function RoomProfilePanel({
                 disabled={isMusicPowerVoteDisabled}
                 onClick={() => handleMusicPowerVote("DOWNVOTE")}
               >
-                <ArrowDown aria-hidden="true" size={15} />
+                <Image
+                  src="/icons/music-power-down.svg"
+                  alt=""
+                  aria-hidden="true"
+                  width={8}
+                  height={8}
+                />
               </button>
             </div>
           </div>

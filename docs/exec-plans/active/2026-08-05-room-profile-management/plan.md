@@ -39,6 +39,7 @@
 - 신고는 대상 사용자의 가장 최근 신고 가능한 채팅 `messageKey`를 기존 채팅 신고 모달/API에 연결한다.
 - 현재 불러온 채팅에 신고 가능한 대상 메시지가 없으면 요청을 만들지 않고 안내 문구를 표시한다.
 - 칭호, 한 줄 소개, 큐잉 횟수, 이용 시간, 음악력과 음악력 평가 동작은 유지된다.
+- 관리와 음악력 위/아래 아이콘은 제공된 SVG를 사용하고 각각 `8x8`로 렌더링한다.
 - targeted test, `npm run lint`, `npm run test`, `npm run build`, fresh QA가 통과한다.
 
 ## Progress
@@ -47,6 +48,7 @@
 - [x] 프로필 레이아웃과 관리 dropdown 구현
 - [x] targeted/full QA
 - [x] explicit staging, commit, push, Draft PR #33 갱신
+- [x] 제공 SVG 아이콘 교체, 검증, push
 
 ## Residual Risk
 

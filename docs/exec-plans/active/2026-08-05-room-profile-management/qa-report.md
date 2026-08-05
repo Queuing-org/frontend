@@ -35,3 +35,12 @@
 - initial verdict: fix (내보내기 pending 중 Escape가 막히는 조건 발견)
 - resolution: pending 여부와 무관하게 Escape가 dropdown을 닫도록 수정하고 회귀 테스트 추가
 - final boundary review: pass, blocking finding 없음
+
+## SVG Icon Follow-up
+
+- Downloads 원본 `manageDown.svg`, `upButton.svg`, `downButton.svg`와 저장소 복사본이 byte-identical이다.
+- 관리, 음악력 위/아래 버튼은 각 SVG를 `8x8`로 렌더링하고 기존 접근성 라벨을 유지한다.
+- targeted: `RoomProfilePanel` 1 file / 14 tests pass
+- full: 57 files / 153 tests pass
+- lint, build, diff check: pass
+- fresh read-only QA: pass
