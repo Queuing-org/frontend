@@ -45,3 +45,11 @@
 - lint, build, diff check: pass
 - fresh read-only QA: pass
 - icon follow-up CI: GitHub Actions, Vercel, CodeRabbit pass
+
+## Profile Row-gap Follow-up
+
+- 데스크톱 grid의 가로 간격 `18px`은 유지하고 세로 간격만 `24px`로 통일했다.
+- 두 번째 grid 행과 음악력 행 사이도 `24px`다.
+- 모바일은 기존 가로 간격 `1rem`을 유지하고 세로 간격을 `24px`로 명시했다.
+- targeted 1 file / 14 tests, full 57 files / 153 tests, lint, build, diff check pass
+- fresh read-only QA: pass
