@@ -296,7 +296,15 @@ export default function RoomProfilePanel({
               <div className={styles.activity}>현재 큐잉 중...</div>
             </div>
           </div>
-          {shouldShowFollowAction ? (
+          {isSelf ? (
+            <div
+              className={styles.selfTrackStatus}
+              aria-label="내 신청곡 재생 상태"
+            >
+              <span className={styles.selfTrackStatusDot} aria-hidden="true" />
+              <span>내 노래가 나오고 있어요!</span>
+            </div>
+          ) : shouldShowFollowAction ? (
             <div
               className={styles.actionRow}
               data-single-action={!canManage || undefined}
@@ -403,53 +411,61 @@ export default function RoomProfilePanel({
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
             </div>
-            {musicPowerNotice?.targetSlug === targetSlug ? (
-              <p className={styles.musicPowerNotice} role="alert">
-                {musicPowerNotice.message}
-              </p>
+            {!isSelf && !isCurrentUserLoading ? (
+              <>
+                {musicPowerNotice?.targetSlug === targetSlug ? (
+                  <p className={styles.musicPowerNotice} role="alert">
+                    {musicPowerNotice.message}
+                  </p>
+                ) : null}
+                <div className={styles.musicPowerActions}>
+                  <button
+                    type="button"
+                    className={styles.musicPowerButton}
+                    aria-label={
+                      musicPowerVoteDisabledLabel ?? "음악력 올리기"
+                    }
+                    title={
+                      !currentUser && !isCurrentUserLoading
+                        ? MUSIC_POWER_LOGIN_NOTICE
+                        : (musicPowerVoteDisabledLabel ?? "음악력 올리기")
+                    }
+                    disabled={isMusicPowerVoteDisabled}
+                    onClick={() => handleMusicPowerVote("UPVOTE")}
+                  >
+                    <Image
+                      src="/icons/music-power-up.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={8}
+                      height={8}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.musicPowerButton}
+                    aria-label={
+                      musicPowerVoteDisabledLabel ?? "음악력 내리기"
+                    }
+                    title={
+                      !currentUser && !isCurrentUserLoading
+                        ? MUSIC_POWER_LOGIN_NOTICE
+                        : (musicPowerVoteDisabledLabel ?? "음악력 내리기")
+                    }
+                    disabled={isMusicPowerVoteDisabled}
+                    onClick={() => handleMusicPowerVote("DOWNVOTE")}
+                  >
+                    <Image
+                      src="/icons/music-power-down.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={8}
+                      height={8}
+                    />
+                  </button>
+                </div>
+              </>
             ) : null}
-            <div className={styles.musicPowerActions}>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-                title={
-                  !currentUser && !isCurrentUserLoading
-                    ? MUSIC_POWER_LOGIN_NOTICE
-                    : (musicPowerVoteDisabledLabel ?? "음악력 올리기")
-                }
-                disabled={isMusicPowerVoteDisabled}
-                onClick={() => handleMusicPowerVote("UPVOTE")}
-              >
-                <Image
-                  src="/icons/music-power-up.svg"
-                  alt=""
-                  aria-hidden="true"
-                  width={8}
-                  height={8}
-                />
-              </button>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-                title={
-                  !currentUser && !isCurrentUserLoading
-                    ? MUSIC_POWER_LOGIN_NOTICE
-                    : (musicPowerVoteDisabledLabel ?? "음악력 내리기")
-                }
-                disabled={isMusicPowerVoteDisabled}
-                onClick={() => handleMusicPowerVote("DOWNVOTE")}
-              >
-                <Image
-                  src="/icons/music-power-down.svg"
-                  alt=""
-                  aria-hidden="true"
-                  width={8}
-                  height={8}
-                />
-              </button>
-            </div>
           </div>
           <BlockUserModal
             onBlocked={(target) => {

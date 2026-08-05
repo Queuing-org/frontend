@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-06-self-room-profile-state](./2026-08-06-self-room-profile-state/plan.md) — 내 신청곡 프로필 상태와 음악력 액션 가시성
+
 - [2026-08-05-room-current-track-thumbnail](./2026-08-05-room-current-track-thumbnail/plan.md) — 현재 곡 방 썸네일과 단일 빈 방 기본 이미지
 
 - [2026-08-05-room-feedback-refresh](./2026-08-05-room-feedback-refresh/plan.md) — 방 생성·음악력 피드백과 방 탐색 캐시 재검증

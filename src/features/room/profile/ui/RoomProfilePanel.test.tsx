@@ -370,42 +370,98 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("본인과 게스트 신청자는 투표할 수 없다", () => {
+  it("본인에게는 내 노래 상태만 표시하고 음악력·관계 액션을 숨긴다", () => {
     const selfUser = {
-        nickname: "대상",
-        profileImageUrl: null,
-        slug: "target-user",
-        userId: 2,
+      nickname: "대상",
+      profileImageUrl: null,
+      slug: "target-user",
+      userId: 2,
     };
-    const { rerender } = renderPanel(requester, { currentUser: selfUser });
-    expect(
-      screen.getAllByRole("button", {
-        name: "본인의 음악력에는 투표할 수 없습니다",
-      }),
-    ).toHaveLength(2);
-    expect(
-      screen.getAllByRole("button", {
-        name: "본인의 음악력에는 투표할 수 없습니다",
-      })[0],
-    ).toBeDisabled();
+    renderPanel(requester, { currentUser: selfUser });
 
-    rerender(
+    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+      "내 노래가 나오고 있어요!",
+    );
+    expect(
+      screen.queryByRole("button", { name: "음악력 올리기" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "음악력 내리기" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("group", { name: "프로필 액션" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "관리" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("인증 로딩부터 본인 확인까지 음악력 버튼을 노출하지 않는다", () => {
+    const selfUser = {
+      nickname: "대상",
+      profileImageUrl: null,
+      slug: "target-user",
+      userId: 2,
+    };
+    const { rerender } = render(
       <RoomProfilePanel
-        currentUser={currentUser}
-        currentRequester={{ ...requester, slug: null }}
-        isCurrentUserLoading={false}
-        kickTarget={null}
+        currentUser={null}
+        currentRequester={requester}
+        isCurrentUserLoading
+        kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
-        reportMessageKey={null}
+        reportMessageKey="message-key"
         roomMeta={roomMeta}
+        roomPassword="secret"
         roomSlug="room"
       />,
     );
+
+    expect(
+      screen.queryByRole("button", { name: "음악력 올리기" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "음악력 내리기" }),
+    ).not.toBeInTheDocument();
+
+    rerender(
+      <RoomProfilePanel
+        currentUser={selfUser}
+        currentRequester={requester}
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
+        reportMessageKey="message-key"
+        roomMeta={roomMeta}
+        roomPassword="secret"
+        roomSlug="room"
+      />,
+    );
+
+    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+      "내 노래가 나오고 있어요!",
+    );
+    expect(
+      screen.queryByRole("button", { name: "음악력 올리기" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "음악력 내리기" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("게스트 신청자는 음악력에 투표할 수 없다", () => {
+    renderPanel({ ...requester, slug: null });
+
     expect(
       screen.getAllByRole("button", {
         name: "투표 대상은 회원 신청자만 가능합니다",
       }),
     ).toHaveLength(2);
+    expect(
+      screen.getAllByRole("button", {
+        name: "투표 대상은 회원 신청자만 가능합니다",
+      })[0],
+    ).toBeDisabled();
   });
 
   it("상단 아래에 팔로잉과 관리 액션을 표시하고 온라인 점은 표시하지 않는다", () => {
