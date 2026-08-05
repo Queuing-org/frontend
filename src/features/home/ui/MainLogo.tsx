@@ -3,7 +3,7 @@ import styles from "./MainLogo.module.css";
 
 export default function MainLogo() {
   return (
-    <Link href="/home" className={styles.logo}>
+    <Link href="/" className={styles.logo}>
       QUEUING.CC
     </Link>
   );

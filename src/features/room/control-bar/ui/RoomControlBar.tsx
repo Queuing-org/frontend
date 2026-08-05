@@ -125,7 +125,7 @@ export default function RoomButtonControlBar({
         <QueueIcon className={styles.icon} />
       </button>
       <Link
-        href="/home"
+        href="/"
         replace
         className={styles.iconButton}
         aria-label="나가기"

@@ -72,6 +72,22 @@ export function getParticipantKickTarget(
   return null;
 }
 
+export function getParticipantKickTargetForUser(
+  participants: PlaylistParticipant[],
+  user: { slug?: string | null } | null | undefined,
+) {
+  const userSlug = normalizeIdentifier(user?.slug);
+  if (!userSlug) {
+    return null;
+  }
+
+  const participant = participants.find(
+    (candidate) => getParticipantUserSlug(candidate) === userSlug,
+  );
+
+  return participant ? getParticipantKickTarget(participant) : null;
+}
+
 export function getParticipantKickTargetKey(
   target: ParticipantKickTarget | null | undefined,
 ) {

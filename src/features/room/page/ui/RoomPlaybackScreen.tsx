@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -40,6 +41,7 @@ import RoomFloatingWidgets from "@/src/features/room/floating/ui/RoomFloatingWid
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
+import { getLatestReportableChatMessageKey } from "@/src/features/room/chat/model/chatMessages";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import type {
   PlaylistParticipant,
@@ -70,6 +72,8 @@ const MOBILE_ROOM_TABS: {
   { id: "queue", iconSrc: "/icons/queue.svg", label: "큐" },
   { id: "participants", iconSrc: "/icons/hambuger.svg", label: "참가자" },
 ];
+
+const EMPTY_BLOCKED_SENDER_SLUGS: ReadonlySet<string> = new Set();
 
 function roomRequiresPassword(roomMeta: RoomMeta) {
   return !roomMeta.isPublic;
@@ -415,6 +419,36 @@ function RoomPlaybackJoinedContent({
     sendErrorMessage: chatSendErrorMessage,
     sendMessage: handleSendChatMessage,
   } = roomChat;
+  const currentRequesterReportMessageKey =
+    getLatestReportableChatMessageKey(
+      chatMessages,
+      playback.currentRequester?.slug,
+    );
+  const [blockedChatSenders, setBlockedChatSenders] = useState<{
+    roomSlug: string;
+    slugs: ReadonlySet<string>;
+  }>(() => ({ roomSlug: slug, slugs: new Set() }));
+  const blockedSenderSlugs =
+    blockedChatSenders.roomSlug === slug
+      ? blockedChatSenders.slugs
+      : EMPTY_BLOCKED_SENDER_SLUGS;
+  const handleUserBlocked = useCallback(
+    (userSlug: string) => {
+      const normalizedUserSlug = userSlug.trim();
+      if (!normalizedUserSlug) {
+        return;
+      }
+
+      setBlockedChatSenders((current) => {
+        const nextSlugs = new Set(
+          current.roomSlug === slug ? current.slugs : [],
+        );
+        nextSlugs.add(normalizedUserSlug);
+        return { roomSlug: slug, slugs: nextSlugs };
+      });
+    },
+    [slug],
+  );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
 
@@ -437,7 +471,7 @@ function RoomPlaybackJoinedContent({
                   />
                 ) : null}
                 <Link
-                  href="/home"
+                  href="/"
                   replace
                   className={styles.mobileExitLink}
                   aria-label="방 나가기"
@@ -508,12 +542,14 @@ function RoomPlaybackJoinedContent({
                 >
                   <div className={styles.mobileChatList}>
                     <ChatArea
+                      blockedSenderSlugs={blockedSenderSlugs}
                       currentUser={currentUser}
                       errorMessage={chatHistoryErrorMessage}
                       hasOlderMessages={hasOlderChatMessages}
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      onUserBlocked={handleUserBlocked}
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
@@ -643,12 +679,14 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.chatSection}>
             <ChatArea
+              blockedSenderSlugs={blockedSenderSlugs}
               currentUser={currentUser}
               errorMessage={chatHistoryErrorMessage}
               hasOlderMessages={hasOlderChatMessages}
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              onUserBlocked={handleUserBlocked}
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
@@ -683,8 +721,10 @@ function RoomPlaybackJoinedContent({
         onChatLoginClick={
           showChatLoginAction ? redirectToGoogleLogin : undefined
         }
+        onUserBlocked={handleUserBlocked}
         onSendChatMessage={handleSendChatMessage}
         participants={participants}
+        reportMessageKey={currentRequesterReportMessageKey}
         roomMeta={roomMeta}
         roomPassword={roomPassword}
         roomSlug={slug}

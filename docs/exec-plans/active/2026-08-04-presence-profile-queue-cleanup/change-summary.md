@@ -14,3 +14,6 @@
 - 최종 lint, 52 files / 126 tests, build, diff-check, fresh read-only QA를 통과했다.
 - 현재 재생 썸네일 전체에 `#ffffff` 60% 오버레이를 적용하고 equalizer 막대를 `#3c3c3c`로 중앙 정렬했다.
 - 봇 리뷰 중 타당한 관계 pagination, 동시 차단 해제 상태, invalidation 대기, confetti cleanup, 짧은 화면 모달/대비, test global cleanup 지적을 수정했다.
+- 방 사진 미선택 시 쓰는 기존 기본 이미지 6장을 제거하고 오늘 다운로드한 정사각형 PNG 10장으로 교체했으며 fallback 순환 테스트를 추가했다.
+- 로비·검색이 목록 위치를 기본 이미지 seed로 쓰던 결함을 수정해 같은 방 slug가 모든 화면에서 같은 기본 썸네일을 사용하도록 통일했다.
+- 첫 기본 이미지 세트를 제거하고 2026-08-05 05:32에 다운로드된 v2 PNG 10장으로 다시 교체했다.

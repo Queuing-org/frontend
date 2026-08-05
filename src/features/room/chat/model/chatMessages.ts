@@ -182,3 +182,23 @@ export function getChatMessageManagementActions(
 
   return actions;
 }
+
+export function getLatestReportableChatMessageKey(
+  messages: readonly ChatMessage[],
+  userSlug: string | null | undefined,
+) {
+  const normalizedUserSlug = userSlug?.trim();
+  if (!normalizedUserSlug) {
+    return null;
+  }
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const messageKey = message.messageKey?.trim();
+    if (message.senderSlug === normalizedUserSlug && messageKey) {
+      return messageKey;
+    }
+  }
+
+  return null;
+}

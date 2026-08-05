@@ -94,3 +94,39 @@
 - blocked DTO identity mapper와 이미 반영된 dual-lockfile nitpick은 코드 변경 없이 근거를 기록했다.
 - 잔여 위험: 전용 관계 API가 없어 큰 팔로잉 계정의 첫 관계 확인 비용이 크고, 모달/confetti 실제 브라우저 QA는 수행하지 못했다.
 - review fix `009eca3`: GitHub Actions, Vercel, CodeRabbit success. CodeRabbit actionable thread 7개가 자동 resolved됐다.
+
+## Default Room Thumbnail QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- 다운로드 원본과 저장소 복사본 PNG 10장이 모두 byte-identical이고, `public/room-defaults`에는 새 파일 10장만 남았다.
+- 기존 fallback 이미지 6개는 삭제됐고 런타임 경로 참조도 남지 않았다.
+- targeted: 1 file / 4 tests pass
+- full: 56 files / 139 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- fallback seed의 10장 순환과 서버 thumbnail variant/url 우선순위 유지 여부를 확인했다.
+- 사용자 소유 `CurrentRequesterCard.module.css` 변경은 이번 변경과 무관하므로 staging 대상에서 제외한다.
+- 기능 commit `d89b007`과 문서 commit `54fbe36`을 push하고 새 Draft PR #33을 생성했다. 최종 implementation/docs head에서 GitHub Actions와 Vercel이 모두 통과했다.
+
+## Default Thumbnail Surface Consistency QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- 원인은 기본 이미지 선택에만 존재했다. 업로드 thumbnail variant/url 우선순위는 유지되어 실제 방 이미지에는 영향이 없다.
+- desktop lobby, mobile lobby, search hero, room interior 네 호출부가 모두 room slug를 fallback identity로 사용한다.
+- 기존 방 내부의 slug 문자합 알고리즘을 그대로 공용 helper로 이동했으므로 방 내부의 기존 기본 이미지 배정은 유지된다.
+- targeted: 1 file / 5 tests pass
+- full: 56 files / 140 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.
+- v2 교체 commit `50a64e9`의 GitHub Actions, Vercel, CodeRabbit이 모두 통과했다.
+
+## Recent V2 Thumbnail Replacement QA
+
+- 판정: `pass` (fresh read-only reviewer, blocking finding 없음)
+- Downloads의 2026-08-05 05:32:40 `*-v2.png` 10장과 저장소 복사본이 SHA-256 및 `cmp` 기준 모두 byte-identical하다.
+- `public/room-defaults`에는 동일 basename의 v2 PNG 10장만 존재하며 모두 1254×1254 RGB PNG다.
+- 구현과 테스트 fallback 목록은 v2 경로 10개만 사용하고 이전 이미지 경로는 남지 않았다.
+- slug 기반 surface 일치와 서버 thumbnail variant/url 우선순위는 유지된다.
+- targeted: 1 file / 5 tests pass
+- full: 56 files / 140 tests pass
+- `npm run lint`, `npm run build`, `git diff --check`: pass
+- 사용자 소유 `CurrentRequesterCard.module.css`는 unrelated/unstaged 상태다.

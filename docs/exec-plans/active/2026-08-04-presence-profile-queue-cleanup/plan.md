@@ -12,6 +12,8 @@
 - 차단 목록 조회/해제를 연결하고 팔로워·팔로잉 카드 클릭 시 관계/차단 액션을 연다.
 - 현재 재생 카드와 queue 카드의 긴 곡 제목도 실제 overflow가 있을 때 연속 가로 스크롤로 표시한다.
 - 현재 재생 곡 썸네일의 `PLAY` 문구를 reduced motion을 존중하는 equalizer 애니메이션으로 교체한다.
+- 방 이미지 미선택 시 사용하는 기존 기본 썸네일 6장을 제거하고 2026-08-05 다운로드 PNG 10장으로 교체한다.
+- 첫 교체 이미지 10장을 제거하고 2026-08-05 05:32에 다운로드된 `*-v2.png` 10장으로 다시 교체한다.
 
 ## Selected Skills
 
@@ -49,6 +51,8 @@
 9. `feat(room): 긴 곡 제목 순환과 재생 애니메이션 추가`
 10. `style(queue): 현재 재생 썸네일 오버레이 조정`
 11. `fix(review): 봇 리뷰의 상태·접근성 결함 수정`
+12. `feat(room): 기본 방 썸네일 이미지 교체`
+13. `style(room): 기본 방 썸네일 이미지 재교체`
 
 ## Acceptance Criteria
 
@@ -71,6 +75,9 @@
 - 동시 차단 해제는 모든 요청별 pending 상태를 유지하고 cache invalidation 완료까지 mutation을 pending으로 유지한다.
 - 칭호 모달은 짧은 viewport에서 세로 스크롤 가능하고 설명 대비를 충족하며, 닫힐 때 실행 중 confetti를 즉시 정리한다.
 - marquee 테스트는 `ResizeObserver` 전역 stub을 테스트마다 복원한다.
+- 기본 방 썸네일 디렉터리에는 새 PNG 10장만 남고, 방 fallback seed는 10장을 결정적으로 순환한다.
+- 같은 방 slug는 로비·모바일·검색·방 내부에서 같은 기본 썸네일을 사용하며 목록 위치 변경에도 이미지가 바뀌지 않는다.
+- 기본 방 썸네일 디렉터리에는 최근 다운로드된 v2 PNG 10장만 남고 원본과 byte-identical하다.
 - `npm run lint`, `npm run test`, `npm run build`, fresh QA가 통과한다.
 
 ## Progress
@@ -96,6 +103,13 @@
 - [x] 봇 리뷰 분류와 타당한 지적 수정
 - [x] review targeted/full QA
 - [x] review fix commit/push와 checks 재확인
+- [x] 기본 방 썸네일 10장 교체 및 fallback 테스트
+- [x] 썸네일 교체 targeted/full QA
+- [x] 썸네일 교체 commit/push와 새 Draft PR 생성
+- [x] 기본 썸네일 surface 불일치 수정과 회귀 테스트
+- [x] 불일치 수정 QA, commit/push, PR #33 checks 재확인
+- [x] 최근 다운로드 v2 PNG 10장 재교체 및 무결성 검증
+- [x] 이미지 재교체 QA, commit/push, PR #33 checks 재확인
 
 ## Residual Risk
 

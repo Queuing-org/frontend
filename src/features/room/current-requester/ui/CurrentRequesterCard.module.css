@@ -84,7 +84,7 @@
 }
 
 .story {
-  max-width: min(190px, 36vw);
+  max-width: min(600px, 36vw);
 }
 
 @media (max-width: 760px) {

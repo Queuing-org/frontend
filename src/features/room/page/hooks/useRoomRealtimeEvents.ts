@@ -521,7 +521,7 @@ export function useRoomRealtimeEvents({
           queryKey: playlistKeys.roomQueuePrefix(slug),
         });
         void queryClient.invalidateQueries({ queryKey: roomKeys.meta(slug) });
-        router.replace("/home");
+        router.replace("/");
       },
     });
   }, [

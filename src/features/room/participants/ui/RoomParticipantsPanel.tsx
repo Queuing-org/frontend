@@ -30,7 +30,7 @@ export default function RoomParticipantsPanel({
     <div className={styles.root}>
       <div className={styles.header}>
         <div className={styles.title}>참가자</div>
-        <div className={styles.count}>{participants.length}</div>
+        <div className={styles.count}>{participants.length} 명</div>
       </div>
       {participants.length ? (
         <RoomParticipantList

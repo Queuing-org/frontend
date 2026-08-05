@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
@@ -67,19 +68,38 @@ const messages = [
   message("식별없음", { messageKey: null, senderSlug: null }),
 ];
 
-function renderChat(chatMessages = messages) {
-  return render(
+const onUserBlocked = vi.fn();
+
+function ChatAreaHarness({ chatMessages }: { chatMessages: ChatMessage[] }) {
+  const [blockedSenderSlugs, setBlockedSenderSlugs] = useState<
+    ReadonlySet<string>
+  >(new Set());
+
+  return (
     <ChatArea
+      blockedSenderSlugs={blockedSenderSlugs}
       currentUser={currentUser}
       hasOlderMessages={false}
       isLoadingOlderMessages={false}
       messages={chatMessages}
       onLoadOlderMessages={vi.fn()}
+      onUserBlocked={(userSlug) => {
+        onUserBlocked(userSlug);
+        setBlockedSenderSlugs((current) => {
+          const next = new Set(current);
+          next.add(userSlug);
+          return next;
+        });
+      }}
       roomPassword="secret"
       roomSlug="room-slug"
       scrollToLatestKey={0}
-    />,
+    />
   );
+}
+
+function renderChat(chatMessages = messages) {
+  return render(<ChatAreaHarness chatMessages={chatMessages} />);
 }
 
 function getMenuTrigger(nickname: string) {
@@ -157,6 +177,7 @@ describe("ChatArea 관리 메뉴", () => {
     await user.click(screen.getByRole("menuitem", { name: "차단" }));
     await user.click(screen.getByRole("button", { name: "차단 실행" }));
 
+    expect(onUserBlocked).toHaveBeenCalledWith("회원-slug");
     expect(screen.queryByText("회원의 메시지")).not.toBeInTheDocument();
     expect(screen.getByText("비회원의 메시지")).toBeInTheDocument();
   });

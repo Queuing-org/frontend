@@ -17,6 +17,7 @@ import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/
 import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
+import { getParticipantKickTargetForUser } from "@/src/features/room/participants/model/participantIdentity";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
@@ -31,10 +32,12 @@ type Props = {
   isChatSending: boolean;
   isCurrentUserLoading: boolean;
   onChatLoginClick?: () => void;
+  onUserBlocked: (userSlug: string) => void;
   onSendChatMessage: (message: string) => boolean;
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
   participants: PlaylistParticipant[];
+  reportMessageKey?: string | null;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
@@ -51,10 +54,12 @@ export default function RoomFloatingWidgets({
   isChatSending,
   isCurrentUserLoading,
   onChatLoginClick,
+  onUserBlocked,
   onSendChatMessage,
   onActivateWidget,
   onWidgetStop,
   participants,
+  reportMessageKey,
   roomMeta,
   roomPassword,
   roomSlug,
@@ -64,6 +69,10 @@ export default function RoomFloatingWidgets({
   const queueWidgetRef = useRef<HTMLDivElement>(null);
   const chatWidgetRef = useRef<HTMLDivElement>(null);
   const participantsWidgetRef = useRef<HTMLDivElement>(null);
+  const currentRequesterKickTarget = getParticipantKickTargetForUser(
+    participants,
+    currentRequester,
+  );
 
   return (
     <div className={styles.widgetLayer}>
@@ -90,8 +99,14 @@ export default function RoomFloatingWidgets({
                 width={widgets.profile.width}
               >
                 <RoomProfilePanel
+                  currentUser={currentUser}
                   currentRequester={currentRequester}
                   currentTrackTitle={currentTrackTitle}
+                  isCurrentUserLoading={isCurrentUserLoading}
+                  kickTarget={currentRequesterKickTarget}
+                  onUserBlocked={onUserBlocked}
+                  reportMessageKey={reportMessageKey}
+                  roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
                 />

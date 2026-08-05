@@ -1,12 +1,16 @@
 import type { ThumbnailUrls } from "../model/types";
 
 const DEFAULT_ROOM_IMAGES = [
-  "/room-defaults/pl.jpg",
-  "/room-defaults/qss.jpg",
-  "/room-defaults/jz.jpg",
-  "/room-defaults/chii.webp",
-  "/room-defaults/jjh.jpg",
-  "/room-defaults/nohong.png",
+  "/room-defaults/queuing-default-thumbnail-coastal-tram-citypop-v2.png",
+  "/room-defaults/queuing-default-thumbnail-conservatory-classical-v2.png",
+  "/room-defaults/queuing-default-thumbnail-forest-rock-v2.png",
+  "/room-defaults/queuing-default-thumbnail-jazz-cafe-v2.png",
+  "/room-defaults/queuing-default-thumbnail-meadow-acoustic-v2.png",
+  "/room-defaults/queuing-default-thumbnail-pastel-neon-rnb-v2.png",
+  "/room-defaults/queuing-default-thumbnail-rainy-lofi-v2.png",
+  "/room-defaults/queuing-default-thumbnail-retro-vinyl-cafe-v2.png",
+  "/room-defaults/queuing-default-thumbnail-seaside-summer-pop-v2.png",
+  "/room-defaults/queuing-default-thumbnail-starlight-animals-v2.png",
 ] as const;
 
 export function getDefaultRoomImage(roomIndex: number) {
@@ -45,11 +49,21 @@ const DEFAULT_ROOM_IMAGE_VARIANTS = [
 ] as const;
 
 type GetRoomImageSrcParams = {
-  fallbackSeed: number;
+  fallbackRoomSlug: string;
   preferredVariants?: readonly (keyof ThumbnailUrls)[];
   thumbnailUrl?: string | null;
   thumbnailUrls?: ThumbnailUrls | null;
 };
+
+function getStableRoomImageIndex(roomSlug: string) {
+  let hash = 0;
+
+  for (let index = 0; index < roomSlug.length; index += 1) {
+    hash += roomSlug.charCodeAt(index);
+  }
+
+  return hash;
+}
 
 function normalizeImageUrl(imageUrl: string | null | undefined) {
   const normalizedImageUrl = imageUrl?.trim();
@@ -77,7 +91,7 @@ function getRoomThumbnailVariantUrl(
 }
 
 export function getRoomImageSrc({
-  fallbackSeed,
+  fallbackRoomSlug,
   preferredVariants = DEFAULT_ROOM_IMAGE_VARIANTS,
   thumbnailUrl,
   thumbnailUrls,
@@ -89,6 +103,8 @@ export function getRoomImageSrc({
   const normalizedThumbnailUrl = normalizeImageUrl(thumbnailUrl);
 
   return (
-    variantImageUrl ?? normalizedThumbnailUrl ?? getDefaultRoomImage(fallbackSeed)
+    variantImageUrl ??
+    normalizedThumbnailUrl ??
+    getDefaultRoomImage(getStableRoomImageIndex(fallbackRoomSlug))
   );
 }

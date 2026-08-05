@@ -15,6 +15,7 @@ Most project risk is at API/UI/state boundaries: API payload shape, React Query 
 - For feature, fix, or refactor requests intended for repository delivery, use `.agents/skills/queuing-feature-delivery/SKILL.md`; it owns specialist routing, QA, commit, push, and draft PR flow. Skip Git/GitHub delivery only when the user explicitly requests local-only work.
 - Use the shared `dev` branch for ongoing development. Do not create per-feature branches unless the user explicitly asks for one. If `dev` does not exist, create it once from the latest remote default branch. Finish an already-published PR on its existing head branch instead of moving it mid-review.
 - For an existing PR with failing checks or review feedback, use `.agents/skills/queuing-pr-review-cycle/SKILL.md`.
+- Codex가 GitHub PR에 작성하는 리뷰 요약, 인라인 리뷰 코멘트, 리뷰 답변은 사용자가 다른 언어를 요청하지 않는 한 한국어로 작성한다. 코드 식별자와 직접 인용은 필요한 경우 원문을 유지한다.
 - For implementation, review, or refactoring, read `ARCHITECTURE.md` before editing and keep its documented boundaries in sync with structural changes.
 - For complex feature work, API troubleshooting, or repeated QA flows, start from `.agents/skills/queuing-orchestrator/SKILL.md`.
 - Use `.agents/skills/queuing-api-boundary/SKILL.md` for API docs, payload, hook, type, and cache-boundary work.

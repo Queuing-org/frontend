@@ -240,11 +240,11 @@ export default function MobileHomeRoomFeed({
 
         {!isLoading && !errorMessage && rooms.length > 0 ? (
           <div className={styles.roomList}>
-            {rooms.map((room, index) => (
+            {rooms.map((room) => (
               <MobileHomeRoomCard
                 key={room.id}
                 imageSrc={getRoomImageSrc({
-                  fallbackSeed: index,
+                  fallbackRoomSlug: room.slug,
                   preferredVariants: ROOM_CARD_IMAGE_VARIANTS,
                   thumbnailUrl: room.thumbnailUrl,
                   thumbnailUrls: room.thumbnailUrls,
