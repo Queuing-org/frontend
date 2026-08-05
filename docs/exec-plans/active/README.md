@@ -1,5 +1,13 @@
 # Active Execution Plans
 
+- [2026-08-06-self-room-profile-state](./2026-08-06-self-room-profile-state/plan.md) — 내 신청곡 프로필 상태와 음악력 액션 가시성
+
+- [2026-08-05-room-current-track-thumbnail](./2026-08-05-room-current-track-thumbnail/plan.md) — 현재 곡 방 썸네일과 단일 빈 방 기본 이미지
+
+- [2026-08-05-room-feedback-refresh](./2026-08-05-room-feedback-refresh/plan.md) — 방 생성·음악력 피드백과 방 탐색 캐시 재검증
+
+- [2026-08-05-loading-empty-owner-ui](./2026-08-05-loading-empty-owner-ui/plan.md) — 로딩·빈 상태·선택 방 방장 UI 정리
+
 - `2026-08-05-root-home-route`: ready — PR #33, 루트 홈 경로 전환 및 CI 통과
 - `2026-08-05-room-profile-management`: implementing — 방 프로필 재구성과 관리 액션
 - `2026-08-04-presence-profile-queue-cleanup`: ci-pending — Draft PR #32, 팔로우 presence·프로필·queue UI 정리

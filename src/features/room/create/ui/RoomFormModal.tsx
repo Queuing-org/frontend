@@ -3,7 +3,6 @@
 import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ClipLoader } from "react-spinners";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
 import { useUploadTemporaryRoomThumbnail } from "@/src/features/room/create/model/useUploadTemporaryRoomThumbnail";
@@ -12,6 +11,7 @@ import { ROOM_TAG_LIMIT } from "@/src/features/room/model/roomFormLimits";
 import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
 import CreateGenreStep from "./CreateGenreStep";
 import CreateSettingsStep, {
@@ -337,10 +337,17 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           thumbnailPreviewUrl={thumbnailSelection.previewUrl}
           thumbnailStatusMessage={
             uploadTemporaryRoomThumbnailMutation.isPending
-              ? "썸네일 업로드 중..."
-              : uploadTemporaryRoomThumbnailMutation.data?.uploadToken
-                ? "썸네일 업로드 완료"
-                : null
+              ? <LoadingSpinner
+                  announce={false}
+                  ariaLabel="썸네일 업로드 중"
+                  size={14}
+                />
+              : null
+          }
+          thumbnailStatusAriaLabel={
+            uploadTemporaryRoomThumbnailMutation.isPending
+              ? "썸네일 업로드 중"
+              : undefined
           }
           isThumbnailPreviewUnavailable={
             thumbnailSelection.isPreviewUnavailable
@@ -358,7 +365,11 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     if (currentStep === 1) {
       return (
         <QueryBoundary
-          fallback={<div className={styles.stepState}>장르 불러오는 중...</div>}
+          fallback={
+            <div className={styles.stepState}>
+              <LoadingSpinner ariaLabel="장르 로딩 중" />
+            </div>
+          }
           errorTitle="장르를 불러오지 못했어요."
           errorDescription="다시 시도해 주세요."
         >
@@ -515,12 +526,10 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   aria-busy={isSubmitting}
                 >
                   {isSubmitting ? (
-                    <ClipLoader
-                      aria-label="방 생성 중"
+                    <LoadingSpinner
+                      ariaLabel="방 생성 중"
                       color="#ffffff"
-                      loading
                       size={18}
-                      speedMultiplier={0.9}
                     />
                   ) : (
                     "완료"

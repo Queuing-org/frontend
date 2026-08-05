@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { Room } from "@/src/features/room/model/types";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { writeStoredRoomJoinPassword } from "../lib/roomJoinPasswordStorage";
@@ -130,7 +131,11 @@ function RoomJoinPasswordModalContent({
             className={styles.confirmButton}
             disabled={!canSubmit}
           >
-            {isSubmitting ? "확인 중" : "확인"}
+            {isSubmitting ? (
+              <LoadingSpinner ariaLabel="방 비밀번호 확인 중" size={16} />
+            ) : (
+              "확인"
+            )}
           </button>
         </div>
       </form>

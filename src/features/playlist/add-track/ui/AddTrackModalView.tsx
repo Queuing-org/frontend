@@ -1,6 +1,7 @@
 "use client";
 
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import AddTrackFormFields from "./AddTrackFormFields";
 import styles from "./AddTrackModal.module.css";
@@ -75,7 +76,15 @@ export default function AddTrackModal({
                 disabled={disabled || submitting}
                 className={`${styles.actionButton} ${styles.submitButton}`}
               >
-                {submitting ? "큐잉 중" : "큐잉"}
+                {submitting ? (
+                  <LoadingSpinner
+                    ariaLabel="큐잉 중"
+                    color="#ffffff"
+                    size={16}
+                  />
+                ) : (
+                  "큐잉"
+                )}
               </button>
             </div>
           </div>

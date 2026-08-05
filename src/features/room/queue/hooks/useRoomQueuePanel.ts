@@ -93,14 +93,12 @@ export function useRoomQueuePanel({
     isPendingQueueEntry(entry);
 
   let emptyMessage = "플레이리스트가 아직 비어 있습니다.";
+  const isEmptyLoading =
+    activeTab === "mine" && (isCurrentUserLoading || isMyQueueLoading);
   if (activeTab === "mine") {
-    if (isCurrentUserLoading) {
-      emptyMessage = "내 신청곡 정보를 확인하는 중입니다.";
-    } else if (isMyQueueLoading) {
-      emptyMessage = "내 신청곡을 불러오는 중입니다.";
-    } else if (!currentUser) {
+    if (!isEmptyLoading && !currentUser) {
       emptyMessage = "내 신청곡을 확인할 수 없습니다.";
-    } else {
+    } else if (!isEmptyLoading) {
       emptyMessage = "내가 신청한 곡이 아직 없습니다.";
     }
   }
@@ -220,6 +218,7 @@ export function useRoomQueuePanel({
     handleMoveRoomEntry,
     hasNextAllQueuePage: allQueueQuery.hasNextPage,
     hasNextMyQueuePage,
+    isEmptyLoading,
     isOwner,
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,

@@ -1,5 +1,6 @@
 import { useRoomTags } from "../../hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 
 function RoomTagsContent() {
   const { data: tags } = useRoomTags();
@@ -18,7 +19,7 @@ function RoomTagsContent() {
 export default function RoomTags() {
   return (
     <QueryBoundary
-      fallback={<div>태그 로딩중...</div>}
+      fallback={<LoadingSpinner ariaLabel="태그 로딩 중" />}
       errorTitle="태그 로딩 실패"
       errorDescription="다시 시도해 주세요."
     >

@@ -59,6 +59,7 @@ import {
 } from "../hooks/useRoomPlaybackViewModel";
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -304,7 +305,11 @@ export default function RoomPlaybackScreen() {
   }
 
   if (currentStatus === "joining") {
-    return <div className={styles.statusState}>입장 중...</div>;
+    return (
+      <div className={styles.statusState}>
+        <LoadingSpinner ariaLabel="방 입장 중" size={28} />
+      </div>
+    );
   }
 
   if (currentStatus === "error") {
@@ -316,7 +321,11 @@ export default function RoomPlaybackScreen() {
   }
 
   if (isRoomPlaybackLoading || isParticipantsLoading) {
-    return <div className={styles.statusState}>방 상태를 불러오는 중...</div>;
+    return (
+      <div className={styles.statusState}>
+        <LoadingSpinner ariaLabel="방 상태 로딩 중" size={28} />
+      </div>
+    );
   }
 
   if (isRoomPlaybackError || isParticipantsError) {
@@ -342,7 +351,11 @@ export default function RoomPlaybackScreen() {
 
   return (
     <QueryBoundary
-      fallback={<div className={styles.statusState}>방 정보를 불러오는 중...</div>}
+      fallback={
+        <div className={styles.statusState}>
+          <LoadingSpinner ariaLabel="방 정보 로딩 중" size={28} />
+        </div>
+      }
       errorTitle="방 정보를 불러오지 못했습니다."
       resetKeys={[slug]}
     >

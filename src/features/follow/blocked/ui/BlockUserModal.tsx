@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef } from "react";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import { useBlockUser } from "../hooks/useBlockUser";
 import styles from "./BlockUserModal.module.css";
@@ -141,7 +142,15 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
                   onClick={handleConfirm}
                   disabled={blockUser.isPending}
                 >
-                  {blockUser.isPending ? "차단 중..." : "차단"}
+                  {blockUser.isPending ? (
+                    <LoadingSpinner
+                      ariaLabel="차단 중"
+                      color="#ffffff"
+                      size={16}
+                    />
+                  ) : (
+                    "차단"
+                  )}
                 </button>
               </div>
             </>

@@ -83,6 +83,13 @@
   gap: 14px;
 }
 
+.profileFormLoading {
+  display: flex;
+  min-height: 220px;
+  align-items: center;
+  justify-content: center;
+}
+
 .formRow {
   display: grid;
   grid-template-columns: 108px minmax(0, 1fr);

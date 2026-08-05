@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import FollowListState from "@/src/features/follow/ui/FollowListState";
 import { useBlockedUsers } from "../hooks/useBlockedUsers";
 import {
   usePendingUnblockUserSlugs,
@@ -26,7 +28,7 @@ export default function BlockedUsersList() {
   );
 
   if (users.length === 0) {
-    return <div className={styles.state}>차단한 사용자가 없습니다.</div>;
+    return <FollowListState>차단한 사용자가 없습니다.</FollowListState>;
   }
 
   return (
@@ -55,7 +57,11 @@ export default function BlockedUsersList() {
           disabled={blockedUsers.isFetchingNextPage}
           onClick={() => void blockedUsers.fetchNextPage()}
         >
-          {blockedUsers.isFetchingNextPage ? "불러오는 중..." : "더 보기"}
+          {blockedUsers.isFetchingNextPage ? (
+            <LoadingSpinner ariaLabel="차단 사용자 더 불러오는 중" size={16} />
+          ) : (
+            "더 보기"
+          )}
         </button>
       ) : null}
     </div>

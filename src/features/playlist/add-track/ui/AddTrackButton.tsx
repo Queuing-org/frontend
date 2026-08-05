@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import type { ReactNode } from "react";
 import styles from "./AddTrackAction.module.css";
 
 type AddTrackButtonProps = {
   appearance?: "loading" | "login" | "primary";
   className?: string;
   disabled?: boolean;
-  label: string;
+  label: ReactNode;
   onClick: () => void;
   variant?: "default" | "queueDock";
 };

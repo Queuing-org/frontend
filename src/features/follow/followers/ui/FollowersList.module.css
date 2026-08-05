@@ -1,6 +1,6 @@
 .container {
   min-width: 0;
-  min-height: 0;
+  min-height: 100%;
 }
 
 .list {
@@ -9,15 +9,4 @@
   padding: 0;
   margin: 0;
   list-style: none;
-}
-
-.state {
-  display: flex;
-  min-height: 160px;
-  align-items: center;
-  justify-content: center;
-  color: #8d8d8d;
-  font-size: 14px;
-  font-weight: var(--fw-medium);
-  line-height: 1.4;
 }

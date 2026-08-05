@@ -11,6 +11,7 @@ import {
 } from "react";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
@@ -283,7 +284,9 @@ export default function ChatArea({
           }}
         >
           {isLoadingOlderMessages ? (
-            <div className={styles.state}>이전 채팅을 불러오는 중...</div>
+            <div className={styles.state}>
+              <LoadingSpinner ariaLabel="이전 채팅 로딩 중" size={18} />
+            </div>
           ) : null}
           {errorMessage ? (
             <button

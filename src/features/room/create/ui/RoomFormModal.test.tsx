@@ -139,9 +139,9 @@ describe("RoomFormModal room form flows", () => {
 
     await selectThumbnail();
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "썸네일 업로드 중...",
-    );
+    expect(
+      await screen.findByRole("status", { name: "썸네일 업로드 중" }),
+    ).toBeInTheDocument();
     const titleInput = screen.getByLabelText("방 제목");
     expect(titleInput).toBeEnabled();
     await user.type(titleInput, "업로드 중 입력");
@@ -176,9 +176,13 @@ describe("RoomFormModal room form flows", () => {
     expect(
       vi.mocked(uploadTemporaryRoomThumbnail).mock.lastCall?.[0],
     ).toEqual({ file: retryFile });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "썸네일 업로드 완료",
-    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+      ).toBeEnabled();
+    });
+    expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -191,9 +195,12 @@ describe("RoomFormModal room form flows", () => {
     renderCreateRoomModal();
 
     await selectThumbnail();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "썸네일 업로드 완료",
-    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+      ).toBeEnabled();
+    });
+    expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("방 제목"), "토큰 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
@@ -219,9 +226,11 @@ describe("RoomFormModal room form flows", () => {
     renderCreateRoomModal();
 
     await selectThumbnail();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "썸네일 업로드 완료",
-    );
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+      ).toBeEnabled();
+    });
     await user.click(
       screen.getByRole("button", { name: "선택한 썸네일 제거" }),
     );

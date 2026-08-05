@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         pathname: "/vi/**", //유튜브 api 썸네일
       },
       {
+        protocol: "https",
+        hostname: "img.youtube.com",
+        pathname: "/vi/**", //유튜브 썸네일 호환 도메인
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         port: "8080",

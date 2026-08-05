@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "./RoomProfileManagementMenu.module.css";
 
 type Props = {
@@ -105,7 +106,11 @@ export default function RoomProfileManagementMenu({
           disabled={isKickPending}
           onClick={() => runAndClose(onKick)}
         >
-          {isKickPending ? "내보내는 중..." : "내보내기"}
+          {isKickPending ? (
+            <LoadingSpinner ariaLabel="참가자 내보내는 중" size={16} />
+          ) : (
+            "내보내기"
+          )}
         </button>
       ) : null}
     </div>

@@ -2,6 +2,7 @@
 
 import type { FormEvent, KeyboardEvent } from "react";
 import type { ApiError } from "@/src/shared/api/api-error";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "../ProfileSettingsTab.module.css";
 
 type ProfileSettingsFormProps = {
@@ -16,6 +17,7 @@ type ProfileSettingsFormProps = {
   canUpdateStatusMessage: boolean;
   hasProfile: boolean;
   isBadgeStatusError: boolean;
+  isBadgePending: boolean;
   isMeError: boolean;
   isMeLoading: boolean;
   isUpdatingProfile: boolean;
@@ -48,6 +50,7 @@ export default function ProfileSettingsForm({
   canUpdateStatusMessage,
   hasProfile,
   isBadgeStatusError,
+  isBadgePending,
   isMeError,
   isMeLoading,
   isUpdatingProfile,
@@ -61,11 +64,15 @@ export default function ProfileSettingsForm({
   onStatusMessageChange,
   onStatusMessageSubmit,
 }: ProfileSettingsFormProps) {
-  const nicknameInputValue = isMeLoading
-    ? "프로필 확인 중"
-    : hasProfile
-      ? nickname
-      : "로그인이 필요합니다";
+  const nicknameInputValue = hasProfile ? nickname : "로그인이 필요합니다";
+
+  if (isMeLoading) {
+    return (
+      <div className={styles.profileFormLoading}>
+        <LoadingSpinner ariaLabel="프로필 로딩 중" size={28} />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.profileForm}>
@@ -92,7 +99,11 @@ export default function ProfileSettingsForm({
             disabled={!canUpdateNickname}
             aria-label="사용자 이름 수정"
           >
-            {isUpdatingProfile ? "변경 중" : "수정"}
+            {isUpdatingProfile ? (
+              <LoadingSpinner ariaLabel="프로필 변경 중" color="#ffffff" size={14} />
+            ) : (
+              "수정"
+            )}
           </button>
         </div>
       </form>
@@ -118,7 +129,11 @@ export default function ProfileSettingsForm({
             disabled={!canUpdateStatusMessage}
             aria-label="한 줄 메시지 수정"
           >
-            {isUpdatingProfile ? "변경 중" : "수정"}
+            {isUpdatingProfile ? (
+              <LoadingSpinner ariaLabel="프로필 변경 중" color="#ffffff" size={14} />
+            ) : (
+              "수정"
+            )}
           </button>
         </div>
         <span id="settings-status-message-hint" className={styles.srOnly}>
@@ -161,6 +176,11 @@ export default function ProfileSettingsForm({
           role={isBadgeStatusError ? "alert" : undefined}
         >
           {badgeStatusMessage}
+        </p>
+      ) : null}
+      {isBadgePending ? (
+        <p className={styles.badgeStatusText}>
+          <LoadingSpinner ariaLabel="칭호 정보 처리 중" size={14} />
         </p>
       ) : null}
       {successMessage ? (

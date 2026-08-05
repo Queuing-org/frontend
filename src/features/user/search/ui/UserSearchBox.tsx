@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useSearchUsers } from "../hooks/useSearchUsers";
 import UserSearchList from "./UserSearchList";
 
@@ -19,7 +20,7 @@ export default function UserSearchBox() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      {isLoading && <div className="text-sm">검색중...</div>}
+      {isLoading ? <LoadingSpinner ariaLabel="사용자 검색 중" size={18} /> : null}
       {isError && <div className="text-sm">검색 실패</div>}
 
       <UserSearchList data={data} />

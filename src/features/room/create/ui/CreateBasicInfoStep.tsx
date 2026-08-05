@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import styles from "./CreateBasicInfoStep.module.css";
 import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 
@@ -11,7 +12,8 @@ type CreateBasicInfoStepProps = {
   thumbnailErrorMessage?: string | null;
   thumbnailFileName?: string | null;
   thumbnailPreviewUrl?: string | null;
-  thumbnailStatusMessage?: string | null;
+  thumbnailStatusMessage?: ReactNode;
+  thumbnailStatusAriaLabel?: string;
   isThumbnailPreviewUnavailable?: boolean;
   onTitleChange: (title: string) => void;
   onThumbnailChange: (files: FileList | null) => void;
@@ -28,6 +30,7 @@ export default function CreateBasicInfoStep({
   thumbnailFileName,
   thumbnailPreviewUrl,
   thumbnailStatusMessage,
+  thumbnailStatusAriaLabel,
   isThumbnailPreviewUnavailable,
   onTitleChange,
   onThumbnailChange,
@@ -47,6 +50,7 @@ export default function CreateBasicInfoStep({
           isPreviewUnavailable={isThumbnailPreviewUnavailable}
           previewUrl={thumbnailPreviewUrl}
           statusMessage={thumbnailStatusMessage}
+          statusAriaLabel={thumbnailStatusAriaLabel}
           variant="create"
           onClearSelection={onThumbnailClear}
           onFileChange={onThumbnailChange}

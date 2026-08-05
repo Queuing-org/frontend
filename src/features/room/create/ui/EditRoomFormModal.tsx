@@ -3,6 +3,7 @@
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -215,7 +216,9 @@ export default function EditRoomFormModal({
 
             <QueryBoundary
               fallback={
-                <div className={styles.helperText}>장르 불러오는 중...</div>
+                <div className={styles.helperText}>
+                  <LoadingSpinner ariaLabel="장르 로딩 중" size={18} />
+                </div>
               }
               errorTitle="장르를 불러오지 못했어요."
               errorDescription="다시 시도해 주세요."
@@ -239,7 +242,15 @@ export default function EditRoomFormModal({
             className={styles.submitButton}
             disabled={!form.canSubmit}
           >
-            {form.isSubmitting ? "큐 수정 중..." : "큐 수정하기"}
+            {form.isSubmitting ? (
+              <LoadingSpinner
+                ariaLabel="큐 수정 중"
+                color="#ffffff"
+                size={16}
+              />
+            ) : (
+              "큐 수정하기"
+            )}
           </button>
         </form>
       </div>

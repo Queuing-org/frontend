@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -15,6 +15,7 @@ import { useFollowingRelationship } from "@/src/features/follow/following/hooks/
 import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import type { ParticipantKickTarget } from "@/src/features/room/participants/model/participantIdentity";
@@ -37,6 +38,17 @@ type Props = {
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
+};
+
+const MUSIC_POWER_NOTICE_DURATION_MS = 2_000;
+const MUSIC_POWER_LIMIT_NOTICE =
+  "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.";
+const MUSIC_POWER_LOGIN_NOTICE =
+  "로그인 후 음악력을 올리거나 내릴 수 있습니다.";
+
+type MusicPowerNotice = {
+  message: string;
+  targetSlug: string;
 };
 
 function isCurrentUserProfile(
@@ -70,7 +82,11 @@ export default function RoomProfilePanel({
   const [managementMessage, setManagementMessage] = useState<string | null>(
     null,
   );
+  const [musicPowerNotice, setMusicPowerNotice] =
+    useState<MusicPowerNotice | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
+  const musicPowerNoticeTimerRef = useRef<number | null>(null);
+  const musicPowerNoticeSequenceRef = useRef(0);
   const targetSlug = currentRequester?.slug ?? null;
   const { data: publicProfile, isLoading: isPublicProfileLoading } =
     useUserProfile(targetSlug);
@@ -96,13 +112,15 @@ export default function RoomProfilePanel({
     canFollow ? targetSlug : null,
   );
 
-  let buttonLabel = "팔로우";
+  let buttonLabel: ReactNode = "팔로우";
   if (!currentRequester) {
     buttonLabel = "대상 없음";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
   } else if (isCurrentUserLoading) {
-    buttonLabel = "확인 중";
+    buttonLabel = (
+      <LoadingSpinner ariaLabel="로그인 상태 확인 중" size={16} />
+    );
   } else if (!currentUser) {
     buttonLabel = "로그인 필요";
   }
@@ -114,23 +132,18 @@ export default function RoomProfilePanel({
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
   const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
-  const badgeValue =
-    isPublicProfileLoading || isPublicBadgesLoading
-      ? "불러오는 중..."
-      : (representativeBadge?.name ?? "대표 칭호 없음");
+  const isBadgeLoading = isPublicProfileLoading || isPublicBadgesLoading;
+  const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
   const isMusicPowerVoteDisabled =
-    !currentUser ||
+    isCurrentUserLoading ||
     isSelf ||
     !targetSlug ||
-    !roomSlug ||
-    musicPowerQuery.isLoading ||
-    !musicPowerQuery.data ||
-    musicPowerVote.isPending;
+    !roomSlug;
   const musicPowerVoteDisabledLabel = (() => {
-    if (!currentUser) {
-      return "로그인 후 음악력에 투표할 수 있습니다";
+    if (isCurrentUserLoading) {
+      return "로그인 상태를 확인하고 있습니다";
     }
     if (isSelf) {
       return "본인의 음악력에는 투표할 수 없습니다";
@@ -138,28 +151,68 @@ export default function RoomProfilePanel({
     if (!targetSlug) {
       return "투표 대상은 회원 신청자만 가능합니다";
     }
-    if (musicPowerQuery.isLoading) {
-      return "음악력 투표 상태 확인 중";
-    }
-    if (!musicPowerQuery.data) {
-      return "음악력 투표 상태를 확인할 수 없습니다";
-    }
-    if (musicPowerVote.isPending) {
-      return "음악력 투표 처리 중";
-    }
     return null;
   })();
 
+  useEffect(() => {
+    return () => {
+      if (musicPowerNoticeTimerRef.current !== null) {
+        window.clearTimeout(musicPowerNoticeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showMusicPowerNotice = (message: string, noticeTargetSlug: string) => {
+    if (musicPowerNoticeTimerRef.current !== null) {
+      window.clearTimeout(musicPowerNoticeTimerRef.current);
+    }
+
+    setMusicPowerNotice({ message, targetSlug: noticeTargetSlug });
+    musicPowerNoticeTimerRef.current = window.setTimeout(() => {
+      setMusicPowerNotice(null);
+      musicPowerNoticeTimerRef.current = null;
+    }, MUSIC_POWER_NOTICE_DURATION_MS);
+  };
+
   const handleMusicPowerVote = (vote: MusicPowerVote) => {
-    if (isMusicPowerVoteDisabled || !musicPowerQuery.data) {
+    if (!targetSlug || isCurrentUserLoading) {
       return;
     }
 
-    musicPowerVote.mutate({
-      roomSlug,
-      password: roomPassword,
-      vote,
-    });
+    const noticeSequence = ++musicPowerNoticeSequenceRef.current;
+    if (!currentUser) {
+      showMusicPowerNotice(MUSIC_POWER_LOGIN_NOTICE, targetSlug);
+      return;
+    }
+
+    if (isMusicPowerVoteDisabled) {
+      return;
+    }
+
+    if (musicPowerNoticeTimerRef.current !== null) {
+      window.clearTimeout(musicPowerNoticeTimerRef.current);
+      musicPowerNoticeTimerRef.current = null;
+    }
+    setMusicPowerNotice(null);
+    musicPowerVote.mutate(
+      {
+        roomSlug,
+        password: roomPassword,
+        vote,
+      },
+      {
+        onError: (error) => {
+          if (musicPowerNoticeSequenceRef.current !== noticeSequence) {
+            return;
+          }
+
+          showMusicPowerNotice(
+            error.message || MUSIC_POWER_LIMIT_NOTICE,
+            targetSlug,
+          );
+        },
+      },
+    );
   };
 
   const handleReport = () => {
@@ -243,7 +296,15 @@ export default function RoomProfilePanel({
               <div className={styles.activity}>현재 큐잉 중...</div>
             </div>
           </div>
-          {shouldShowFollowAction ? (
+          {isSelf ? (
+            <div
+              className={styles.selfTrackStatus}
+              aria-label="내 신청곡 재생 상태"
+            >
+              <span className={styles.selfTrackStatusDot} aria-hidden="true" />
+              <span>내 노래가 나오고 있어요!</span>
+            </div>
+          ) : shouldShowFollowAction ? (
             <div
               className={styles.actionRow}
               data-single-action={!canManage || undefined}
@@ -312,7 +373,15 @@ export default function RoomProfilePanel({
             <div className={styles.card}>
               <div className={styles.cardTitle}>칭호</div>
               <div className={styles.cardValue}>
-                {targetSlug ? badgeValue : "-"}
+                {targetSlug ? (
+                  isBadgeLoading ? (
+                    <LoadingSpinner ariaLabel="칭호 로딩 중" size={18} />
+                  ) : (
+                    badgeValue
+                  )
+                ) : (
+                  "-"
+                )}
               </div>
             </div>
             <div className={styles.card}>
@@ -341,46 +410,62 @@ export default function RoomProfilePanel({
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
-              {musicPowerVote.error ? (
-                <p className={styles.recommendationError} role="alert">
-                  {musicPowerVote.error.message}
-                </p>
-              ) : null}
             </div>
-            <div className={styles.musicPowerActions}>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-                title={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-                disabled={isMusicPowerVoteDisabled}
-                onClick={() => handleMusicPowerVote("UPVOTE")}
-              >
-                <Image
-                  src="/icons/music-power-up.svg"
-                  alt=""
-                  aria-hidden="true"
-                  width={8}
-                  height={8}
-                />
-              </button>
-              <button
-                type="button"
-                className={styles.musicPowerButton}
-                aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-                title={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-                disabled={isMusicPowerVoteDisabled}
-                onClick={() => handleMusicPowerVote("DOWNVOTE")}
-              >
-                <Image
-                  src="/icons/music-power-down.svg"
-                  alt=""
-                  aria-hidden="true"
-                  width={8}
-                  height={8}
-                />
-              </button>
-            </div>
+            {!isSelf && !isCurrentUserLoading ? (
+              <>
+                {musicPowerNotice?.targetSlug === targetSlug ? (
+                  <p className={styles.musicPowerNotice} role="alert">
+                    {musicPowerNotice.message}
+                  </p>
+                ) : null}
+                <div className={styles.musicPowerActions}>
+                  <button
+                    type="button"
+                    className={styles.musicPowerButton}
+                    aria-label={
+                      musicPowerVoteDisabledLabel ?? "음악력 올리기"
+                    }
+                    title={
+                      !currentUser && !isCurrentUserLoading
+                        ? MUSIC_POWER_LOGIN_NOTICE
+                        : (musicPowerVoteDisabledLabel ?? "음악력 올리기")
+                    }
+                    disabled={isMusicPowerVoteDisabled}
+                    onClick={() => handleMusicPowerVote("UPVOTE")}
+                  >
+                    <Image
+                      src="/icons/music-power-up.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={8}
+                      height={8}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.musicPowerButton}
+                    aria-label={
+                      musicPowerVoteDisabledLabel ?? "음악력 내리기"
+                    }
+                    title={
+                      !currentUser && !isCurrentUserLoading
+                        ? MUSIC_POWER_LOGIN_NOTICE
+                        : (musicPowerVoteDisabledLabel ?? "음악력 내리기")
+                    }
+                    disabled={isMusicPowerVoteDisabled}
+                    onClick={() => handleMusicPowerVote("DOWNVOTE")}
+                  >
+                    <Image
+                      src="/icons/music-power-down.svg"
+                      alt=""
+                      aria-hidden="true"
+                      width={8}
+                      height={8}
+                    />
+                  </button>
+                </div>
+              </>
+            ) : null}
           </div>
           <BlockUserModal
             onBlocked={(target) => {

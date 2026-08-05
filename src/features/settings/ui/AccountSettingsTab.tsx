@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
@@ -109,7 +110,11 @@ export default function AccountSettingsTab({
           onClick={handleLogout}
           disabled={!me || isAccountActionPending}
         >
-          {isLoggingOut ? "로그아웃 중..." : "로그아웃"}
+          {isLoggingOut ? (
+            <LoadingSpinner ariaLabel="로그아웃 중" size={16} />
+          ) : (
+            "로그아웃"
+          )}
         </button>
         <span className={styles.actionDivider} aria-hidden="true" />
         <button
@@ -118,9 +123,9 @@ export default function AccountSettingsTab({
           onClick={handleWithdraw}
           disabled={!me || isAccountActionPending}
         >
-          {isWithdrawing
-            ? "탈퇴 중..."
-            : isConfirmingWithdraw
+          {isWithdrawing ? (
+            <LoadingSpinner ariaLabel="회원 탈퇴 중" size={16} />
+          ) : isConfirmingWithdraw
               ? "탈퇴 확인"
               : "회원탈퇴"}
         </button>

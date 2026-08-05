@@ -38,6 +38,10 @@ import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
+import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
+import SelectedRoomOwnerBar from "@/src/features/room/list/ui/SelectedRoomOwnerBar";
+import SearchEmptyState from "@/src/features/room/search/ui/SearchEmptyState";
+import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 
 export default function SearchScreen() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
@@ -241,10 +245,25 @@ function SearchRoomsContent({
   const selectedRoomIndex = selectedRoomSlug
     ? roomListRooms.findIndex((room) => room.slug === selectedRoomSlug)
     : -1;
-  const selectedRoom =
+  const selectedRoomFromList =
     selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
+  const roomMetaQuery = useRoomMetaQuery(selectedRoomFromList?.slug ?? null);
+  const selectedRoom = selectedRoomFromList
+    ? mergeRoomMeta(selectedRoomFromList, roomMetaQuery.data)
+    : null;
+  const visibleRooms = useMemo(
+    () =>
+      roomListRooms.map((room) =>
+        room.slug === selectedRoomSlug
+          ? mergeRoomMeta(room, roomMetaQuery.data)
+          : room,
+      ),
+    [roomListRooms, roomMetaQuery.data, selectedRoomSlug],
+  );
+  const selectedRoomOwner = roomMetaQuery.data?.owner ?? null;
+  const showEmptyState =
+    !roomsQuery.isPending && !roomsQuery.isError && roomListRooms.length === 0;
   const backgroundImageSrc = getRoomImageSrc({
-    fallbackRoomSlug: selectedRoom?.slug ?? selectedRoomSlug ?? "",
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
     thumbnailUrl: selectedRoom?.thumbnailUrl,
     thumbnailUrls: selectedRoom?.thumbnailUrls,
@@ -257,41 +276,50 @@ function SearchRoomsContent({
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}
         />
-        <div className={styles.contentGrid}>
-          <div className={styles.listContent}>
-            <div className={styles.room_list}>
-              <SearchPageRoomList
-                errorMessage={roomListErrorMessage}
-                isLoading={roomsQuery.isPending}
-                onRetry={() => {
-                  void roomsQuery.refetch();
-                }}
-                rooms={roomListRooms}
-                selectedRoomSlug={selectedRoomSlug}
-                onSelectRoom={setCurrentRoomSlug}
-                onRequestRoomEntry={roomEntry.requestRoomEntry}
-              />
-            </div>
+        {showEmptyState ? (
+          <div className={styles.emptyContent}>
+            <SearchEmptyState query={searchQuery} onCreateRoom={onCreateRoom} />
           </div>
+        ) : (
+          <div className={styles.contentGrid}>
+            <div className={styles.listContent}>
+              <div className={styles.room_list}>
+                <SearchPageRoomList
+                  errorMessage={roomListErrorMessage}
+                  isLoading={roomsQuery.isPending}
+                  onRetry={() => {
+                    void roomsQuery.refetch();
+                  }}
+                  rooms={visibleRooms}
+                  selectedRoomSlug={selectedRoomSlug}
+                  onSelectRoom={setCurrentRoomSlug}
+                  onRequestRoomEntry={roomEntry.requestRoomEntry}
+                />
+              </div>
+            </div>
 
-          <div className={styles.thumbnail_container}>
-            <div className={styles.thumbnailImageFrame}>
-              <Image
-                key={backgroundImageSrc}
-                src={backgroundImageSrc}
-                alt={
-                  selectedRoom
-                    ? `${selectedRoom.title} 대표 이미지`
-                    : "방 대표 이미지"
-                }
-                fill
-                className={styles.thumbnail}
-                sizes="(max-width: 900px) 100vw, 46vw"
-                priority
-              />
+            <div className={styles.thumbnail_container}>
+              <div className={styles.thumbnailImageFrame}>
+                <Image
+                  key={backgroundImageSrc}
+                  src={backgroundImageSrc}
+                  alt={
+                    selectedRoom
+                      ? `${selectedRoom.title} 대표 이미지`
+                      : "방 대표 이미지"
+                  }
+                  fill
+                  className={styles.thumbnail}
+                  sizes="(max-width: 900px) 100vw, 46vw"
+                  priority
+                />
+                {selectedRoomOwner ? (
+                  <SelectedRoomOwnerBar owner={selectedRoomOwner} />
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       <HomeSearchControlDock

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Settings, Shuffle, UsersRound } from "lucide-react";
-import { ClipLoader } from "react-spinners";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { Room } from "@/src/features/room/model/types";
 import {
   getRoomImageSrc,
@@ -160,7 +160,7 @@ export default function MobileHomeRoomFeed({
           aria-busy={isRandomEntryPending}
         >
           {isRandomEntryPending ? (
-            <ClipLoader color="#3c3c3c" size={16} aria-label="랜덤 입장 중" />
+            <LoadingSpinner ariaLabel="랜덤 입장 중" size={16} />
           ) : (
             <Shuffle className={styles.actionIcon} aria-hidden="true" />
           )}
@@ -211,7 +211,7 @@ export default function MobileHomeRoomFeed({
       <section className={styles.listSection} aria-label="방 목록">
         {isLoading ? (
           <div className={styles.loadingState}>
-            <ClipLoader color="#3c3c3c" size={28} aria-label="방 목록 로딩 중" />
+            <LoadingSpinner ariaLabel="방 목록 로딩 중" size={28} />
           </div>
         ) : null}
 
@@ -233,8 +233,14 @@ export default function MobileHomeRoomFeed({
 
         {!isLoading && !errorMessage && showEmptyState ? (
           <div className={styles.emptyState}>
-            <strong>방이 하나도 없어요.</strong>
-            <span>새 방을 만들거나 잠시 후 다시 확인해 주세요.</span>
+            <strong>현재 생성된 방이 없어요.</strong>
+            <button
+              type="button"
+              className={styles.emptyCreateButton}
+              onClick={onCreateRoom}
+            >
+              방 만들기
+            </button>
           </div>
         ) : null}
 
@@ -244,7 +250,6 @@ export default function MobileHomeRoomFeed({
               <MobileHomeRoomCard
                 key={room.id}
                 imageSrc={getRoomImageSrc({
-                  fallbackRoomSlug: room.slug,
                   preferredVariants: ROOM_CARD_IMAGE_VARIANTS,
                   thumbnailUrl: room.thumbnailUrl,
                   thumbnailUrls: room.thumbnailUrls,
@@ -265,7 +270,11 @@ export default function MobileHomeRoomFeed({
             onClick={onLoadMoreRooms}
             disabled={isFetchingNextPage}
           >
-            {isFetchingNextPage ? "불러오는 중" : "방 더 보기"}
+            {isFetchingNextPage ? (
+              <LoadingSpinner ariaLabel="방 더 불러오는 중" size={16} />
+            ) : (
+              "방 더 보기"
+            )}
           </button>
         ) : null}
       </section>

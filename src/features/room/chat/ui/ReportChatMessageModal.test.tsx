@@ -78,7 +78,7 @@ describe("ReportChatMessageModal", () => {
 
     await user.click(screen.getByRole("checkbox", { name: "욕설 및 비방" }));
     await user.click(screen.getByRole("button", { name: "신고" }));
-    const pendingButton = screen.getByRole("button", { name: "신고 중..." });
+    const pendingButton = screen.getByRole("button", { name: "신고 중" });
     expect(pendingButton).toBeDisabled();
     await user.click(pendingButton);
     await user.click(screen.getByRole("button", { name: "취소" }));

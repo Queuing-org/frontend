@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useUpdateMe } from "../hooks/useUpdateMe";
 import CheckNicknameButton from "@/src/features/user/profile/ui/CheckNicknameButton";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 
 export default function NicknameEditForm() {
   const { mutate, isPending, error } = useUpdateMe();
@@ -44,7 +45,11 @@ export default function NicknameEditForm() {
         className="border px-3 py-1 cursor-pointer"
         disabled={isPending}
       >
-        {isPending ? "변경 중..." : "변경하기"}
+        {isPending ? (
+          <LoadingSpinner ariaLabel="닉네임 변경 중" size={16} />
+        ) : (
+          "변경하기"
+        )}
       </button>
 
       {error && (

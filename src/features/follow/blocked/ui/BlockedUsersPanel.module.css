@@ -12,17 +12,6 @@
   list-style: none;
 }
 
-.state {
-  display: flex;
-  min-height: 100%;
-  align-items: center;
-  justify-content: center;
-  color: #8d8d8d;
-  font-size: 14px;
-  font-weight: var(--fw-medium);
-  line-height: 1.4;
-}
-
 .unblockButton,
 .loadMoreButton {
   min-width: 88px;
