@@ -1,12 +1,13 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import RoomQueueCard from "./RoomQueueCard";
 import styles from "./RoomQueueList.module.css";
 
 type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
-  emptyMessage: string;
+  emptyMessage: ReactNode;
   entries: PlaylistEntry[];
   isDeletePending?: boolean;
   listClassName?: string;

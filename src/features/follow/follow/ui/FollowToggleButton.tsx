@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useUnfollow } from "@/src/features/follow/unfollow/hooks/useUnfollow";
 import { useFollow } from "../hooks/useFollow";
 import type { FollowRelationship } from "../model/types";
@@ -9,7 +10,7 @@ import styles from "./FollowToggleButton.module.css";
 type FollowToggleButtonProps = {
   className?: string;
   disabled?: boolean;
-  disabledLabel?: string;
+  disabledLabel?: ReactNode;
   followingLabel?: string;
   initialRelationship?: FollowRelationship | null;
   targetSlug?: string | null;
@@ -50,7 +51,12 @@ export default function FollowToggleButton({
 
   const label = (() => {
     if (isPending) {
-      return isFollowing ? "언팔로우 중..." : "팔로우 중...";
+      return (
+        <LoadingSpinner
+          ariaLabel={isFollowing ? "언팔로우 중" : "팔로우 중"}
+          size={16}
+        />
+      );
     }
 
     if (disabled || !targetSlug) {

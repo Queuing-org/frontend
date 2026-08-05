@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import type { SearchUser } from "@/src/features/user/search/model/types";
 import styles from "../FollowModal.module.css";
@@ -60,7 +61,9 @@ export default function FollowUserSearch({
         {hasSearchQuery ? (
           <div className={styles.searchDropdown}>
             {isLoading ? (
-              <div className={styles.stateText}>검색중...</div>
+              <div className={styles.stateText}>
+                <LoadingSpinner ariaLabel="사용자 검색 중" size={18} />
+              </div>
             ) : null}
             {isError ? <div className={styles.stateText}>검색 실패</div> : null}
             {!isLoading && !isError && users.length === 0 ? (

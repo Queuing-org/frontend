@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   closestCenter,
   DndContext,
@@ -35,7 +35,7 @@ type MovePayload = {
 
 type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
-  emptyMessage: string;
+  emptyMessage: ReactNode;
   entries: PlaylistEntry[];
   hasUnloadedEntries?: boolean;
   isDeletePending?: boolean;

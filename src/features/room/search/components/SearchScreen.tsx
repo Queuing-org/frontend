@@ -38,6 +38,9 @@ import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
+import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
+import SelectedRoomOwnerBar from "@/src/features/room/list/ui/SelectedRoomOwnerBar";
+import SearchEmptyState from "@/src/features/room/search/ui/SearchEmptyState";
 
 export default function SearchScreen() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
@@ -243,6 +246,10 @@ function SearchRoomsContent({
     : -1;
   const selectedRoom =
     selectedRoomIndex >= 0 ? roomListRooms[selectedRoomIndex] : null;
+  const roomMetaQuery = useRoomMetaQuery(selectedRoom?.slug ?? null);
+  const selectedRoomOwner = roomMetaQuery.data?.owner ?? null;
+  const showEmptyState =
+    !roomsQuery.isPending && !roomsQuery.isError && roomListRooms.length === 0;
   const backgroundImageSrc = getRoomImageSrc({
     fallbackRoomSlug: selectedRoom?.slug ?? selectedRoomSlug ?? "",
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
@@ -257,6 +264,11 @@ function SearchRoomsContent({
           searchQuery={searchQuery}
           onSearchQueryChange={onSearchQueryChange}
         />
+        {showEmptyState ? (
+          <div className={styles.emptyContent}>
+            <SearchEmptyState query={searchQuery} onCreateRoom={onCreateRoom} />
+          </div>
+        ) : (
         <div className={styles.contentGrid}>
           <div className={styles.listContent}>
             <div className={styles.room_list}>
@@ -289,9 +301,13 @@ function SearchRoomsContent({
                 sizes="(max-width: 900px) 100vw, 46vw"
                 priority
               />
+              {selectedRoomOwner ? (
+                <SelectedRoomOwnerBar owner={selectedRoomOwner} />
+              ) : null}
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <HomeSearchControlDock

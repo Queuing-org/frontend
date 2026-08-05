@@ -1,5 +1,6 @@
 "use client";
 
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "./HomeControlPanelShell.module.css";
 
 const menuItems = ["RANDOM", "CREATE", "FOLLOW", "SETTING"] as const;
@@ -45,6 +46,7 @@ export type HomeFilterOptionDescriptor<Option extends string = string> = {
   disabled?: boolean;
   disabledReason?: string;
   label: string;
+  loading?: boolean;
   statusLabel?: string;
   value: Option;
 };
@@ -80,7 +82,8 @@ export function getHomeGenreFilterOptions({
       allOption,
       {
         disabled: true,
-        label: "불러오는 중",
+        label: "",
+        loading: true,
         value: "__GENRE_FILTER_LOADING__",
       },
     ];
@@ -218,7 +221,11 @@ export default function HomeControlPanelShell(props: Props) {
                 aria-busy={isPendingRandom}
                 onClick={() => props.onSelectMenuItem(item)}
               >
-                {isPendingRandom ? "LOADING" : item}
+                {isPendingRandom ? (
+                  <LoadingSpinner ariaLabel="랜덤 방 찾는 중" size={16} />
+                ) : (
+                  item
+                )}
               </button>
             );
           })}
@@ -255,6 +262,7 @@ export default function HomeControlPanelShell(props: Props) {
                   }`}
                   aria-pressed={isActive}
                   disabled={option.disabled}
+                  aria-label={option.loading ? "장르 로딩 중" : undefined}
                   title={option.disabledReason}
                   onClick={() => {
                     if (option.disabled) {
@@ -264,7 +272,11 @@ export default function HomeControlPanelShell(props: Props) {
                     props.onSelectFilter(section.key, option.value);
                   }}
                 >
-                  <span>{option.label}</span>
+                  {option.loading ? (
+                    <LoadingSpinner ariaLabel="장르 로딩 중" size={14} />
+                  ) : (
+                    <span>{option.label}</span>
+                  )}
                   {option.statusLabel ? (
                     <span className={styles.optionStatus}>
                       {option.statusLabel}

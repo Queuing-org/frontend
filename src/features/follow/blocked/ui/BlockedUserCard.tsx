@@ -1,4 +1,5 @@
 import type { BlockedUser } from "../model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import FollowUserCard from "../../ui/FollowUserCard";
 import styles from "./BlockedUsersPanel.module.css";
 
@@ -24,7 +25,11 @@ export default function BlockedUserCard({
           disabled={isPending}
           onClick={() => onUnblock(user.slug)}
         >
-          {isPending ? "해제 중..." : "차단 해제"}
+          {isPending ? (
+            <LoadingSpinner ariaLabel="차단 해제 중" size={16} />
+          ) : (
+            "차단 해제"
+          )}
         </button>
       }
     />

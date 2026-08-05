@@ -1,0 +1,44 @@
+.bar {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  height: 56px;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  padding: 12px 16px;
+  background: rgba(245, 245, 247, 0.8);
+  backdrop-filter: blur(3px);
+  color: #3c3c3c;
+  pointer-events: none;
+}
+
+.avatarWrap {
+  position: relative;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.avatar {
+  object-fit: cover;
+}
+
+.name {
+  min-width: 0;
+  overflow: hidden;
+  color: #3c3c3c;
+  font-size: 16px;
+  font-weight: var(--fw-bold);
+  line-height: 1.4;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

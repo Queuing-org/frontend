@@ -4,6 +4,7 @@ import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButt
 import type { FollowRelationship } from "@/src/features/follow/follow/model/types";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { FollowUser } from "../model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "./FollowUserActions.module.css";
 
 type Props = {
@@ -32,7 +33,13 @@ export default function FollowUserActions({
       <FollowToggleButton
         className={styles.relationshipButton}
         disabled={isCheckingRelationship || hasRelationshipError}
-        disabledLabel={hasRelationshipError ? "확인 실패" : "확인 중"}
+        disabledLabel={
+          hasRelationshipError ? (
+            "확인 실패"
+          ) : (
+            <LoadingSpinner ariaLabel="팔로우 관계 확인 중" size={16} />
+          )
+        }
         initialRelationship={resolvedRelationship}
         targetSlug={user.slug}
       />

@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- Local blob previews cannot use next/image optimization. */
 
-import { useRef, type ChangeEvent } from "react";
+import { useRef, type ChangeEvent, type ReactNode } from "react";
 import { Camera, X } from "lucide-react";
 import { ROOM_THUMBNAIL_ACCEPT } from "@/src/features/room/hooks/useRoomThumbnailSelection";
 import styles from "./RoomThumbnailUploadField.module.css";
@@ -16,7 +16,8 @@ type RoomThumbnailUploadFieldProps = {
   inputId: string;
   isPreviewUnavailable?: boolean;
   previewUrl?: string | null;
-  statusMessage?: string | null;
+  statusMessage?: ReactNode;
+  statusAriaLabel?: string;
   variant: "create" | "edit";
   onClearSelection: () => void;
   onFileChange: (files: FileList | null) => void;
@@ -33,6 +34,7 @@ export default function RoomThumbnailUploadField({
   isPreviewUnavailable = false,
   previewUrl,
   statusMessage,
+  statusAriaLabel,
   variant,
   onClearSelection,
   onFileChange,
@@ -100,7 +102,12 @@ export default function RoomThumbnailUploadField({
           {errorMessage}
         </p>
       ) : statusMessage ? (
-        <p className={styles.feedback} data-tone="status" role="status">
+        <p
+          className={styles.feedback}
+          data-tone="status"
+          role="status"
+          aria-label={statusAriaLabel}
+        >
           {statusMessage}
         </p>
       ) : null}

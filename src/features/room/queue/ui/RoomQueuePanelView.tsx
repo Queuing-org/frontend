@@ -1,6 +1,7 @@
 "use client";
 
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { QueueTab } from "../model/roomQueue";
 import RoomQueueListSection from "./RoomQueueListSection";
@@ -25,6 +26,7 @@ type RoomQueuePanelViewProps = {
   hasNextMyQueuePage: boolean;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
+  isEmptyLoading: boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
@@ -58,6 +60,7 @@ export default function RoomQueuePanelView({
   hasNextMyQueuePage,
   isDeleteMyPending,
   isDeleteRoomPending,
+  isEmptyLoading,
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
@@ -93,6 +96,7 @@ export default function RoomQueuePanelView({
           canDeleteEntry={canDeleteEntry}
           canDeleteEntryAsOwner={canDeleteEntryAsOwner}
           emptyMessage={emptyMessage}
+          isEmptyLoading={isEmptyLoading}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}
           isMoveMyPending={isMoveMyPending}
@@ -117,13 +121,19 @@ export default function RoomQueuePanelView({
         <div className={styles.error}>{queueErrorMessage}</div>
       ) : null}
       {isMoveMyPending || isMoveRoomPending ? (
-        <div className={styles.refreshing}>큐 순서를 변경하는 중...</div>
+        <div className={styles.refreshing}>
+          <LoadingSpinner ariaLabel="큐 순서 변경 중" size={14} />
+        </div>
       ) : null}
       {isDeleteMyPending || isDeleteRoomPending ? (
-        <div className={styles.refreshing}>큐 항목을 삭제하는 중...</div>
+        <div className={styles.refreshing}>
+          <LoadingSpinner ariaLabel="큐 항목 삭제 중" size={14} />
+        </div>
       ) : null}
       {isRefetching ? (
-        <div className={styles.refreshing}>최신 목록으로 갱신 중...</div>
+        <div className={styles.refreshing}>
+          <LoadingSpinner ariaLabel="최신 큐 목록 갱신 중" size={14} />
+        </div>
       ) : null}
       {activeTab === "all" && hasNextAllQueuePage ? (
         <button
@@ -132,7 +142,11 @@ export default function RoomQueuePanelView({
           disabled={isFetchingNextAllQueuePage}
           onClick={onLoadMoreAllQueue}
         >
-          {isFetchingNextAllQueuePage ? "불러오는 중..." : "대기곡 더 보기"}
+          {isFetchingNextAllQueuePage ? (
+            <LoadingSpinner ariaLabel="대기곡 더 불러오는 중" size={16} />
+          ) : (
+            "대기곡 더 보기"
+          )}
         </button>
       ) : null}
       {activeTab === "mine" && hasNextMyQueuePage ? (
@@ -142,7 +156,11 @@ export default function RoomQueuePanelView({
           disabled={isFetchingNextMyQueuePage}
           onClick={onLoadMoreMyQueue}
         >
-          {isFetchingNextMyQueuePage ? "불러오는 중..." : "내 신청곡 더 보기"}
+          {isFetchingNextMyQueuePage ? (
+            <LoadingSpinner ariaLabel="내 신청곡 더 불러오는 중" size={16} />
+          ) : (
+            "내 신청곡 더 보기"
+          )}
         </button>
       ) : null}
       <div className={styles.addTrackDock}>

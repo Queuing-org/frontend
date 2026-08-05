@@ -1,6 +1,8 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useAddTrackAction } from "../hooks/useAddTrackAction";
 import AddTrackButton from "./AddTrackButton";
 import AddTrackModalView from "./AddTrackModalView";
@@ -27,13 +29,17 @@ export default function AddTrackAction({
   const form = action.form;
   let appearance: "loading" | "login" | "primary" = "primary";
   let buttonDisabled = false;
-  let buttonLabel = isQueueDock ? (labelOverride ?? "큐잉하기") : "곡 추가";
+  let buttonLabel: ReactNode = isQueueDock
+    ? (labelOverride ?? "큐잉하기")
+    : "곡 추가";
   let buttonAction = action.openModal;
 
   if (action.isLoading) {
     appearance = "loading";
     buttonDisabled = true;
-    buttonLabel = isQueueDock ? "확인 중" : "로그인 확인 중...";
+    buttonLabel = (
+      <LoadingSpinner ariaLabel="로그인 상태 확인 중" size={16} />
+    );
   } else if (!action.isLoggedIn) {
     appearance = "login";
     buttonLabel = isQueueDock

@@ -139,9 +139,9 @@ describe("RoomFormModal room form flows", () => {
 
     await selectThumbnail();
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "썸네일 업로드 중...",
-    );
+    expect(
+      await screen.findByRole("status", { name: "썸네일 업로드 중" }),
+    ).toBeInTheDocument();
     const titleInput = screen.getByLabelText("방 제목");
     expect(titleInput).toBeEnabled();
     await user.type(titleInput, "업로드 중 입력");

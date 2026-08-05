@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type CSSProperties } from "react";
-import { ClipLoader } from "react-spinners";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { Room } from "@/src/features/room/model/types";
 import { useRoomWheelNavigation } from "@/src/shared/lib/useRoomWheelNavigation";
 import SearchPageRoomCard from "@/src/features/room/search/ui/SearchPageRoomCard";
@@ -46,7 +46,7 @@ export function SearchPageRoomList({
     return (
       <div className={styles.viewport} aria-label="검색 방 목록">
         <div className={styles.loadingState}>
-          <ClipLoader color="#3c3c3c" size={28} aria-label="방 목록 로딩 중" />
+          <LoadingSpinner ariaLabel="방 목록 로딩 중" size={28} />
         </div>
       </div>
     );
@@ -74,7 +74,7 @@ export function SearchPageRoomList({
   if (rooms.length === 0) {
     return (
       <div className={styles.viewport} aria-label="검색 방 목록">
-        <div className={styles.emptyState}>방이 하나도 없어요😫</div>
+        <div className={styles.emptyState}>검색 결과가 없습니다.</div>
       </div>
     );
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { redirectToGoogleLogin } from "../api/login";
 import LoginModal from "./LoginModal";
 import styles from "./SignUpButton.module.css";
@@ -20,7 +21,6 @@ export default function SignUpButton({ className }: SignUpButtonProps) {
   }
 
   const isDisabled = isLoading;
-  const buttonLabel = isLoading ? "로그인 확인 중" : "Sign Up";
 
   function handleClick() {
     if (isDisabled) {
@@ -46,7 +46,11 @@ export default function SignUpButton({ className }: SignUpButtonProps) {
         disabled={isDisabled}
         onClick={handleClick}
       >
-        {buttonLabel}
+        {isLoading ? (
+          <LoadingSpinner ariaLabel="로그인 상태 확인 중" size={16} />
+        ) : (
+          "Sign Up"
+        )}
       </button>
       <LoginModal
         open={isLoginModalOpen}

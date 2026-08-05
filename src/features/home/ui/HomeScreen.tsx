@@ -247,6 +247,8 @@ function HomeRoomsContent({
             currentRoomSlug={selectedRoomSlug}
             errorMessage={roomListErrorMessage}
             isLoading={roomsQuery.isPending}
+            selectedRoomOwner={roomMetaQuery.data?.owner ?? null}
+            onCreateRoom={onCreateRoom}
             onSelectRoom={setCurrentRoomSlug}
             onRequestRoomEntry={roomEntry.requestRoomEntry}
             onRetry={() => {

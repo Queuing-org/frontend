@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import {
   buildChatReportReason,
@@ -147,7 +148,15 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
               onClick={handleSubmit}
               disabled={!reason || reportMessage.isPending}
             >
-              {reportMessage.isPending ? "신고 중..." : "신고"}
+              {reportMessage.isPending ? (
+                <LoadingSpinner
+                  ariaLabel="신고 중"
+                  color="#ffffff"
+                  size={16}
+                />
+              ) : (
+                "신고"
+              )}
             </button>
           </div>
         </section>

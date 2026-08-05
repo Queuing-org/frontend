@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState, type PointerEvent } from "react";
-import { ClipLoader } from "react-spinners";
-import type { Room } from "@/src/features/room/model/types";
+import type { Room, RoomOwner } from "@/src/features/room/model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import {
   getRoomImageSrc,
   ROOM_STAGE_IMAGE_VARIANTS,
@@ -25,6 +25,8 @@ type Props = {
   currentRoomSlug: string | null;
   errorMessage?: string | null;
   isLoading?: boolean;
+  selectedRoomOwner?: RoomOwner | null;
+  onCreateRoom: () => void;
   onSelectRoom: (roomSlug: string) => void;
   onRequestRoomEntry: (room: Room) => void;
   onRetry?: () => void;
@@ -52,6 +54,8 @@ export default function HomeRoomStage({
   currentRoomSlug,
   errorMessage,
   isLoading = false,
+  selectedRoomOwner = null,
+  onCreateRoom,
   onSelectRoom,
   onRequestRoomEntry,
   onRetry,
@@ -84,7 +88,7 @@ export default function HomeRoomStage({
       <section className={styles.viewport} aria-label="방 선택 스테이지">
         <div className={styles.rail} data-loading="true">
           <div className={styles.loadingState}>
-            <ClipLoader color="#3c3c3c" size={32} aria-label="방 목록 로딩 중" />
+            <LoadingSpinner ariaLabel="방 목록 로딩 중" size={32} />
           </div>
         </div>
       </section>
@@ -116,7 +120,16 @@ export default function HomeRoomStage({
     return (
       <section className={styles.viewport} aria-label="방 선택 스테이지">
         <div className={styles.rail}>
-          <div className={styles.emptyState}>방이 하나도 없어요😫</div>
+          <div className={styles.emptyState}>
+            <strong>현재 생성된 방이 없어요.</strong>
+            <button
+              type="button"
+              className={styles.createRoomButton}
+              onClick={onCreateRoom}
+            >
+              방 만들기
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -257,6 +270,7 @@ export default function HomeRoomStage({
                     thumbnailUrl: room.thumbnailUrl,
                     thumbnailUrls: room.thumbnailUrls,
                   })}
+                  owner={isSelected ? selectedRoomOwner : null}
                   isSelected={isSelected}
                   disabled={!canClick}
                   ariaLabel={

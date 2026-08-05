@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -15,6 +15,7 @@ import { useFollowingRelationship } from "@/src/features/follow/following/hooks/
 import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import type { ParticipantKickTarget } from "@/src/features/room/participants/model/participantIdentity";
@@ -96,13 +97,15 @@ export default function RoomProfilePanel({
     canFollow ? targetSlug : null,
   );
 
-  let buttonLabel = "팔로우";
+  let buttonLabel: ReactNode = "팔로우";
   if (!currentRequester) {
     buttonLabel = "대상 없음";
   } else if (!currentRequester.slug) {
     buttonLabel = "준비 중";
   } else if (isCurrentUserLoading) {
-    buttonLabel = "확인 중";
+    buttonLabel = (
+      <LoadingSpinner ariaLabel="로그인 상태 확인 중" size={16} />
+    );
   } else if (!currentUser) {
     buttonLabel = "로그인 필요";
   }
@@ -114,10 +117,8 @@ export default function RoomProfilePanel({
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
   const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
-  const badgeValue =
-    isPublicProfileLoading || isPublicBadgesLoading
-      ? "불러오는 중..."
-      : (representativeBadge?.name ?? "대표 칭호 없음");
+  const isBadgeLoading = isPublicProfileLoading || isPublicBadgesLoading;
+  const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
   const isMusicPowerVoteDisabled =
@@ -312,7 +313,15 @@ export default function RoomProfilePanel({
             <div className={styles.card}>
               <div className={styles.cardTitle}>칭호</div>
               <div className={styles.cardValue}>
-                {targetSlug ? badgeValue : "-"}
+                {targetSlug ? (
+                  isBadgeLoading ? (
+                    <LoadingSpinner ariaLabel="칭호 로딩 중" size={18} />
+                  ) : (
+                    badgeValue
+                  )
+                ) : (
+                  "-"
+                )}
               </div>
             </div>
             <div className={styles.card}>

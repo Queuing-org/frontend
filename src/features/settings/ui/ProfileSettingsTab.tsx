@@ -29,20 +29,13 @@ export default function ProfileSettingsTab() {
   );
   const representativeBadge = getRepresentativeBadge(myBadgesQuery.data);
   const isBadgeLoading = myBadgesQuery.isLoading;
+  const isBadgePending =
+    isBadgeLoading ||
+    setRepresentativeBadge.isPending ||
+    clearRepresentativeBadge.isPending;
   const badgeStatusMessage = (() => {
-    if (isBadgeLoading) {
-      return "칭호 불러오는 중";
-    }
-
     if (myBadgesQuery.isError) {
       return "칭호를 불러오지 못했습니다.";
-    }
-
-    if (
-      setRepresentativeBadge.isPending ||
-      clearRepresentativeBadge.isPending
-    ) {
-      return "대표 칭호 저장 중";
     }
 
     const badgeMutationError =
@@ -101,6 +94,7 @@ export default function ProfileSettingsTab() {
           }
           badgeOptions={badgeOptions}
           badgeStatusMessage={badgeStatusMessage}
+          isBadgePending={isBadgePending}
           badgeValue={representativeBadge?.badgeCode ?? ""}
           isBadgeStatusError={Boolean(
             myBadgesQuery.isError ||

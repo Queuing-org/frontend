@@ -2,6 +2,7 @@
 
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { QueueTab } from "../model/roomQueue";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import RoomQueueList from "./RoomQueueList";
 import RoomQueueSortableList from "./RoomQueueSortableList";
 
@@ -19,6 +20,7 @@ type RoomQueueListSectionProps = {
   emptyMessage: string;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
+  isEmptyLoading: boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
@@ -39,6 +41,7 @@ export default function RoomQueueListSection({
   emptyMessage,
   isDeleteMyPending,
   isDeleteRoomPending,
+  isEmptyLoading,
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
@@ -50,11 +53,17 @@ export default function RoomQueueListSection({
   onMoveMyEntry,
   onMoveRoomEntry,
 }: RoomQueueListSectionProps) {
+  const emptyContent = isEmptyLoading ? (
+    <LoadingSpinner ariaLabel="내 신청곡 로딩 중" />
+  ) : (
+    emptyMessage
+  );
+
   if (activeTab === "mine") {
     return (
       <RoomQueueSortableList
         canDeleteEntry={canDeleteEntry}
-        emptyMessage={emptyMessage}
+        emptyMessage={emptyContent}
         entries={myEntries}
         isDeletePending={isDeleteMyPending}
         isMovePending={isMoveMyPending}

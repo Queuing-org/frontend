@@ -1,4 +1,5 @@
 import Image from "next/image";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { BadgeSummary } from "@/src/features/badge/model/types";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import styles from "./RoomParticipantsPanel.module.css";
@@ -62,7 +63,11 @@ export default function RoomParticipantCard({
           disabled={isKickPending}
           onClick={onKick}
         >
-          {isKickPending ? "내보내는 중" : "내보내기"}
+          {isKickPending ? (
+            <LoadingSpinner ariaLabel="참가자 내보내는 중" size={16} />
+          ) : (
+            "내보내기"
+          )}
         </button>
       ) : null}
     </div>

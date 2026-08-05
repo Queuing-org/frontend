@@ -1,12 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import type { RoomOwner } from "@/src/features/room/model/types";
+import SelectedRoomOwnerBar from "./SelectedRoomOwnerBar";
 import styles from "./RoomStageCard.module.css";
 
 type Props = {
   slug: string;
   title: string;
   imageSrc: string;
+  owner?: RoomOwner | null;
   isSelected?: boolean;
   disabled?: boolean;
   ariaLabel?: string;
@@ -17,6 +20,7 @@ export default function RoomStageCard({
   slug,
   title,
   imageSrc,
+  owner = null,
   isSelected = false,
   disabled = false,
   ariaLabel,
@@ -40,6 +44,7 @@ export default function RoomStageCard({
         priority={isSelected}
       />
       <div className={styles.scrim} />
+      {isSelected && owner ? <SelectedRoomOwnerBar owner={owner} /> : null}
     </button>
   );
 }

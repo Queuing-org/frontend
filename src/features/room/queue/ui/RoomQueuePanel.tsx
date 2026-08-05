@@ -4,6 +4,7 @@ import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useRoomQueuePanel } from "../hooks/useRoomQueuePanel";
 import RoomQueuePanelView from "./RoomQueuePanelView";
 import styles from "./RoomQueuePanel.module.css";
@@ -31,7 +32,7 @@ export default function RoomQueuePanel({
         <div className={styles.root}>
           <div className={styles.listArea}>
             <div className={styles.state}>
-              플레이리스트를 불러오는 중입니다.
+              <LoadingSpinner ariaLabel="플레이리스트 로딩 중" />
             </div>
           </div>
         </div>
@@ -81,6 +82,7 @@ function RoomQueuePanelContent({
       hasNextMyQueuePage={queuePanel.hasNextMyQueuePage}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
+      isEmptyLoading={queuePanel.isEmptyLoading}
       isMoveMyPending={queuePanel.moveMyQueueEntry.isPending}
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}

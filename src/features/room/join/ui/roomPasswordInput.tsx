@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 
 type Props = {
   onSubmit: (password: string) => void | Promise<void>;
@@ -41,7 +42,11 @@ export default function RoomPasswordInput({
         <div className="text-sm text-red-600">{validationMessage}</div>
       ) : null}
       <button className="border px-3 py-2" disabled={submitting} type="submit">
-        {submitting ? "확인 중..." : "확인"}
+        {submitting ? (
+          <LoadingSpinner ariaLabel="방 비밀번호 확인 중" size={16} />
+        ) : (
+          "확인"
+        )}
       </button>
     </form>
   );

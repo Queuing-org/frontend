@@ -76,7 +76,7 @@ describe("BlockUserModal", () => {
     const { onClose } = renderModal();
 
     await user.click(screen.getByRole("button", { name: "차단" }));
-    const pendingButton = screen.getByRole("button", { name: "차단 중..." });
+    const pendingButton = screen.getByRole("button", { name: "차단 중" });
     expect(pendingButton).toBeDisabled();
     await user.click(pendingButton);
     await user.click(screen.getByRole("button", { name: "취소" }));

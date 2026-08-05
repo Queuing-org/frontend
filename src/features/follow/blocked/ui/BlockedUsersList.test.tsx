@@ -119,7 +119,7 @@ describe("BlockedUsersList", () => {
     render(<BlockedUsersList />);
 
     const pendingButtons = screen.getAllByRole("button", {
-      name: "해제 중...",
+      name: "차단 해제 중",
     });
     expect(pendingButtons).toHaveLength(2);
     pendingButtons.forEach((button) => expect(button).toBeDisabled());

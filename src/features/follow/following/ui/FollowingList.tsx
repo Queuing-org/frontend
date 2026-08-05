@@ -5,6 +5,7 @@ import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
 import type { FollowingUser } from "@/src/features/follow/model/types";
+import FollowListState from "@/src/features/follow/ui/FollowListState";
 import { useFollowingList } from "../hooks/useFollowingList";
 import FollowingCard from "./FollowingCard";
 import styles from "./FollowingList.module.css";
@@ -25,7 +26,7 @@ export default function FollowingList() {
   return (
     <div className={styles.container}>
       {followingUsers.length === 0 ? (
-        <div className={styles.state}>팔로잉한 사용자가 없습니다.</div>
+        <FollowListState>팔로잉한 사용자가 없습니다.</FollowListState>
       ) : (
         <ul className={styles.list}>
           {followingUsers.map((user) => (
