@@ -43,6 +43,8 @@ type Props = {
 const MUSIC_POWER_NOTICE_DURATION_MS = 2_000;
 const MUSIC_POWER_LIMIT_NOTICE =
   "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.";
+const MUSIC_POWER_LOGIN_NOTICE =
+  "로그인 후 음악력을 올리거나 내릴 수 있습니다.";
 
 type MusicPowerNotice = {
   message: string;
@@ -135,13 +137,13 @@ export default function RoomProfilePanel({
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
   const isMusicPowerVoteDisabled =
-    !currentUser ||
+    isCurrentUserLoading ||
     isSelf ||
     !targetSlug ||
     !roomSlug;
   const musicPowerVoteDisabledLabel = (() => {
-    if (!currentUser) {
-      return "로그인 후 음악력에 투표할 수 있습니다";
+    if (isCurrentUserLoading) {
+      return "로그인 상태를 확인하고 있습니다";
     }
     if (isSelf) {
       return "본인의 음악력에는 투표할 수 없습니다";
@@ -173,12 +175,25 @@ export default function RoomProfilePanel({
   };
 
   const handleMusicPowerVote = (vote: MusicPowerVote) => {
-    if (isMusicPowerVoteDisabled || !targetSlug) {
+    if (!targetSlug || isCurrentUserLoading) {
       return;
     }
 
     const noticeSequence = ++musicPowerNoticeSequenceRef.current;
-    showMusicPowerNotice(MUSIC_POWER_LIMIT_NOTICE, targetSlug);
+    if (!currentUser) {
+      showMusicPowerNotice(MUSIC_POWER_LOGIN_NOTICE, targetSlug);
+      return;
+    }
+
+    if (isMusicPowerVoteDisabled) {
+      return;
+    }
+
+    if (musicPowerNoticeTimerRef.current !== null) {
+      window.clearTimeout(musicPowerNoticeTimerRef.current);
+      musicPowerNoticeTimerRef.current = null;
+    }
+    setMusicPowerNotice(null);
     musicPowerVote.mutate(
       {
         roomSlug,
@@ -389,7 +404,7 @@ export default function RoomProfilePanel({
               </div>
             </div>
             {musicPowerNotice?.targetSlug === targetSlug ? (
-              <p className={styles.musicPowerNotice} role="status">
+              <p className={styles.musicPowerNotice} role="alert">
                 {musicPowerNotice.message}
               </p>
             ) : null}
@@ -398,7 +413,11 @@ export default function RoomProfilePanel({
                 type="button"
                 className={styles.musicPowerButton}
                 aria-label={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
-                title={musicPowerVoteDisabledLabel ?? "음악력 올리기"}
+                title={
+                  !currentUser && !isCurrentUserLoading
+                    ? MUSIC_POWER_LOGIN_NOTICE
+                    : (musicPowerVoteDisabledLabel ?? "음악력 올리기")
+                }
                 disabled={isMusicPowerVoteDisabled}
                 onClick={() => handleMusicPowerVote("UPVOTE")}
               >
@@ -414,7 +433,11 @@ export default function RoomProfilePanel({
                 type="button"
                 className={styles.musicPowerButton}
                 aria-label={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
-                title={musicPowerVoteDisabledLabel ?? "음악력 내리기"}
+                title={
+                  !currentUser && !isCurrentUserLoading
+                    ? MUSIC_POWER_LOGIN_NOTICE
+                    : (musicPowerVoteDisabledLabel ?? "음악력 내리기")
+                }
                 disabled={isMusicPowerVoteDisabled}
                 onClick={() => handleMusicPowerVote("DOWNVOTE")}
               >

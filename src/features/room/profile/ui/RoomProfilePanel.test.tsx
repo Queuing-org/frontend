@@ -122,7 +122,7 @@ function renderPanel(
   currentRequester: typeof requester | (typeof requester & { slug: null }) =
     requester,
   options?: {
-    currentUser?: typeof currentUser;
+    currentUser?: typeof currentUser | null;
     kickTarget?: { userSlug: string } | null;
     onUserBlocked?: (userSlug: string) => void;
     reportMessageKey?: string | null;
@@ -131,7 +131,9 @@ function renderPanel(
 ) {
   return render(
     <RoomProfilePanel
-      currentUser={options?.currentUser ?? currentUser}
+      currentUser={
+        options?.currentUser === undefined ? currentUser : options.currentUser
+      }
       currentRequester={currentRequester}
       isCurrentUserLoading={false}
       kickTarget={
@@ -279,32 +281,50 @@ describe("RoomProfilePanel", () => {
     );
   });
 
-  it("클릭 안내를 버튼 왼쪽에 표시하고 2초 뒤 제거한다", () => {
+  it("성공 클릭에는 안내를 표시하지 않고 서버 오류만 2초 동안 표시한다", () => {
     vi.useFakeTimers();
     renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 
-    expect(screen.getByRole("status")).toHaveTextContent(
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    act(() => {
+      mutationOptions.onError(
+        new Error(
+          "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
+        ),
+      );
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
       "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
     );
 
     act(() => {
       vi.advanceTimersByTime(1_999);
     });
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toBeInTheDocument();
 
     act(() => {
       vi.advanceTimersByTime(1);
     });
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("신청자가 바뀌면 이전 신청자의 음악력 안내를 표시하지 않는다", () => {
     const { rerender } = renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    act(() => {
+      mutationOptions.onError(new Error("음악력 투표 오류"));
+    });
+    expect(screen.getByRole("alert")).toBeInTheDocument();
 
     rerender(
       <RoomProfilePanel
@@ -320,7 +340,21 @@ describe("RoomProfilePanel", () => {
       />,
     );
 
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("비로그인은 mutation 없이 로그인 필요 안내를 표시한다", () => {
+    renderPanel(requester, { currentUser: null });
+
+    const upButton = screen.getByRole("button", { name: "음악력 올리기" });
+    expect(upButton).toBeEnabled();
+
+    fireEvent.click(upButton);
+
+    expect(mutate).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "로그인 후 음악력을 올리거나 내릴 수 있습니다.",
+    );
   });
 
   it("처리 중이어도 음악력 버튼을 비활성화하지 않는다", () => {

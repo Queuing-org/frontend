@@ -16,12 +16,23 @@
 - 방 삭제 성공 시 삭제된 방 메타를 제거하고 모든 방 목록을 무효화한다.
 - 최신 선택 방 메타를 홈/검색의 카드, 썸네일, 방 정보 및 입장 대상에 병합한다.
 - 음악력 안내를 대상 slug에 귀속하고 이전 mutation 응답이 최신 안내를 덮지 않도록 순번을 검사한다.
+- 음악력 성공 클릭에서는 안내를 만들지 않고 mutation 오류 응답이 있을 때만 서버 메시지를 2초 표시한다.
+- 비로그인 클릭은 mutation을 보내지 않고 로그인 필요 안내를 표시한다.
+- 음악력 안내는 화살표 아래 절대 위치에 배치해 프로필 레이아웃을 밀지 않으며, 빨간색 `#c94343`으로 흰 배경 대비 약 `4.81:1`을 확보한다.
+
+## 음악력 후속 QA
+
+- fresh read-only QA 1차: `fix`
+  - 기존 빨간색이 10px 일반 텍스트의 WCAG AA 명암 대비 기준에 미달함을 확인
+- `#c94343`으로 수정 후 재검토: `pass`
+- 성공 무안내, 오류 전용 안내, 비로그인 mutation 차단, 연속 요청 stale 오류 방지, 데스크톱/모바일 고정 배치를 확인했다.
 
 ## 검증
 
 - polling 제거 관련 테스트: 2 files / 3 tests pass
 - `npm run lint`: pass
-- `npm run test -- --reporter=dot`: 62 files / 167 tests pass
+- 음악력 프로필 대상 테스트: 1 file / 19 tests pass
+- `npm run test -- --reporter=dot`: 62 files / 168 tests pass
 - `npm run build`: pass
 - `git diff --check`: pass
 
