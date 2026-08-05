@@ -44,3 +44,4 @@
 - full: 57 files / 153 tests pass
 - lint, build, diff check: pass
 - fresh read-only QA: pass
+- icon follow-up CI: GitHub Actions, Vercel, CodeRabbit pass
