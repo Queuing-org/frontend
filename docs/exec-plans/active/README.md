@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- `2026-08-05-root-home-route`: publishing — 홈 기본 주소를 `/home`에서 `/`로 전환
+- `2026-08-05-root-home-route`: ci-pending — Draft PR #33, 홈 기본 주소를 `/home`에서 `/`로 전환
 - `2026-08-05-room-profile-management`: implementing — 방 프로필 재구성과 관리 액션
 - `2026-08-04-presence-profile-queue-cleanup`: ci-pending — Draft PR #32, 팔로우 presence·프로필·queue UI 정리
 - `2026-08-04-settings-badge-catalog`: ci-pending — Draft PR #31, 내 칭호 및 프로필 수정 계약 정정 push 완료

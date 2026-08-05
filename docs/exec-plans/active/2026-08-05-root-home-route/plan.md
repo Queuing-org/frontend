@@ -42,7 +42,7 @@
 - [x] 구현
 - [x] 로컬 검증
 - [x] fresh QA
-- [ ] commit / push / PR 갱신
+- [x] commit / push / PR 갱신
 
 ## 잔여 위험
 
