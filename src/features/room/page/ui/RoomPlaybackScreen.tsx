@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -71,6 +72,8 @@ const MOBILE_ROOM_TABS: {
   { id: "queue", iconSrc: "/icons/queue.svg", label: "큐" },
   { id: "participants", iconSrc: "/icons/hambuger.svg", label: "참가자" },
 ];
+
+const EMPTY_BLOCKED_SENDER_SLUGS: ReadonlySet<string> = new Set();
 
 function roomRequiresPassword(roomMeta: RoomMeta) {
   return !roomMeta.isPublic;
@@ -421,6 +424,31 @@ function RoomPlaybackJoinedContent({
       chatMessages,
       playback.currentRequester?.slug,
     );
+  const [blockedChatSenders, setBlockedChatSenders] = useState<{
+    roomSlug: string;
+    slugs: ReadonlySet<string>;
+  }>(() => ({ roomSlug: slug, slugs: new Set() }));
+  const blockedSenderSlugs =
+    blockedChatSenders.roomSlug === slug
+      ? blockedChatSenders.slugs
+      : EMPTY_BLOCKED_SENDER_SLUGS;
+  const handleUserBlocked = useCallback(
+    (userSlug: string) => {
+      const normalizedUserSlug = userSlug.trim();
+      if (!normalizedUserSlug) {
+        return;
+      }
+
+      setBlockedChatSenders((current) => {
+        const nextSlugs = new Set(
+          current.roomSlug === slug ? current.slugs : [],
+        );
+        nextSlugs.add(normalizedUserSlug);
+        return { roomSlug: slug, slugs: nextSlugs };
+      });
+    },
+    [slug],
+  );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
 
@@ -514,12 +542,14 @@ function RoomPlaybackJoinedContent({
                 >
                   <div className={styles.mobileChatList}>
                     <ChatArea
+                      blockedSenderSlugs={blockedSenderSlugs}
                       currentUser={currentUser}
                       errorMessage={chatHistoryErrorMessage}
                       hasOlderMessages={hasOlderChatMessages}
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      onUserBlocked={handleUserBlocked}
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
@@ -649,12 +679,14 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.chatSection}>
             <ChatArea
+              blockedSenderSlugs={blockedSenderSlugs}
               currentUser={currentUser}
               errorMessage={chatHistoryErrorMessage}
               hasOlderMessages={hasOlderChatMessages}
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              onUserBlocked={handleUserBlocked}
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
@@ -689,6 +721,7 @@ function RoomPlaybackJoinedContent({
         onChatLoginClick={
           showChatLoginAction ? redirectToGoogleLogin : undefined
         }
+        onUserBlocked={handleUserBlocked}
         onSendChatMessage={handleSendChatMessage}
         participants={participants}
         reportMessageKey={currentRequesterReportMessageKey}

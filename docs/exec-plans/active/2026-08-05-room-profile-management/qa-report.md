@@ -54,3 +54,15 @@
 - 모바일은 기존 가로 간격 `1rem`을 유지하고 세로 간격을 `24px`로 명시했다.
 - targeted 1 file / 14 tests, full 57 files / 153 tests, lint, build, diff check pass
 - fresh read-only QA: pass
+
+## PR #33 Codex Review Follow-up
+
+- `bottom: 28`을 유효한 `28px`로 수정했다.
+- 신청자가 현재 participants에 존재할 때만 실제 participant kick target을 만들고 내보내기를 표시한다.
+- 채팅의 차단 sender set을 방 화면으로 올려 채팅과 프로필 차단 성공이 같은 상태를 갱신한다.
+- 프로필 차단 후 이미 로드된 대상 메시지가 즉시 숨겨진다.
+- 루트 `AGENTS.md`에 Codex의 GitHub PR 리뷰·인라인 코멘트·답변을 기본적으로 한국어로 작성하는 규칙을 추가했다.
+- targeted: 3 files / 24 tests pass
+- full: 57 files / 155 tests pass
+- lint, build, diff check: pass
+- structured boundary QA: pass, blocking finding 없음

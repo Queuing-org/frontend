@@ -3,6 +3,7 @@ import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   getParticipantIdentityKey,
+  getParticipantKickTargetForUser,
   getParticipantUserSlug,
   isSameUser,
 } from "./participantIdentity";
@@ -46,5 +47,16 @@ describe("participantIdentity", () => {
     };
     expect(isSameUser(participant({ userSlug: "other" }), me)).toBe(false);
     expect(isSameUser(participant({ userSlug: "me" }), me)).toBe(true);
+  });
+
+  it("현재 참가 중인 회원에게만 userSlug 기반 내보내기 대상을 만든다", () => {
+    const participants = [participant({ userSlug: "active-user" })];
+
+    expect(
+      getParticipantKickTargetForUser(participants, { slug: "active-user" }),
+    ).toEqual({ userSlug: "active-user" });
+    expect(
+      getParticipantKickTargetForUser(participants, { slug: "left-user" }),
+    ).toBeNull();
   });
 });

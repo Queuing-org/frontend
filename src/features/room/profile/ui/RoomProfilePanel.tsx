@@ -17,6 +17,7 @@ import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
+import type { ParticipantKickTarget } from "@/src/features/room/participants/model/participantIdentity";
 import ReportChatMessageModal, {
   type ReportChatMessageTarget,
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
@@ -30,6 +31,8 @@ type Props = {
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
   isCurrentUserLoading: boolean;
+  kickTarget: ParticipantKickTarget | null;
+  onUserBlocked: (userSlug: string) => void;
   reportMessageKey?: string | null;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
@@ -53,6 +56,8 @@ export default function RoomProfilePanel({
   currentUser,
   currentRequester,
   isCurrentUserLoading,
+  kickTarget,
+  onUserBlocked,
   reportMessageKey,
   roomMeta,
   roomPassword,
@@ -82,7 +87,11 @@ export default function RoomProfilePanel({
   const isCurrentUserRoomOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const isTargetRoomOwner = isRoomOwner(roomMeta?.owner, currentRequester);
   const canKick =
-    canManage && isCurrentUserRoomOwner && !isTargetRoomOwner && !isSelf;
+    canManage &&
+    isCurrentUserRoomOwner &&
+    !isTargetRoomOwner &&
+    !isSelf &&
+    Boolean(kickTarget);
   const { data: isFollowingCurrentRequester } = useFollowingRelationship(
     canFollow ? targetSlug : null,
   );
@@ -177,7 +186,7 @@ export default function RoomProfilePanel({
   };
 
   const handleKick = () => {
-    if (!targetSlug || !canKick) {
+    if (!kickTarget || !canKick) {
       return;
     }
 
@@ -185,9 +194,9 @@ export default function RoomProfilePanel({
     kickParticipant.reset();
     kickParticipant.mutate(
       {
+        ...kickTarget,
         password: roomPassword,
         slug: roomSlug,
-        userSlug: targetSlug,
       },
       {
         onSuccess: () => {
@@ -376,6 +385,7 @@ export default function RoomProfilePanel({
           <BlockUserModal
             onBlocked={(target) => {
               setManagementMessage(`${target.nickname}님을 차단했습니다.`);
+              onUserBlocked(target.slug);
             }}
             onClose={() => setBlockTarget(null)}
             target={blockTarget}

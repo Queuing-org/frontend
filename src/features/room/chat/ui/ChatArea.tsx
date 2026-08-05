@@ -27,12 +27,14 @@ import ReportChatMessageModal, {
 import styles from "./ChatArea.module.css";
 
 type Props = {
+  blockedSenderSlugs: ReadonlySet<string>;
   currentUser: User | null;
   errorMessage?: string;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
+  onUserBlocked: (userSlug: string) => void;
   roomPassword?: string | null;
   roomSlug: string;
   scrollToLatestKey: number;
@@ -142,12 +144,14 @@ function ChatMessageRow({
 }
 
 export default function ChatArea({
+  blockedSenderSlugs,
   currentUser,
   errorMessage,
   hasOlderMessages,
   isLoadingOlderMessages,
   messages,
   onLoadOlderMessages,
+  onUserBlocked,
   roomPassword,
   roomSlug,
   scrollToLatestKey,
@@ -158,16 +162,8 @@ export default function ChatArea({
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
-  const [blockedChatSenders, setBlockedChatSenders] = useState<{
-    roomSlug: string;
-    slugs: ReadonlySet<string>;
-  }>(() => ({ roomSlug, slugs: new Set() }));
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const blockedSenderSlugs =
-    blockedChatSenders.roomSlug === roomSlug
-      ? blockedChatSenders.slugs
-      : new Set<string>();
   const visibleMessages = messages.filter((message) =>
     shouldDisplayChatMessage(message, blockedSenderSlugs),
   );
@@ -329,13 +325,7 @@ export default function ChatArea({
       <BlockUserModal
         target={blockTarget}
         onBlocked={(blockedTarget) => {
-          setBlockedChatSenders((current) => {
-            const nextSlugs = new Set(
-              current.roomSlug === roomSlug ? current.slugs : [],
-            );
-            nextSlugs.add(blockedTarget.slug);
-            return { roomSlug, slugs: nextSlugs };
-          });
+          onUserBlocked(blockedTarget.slug);
         }}
         onClose={() => {
           setBlockTarget(null);

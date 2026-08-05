@@ -116,12 +116,15 @@ const roomMeta = {
 const mutate = vi.fn();
 const kickMutate = vi.fn();
 const kickReset = vi.fn();
+const onUserBlocked = vi.fn();
 
 function renderPanel(
   currentRequester: typeof requester | (typeof requester & { slug: null }) =
     requester,
   options?: {
     currentUser?: typeof currentUser;
+    kickTarget?: { userSlug: string } | null;
+    onUserBlocked?: (userSlug: string) => void;
     reportMessageKey?: string | null;
     roomMeta?: typeof roomMeta;
   },
@@ -131,6 +134,12 @@ function renderPanel(
       currentUser={options?.currentUser ?? currentUser}
       currentRequester={currentRequester}
       isCurrentUserLoading={false}
+      kickTarget={
+        options?.kickTarget === undefined
+          ? { userSlug: "target-user" }
+          : options.kickTarget
+      }
+      onUserBlocked={options?.onUserBlocked ?? onUserBlocked}
       reportMessageKey={
         options?.reportMessageKey === undefined
           ? "message-key"
@@ -221,6 +230,8 @@ describe("RoomProfilePanel", () => {
         currentUser={currentUser}
         currentRequester={requester}
         isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
         reportMessageKey="message-key"
         roomMeta={roomMeta}
         roomPassword="secret"
@@ -282,6 +293,8 @@ describe("RoomProfilePanel", () => {
         currentUser={currentUser}
         currentRequester={{ ...requester, slug: null }}
         isCurrentUserLoading={false}
+        kickTarget={null}
+        onUserBlocked={onUserBlocked}
         reportMessageKey={null}
         roomMeta={roomMeta}
         roomSlug="room"
@@ -443,6 +456,23 @@ describe("RoomProfilePanel", () => {
     expect(
       screen.getByRole("dialog", { name: "차단 확인" }),
     ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "차단 실행" }));
+    expect(onUserBlocked).toHaveBeenCalledWith("target-user");
+  });
+
+  it("방장이더라도 신청자가 현재 참가자 목록에 없으면 내보내기를 숨긴다", async () => {
+    const user = userEvent.setup();
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+      kickTarget: null,
+    });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+
+    expect(
+      screen.queryByRole("menuitem", { name: "내보내기" }),
+    ).not.toBeInTheDocument();
   });
 
   it("현재 사용자가 방장일 때만 대상 내보내기를 연결한다", async () => {
