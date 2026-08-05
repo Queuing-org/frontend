@@ -46,7 +46,7 @@
 - [x] 기존 profile/follow/block/kick 계약 확인
 - [x] 프로필 레이아웃과 관리 dropdown 구현
 - [x] targeted/full QA
-- [ ] explicit staging, commit, push, Draft PR #33 갱신
+- [x] explicit staging, commit, push, Draft PR #33 갱신
 
 ## Residual Risk
 

@@ -6,6 +6,7 @@
 - lint: pass
 - build: pass (Next.js production build, dev 서버 중지 후 2.2초 compile)
 - diff check: pass
+- feature head CI: GitHub Actions, Vercel, CodeRabbit pass
 
 ## Boundary Review
 
