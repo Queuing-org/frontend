@@ -44,3 +44,14 @@
 - 내보내기 target은 현재 참가자 목록의 공개 `userSlug`로 만든 target만 사용한다.
 - 차단 sender set은 `RoomPlaybackJoinedContent`가 소유하고 mobile/desktop chat과 profile block entry point가 공유한다.
 - 차단 API와 kick API payload/header 계약은 변경하지 않았다.
+
+## Post-push State
+
+- review fix commit: `86dc02e`
+- Korean review guidance commit: `999b2b0`
+- GitHub Actions: success
+- Vercel: success
+- CodeRabbit: success
+- CSS 단위와 kick gate thread는 최신 diff에서 outdated다.
+- 차단 상태 전파 thread는 live unresolved지만 최신 코드와 테스트에서 수정 완료했다.
+- 사용자 요청에 thread resolve 권한은 포함되지 않아 직접 resolve하지 않았다.
