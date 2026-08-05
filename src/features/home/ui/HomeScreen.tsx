@@ -33,6 +33,7 @@ import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordM
 import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
+import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 
 export default function HomeScreen() {
@@ -195,6 +196,18 @@ function HomeRoomsContent({
   const roomMetaQuery = useRoomMetaQuery(
     !isChromeReduced ? selectedRoomSlug : null,
   );
+  const visibleRooms = useMemo(
+    () =>
+      rooms.map((room) =>
+        room.slug === selectedRoomSlug
+          ? mergeRoomMeta(room, roomMetaQuery.data)
+          : room,
+      ),
+    [roomMetaQuery.data, rooms, selectedRoomSlug],
+  );
+  const visibleCurrentRoom = currentRoom
+    ? mergeRoomMeta(currentRoom, roomMetaQuery.data)
+    : null;
 
   useLoadMoreRoomsNearEnd({
     rooms,
@@ -207,7 +220,7 @@ function HomeRoomsContent({
   return (
     <>
       <HomeTopBar
-        currentRoom={currentRoom}
+        currentRoom={visibleCurrentRoom}
         isChromeReduced={isChromeReduced}
         mobileSearchQuery={mobileSearchQuery}
         onMobileSearchQueryChange={onMobileSearchQueryChange}
@@ -236,14 +249,14 @@ function HomeRoomsContent({
           onSelectFilter={onSelectFilter}
           onSelectRoom={setCurrentRoomSlug}
           randomEntryErrorMessage={randomEntry.errorMessage}
-          rooms={rooms}
+          rooms={visibleRooms}
           selectedRoomSlug={selectedRoomSlug}
         />
       ) : null}
       {!isMobileLayout && !isChromeReduced ? (
         <>
           <HomeRoomStage
-            rooms={rooms}
+            rooms={visibleRooms}
             currentRoomSlug={selectedRoomSlug}
             errorMessage={roomListErrorMessage}
             isLoading={roomsQuery.isPending}
@@ -272,8 +285,8 @@ function HomeRoomsContent({
             isRandomEntryPending={randomEntry.isPending}
             randomEntryErrorMessage={randomEntry.errorMessage}
             onEnterSelectedRoom={() => {
-              if (currentRoom) {
-                roomEntry.requestRoomEntry(currentRoom);
+              if (visibleCurrentRoom) {
+                roomEntry.requestRoomEntry(visibleCurrentRoom);
               }
             }}
           />

@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-05-room-feedback-refresh](./2026-08-05-room-feedback-refresh/plan.md) — 방 생성·음악력 피드백과 홈/검색 10초 갱신
+
 - [2026-08-05-loading-empty-owner-ui](./2026-08-05-loading-empty-owner-ui/plan.md) — 로딩·빈 상태·선택 방 방장 UI 정리
 
 - `2026-08-05-root-home-route`: ready — PR #33, 루트 홈 경로 전환 및 CI 통과

@@ -342,9 +342,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   ariaLabel="썸네일 업로드 중"
                   size={14}
                 />
-              : uploadTemporaryRoomThumbnailMutation.data?.uploadToken
-                ? "썸네일 업로드 완료"
-                : null
+              : null
           }
           thumbnailStatusAriaLabel={
             uploadTemporaryRoomThumbnailMutation.isPending

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -40,6 +40,15 @@ type Props = {
   roomSlug: string;
 };
 
+const MUSIC_POWER_NOTICE_DURATION_MS = 2_000;
+const MUSIC_POWER_LIMIT_NOTICE =
+  "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.";
+
+type MusicPowerNotice = {
+  message: string;
+  targetSlug: string;
+};
+
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
   currentUser: User | null,
@@ -71,7 +80,11 @@ export default function RoomProfilePanel({
   const [managementMessage, setManagementMessage] = useState<string | null>(
     null,
   );
+  const [musicPowerNotice, setMusicPowerNotice] =
+    useState<MusicPowerNotice | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
+  const musicPowerNoticeTimerRef = useRef<number | null>(null);
+  const musicPowerNoticeSequenceRef = useRef(0);
   const targetSlug = currentRequester?.slug ?? null;
   const { data: publicProfile, isLoading: isPublicProfileLoading } =
     useUserProfile(targetSlug);
@@ -125,10 +138,7 @@ export default function RoomProfilePanel({
     !currentUser ||
     isSelf ||
     !targetSlug ||
-    !roomSlug ||
-    musicPowerQuery.isLoading ||
-    !musicPowerQuery.data ||
-    musicPowerVote.isPending;
+    !roomSlug;
   const musicPowerVoteDisabledLabel = (() => {
     if (!currentUser) {
       return "로그인 후 음악력에 투표할 수 있습니다";
@@ -139,28 +149,55 @@ export default function RoomProfilePanel({
     if (!targetSlug) {
       return "투표 대상은 회원 신청자만 가능합니다";
     }
-    if (musicPowerQuery.isLoading) {
-      return "음악력 투표 상태 확인 중";
-    }
-    if (!musicPowerQuery.data) {
-      return "음악력 투표 상태를 확인할 수 없습니다";
-    }
-    if (musicPowerVote.isPending) {
-      return "음악력 투표 처리 중";
-    }
     return null;
   })();
 
+  useEffect(() => {
+    return () => {
+      if (musicPowerNoticeTimerRef.current !== null) {
+        window.clearTimeout(musicPowerNoticeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showMusicPowerNotice = (message: string, noticeTargetSlug: string) => {
+    if (musicPowerNoticeTimerRef.current !== null) {
+      window.clearTimeout(musicPowerNoticeTimerRef.current);
+    }
+
+    setMusicPowerNotice({ message, targetSlug: noticeTargetSlug });
+    musicPowerNoticeTimerRef.current = window.setTimeout(() => {
+      setMusicPowerNotice(null);
+      musicPowerNoticeTimerRef.current = null;
+    }, MUSIC_POWER_NOTICE_DURATION_MS);
+  };
+
   const handleMusicPowerVote = (vote: MusicPowerVote) => {
-    if (isMusicPowerVoteDisabled || !musicPowerQuery.data) {
+    if (isMusicPowerVoteDisabled || !targetSlug) {
       return;
     }
 
-    musicPowerVote.mutate({
-      roomSlug,
-      password: roomPassword,
-      vote,
-    });
+    const noticeSequence = ++musicPowerNoticeSequenceRef.current;
+    showMusicPowerNotice(MUSIC_POWER_LIMIT_NOTICE, targetSlug);
+    musicPowerVote.mutate(
+      {
+        roomSlug,
+        password: roomPassword,
+        vote,
+      },
+      {
+        onError: (error) => {
+          if (musicPowerNoticeSequenceRef.current !== noticeSequence) {
+            return;
+          }
+
+          showMusicPowerNotice(
+            error.message || MUSIC_POWER_LIMIT_NOTICE,
+            targetSlug,
+          );
+        },
+      },
+    );
   };
 
   const handleReport = () => {
@@ -350,12 +387,12 @@ export default function RoomProfilePanel({
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
-              {musicPowerVote.error ? (
-                <p className={styles.recommendationError} role="alert">
-                  {musicPowerVote.error.message}
-                </p>
-              ) : null}
             </div>
+            {musicPowerNotice?.targetSlug === targetSlug ? (
+              <p className={styles.musicPowerNotice} role="status">
+                {musicPowerNotice.message}
+              </p>
+            ) : null}
             <div className={styles.musicPowerActions}>
               <button
                 type="button"

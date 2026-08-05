@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -154,6 +154,7 @@ function renderPanel(
 
 describe("RoomProfilePanel", () => {
   beforeEach(() => {
+    vi.useRealTimers();
     vi.clearAllMocks();
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
@@ -211,11 +212,14 @@ describe("RoomProfilePanel", () => {
     const { rerender } = renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 올리기" }));
-    expect(mutate).toHaveBeenLastCalledWith({
-      roomSlug: "room",
-      password: "secret",
-      vote: "UPVOTE",
-    });
+    expect(mutate).toHaveBeenLastCalledWith(
+      {
+        roomSlug: "room",
+        password: "secret",
+        vote: "UPVOTE",
+      },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
 
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
@@ -242,11 +246,14 @@ describe("RoomProfilePanel", () => {
     const upButton = screen.getByRole("button", { name: "음악력 올리기" });
     expect(upButton).not.toHaveAttribute("aria-pressed");
     await user.click(upButton);
-    expect(mutate).toHaveBeenLastCalledWith({
-      roomSlug: "room",
-      password: "secret",
-      vote: "UPVOTE",
-    });
+    expect(mutate).toHaveBeenLastCalledWith(
+      {
+        roomSlug: "room",
+        password: "secret",
+        vote: "UPVOTE",
+      },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
   it("반대 방향 클릭은 DOWNVOTE로 교체한다", async () => {
@@ -262,11 +269,71 @@ describe("RoomProfilePanel", () => {
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
-    expect(mutate).toHaveBeenCalledWith({
-      roomSlug: "room",
-      password: "secret",
-      vote: "DOWNVOTE",
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        roomSlug: "room",
+        password: "secret",
+        vote: "DOWNVOTE",
+      },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
+  });
+
+  it("클릭 안내를 버튼 왼쪽에 표시하고 2초 뒤 제거한다", () => {
+    vi.useFakeTimers();
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1_999);
     });
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("신청자가 바뀌면 이전 신청자의 음악력 안내를 표시하지 않는다", () => {
+    const { rerender } = renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    expect(screen.getByRole("status")).toBeInTheDocument();
+
+    rerender(
+      <RoomProfilePanel
+        currentUser={currentUser}
+        currentRequester={{ ...requester, slug: "next-user" }}
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "next-user" }}
+        onUserBlocked={onUserBlocked}
+        reportMessageKey="message-key"
+        roomMeta={roomMeta}
+        roomPassword="secret"
+        roomSlug="room"
+      />,
+    );
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("처리 중이어도 음악력 버튼을 비활성화하지 않는다", () => {
+    vi.mocked(useCurrentTrackMusicPowerVote).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate,
+    } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
+
+    renderPanel();
+
+    expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
   it("본인과 게스트 신청자는 투표할 수 없다", () => {

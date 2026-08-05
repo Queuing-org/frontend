@@ -214,6 +214,19 @@
   gap: 10px;
 }
 
+.musicPowerNotice {
+  position: absolute;
+  right: 94px;
+  bottom: 28px;
+  max-width: calc(100% - 112px);
+  margin: 0;
+  color: #8d8d8d;
+  font-size: 10px;
+  font-weight: var(--fw-regular);
+  line-height: 1.35;
+  text-align: right;
+}
+
 .musicPowerButton {
   display: inline-flex;
   width: 24px;
@@ -226,13 +239,6 @@
   background: #f7f7f9;
   color: #3c3c3c;
   cursor: pointer;
-}
-
-.recommendationError {
-  margin: 5px 0 0;
-  color: #d24b4b;
-  font-size: 12px;
-  line-height: 1.4;
 }
 
 .empty {
@@ -277,5 +283,11 @@
   .musicPowerActions {
     right: 1rem;
     bottom: 1rem;
+  }
+
+  .musicPowerNotice {
+    right: 92px;
+    bottom: 1rem;
+    max-width: calc(100% - 108px);
   }
 }

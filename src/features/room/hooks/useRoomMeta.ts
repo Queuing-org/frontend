@@ -6,6 +6,7 @@ import type { RoomMeta } from "../model/types";
 import { fetchRoomMeta } from "../api/fetchRoomMeta";
 import { roomKeys } from "../model/queryKeys";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import { ROOM_DISCOVERY_REFRESH_INTERVAL_MS } from "../model/roomDiscoveryRefresh";
 
 export function useRoomMeta(slug: string) {
   return useSuspenseQuery<RoomMeta, ApiError>({
@@ -21,5 +22,6 @@ export function useRoomMetaQuery(slug: string | null | undefined) {
     queryKey: roomKeys.meta(normalizedSlug || null),
     queryFn: () => fetchRoomMeta(normalizedSlug),
     enabled: normalizedSlug.length > 0,
+    refetchInterval: ROOM_DISCOVERY_REFRESH_INTERVAL_MS,
   });
 }
