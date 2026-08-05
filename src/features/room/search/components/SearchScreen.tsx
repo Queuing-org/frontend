@@ -146,7 +146,7 @@ function SearchPanelHeader({
   return (
     <div className={styles.searchHeader}>
       <Link
-        href="/home"
+        href="/"
         className={styles.backButton}
         aria-label="홈으로 돌아가기"
       >

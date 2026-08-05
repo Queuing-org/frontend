@@ -443,7 +443,7 @@ function RoomPlaybackJoinedContent({
                   />
                 ) : null}
                 <Link
-                  href="/home"
+                  href="/"
                   replace
                   className={styles.mobileExitLink}
                   aria-label="방 나가기"
