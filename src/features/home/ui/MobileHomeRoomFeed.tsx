@@ -250,7 +250,6 @@ export default function MobileHomeRoomFeed({
               <MobileHomeRoomCard
                 key={room.id}
                 imageSrc={getRoomImageSrc({
-                  fallbackRoomSlug: room.slug,
                   preferredVariants: ROOM_CARD_IMAGE_VARIANTS,
                   thumbnailUrl: room.thumbnailUrl,
                   thumbnailUrls: room.thumbnailUrls,

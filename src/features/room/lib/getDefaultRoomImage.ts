@@ -1,24 +1,10 @@
 import type { ThumbnailUrls } from "../model/types";
 
-const DEFAULT_ROOM_IMAGES = [
-  "/room-defaults/queuing-default-thumbnail-coastal-tram-citypop-v2.png",
-  "/room-defaults/queuing-default-thumbnail-conservatory-classical-v2.png",
-  "/room-defaults/queuing-default-thumbnail-forest-rock-v2.png",
-  "/room-defaults/queuing-default-thumbnail-jazz-cafe-v2.png",
-  "/room-defaults/queuing-default-thumbnail-meadow-acoustic-v2.png",
-  "/room-defaults/queuing-default-thumbnail-pastel-neon-rnb-v2.png",
-  "/room-defaults/queuing-default-thumbnail-rainy-lofi-v2.png",
-  "/room-defaults/queuing-default-thumbnail-retro-vinyl-cafe-v2.png",
-  "/room-defaults/queuing-default-thumbnail-seaside-summer-pop-v2.png",
-  "/room-defaults/queuing-default-thumbnail-starlight-animals-v2.png",
-] as const;
+const DEFAULT_ROOM_IMAGE =
+  "/room-defaults/queuing-empty-room-thumbnail.jpg";
 
-export function getDefaultRoomImage(roomIndex: number) {
-  const imageIndex =
-    ((roomIndex % DEFAULT_ROOM_IMAGES.length) + DEFAULT_ROOM_IMAGES.length) %
-    DEFAULT_ROOM_IMAGES.length;
-
-  return DEFAULT_ROOM_IMAGES[imageIndex];
+export function getDefaultRoomImage() {
+  return DEFAULT_ROOM_IMAGE;
 }
 
 export const ROOM_CARD_IMAGE_VARIANTS = [
@@ -49,21 +35,10 @@ const DEFAULT_ROOM_IMAGE_VARIANTS = [
 ] as const;
 
 type GetRoomImageSrcParams = {
-  fallbackRoomSlug: string;
   preferredVariants?: readonly (keyof ThumbnailUrls)[];
   thumbnailUrl?: string | null;
   thumbnailUrls?: ThumbnailUrls | null;
 };
-
-function getStableRoomImageIndex(roomSlug: string) {
-  let hash = 0;
-
-  for (let index = 0; index < roomSlug.length; index += 1) {
-    hash += roomSlug.charCodeAt(index);
-  }
-
-  return hash;
-}
 
 function normalizeImageUrl(imageUrl: string | null | undefined) {
   const normalizedImageUrl = imageUrl?.trim();
@@ -91,7 +66,6 @@ function getRoomThumbnailVariantUrl(
 }
 
 export function getRoomImageSrc({
-  fallbackRoomSlug,
   preferredVariants = DEFAULT_ROOM_IMAGE_VARIANTS,
   thumbnailUrl,
   thumbnailUrls,
@@ -105,6 +79,6 @@ export function getRoomImageSrc({
   return (
     variantImageUrl ??
     normalizedThumbnailUrl ??
-    getDefaultRoomImage(getStableRoomImageIndex(fallbackRoomSlug))
+    getDefaultRoomImage()
   );
 }

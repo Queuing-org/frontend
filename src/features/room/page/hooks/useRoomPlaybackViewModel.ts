@@ -101,7 +101,6 @@ export function useRoomPlaybackViewModel({
   slug,
 }: UseRoomPlaybackViewModelParams) {
   const backgroundImageSrc = getRoomImageSrc({
-    fallbackRoomSlug: slug,
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
     thumbnailUrl: roomMeta?.thumbnailUrl,
     thumbnailUrls: roomMeta?.thumbnailUrls,

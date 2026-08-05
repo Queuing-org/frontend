@@ -1,6 +1,8 @@
 # Active Execution Plans
 
-- [2026-08-05-room-feedback-refresh](./2026-08-05-room-feedback-refresh/plan.md) — 방 생성·음악력 피드백과 홈/검색 10초 갱신
+- [2026-08-05-room-current-track-thumbnail](./2026-08-05-room-current-track-thumbnail/plan.md) — 현재 곡 방 썸네일과 단일 빈 방 기본 이미지
+
+- [2026-08-05-room-feedback-refresh](./2026-08-05-room-feedback-refresh/plan.md) — 방 생성·음악력 피드백과 방 탐색 캐시 재검증
 
 - [2026-08-05-loading-empty-owner-ui](./2026-08-05-loading-empty-owner-ui/plan.md) — 로딩·빈 상태·선택 방 방장 UI 정리
 

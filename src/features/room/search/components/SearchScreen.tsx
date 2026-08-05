@@ -264,7 +264,6 @@ function SearchRoomsContent({
   const showEmptyState =
     !roomsQuery.isPending && !roomsQuery.isError && roomListRooms.length === 0;
   const backgroundImageSrc = getRoomImageSrc({
-    fallbackRoomSlug: selectedRoom?.slug ?? selectedRoomSlug ?? "",
     preferredVariants: ROOM_HERO_IMAGE_VARIANTS,
     thumbnailUrl: selectedRoom?.thumbnailUrl,
     thumbnailUrls: selectedRoom?.thumbnailUrls,

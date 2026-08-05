@@ -33,7 +33,7 @@ vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
   stopSocketAutoReconnect: vi.fn(),
 }));
 
-describe("useRoomRealtimeEvents 재연결", () => {
+describe("useRoomRealtimeEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getSocketClient).mockReturnValue({
@@ -118,6 +118,94 @@ describe("useRoomRealtimeEvents 재연결", () => {
     );
     expect(stopSocketAutoReconnect).toHaveBeenCalledTimes(1);
     expect(publishLeaveRequest).not.toHaveBeenCalled();
+  });
+
+  it("곡 시작과 마지막 곡 종료 시 방 메타를 즉시 무효화한다", () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    let roomEventHandler:
+      | Parameters<typeof subscribeRoomEvents>[1]
+      | undefined;
+    const roomSubscription = { id: "room-events", unsubscribe: vi.fn() };
+    vi.mocked(subscribeRoomEvents).mockImplementation((_slug, handler) => {
+      roomEventHandler = handler;
+      return roomSubscription;
+    });
+    vi.mocked(addSocketListener).mockReturnValue(vi.fn());
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result, unmount } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions: vi.fn(),
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState: vi.fn(),
+          setJoinErrorMessage: vi.fn(),
+          setLivePlaybackStatus: vi.fn(),
+          setStatus: vi.fn(),
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => {
+      roomEventHandler?.({
+        body: JSON.stringify({
+          type: "TRACK_STARTED",
+          roomSlug: "room",
+          timestamp: 1,
+          data: {
+            entryId: "entry-1",
+            revision: 2,
+            track: {
+              title: "새 노래",
+              videoId: "video-1",
+              provider: "YOUTUBE",
+              durationMs: 180_000,
+              thumbnailUrl: "https://img.example.com/current.jpg",
+            },
+            addedBy: {
+              nickname: "신청자",
+              slug: "requester",
+              avatarUrl: null,
+            },
+            playbackStatus: {
+              videoId: "video-1",
+              status: "PLAYING",
+              currentTime: 0,
+              serverTimestamp: 1,
+            },
+          },
+        }),
+      } as never);
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomMeta", "room"],
+    });
+
+    invalidateQueries.mockClear();
+    act(() => {
+      roomEventHandler?.({
+        body: JSON.stringify({
+          type: "TRACK_ENDED",
+          roomSlug: "room",
+          timestamp: 2,
+          data: {},
+        }),
+      } as never);
+    });
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomMeta", "room"],
+    });
+
+    unmount();
   });
 
   it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {
