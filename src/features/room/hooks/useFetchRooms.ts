@@ -12,6 +12,7 @@ import {
 import type { Room, RoomsResponse } from "../model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { roomKeys } from "../model/queryKeys";
+import { ROOM_DISCOVERY_CACHE_POLICY } from "../model/roomDiscoveryCachePolicy";
 
 const ROOMS_PAGE_SIZE = 30;
 const DEFAULT_ROOMS_QUERY_PARAMS: RoomListQueryParams = {
@@ -129,6 +130,7 @@ export function useRoomsQuery(params: RoomsQueryParams = {}) {
     typeof queryKey,
     RoomsPageParam
   >({
+    ...ROOM_DISCOVERY_CACHE_POLICY,
     queryKey,
     queryFn: ({ pageParam }) =>
       fetchRooms({
