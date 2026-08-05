@@ -105,9 +105,10 @@ export default function RoomProfilePanel({
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
   const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
-  const badgeValue = isPublicProfileLoading || isPublicBadgesLoading
-    ? "불러오는 중..."
-    : representativeBadge?.name ?? "대표 칭호 없음";
+  const badgeValue =
+    isPublicProfileLoading || isPublicBadgesLoading
+      ? "불러오는 중..."
+      : (representativeBadge?.name ?? "대표 칭호 없음");
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
   const isMusicPowerVoteDisabled =
@@ -224,8 +225,8 @@ export default function RoomProfilePanel({
                   <Image
                     src="/icons/onwer_black.svg"
                     alt="방장"
-                    width={18}
-                    height={18}
+                    width={11}
+                    height={11}
                     className={styles.ownerIcon}
                   />
                 ) : null}
@@ -295,8 +296,7 @@ export default function RoomProfilePanel({
           ) : null}
           {kickParticipant.error ? (
             <p className={styles.managementError} role="alert">
-              {kickParticipant.error.message ||
-                "참가자를 내보내지 못했습니다."}
+              {kickParticipant.error.message || "참가자를 내보내지 못했습니다."}
             </p>
           ) : null}
           <div className={styles.grid}>

@@ -31,8 +31,8 @@
   border-radius: 999px;
   background: #f7f7f9;
   color: #8d8d8d;
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
+  font-size: 12px;
+  font-weight: var(--fw-medium);
 }
 
 .list {
