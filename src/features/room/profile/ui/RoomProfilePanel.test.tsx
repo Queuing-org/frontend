@@ -5,7 +5,7 @@ import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBad
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
-import { useMe } from "@/src/features/user/session/hooks/useMe";
+import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import RoomProfilePanel from "./RoomProfilePanel";
 
@@ -24,14 +24,54 @@ vi.mock("@/src/features/user/profile/hooks/useMusicPower", () => ({
 vi.mock("@/src/features/user/profile/hooks/useUserProfile", () => ({
   useUserProfile: vi.fn(),
 }));
-vi.mock("@/src/features/user/session/hooks/useMe", () => ({
-  useMe: vi.fn(),
-}));
 vi.mock("../hooks/useCurrentTrackMusicPowerVote", () => ({
   useCurrentTrackMusicPowerVote: vi.fn(),
 }));
+vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
+  useKickRoomParticipant: vi.fn(),
+}));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
-  default: () => <button type="button">팔로우</button>,
+  default: ({
+    followingLabel,
+    initialRelationship,
+  }: {
+    followingLabel?: string;
+    initialRelationship?: string;
+  }) => (
+    <button type="button">
+      {initialRelationship === "FOLLOWING"
+        ? followingLabel ?? "언팔로우"
+        : "팔로우"}
+    </button>
+  ),
+}));
+vi.mock("@/src/features/follow/blocked/ui/BlockUserModal", () => ({
+  default: ({
+    onBlocked,
+    target,
+  }: {
+    onBlocked?: (target: { nickname: string; slug: string }) => void;
+    target: { nickname: string; slug: string } | null;
+  }) =>
+    target ? (
+      <div role="dialog" aria-label="차단 확인">
+        <button type="button" onClick={() => onBlocked?.(target)}>
+          차단 실행
+        </button>
+      </div>
+    ) : null,
+}));
+vi.mock("@/src/features/room/chat/ui/ReportChatMessageModal", () => ({
+  default: ({
+    target,
+  }: {
+    target: { messageKey: string } | null;
+  }) =>
+    target ? (
+      <div role="dialog" aria-label="채팅 메시지 신고">
+        {target.messageKey}
+      </div>
+    ) : null,
 }));
 
 const requester = {
@@ -40,15 +80,49 @@ const requester = {
   slug: "target-user",
   userId: 2,
 };
+const currentUser = {
+  nickname: "나",
+  profileImageUrl: null,
+  slug: "me",
+  userId: 1,
+};
+const roomMeta = {
+  activeUsersCount: 2,
+  hasPassword: false,
+  isPublic: true,
+  owner: {
+    nickname: "방장",
+    profileImageUrl: null,
+    slug: "owner",
+  },
+  slug: "room",
+  tags: [],
+  title: "테스트 방",
+};
 const mutate = vi.fn();
+const kickMutate = vi.fn();
+const kickReset = vi.fn();
 
 function renderPanel(
   currentRequester: typeof requester | (typeof requester & { slug: null }) =
     requester,
+  options?: {
+    currentUser?: typeof currentUser;
+    reportMessageKey?: string | null;
+    roomMeta?: typeof roomMeta;
+  },
 ) {
   return render(
     <RoomProfilePanel
+      currentUser={options?.currentUser ?? currentUser}
       currentRequester={currentRequester}
+      isCurrentUserLoading={false}
+      reportMessageKey={
+        options?.reportMessageKey === undefined
+          ? "message-key"
+          : options.reportMessageKey
+      }
+      roomMeta={options?.roomMeta ?? roomMeta}
       roomPassword="secret"
       roomSlug="room"
     />,
@@ -58,16 +132,6 @@ function renderPanel(
 describe("RoomProfilePanel", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useMe).mockReturnValue({
-      data: {
-        nickname: "나",
-        profileImageUrl: null,
-        slug: "me",
-        userId: 1,
-      },
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useMe>);
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         nickname: "대상",
@@ -98,6 +162,12 @@ describe("RoomProfilePanel", () => {
       isPending: false,
       mutate,
     } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
+    vi.mocked(useKickRoomParticipant).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate: kickMutate,
+      reset: kickReset,
+    } as unknown as ReturnType<typeof useKickRoomParticipant>);
   });
 
   it("통계와 한 줄 소개, 양방향 음악력 버튼을 표시한다", () => {
@@ -134,7 +204,11 @@ describe("RoomProfilePanel", () => {
     } as ReturnType<typeof useMusicPower>);
     rerender(
       <RoomProfilePanel
+        currentUser={currentUser}
         currentRequester={requester}
+        isCurrentUserLoading={false}
+        reportMessageKey="message-key"
+        roomMeta={roomMeta}
         roomPassword="secret"
         roomSlug="room"
       />,
@@ -171,17 +245,13 @@ describe("RoomProfilePanel", () => {
   });
 
   it("본인과 게스트 신청자는 투표할 수 없다", () => {
-    vi.mocked(useMe).mockReturnValue({
-      data: {
+    const selfUser = {
         nickname: "대상",
         profileImageUrl: null,
         slug: "target-user",
         userId: 2,
-      },
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useMe>);
-    const { rerender } = renderPanel();
+    };
+    const { rerender } = renderPanel(requester, { currentUser: selfUser });
     expect(
       screen.getAllByRole("button", {
         name: "본인의 음악력에는 투표할 수 없습니다",
@@ -193,18 +263,13 @@ describe("RoomProfilePanel", () => {
       })[0],
     ).toBeDisabled();
 
-    vi.mocked(useMe).mockReturnValue({
-      data: {
-        nickname: "나",
-        profileImageUrl: null,
-        slug: "me",
-      },
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useMe>);
     rerender(
       <RoomProfilePanel
+        currentUser={currentUser}
         currentRequester={{ ...requester, slug: null }}
+        isCurrentUserLoading={false}
+        reportMessageKey={null}
+        roomMeta={roomMeta}
         roomSlug="room"
       />,
     );
@@ -213,5 +278,156 @@ describe("RoomProfilePanel", () => {
         name: "투표 대상은 회원 신청자만 가능합니다",
       }),
     ).toHaveLength(2);
+  });
+
+  it("상단 아래에 팔로잉과 관리 액션을 표시하고 온라인 점은 표시하지 않는다", () => {
+    vi.mocked(useFollowingRelationship).mockReturnValue({
+      data: true,
+    } as ReturnType<typeof useFollowingRelationship>);
+    renderPanel();
+
+    expect(screen.getByText("현재 큐잉 중...")).toBeInTheDocument();
+    const actions = screen.getByRole("group", { name: "프로필 액션" });
+    expect(actions).toContainElement(
+      screen.getByRole("button", { name: "팔로잉" }),
+    );
+    expect(actions).toContainElement(
+      screen.getByRole("button", { name: "관리" }),
+    );
+    expect(screen.queryByText("온라인")).not.toBeInTheDocument();
+  });
+
+  it("일반 사용자의 관리 메뉴에는 신고와 차단만 표시한다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    expect(
+      screen.getByRole("menu", { name: "프로필 관리" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "차단" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "내보내기" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("관리 버튼 재클릭과 바깥 클릭으로 dropdown을 닫는다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    const manageButton = screen.getByRole("button", { name: "관리" });
+
+    await user.click(manageButton);
+    expect(
+      screen.getByRole("menu", { name: "프로필 관리" }),
+    ).toBeInTheDocument();
+
+    await user.click(manageButton);
+    expect(
+      screen.queryByRole("menu", { name: "프로필 관리" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(manageButton);
+    await user.click(screen.getByText("한 줄 소개"));
+    expect(
+      screen.queryByRole("menu", { name: "프로필 관리" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("Escape로 관리 메뉴를 닫고 관리 버튼에 포커스를 복원한다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+    const manageButton = screen.getByRole("button", { name: "관리" });
+
+    await user.click(manageButton);
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("menu", { name: "프로필 관리" }),
+    ).not.toBeInTheDocument();
+    expect(manageButton).toHaveFocus();
+  });
+
+  it("내보내기 처리 중 다시 연 dropdown도 Escape로 닫는다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useKickRoomParticipant).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate: kickMutate,
+      reset: kickReset,
+    } as unknown as ReturnType<typeof useKickRoomParticipant>);
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+    });
+    const manageButton = screen.getByRole("button", { name: "관리" });
+
+    await user.click(manageButton);
+    expect(
+      screen.getByRole("menu", { name: "프로필 관리" }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+
+    expect(
+      screen.queryByRole("menu", { name: "프로필 관리" }),
+    ).not.toBeInTheDocument();
+    expect(manageButton).toHaveFocus();
+  });
+
+  it("신고는 대상의 최근 채팅 messageKey로 기존 신고 모달을 연다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "신고" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "채팅 메시지 신고" }),
+    ).toHaveTextContent("message-key");
+  });
+
+  it("신고 가능한 채팅이 없으면 API 성공을 가장하지 않고 안내한다", async () => {
+    const user = userEvent.setup();
+    renderPanel(requester, { reportMessageKey: null });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "신고" }));
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "신고할 수 있는 채팅 메시지가 없습니다.",
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "채팅 메시지 신고" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("차단 액션은 기존 차단 확인 모달을 연다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "차단" }));
+
+    expect(
+      screen.getByRole("dialog", { name: "차단 확인" }),
+    ).toBeInTheDocument();
+  });
+
+  it("현재 사용자가 방장일 때만 대상 내보내기를 연결한다", async () => {
+    const user = userEvent.setup();
+    const ownerUser = { ...currentUser, slug: "owner" };
+    renderPanel(requester, { currentUser: ownerUser });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "내보내기" }));
+
+    expect(kickReset).toHaveBeenCalledOnce();
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        password: "secret",
+        slug: "room",
+        userSlug: "target-user",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 });

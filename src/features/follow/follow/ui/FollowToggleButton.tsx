@@ -10,6 +10,7 @@ type FollowToggleButtonProps = {
   className?: string;
   disabled?: boolean;
   disabledLabel?: string;
+  followingLabel?: string;
   initialRelationship?: FollowRelationship | null;
   targetSlug?: string | null;
 };
@@ -22,6 +23,7 @@ export default function FollowToggleButton({
   className,
   disabled = false,
   disabledLabel = "팔로우",
+  followingLabel = "언팔로우",
   initialRelationship = "NONE",
   targetSlug,
 }: FollowToggleButtonProps) {
@@ -55,7 +57,7 @@ export default function FollowToggleButton({
       return disabledLabel;
     }
 
-    return isFollowing ? "언팔로우" : "팔로우";
+    return isFollowing ? followingLabel : "팔로우";
   })();
 
   const handleClick = () => {

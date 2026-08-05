@@ -35,6 +35,7 @@ type Props = {
   onActivateWidget: (widgetId: WidgetId) => void;
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
   participants: PlaylistParticipant[];
+  reportMessageKey?: string | null;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
@@ -55,6 +56,7 @@ export default function RoomFloatingWidgets({
   onActivateWidget,
   onWidgetStop,
   participants,
+  reportMessageKey,
   roomMeta,
   roomPassword,
   roomSlug,
@@ -90,8 +92,12 @@ export default function RoomFloatingWidgets({
                 width={widgets.profile.width}
               >
                 <RoomProfilePanel
+                  currentUser={currentUser}
                   currentRequester={currentRequester}
                   currentTrackTitle={currentTrackTitle}
+                  isCurrentUserLoading={isCurrentUserLoading}
+                  reportMessageKey={reportMessageKey}
+                  roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
                 />

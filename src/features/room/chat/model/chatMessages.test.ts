@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   getChatMessageManagementActions,
+  getLatestReportableChatMessageKey,
   shouldDisplayChatMessage,
 } from "./chatMessages";
 
@@ -94,5 +95,30 @@ describe("shouldDisplayChatMessage", () => {
 
   it("차단되지 않은 일반 메시지는 표시한다", () => {
     expect(shouldDisplayChatMessage(message({}), new Set())).toBe(true);
+  });
+});
+
+describe("getLatestReportableChatMessageKey", () => {
+  it("대상 회원의 가장 최근 messageKey를 반환한다", () => {
+    expect(
+      getLatestReportableChatMessageKey(
+        [
+          message({ messageKey: "old-key", sentAt: 1 }),
+          message({ messageKey: "other-key", senderSlug: "other", sentAt: 2 }),
+          message({ messageKey: " latest-key ", sentAt: 3 }),
+        ],
+        "target-user",
+      ),
+    ).toBe("latest-key");
+  });
+
+  it("대상의 신고 가능한 채팅이 없으면 null을 반환한다", () => {
+    expect(
+      getLatestReportableChatMessageKey(
+        [message({ messageKey: null, senderSlug: "target-user" })],
+        "target-user",
+      ),
+    ).toBeNull();
+    expect(getLatestReportableChatMessageKey([message({})], null)).toBeNull();
   });
 });

@@ -40,6 +40,7 @@ import RoomFloatingWidgets from "@/src/features/room/floating/ui/RoomFloatingWid
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
+import { getLatestReportableChatMessageKey } from "@/src/features/room/chat/model/chatMessages";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import type {
   PlaylistParticipant,
@@ -415,6 +416,11 @@ function RoomPlaybackJoinedContent({
     sendErrorMessage: chatSendErrorMessage,
     sendMessage: handleSendChatMessage,
   } = roomChat;
+  const currentRequesterReportMessageKey =
+    getLatestReportableChatMessageKey(
+      chatMessages,
+      playback.currentRequester?.slug,
+    );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
 
@@ -685,6 +691,7 @@ function RoomPlaybackJoinedContent({
         }
         onSendChatMessage={handleSendChatMessage}
         participants={participants}
+        reportMessageKey={currentRequesterReportMessageKey}
         roomMeta={roomMeta}
         roomPassword={roomPassword}
         roomSlug={slug}
