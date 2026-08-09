@@ -27,11 +27,12 @@ type Props = {
   onRandomEntry: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
+  onMenuItemIntent?: (menuItem: HomeMenuItem) => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onEnterSelectedRoom: () => void;
   isRandomEntryPending?: boolean;
-  randomEntryErrorMessage?: string | null;
+  actionErrorMessage?: string | null;
 };
 
 export default function HomeSearchControlDock({
@@ -46,11 +47,12 @@ export default function HomeSearchControlDock({
   onRandomEntry,
   onSelectFilter,
   onCreateRoom,
+  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onEnterSelectedRoom,
   isRandomEntryPending = false,
-  randomEntryErrorMessage = null,
+  actionErrorMessage = null,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
@@ -110,11 +112,11 @@ export default function HomeSearchControlDock({
 
   return (
     <div ref={dockRef} className={styles.dock}>
-      {openPanel || randomEntryErrorMessage ? (
+      {openPanel || actionErrorMessage ? (
         <div className={styles.floatStack}>
-          {randomEntryErrorMessage ? (
+          {actionErrorMessage ? (
             <div className={styles.errorBubble} role="alert">
-              {randomEntryErrorMessage}
+              {actionErrorMessage}
             </div>
           ) : null}
           {openPanel ? (
@@ -123,6 +125,7 @@ export default function HomeSearchControlDock({
                 <HomeControlPanelShell
                   variant="menu"
                   isRandomEntryPending={isRandomEntryPending}
+                  onMenuItemIntent={onMenuItemIntent}
                   onSelectMenuItem={selectMenuItem}
                 />
               ) : (

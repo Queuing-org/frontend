@@ -22,6 +22,7 @@ import {
   getSelectedHomeGenreTags,
   type HomeFilterKey,
   type HomeFilterOption,
+  type HomeMenuItem,
 } from "@/src/features/room/discovery/ui/HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
 import HomeSearchControlDock from "@/src/features/room/discovery/ui/HomeSearchControlDock";
@@ -33,14 +34,14 @@ import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
+import { useIdlePreload } from "@/src/shared/lib/useIdlePreload";
+import {
+  DISCOVERY_MODAL_PRELOADERS,
+  discoveryModalResources,
+  preloadDiscoveryModalForMenuItem,
+} from "@/src/features/room/discovery/lib/discoveryModalResources";
+import { useDiscoveryModalController } from "@/src/features/room/discovery/model/useDiscoveryModalController";
 
-const RoomFormModal = dynamic(
-  () => import("@/src/features/room/create/ui/RoomFormModal"),
-  {
-    ssr: false,
-    loading: () => <LazyModalFallback label="방 만들기 화면 로딩 중" />,
-  },
-);
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
   {
@@ -48,29 +49,18 @@ const RoomJoinPasswordModal = dynamic(
     loading: () => <LazyModalFallback label="방 입장 화면 로딩 중" />,
   },
 );
-const FollowModal = dynamic(
-  () => import("@/src/features/follow/ui/FollowModal"),
-  {
-    ssr: false,
-    loading: () => <LazyModalFallback label="친구 화면 로딩 중" />,
-  },
-);
-const SettingsModal = dynamic(
-  () => import("@/src/features/settings/ui/SettingsModal"),
-  {
-    ssr: false,
-    loading: () => <LazyModalFallback label="설정 화면 로딩 중" />,
-  },
-);
+const RoomFormModal = discoveryModalResources.create.Component;
+const FollowModal = discoveryModalResources.follow.Component;
+const SettingsModal = discoveryModalResources.settings.Component;
 
 export default function HomeScreen() {
+  useIdlePreload(DISCOVERY_MODAL_PRELOADERS);
+
   const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
-  const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
-  const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const discoveryModal = useDiscoveryModalController();
   const {
     authRequiredDescription,
     closeAuthRequiredModal,
@@ -102,27 +92,28 @@ export default function HomeScreen() {
     ],
   );
 
-  const requestCreateRoom = () =>
+  const requestCreateRoom = () => {
     requestAuthenticatedAction({
       description: "방 만들기는 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => setIsCreateRoomModalOpen(true),
+      onAuthenticated: () => discoveryModal.requestModal("create"),
     });
+  };
 
-  const requestOpenFollow = () =>
+  const requestOpenFollow = () => {
     requestAuthenticatedAction({
       description: "팔로우 기능은 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => setIsFollowModalOpen(true),
+      onAuthenticated: () => discoveryModal.requestModal("follow"),
     });
+  };
 
-  const requestOpenSettings = () =>
+  const requestOpenSettings = () => {
     requestAuthenticatedAction({
       description: "설정은 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => setIsSettingsModalOpen(true),
+      onAuthenticated: () => discoveryModal.requestModal("settings"),
     });
+  };
   const hasPageModalOpen =
-    isCreateRoomModalOpen ||
-    isFollowModalOpen ||
-    isSettingsModalOpen ||
+    Boolean(discoveryModal.activeModal) ||
     isAuthRequiredModalOpen;
 
   return (
@@ -131,25 +122,27 @@ export default function HomeScreen() {
         activeFilters={roomListFilters}
         hasPageModalOpen={hasPageModalOpen}
         isMobileLayout={isMobileLayout}
+        modalLoadErrorMessage={discoveryModal.loadErrorMessage}
         onCreateRoom={requestCreateRoom}
         onMobileSearchQueryChange={setMobileSearchQuery}
+        onMenuItemIntent={preloadDiscoveryModalForMenuItem}
         onOpenFollow={requestOpenFollow}
         onOpenSettings={requestOpenSettings}
         onSelectFilter={selectRoomListFilter}
         roomsQueryParams={roomListQueryParams}
       />
-      {isCreateRoomModalOpen ? (
+      {discoveryModal.activeModal === "create" ? (
         <RoomFormModal
           open
           mode="create"
-          onClose={() => setIsCreateRoomModalOpen(false)}
+          onClose={discoveryModal.closeModal}
         />
       ) : null}
-      {isFollowModalOpen ? (
-        <FollowModal open onClose={() => setIsFollowModalOpen(false)} />
+      {discoveryModal.activeModal === "follow" ? (
+        <FollowModal open onClose={discoveryModal.closeModal} />
       ) : null}
-      {isSettingsModalOpen ? (
-        <SettingsModal open onClose={() => setIsSettingsModalOpen(false)} />
+      {discoveryModal.activeModal === "settings" ? (
+        <SettingsModal open onClose={discoveryModal.closeModal} />
       ) : null}
       <AuthRequiredModal
         open={isAuthRequiredModalOpen}
@@ -165,8 +158,10 @@ type HomeRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
   hasPageModalOpen: boolean;
   isMobileLayout: boolean;
+  modalLoadErrorMessage: string | null;
   onCreateRoom: () => void;
   onMobileSearchQueryChange: (query: string) => void;
+  onMenuItemIntent: (menuItem: HomeMenuItem) => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
@@ -177,8 +172,10 @@ function HomeRoomsContent({
   activeFilters,
   hasPageModalOpen,
   isMobileLayout,
+  modalLoadErrorMessage,
   onCreateRoom,
   onMobileSearchQueryChange,
+  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onSelectFilter,
@@ -221,6 +218,8 @@ function HomeRoomsContent({
     onSelectRoom: setCurrentRoomSlug,
   });
   const randomEntry = useRandomEntryNavigation();
+  const actionErrorMessage =
+    modalLoadErrorMessage ?? randomEntry.errorMessage;
   const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
   const roomMetaQuery = useRoomMetaQuery(
     !isChromeReduced ? selectedRoomSlug : null,
@@ -257,6 +256,7 @@ function HomeRoomsContent({
       {isMobileLayout && !isChromeReduced ? (
         <MobileHomeRoomFeed
           activeFilters={activeFilters}
+          actionErrorMessage={actionErrorMessage}
           errorMessage={roomListErrorMessage}
           genreOptions={genreOptions}
           hasNextPage={Boolean(roomsQuery.hasNextPage)}
@@ -267,6 +267,7 @@ function HomeRoomsContent({
           onLoadMoreRooms={() => {
             void roomsQuery.fetchNextPage();
           }}
+          onMenuItemIntent={onMenuItemIntent}
           onOpenFollow={onOpenFollow}
           onOpenSettings={onOpenSettings}
           onRandomEntry={randomEntry.requestRandomEntry}
@@ -276,7 +277,6 @@ function HomeRoomsContent({
           onRequestRoomEntry={roomEntry.requestRoomEntry}
           onSelectFilter={onSelectFilter}
           onSelectRoom={setCurrentRoomSlug}
-          randomEntryErrorMessage={randomEntry.errorMessage}
           rooms={visibleRooms}
           selectedRoomSlug={selectedRoomSlug}
         />
@@ -290,6 +290,7 @@ function HomeRoomsContent({
             isLoading={roomsQuery.isPending}
             selectedRoomOwner={roomMetaQuery.data?.owner ?? null}
             onCreateRoom={onCreateRoom}
+            onCreateRoomIntent={() => onMenuItemIntent("CREATE")}
             onSelectRoom={setCurrentRoomSlug}
             onRequestRoomEntry={roomEntry.requestRoomEntry}
             onRetry={() => {
@@ -310,8 +311,9 @@ function HomeRoomsContent({
             onCreateRoom={onCreateRoom}
             onOpenFollow={onOpenFollow}
             onOpenSettings={onOpenSettings}
+            onMenuItemIntent={onMenuItemIntent}
             isRandomEntryPending={randomEntry.isPending}
-            randomEntryErrorMessage={randomEntry.errorMessage}
+            actionErrorMessage={actionErrorMessage}
             onEnterSelectedRoom={() => {
               if (visibleCurrentRoom) {
                 roomEntry.requestRoomEntry(visibleCurrentRoom);

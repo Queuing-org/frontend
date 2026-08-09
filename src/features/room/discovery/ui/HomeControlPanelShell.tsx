@@ -20,6 +20,7 @@ type Props =
   | {
       variant: "menu";
       isRandomEntryPending?: boolean;
+      onMenuItemIntent?: (menuItem: HomeMenuItem) => void;
       onSelectMenuItem: (menuItem: HomeMenuItem) => void;
     }
   | {
@@ -239,6 +240,9 @@ export default function HomeControlPanelShell(props: Props) {
                 className={styles.menuItem}
                 disabled={isPendingRandom}
                 aria-busy={isPendingRandom}
+                onFocus={() => props.onMenuItemIntent?.(item)}
+                onPointerDown={() => props.onMenuItemIntent?.(item)}
+                onPointerEnter={() => props.onMenuItemIntent?.(item)}
                 onClick={() => props.onSelectMenuItem(item)}
               >
                 {isPendingRandom ? (

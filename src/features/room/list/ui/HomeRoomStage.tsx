@@ -27,6 +27,7 @@ type Props = {
   isLoading?: boolean;
   selectedRoomOwner?: RoomOwner | null;
   onCreateRoom: () => void;
+  onCreateRoomIntent?: () => void;
   onSelectRoom: (roomSlug: string) => void;
   onRequestRoomEntry: (room: Room) => void;
   onRetry?: () => void;
@@ -57,6 +58,7 @@ export default function HomeRoomStage({
   isLoading = false,
   selectedRoomOwner = null,
   onCreateRoom,
+  onCreateRoomIntent,
   onSelectRoom,
   onRequestRoomEntry,
   onRetry,
@@ -138,6 +140,9 @@ export default function HomeRoomStage({
             <button
               type="button"
               className={styles.createRoomButton}
+              onFocus={onCreateRoomIntent}
+              onPointerDown={onCreateRoomIntent}
+              onPointerEnter={onCreateRoomIntent}
               onClick={onCreateRoom}
             >
               방 만들기

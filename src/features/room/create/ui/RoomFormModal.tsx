@@ -39,7 +39,7 @@ const EMPTY_TAG_SLUGS: string[] = [];
 
 type RoomFormModalMode = "create" | "edit";
 
-type RoomFormModalProps = {
+export type RoomFormModalProps = {
   open: boolean;
   mode: RoomFormModalMode;
   roomSlug?: string;
