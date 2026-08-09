@@ -35,3 +35,5 @@
 - `npm run build`: pass
 - `git diff --check`: pass
 - GitHub thread reply/resolve는 사용자 요청 범위를 넘으므로 수행하지 않는다.
+- push 후 GitHub Actions, Vercel, CodeRabbit 모두 pass했다.
+- 재조회에서 신규 actionable 스레드는 없었다. 기존 unresolved 5개는 2개 outdated, 3개는 현재 diff로 해결됐지만 명시적 요청 없이 resolve하지 않았다.
