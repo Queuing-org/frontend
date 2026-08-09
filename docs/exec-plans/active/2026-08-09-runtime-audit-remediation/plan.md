@@ -33,7 +33,7 @@
 - production initial bundle/font/image 낭비를 가능한 범위에서 줄이고 build artifact로 검증한다.
 - confirmed dead import/export/CSS/dependency는 owner 확인 가능한 항목만 삭제한다.
 - `npm run lint`, `npm run test`, `npm run build`, `git diff --check`, fresh read-only QA가 통과한다.
-- `dev`에 기능 단위 커밋으로 push하고 기존 PR #37을 한국어로 갱신한다.
+- `dev`에 기능 단위 커밋으로 push하고 Draft PR #38을 한국어로 게시한다.
 
 ## Progress
 
@@ -45,4 +45,5 @@
 - [x] 통합 테스트
 - [x] fresh read-only QA
 - [x] 기능 단위 commit 및 `dev` push
-- [ ] PR #37 갱신 및 최신 head CI 확인
+- [x] Draft PR #38 생성 및 한국어 본문 게시
+- [ ] 최신 head CI 확인
