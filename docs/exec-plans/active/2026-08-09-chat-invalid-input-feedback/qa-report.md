@@ -21,3 +21,9 @@
 
 - 실제 로그인 방에서 금칙어를 보내는 파괴적 수동 QA는 수행하지 않았다.
 - 기존 `FollowModal.module.css` 및 관찰된 다른 동시 작업 변경은 수정·커밋 대상에서 제외한다.
+
+## 원격 검증
+
+- GitHub Actions `Lint, test, and build`: pass
+- Vercel: pass
+- CodeRabbit: pass (Draft PR review skipped)

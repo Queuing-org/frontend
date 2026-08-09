@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): implementing — 채팅 금칙어 invalid-input 하단 문구 숨김
+- [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): ready — 채팅 금칙어 invalid-input 하단 문구 숨김
 
 - [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ci-pending — Draft PR #36, 참가자 카드 관리 메뉴와 방장 위임
 
