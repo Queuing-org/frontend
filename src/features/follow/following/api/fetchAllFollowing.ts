@@ -2,7 +2,7 @@ import type { FollowingUser } from "@/src/features/follow/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { fetchFollowing } from "./fetchFollowing";
 
-const FOLLOWING_RELATIONSHIP_PAGE_SIZE = 200;
+const FOLLOWING_RELATIONSHIP_PAGE_SIZE = 100;
 
 export async function fetchAllFollowing(
   signal?: AbortSignal,

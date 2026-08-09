@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-09-follow-relationship-page-size](./2026-08-09-follow-relationship-page-size/plan.md) — 팔로워 관계 조회 API 페이지 크기 계약 수정
+
 - [2026-08-06-self-room-profile-state](./2026-08-06-self-room-profile-state/plan.md) — 내 신청곡 프로필 상태와 음악력 액션 가시성
 
 - [2026-08-05-room-current-track-thumbnail](./2026-08-05-room-current-track-thumbnail/plan.md) — 현재 곡 방 썸네일과 단일 빈 방 기본 이미지
