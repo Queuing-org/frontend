@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-10-discovery-modal-preload](./2026-08-10-discovery-modal-preload/plan.md): ready-to-publish — CREATE·FOLLOW·SETTING 지연 모달 클릭 스피너 제거
+- [2026-08-10-discovery-modal-preload](./2026-08-10-discovery-modal-preload/plan.md): ready — Draft PR #39, CREATE·FOLLOW·SETTING 지연 모달 클릭 스피너 제거 및 CI 통과
 
 - [2026-08-09-runtime-audit-remediation](./2026-08-09-runtime-audit-remediation/plan.md): implementing — 프론트 런타임 감사 confirmed finding 후속 최적화
 

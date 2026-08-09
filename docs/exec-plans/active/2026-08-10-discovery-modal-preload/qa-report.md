@@ -38,3 +38,10 @@
 - result: pass
 - blocker: none
 - 확인 범위: 세 modal open gate, 실패 재시도, 단일 reservation, desktop/mobile/empty-state intent, production chunk 분리, idle cleanup
+
+## Remote Verification
+
+- Draft PR: #39
+- GitHub CI: pass
+- Vercel: pass
+- CodeRabbit: pass, inline/review comments 없음

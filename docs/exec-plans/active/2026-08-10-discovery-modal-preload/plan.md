@@ -36,4 +36,4 @@
 - [x] 홈·검색·모바일 intent 연결
 - [x] 회귀 테스트와 전체 검증
 - [x] 기능·테스트 commit
-- [ ] dev push, Draft PR #38 갱신 및 CI 확인
+- [x] dev push, Draft PR #39 생성 및 CI 확인
