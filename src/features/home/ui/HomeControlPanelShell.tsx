@@ -1,6 +1,7 @@
 "use client";
 
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { MAX_ROOM_TAG_FILTERS } from "@/src/features/room/model/roomTagFilters";
 import styles from "./HomeControlPanelShell.module.css";
 
 const menuItems = ["RANDOM", "CREATE", "FOLLOW", "SETTING"] as const;
@@ -63,13 +64,21 @@ export const DEFAULT_HOME_FILTERS: HomeFilterState = {
   participants: "RANDOM",
 };
 
+export function getSelectedHomeGenreTags(
+  genres: readonly HomeGenreFilterOption[],
+) {
+  return genres.filter((genre) => genre !== ALL_GENRE_FILTER_OPTION);
+}
+
 export function getHomeGenreFilterOptions({
   isError = false,
   isLoading = false,
+  selectedGenres = [],
   tags = [],
 }: {
   isError?: boolean;
   isLoading?: boolean;
+  selectedGenres?: readonly HomeGenreFilterOption[];
   tags?: readonly HomeGenreTag[];
 }): HomeGenreFilterOptionDescriptor[] {
   const allOption: HomeGenreFilterOptionDescriptor = {
@@ -100,13 +109,19 @@ export function getHomeGenreFilterOptions({
     ];
   }
 
+  const selectedTagSlugs = new Set(getSelectedHomeGenreTags(selectedGenres));
+  const hasReachedSelectionLimit =
+    selectedTagSlugs.size >= MAX_ROOM_TAG_FILTERS;
+
   return [
     allOption,
     ...tags.map((tag) => ({
-      disabled: true,
-      disabledReason: "장르 필터는 준비 중입니다.",
+      disabled: hasReachedSelectionLimit && !selectedTagSlugs.has(tag.slug),
+      disabledReason:
+        hasReachedSelectionLimit && !selectedTagSlugs.has(tag.slug)
+          ? `장르는 최대 ${MAX_ROOM_TAG_FILTERS}개까지 선택할 수 있습니다.`
+          : undefined,
       label: tag.name,
-      statusLabel: "준비 중",
       value: tag.slug,
     })),
   ];
@@ -127,9 +142,14 @@ export function getNextHomeFilters(
       };
     }
 
-    const selectedGenres = currentFilters.genre.filter(
-      (genre) => genre !== ALL_GENRE_FILTER_OPTION,
-    );
+    const selectedGenres = getSelectedHomeGenreTags(currentFilters.genre);
+    if (
+      !selectedGenres.includes(genreOption) &&
+      selectedGenres.length >= MAX_ROOM_TAG_FILTERS
+    ) {
+      return currentFilters;
+    }
+
     const nextGenres = selectedGenres.includes(genreOption)
       ? selectedGenres.filter((genre) => genre !== genreOption)
       : [...selectedGenres, genreOption];
