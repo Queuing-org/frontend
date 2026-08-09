@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
@@ -11,6 +11,7 @@ import ReportChatMessageModal, {
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
+import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import type { ChatMessage, RoomMeta } from "@/src/features/room/model/types";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { User } from "@/src/features/user/model/types";
@@ -48,10 +49,21 @@ export default function RoomParticipantsPanel({
   );
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
+  const {
+    begin: beginTransferOwnerRequest,
+    clear: clearTransferOwnerError,
+    message: transferOwnerErrorMessage,
+    show: showTransferOwnerError,
+  } = useTransientManagementError();
   const owner = roomMeta?.owner ?? null;
-  const canManageParticipants = isRoomOwner(owner, currentUser);
+  const canModerateParticipants = isRoomOwner(owner, currentUser);
+
+  useEffect(() => {
+    clearTransferOwnerError();
+  }, [clearTransferOwnerError, roomSlug]);
 
   const handleReportParticipant = (participant: PlaylistParticipant) => {
+    clearTransferOwnerError();
     const userSlug =
       participant.participantType === "USER"
         ? getParticipantUserSlug(participant)
@@ -69,6 +81,7 @@ export default function RoomParticipantsPanel({
   };
 
   const handleBlockParticipant = (participant: PlaylistParticipant) => {
+    clearTransferOwnerError();
     const userSlug = getParticipantUserSlug(participant);
     if (participant.participantType !== "USER" || !userSlug) {
       return;
@@ -82,14 +95,16 @@ export default function RoomParticipantsPanel({
     if (participant.participantType !== "USER" || !userSlug) {
       return;
     }
+    const transferSequence = beginTransferOwnerRequest();
     setManagementMessage(null);
     transferOwner.reset();
     transferOwner.mutate(
       { slug: roomSlug, userSlug },
       {
-        onSuccess: () => {
-          setManagementMessage(
-            `${participant.nickname}님에게 방장을 위임했습니다.`,
+        onError: (error) => {
+          showTransferOwnerError(
+            transferSequence,
+            error.message || "방장을 위임하지 못했습니다.",
           );
         },
       },
@@ -112,6 +127,7 @@ export default function RoomParticipantsPanel({
           )}
           onBlockParticipant={handleBlockParticipant}
           onKickParticipant={(target) => {
+            clearTransferOwnerError();
             setManagementMessage(null);
             kickParticipant.reset();
             kickParticipant.mutate({
@@ -124,7 +140,7 @@ export default function RoomParticipantsPanel({
           onTransferOwner={handleTransferOwner}
           owner={owner}
           participants={participants}
-          showParticipantActions={canManageParticipants}
+          canModerateParticipants={canModerateParticipants}
           transferringUserSlug={transferOwner.variables?.userSlug ?? null}
         />
       ) : (
@@ -133,11 +149,15 @@ export default function RoomParticipantsPanel({
       {managementMessage ? (
         <div className={styles.message}>{managementMessage}</div>
       ) : null}
-      {kickParticipant.isError || transferOwner.isError ? (
-        <div className={styles.error}>
-          {transferOwner.error?.message ||
-            kickParticipant.error?.message ||
+      {kickParticipant.isError ? (
+        <div className={styles.error} role="alert">
+          {kickParticipant.error?.message ||
             "참가자 관리 요청을 처리하지 못했습니다."}
+        </div>
+      ) : null}
+      {transferOwnerErrorMessage ? (
+        <div className={styles.error} role="alert">
+          {transferOwnerErrorMessage}
         </div>
       ) : null}
       <BlockUserModal

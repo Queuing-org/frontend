@@ -50,6 +50,7 @@
 
 .menu .menuItem:hover:not(:disabled),
 .menu .menuItem:focus-visible {
+  border-bottom-color: #eeeeee;
   background: #f4f6f8;
   outline: none;
 }

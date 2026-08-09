@@ -1,12 +1,16 @@
 # Active Execution Plans
 
+- [2026-08-09-frontend-runtime-audit](./2026-08-09-frontend-runtime-audit/plan.md): ready — 프론트 전 영역 미사용 코드·런타임 성능·구조 병렬 감사 완료, 전달 대기
+
+- [2026-08-09-transfer-owner-error-feedback](./2026-08-09-transfer-owner-error-feedback/plan.md): ready — 방장 위임 성공 문구 제거와 실패 안내 자동 해제
+
 - [2026-08-09-floating-widget-position-reset](./2026-08-09-floating-widget-position-reset/plan.md): ready — 참가자 scrollbar 숨김과 floating 모달 위치 초기화
 
 - [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): ready — 채팅 금칙어 invalid-input 하단 문구 숨김
 
 - [2026-08-09-room-chat-profile-actions](./2026-08-09-room-chat-profile-actions/plan.md): ci-pending — Draft PR #36, 채팅·프로필 관리 액션과 합성 깜빡임 수정
 
-- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ci-pending — Draft PR #36, 참가자 hover `…`와 채팅 공통 dropdown 통일
+- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ready — Draft PR #37, 참가자 관리 메뉴 노출·hover 피드백 복구
 
 - [2026-08-09-filter-chip-layout-stability](./2026-08-09-filter-chip-layout-stability/plan.md): implementing — 필터 칩 선택 시 크기·줄바꿈 변동 제거
 

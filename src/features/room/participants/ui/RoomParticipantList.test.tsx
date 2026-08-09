@@ -60,21 +60,32 @@ const callbacks = {
   onTransferOwner: vi.fn(),
 };
 
-function renderList(showParticipantActions = true) {
+function renderList({
+  canModerateParticipants = true,
+  currentUser = {
+    nickname: "방장",
+    profileImageUrl: null,
+    slug: "owner",
+    userId: 1,
+  },
+}: {
+  canModerateParticipants?: boolean;
+  currentUser?: {
+    nickname: string;
+    profileImageUrl: null;
+    slug: string;
+    userId: number;
+  } | null;
+} = {}) {
   return render(
     <RoomParticipantList
-      currentUser={{
-        nickname: "방장",
-        profileImageUrl: null,
-        slug: "owner",
-        userId: 1,
-      }}
+      canModerateParticipants={canModerateParticipants}
+      currentUser={currentUser}
       isKickPending={false}
       isTransferPending={false}
       kickingParticipantKey={null}
       owner={{ nickname: "방장", profileImageUrl: null, slug: "owner" }}
       participants={participants}
-      showParticipantActions={showParticipantActions}
       transferringUserSlug={null}
       {...callbacks}
     />,
@@ -149,8 +160,39 @@ describe("RoomParticipantList", () => {
     expect(screen.queryByRole("menuitem", { name: "방장 위임" })).toBeNull();
   });
 
-  it("방장이 아니면 참가자 카드에 더보기 버튼을 만들지 않는다", () => {
-    renderList(false);
+  it("일반 로그인 사용자도 다른 회원의 사회 액션 메뉴를 열 수 있다", async () => {
+    const user = userEvent.setup();
+    renderList({
+      canModerateParticipants: false,
+      currentUser: {
+        nickname: "회원",
+        profileImageUrl: null,
+        slug: "member",
+        userId: 2,
+      },
+    });
+
+    const ownerTrigger = screen.getByRole("button", {
+      name: "방장 참가자 관리 메뉴",
+    });
+    expect(
+      screen.queryByRole("button", { name: "회원 참가자 관리 메뉴" }),
+    ).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "게스트 참가자 관리 메뉴" }),
+    ).toBeNull();
+
+    await user.click(ownerTrigger);
+
+    expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "신고" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "차단" })).toBeVisible();
+    expect(screen.queryByRole("menuitem", { name: "내보내기" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "방장 위임" })).toBeNull();
+  });
+
+  it("비로그인 사용자는 참가자 관리 메뉴를 열 수 없다", () => {
+    renderList({ canModerateParticipants: false, currentUser: null });
 
     expect(screen.queryByRole("button", { name: /참가자 관리 메뉴/ })).toBeNull();
   });

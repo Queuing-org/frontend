@@ -4,6 +4,7 @@ import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import {
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -19,6 +20,7 @@ import BlockUserModal, {
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
+import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import {
   getParticipantKickTarget,
   getParticipantKickTargetKey,
@@ -190,6 +192,12 @@ export default function ChatArea({
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
+  const {
+    begin: beginTransferOwnerRequest,
+    clear: clearTransferOwnerError,
+    message: transferOwnerErrorMessage,
+    show: showTransferOwnerError,
+  } = useTransientManagementError();
   const participantByUserSlug = useMemo(() => {
     const lookup = new Map<string, PlaylistParticipant>();
     participants.forEach((participant) => {
@@ -220,6 +228,10 @@ export default function ChatArea({
     onLoadOlderMessages,
     scrollToLatestKey,
   });
+
+  useEffect(() => {
+    clearTransferOwnerError();
+  }, [clearTransferOwnerError, roomSlug]);
 
   const closeMenu = useCallback(() => {
     setOpenMenuKey(null);
@@ -308,6 +320,7 @@ export default function ChatArea({
       if (!kickTarget) {
         return;
       }
+      clearTransferOwnerError();
       setManagementMessage(null);
       kickParticipant.reset();
       kickParticipant.mutate(
@@ -320,7 +333,13 @@ export default function ChatArea({
           },
         },
       );
-    }, [getModerationParticipant, kickParticipant, roomPassword, roomSlug]);
+    }, [
+      clearTransferOwnerError,
+      getModerationParticipant,
+      kickParticipant,
+      roomPassword,
+      roomSlug,
+    ]);
   const handleTransfer = useCallback(
     (message: ChatMessage) => {
       const participant = getModerationParticipant(message);
@@ -328,19 +347,27 @@ export default function ChatArea({
       if (participant?.participantType !== "USER" || !userSlug) {
         return;
       }
+      const transferSequence = beginTransferOwnerRequest();
       setManagementMessage(null);
       transferOwner.reset();
       transferOwner.mutate(
         { slug: roomSlug, userSlug },
         {
-          onSuccess: () => {
-            setManagementMessage(
-              `${message.senderNickname}님에게 방장을 위임했습니다.`,
+          onError: (error) => {
+            showTransferOwnerError(
+              transferSequence,
+              error.message || "방장을 위임하지 못했습니다.",
             );
           },
         },
       );
-    }, [getModerationParticipant, roomSlug, transferOwner]);
+    }, [
+      beginTransferOwnerRequest,
+      getModerationParticipant,
+      roomSlug,
+      showTransferOwnerError,
+      transferOwner,
+    ]);
   const restoreTriggerFocus = useCallback(() => {
     queueMicrotask(() => activeTriggerRef.current?.focus());
   }, []);
@@ -376,11 +403,15 @@ export default function ChatArea({
               {managementMessage}
             </div>
           ) : null}
-          {kickParticipant.error || transferOwner.error ? (
+          {kickParticipant.error ? (
             <div className={styles.managementError} role="alert">
-              {transferOwner.error?.message ||
-                kickParticipant.error?.message ||
+              {kickParticipant.error?.message ||
                 "사용자 관리 요청을 처리하지 못했습니다."}
+            </div>
+          ) : null}
+          {transferOwnerErrorMessage ? (
+            <div className={styles.managementError} role="alert">
+              {transferOwnerErrorMessage}
             </div>
           ) : null}
           {visibleMessages.length === 0 ? (

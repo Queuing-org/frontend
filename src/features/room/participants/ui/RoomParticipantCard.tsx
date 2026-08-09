@@ -10,7 +10,7 @@ import type { ParticipantKickTarget } from "../model/participantIdentity";
 import styles from "./RoomParticipantsPanel.module.css";
 
 type Props = {
-  canManage: boolean;
+  actions: readonly RoomMemberManagementAction[];
   expanded: boolean;
   isKickPending: boolean;
   isOwner: boolean;
@@ -30,7 +30,7 @@ type Props = {
 };
 
 export default function RoomParticipantCard({
-  canManage,
+  actions,
   expanded,
   isKickPending,
   isOwner,
@@ -51,9 +51,7 @@ export default function RoomParticipantCard({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const actionsId = useId();
   const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
-  const actions: RoomMemberManagementAction[] = userSlug
-    ? ["follow", "report", "block", "kick", "transfer"]
-    : ["kick"];
+  const hasActions = actions.length > 0;
 
   const handleToggle = () => {
     const triggerRect = triggerRef.current?.getBoundingClientRect();
@@ -109,7 +107,7 @@ export default function RoomParticipantCard({
           ) : null}
         </div>
       </div>
-      {canManage ? (
+      {hasActions ? (
         <div className={styles.participantManagement}>
           <button
             ref={triggerRef}

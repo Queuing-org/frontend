@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { BlockUserTarget } from "@/src/features/follow/blocked/ui/BlockUserModal";
@@ -168,6 +168,10 @@ function getMenuTrigger(nickname: string) {
 }
 
 describe("ChatArea 관리 메뉴", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useFollowingRelationship).mockReturnValue({
@@ -231,10 +235,29 @@ describe("ChatArea 관리 메뉴", () => {
 
     await user.click(getMenuTrigger("회원"));
     await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+    const transferOptions = transferMutate.mock.calls.at(-1)?.[1];
     expect(transferMutate).toHaveBeenCalledWith(
       { slug: "room-slug", userSlug: "회원-slug" },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
+      expect.objectContaining({ onError: expect.any(Function) }),
     );
+    expect(transferOptions).not.toHaveProperty("onSuccess");
+    expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
+  });
+
+  it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {
+    vi.useFakeTimers();
+    renderChat(messages, true);
+
+    fireEvent.click(getMenuTrigger("회원"));
+    fireEvent.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+    const transferOptions = transferMutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    act(() => transferOptions.onError(new Error("위임 실패")));
+    expect(screen.getByRole("alert")).toHaveTextContent("위임 실패");
+
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("Escape, 바깥 클릭, 스크롤로 메뉴를 닫고 Escape는 포커스를 복원한다", async () => {

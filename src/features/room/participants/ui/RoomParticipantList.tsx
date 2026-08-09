@@ -3,6 +3,7 @@ import { useQueries } from "@tanstack/react-query";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { publicUserBadgesQueryOptions } from "@/src/features/badge/hooks/usePublicUserBadges";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type { RoomMemberManagementAction } from "@/src/features/room/management/ui/RoomMemberManagementMenu";
 import type { RoomOwner } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import RoomParticipantCard from "./RoomParticipantCard";
@@ -28,7 +29,7 @@ type Props = {
   onTransferOwner: (participant: PlaylistParticipant) => void;
   owner: RoomOwner | null;
   participants: PlaylistParticipant[];
-  showParticipantActions: boolean;
+  canModerateParticipants: boolean;
   transferringUserSlug: string | null;
 };
 
@@ -54,7 +55,7 @@ export default function RoomParticipantList({
   onTransferOwner,
   owner,
   participants,
-  showParticipantActions,
+  canModerateParticipants,
   transferringUserSlug,
 }: Props) {
   const [expandedParticipantKey, setExpandedParticipantKey] = useState<
@@ -111,30 +112,44 @@ export default function RoomParticipantList({
         const kickTargetKey = getParticipantKickTargetKey(kickTarget);
         const participantBadgeSlug =
           getParticipantBadgeLookupSlug(participant);
-        const canManageParticipant =
-          showParticipantActions &&
+        const isCurrentUser = isSameUser(participant, currentUser);
+        const userSlug = getParticipantUserSlug(participant);
+        const memberUserSlug =
+          participant.participantType === "USER" ? userSlug : null;
+        const canUseSocialActions = Boolean(
+          currentUser && memberUserSlug && !isCurrentUser,
+        );
+        const canUseRoomActions =
+          canModerateParticipants &&
           Boolean(kickTarget) &&
           !isOwner &&
-          !isSameUser(participant, currentUser);
+          !isCurrentUser;
+        const actions: RoomMemberManagementAction[] = [
+          ...(canUseSocialActions
+            ? (["follow", "report", "block"] as const)
+            : []),
+          ...(canUseRoomActions ? (["kick"] as const) : []),
+          ...(canUseRoomActions && memberUserSlug
+            ? (["transfer"] as const)
+            : []),
+        ];
+        const hasActions = actions.length > 0;
         const isCurrentKickPending =
           isKickPending &&
           kickTargetKey != null &&
           kickingParticipantKey === kickTargetKey;
-        const userSlug = getParticipantUserSlug(participant);
-        const memberUserSlug =
-          participant.participantType === "USER" ? userSlug : null;
         const isCurrentTransferPending =
           isTransferPending &&
           memberUserSlug != null &&
           memberUserSlug === transferringUserSlug;
         const expanded =
-          canManageParticipant &&
+          hasActions &&
           activeExpandedParticipantKey === participantKey;
 
         return (
           <RoomParticipantCard
             key={participantKey}
-            canManage={canManageParticipant}
+            actions={actions}
             expanded={expanded}
             isKickPending={isCurrentKickPending}
             isOwner={isOwner}
