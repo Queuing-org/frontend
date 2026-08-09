@@ -41,7 +41,7 @@
 
 ## Remote Verification
 
-- Draft PR: #39
+- PR: #39, merged
 - GitHub CI: pass
 - Vercel: pass
 - CodeRabbit: pass, inline/review comments 없음
