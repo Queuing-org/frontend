@@ -5,7 +5,7 @@ import AccountSettingsTab from "./AccountSettingsTab";
 import ProfileSettingsTab from "./ProfileSettingsTab";
 import styles from "./SettingsModal.module.css";
 
-type SettingsModalProps = {
+export type SettingsModalProps = {
   open: boolean;
   onClose: () => void;
 };

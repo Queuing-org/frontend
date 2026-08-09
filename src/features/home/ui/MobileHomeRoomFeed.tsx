@@ -19,6 +19,7 @@ import styles from "./MobileHomeRoomFeed.module.css";
 
 type Props = {
   activeFilters: HomeFilterState;
+  actionErrorMessage?: string | null;
   errorMessage?: string | null;
   genreOptions: HomeGenreFilterOptionDescriptor[];
   hasNextPage: boolean;
@@ -27,6 +28,7 @@ type Props = {
   isRandomEntryPending?: boolean;
   onCreateRoom: () => void;
   onLoadMoreRooms: () => void;
+  onMenuItemIntent: (menuItem: "CREATE" | "FOLLOW" | "SETTING") => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onRandomEntry: () => void;
@@ -34,7 +36,6 @@ type Props = {
   onRequestRoomEntry: (room: Room) => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onSelectRoom: (roomSlug: string) => void;
-  randomEntryErrorMessage?: string | null;
   rooms: Room[];
   selectedRoomSlug: string | null;
 };
@@ -109,6 +110,7 @@ function MobileHomeRoomCard({
 
 export default function MobileHomeRoomFeed({
   activeFilters,
+  actionErrorMessage = null,
   errorMessage,
   genreOptions,
   hasNextPage,
@@ -117,6 +119,7 @@ export default function MobileHomeRoomFeed({
   isRandomEntryPending = false,
   onCreateRoom,
   onLoadMoreRooms,
+  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onRandomEntry,
@@ -124,7 +127,6 @@ export default function MobileHomeRoomFeed({
   onRequestRoomEntry,
   onSelectFilter,
   onSelectRoom,
-  randomEntryErrorMessage = null,
   rooms,
   selectedRoomSlug,
 }: Props) {
@@ -147,6 +149,9 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.primaryAction}
+          onFocus={() => onMenuItemIntent("CREATE")}
+          onPointerDown={() => onMenuItemIntent("CREATE")}
+          onPointerEnter={() => onMenuItemIntent("CREATE")}
           onClick={onCreateRoom}
         >
           방 만들기
@@ -168,6 +173,9 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.secondaryAction}
+          onFocus={() => onMenuItemIntent("FOLLOW")}
+          onPointerDown={() => onMenuItemIntent("FOLLOW")}
+          onPointerEnter={() => onMenuItemIntent("FOLLOW")}
           onClick={onOpenFollow}
           aria-label="팔로우"
         >
@@ -176,15 +184,18 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.secondaryAction}
+          onFocus={() => onMenuItemIntent("SETTING")}
+          onPointerDown={() => onMenuItemIntent("SETTING")}
+          onPointerEnter={() => onMenuItemIntent("SETTING")}
           onClick={onOpenSettings}
           aria-label="설정"
         >
           <Settings className={styles.actionIcon} aria-hidden="true" />
         </button>
       </section>
-      {randomEntryErrorMessage ? (
+      {actionErrorMessage ? (
         <p className={styles.quickActionError} role="alert">
-          {randomEntryErrorMessage}
+          {actionErrorMessage}
         </p>
       ) : null}
 
@@ -237,6 +248,9 @@ export default function MobileHomeRoomFeed({
             <button
               type="button"
               className={styles.emptyCreateButton}
+              onFocus={() => onMenuItemIntent("CREATE")}
+              onPointerDown={() => onMenuItemIntent("CREATE")}
+              onPointerEnter={() => onMenuItemIntent("CREATE")}
               onClick={onCreateRoom}
             >
               방 만들기
