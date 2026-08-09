@@ -154,7 +154,8 @@
   position: absolute;
   left: 50%;
   bottom: var(--control-bar-bottom-offset);
-  width: var(--control-bar-width);
+  width: max-content;
+  max-width: calc(100vw - 48px);
   transform: translateX(-50%);
   z-index: 3;
 }

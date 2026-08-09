@@ -724,6 +724,7 @@ function RoomPlaybackJoinedContent({
               }
               onToggleProfile={() => floatingWidgets.toggleWidget("profile")}
               onToggleQueue={() => floatingWidgets.toggleWidget("queue")}
+              onResetWidgetPositions={floatingWidgets.resetWidgetPositions}
             />
           </div>
         </div>

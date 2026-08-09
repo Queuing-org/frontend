@@ -7,11 +7,18 @@ import {
   getWidgetBounds,
   getWidgetConfig,
   getWidgetOffsetStorageKey,
+  type WidgetId,
   useFloatingWidgetsState,
 } from "./useFloatingWidgetsState";
 
 const normalViewport = { height: 1080, width: 1920 };
 const compactViewport = { height: 864, width: 1536 };
+const widgetIds: readonly WidgetId[] = [
+  "chat",
+  "participants",
+  "profile",
+  "queue",
+];
 
 function setViewport(width: number, height: number) {
   Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
@@ -126,6 +133,67 @@ describe("floating widget laptop compact layout", () => {
     });
 
     expect(result.current.widgets.profile.offset).toEqual({ x: 11, y: 12 });
+  });
+
+  it("현재 viewport의 모든 위젯 위치를 기본값으로 되돌리고 저장값을 제거한다", () => {
+    const storedOffset = JSON.stringify({ x: 18, y: 24 });
+    widgetIds.forEach((widgetId) => {
+      window.localStorage.setItem(
+        getWidgetOffsetStorageKey(widgetId, normalViewport),
+        storedOffset,
+      );
+    });
+    window.localStorage.setItem("isParticipantsOpen", "true");
+
+    const { result } = renderHook(() => useFloatingWidgetsState());
+    const previousLayoutKey = result.current.widgets.participants.layoutKey;
+
+    act(() => {
+      result.current.resetWidgetPositions();
+    });
+
+    expect(result.current.widgets.participants.isOpen).toBe(true);
+    expect(result.current.widgets.participants.layoutKey).not.toBe(
+      previousLayoutKey,
+    );
+    expect(
+      Object.values(result.current.widgets).map((widget) => widget.offset),
+    ).toEqual([
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+      { x: 0, y: 0 },
+    ]);
+    widgetIds.forEach((widgetId) => {
+      expect(
+        window.localStorage.getItem(
+          getWidgetOffsetStorageKey(widgetId, normalViewport),
+        ),
+      ).toBeNull();
+    });
+  });
+
+  it("compact 위치 초기화가 normal 저장 위치를 지우지 않는다", () => {
+    setViewport(compactViewport.width, compactViewport.height);
+    window.localStorage.setItem(
+      "profileWidgetOffset",
+      JSON.stringify({ x: 11, y: 12 }),
+    );
+    window.localStorage.setItem(
+      "profileWidgetOffset:compact",
+      JSON.stringify({ x: 21, y: 22 }),
+    );
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    act(() => {
+      result.current.resetWidgetPositions();
+    });
+
+    expect(result.current.widgets.profile.offset).toEqual({ x: 0, y: 0 });
+    expect(window.localStorage.getItem("profileWidgetOffset:compact")).toBeNull();
+    expect(window.localStorage.getItem("profileWidgetOffset")).toBe(
+      JSON.stringify({ x: 11, y: 12 }),
+    );
   });
 
   it("서버 렌더에서는 저장된 open 상태를 노출하지 않는다", () => {

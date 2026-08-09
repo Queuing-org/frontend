@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-09-floating-widget-position-reset](./2026-08-09-floating-widget-position-reset/plan.md): publishing — 참가자 scrollbar 숨김과 floating 모달 위치 초기화
+
 - [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): ready — 채팅 금칙어 invalid-input 하단 문구 숨김
 
 - [2026-08-09-room-chat-profile-actions](./2026-08-09-room-chat-profile-actions/plan.md): ci-pending — Draft PR #36, 채팅·프로필 관리 액션과 합성 깜빡임 수정

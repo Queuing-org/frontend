@@ -1,3 +1,10 @@
+.controlGroup {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 12px;
+}
+
 .outerBar {
   width: 372px;
   height: 76px;
@@ -10,6 +17,42 @@
   justify-content: center;
   gap: 30px;
   box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
+}
+
+.resetButton {
+  display: inline-flex;
+  flex: 0 0 76px;
+  width: 76px;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0.5px solid #d9d9d9;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #b0b0b5;
+  box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.resetButton:hover {
+  color: #3c3c3c;
+  background: #f7f7f9;
+}
+
+.resetButton:focus-visible,
+.iconButton:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 3px;
+}
+
+.resetIcon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
 }
 
 .iconButton {
@@ -48,6 +91,21 @@
     width: 297.6px;
     height: 60.8px;
     gap: 24px;
+  }
+
+  .controlGroup {
+    gap: 9.6px;
+  }
+
+  .resetButton {
+    flex-basis: 60.8px;
+    width: 60.8px;
+    height: 60.8px;
+  }
+
+  .resetIcon {
+    width: 16px;
+    height: 16px;
   }
 
   .iconButton {

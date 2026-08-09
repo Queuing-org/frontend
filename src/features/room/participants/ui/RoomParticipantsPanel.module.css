@@ -43,6 +43,12 @@
   min-height: 0;
   margin-top: 16px;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
 }
 
 .participantItem {
