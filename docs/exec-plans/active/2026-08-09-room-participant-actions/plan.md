@@ -49,7 +49,7 @@
 - [x] 참가자 카드 전체 trigger를 hover/focus `…` trigger로 교체
 - [x] 채팅 공통 dropdown 재사용과 targeted/full QA
 - [x] commit
-- [ ] push, Draft PR #36 갱신
+- [x] push, Draft PR #36 갱신
 
 ## Residual Risk
 
