@@ -29,6 +29,9 @@ export default function FollowTabs({
           type="button"
           className={styles.tabButton}
           data-active={activeTab === tab.key}
+          aria-label={
+            counts[tab.key] ? `${tab.label} ${counts[tab.key]}명` : tab.label
+          }
           onClick={() => onChange(tab.key)}
         >
           <span
@@ -42,7 +45,7 @@ export default function FollowTabs({
           />
           <span className={styles.tabLabel}>{tab.label}</span>
           {counts[tab.key] ? (
-            <span className={styles.tabCount}>({counts[tab.key]})</span>
+            <span className={styles.tabCount}>{counts[tab.key]}</span>
           ) : null}
         </button>
       ))}

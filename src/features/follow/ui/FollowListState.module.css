@@ -14,3 +14,7 @@
   line-height: 1.4;
   text-align: center;
 }
+
+.raised {
+  transform: translateY(-12px);
+}

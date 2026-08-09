@@ -18,3 +18,9 @@
   - production build: passed
   - fresh read-only QA: pass
 - Browser QA: 실행 환경에 연결된 브라우저 인스턴스가 없어 미실행
+- Follow-up verification:
+  - targeted tests: 10 passed
+  - full test: 180 passed
+  - lint: passed
+  - production build: passed
+  - fresh read-only QA: pass

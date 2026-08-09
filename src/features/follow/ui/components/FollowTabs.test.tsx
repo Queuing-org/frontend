@@ -13,8 +13,13 @@ describe("FollowTabs", () => {
       />,
     );
 
-    const following = screen.getByRole("button", { name: "팔로잉(12)" });
-    const followers = screen.getByRole("button", { name: "팔로워(100+)" });
+    const following = screen.getByRole("button", { name: "팔로잉 12명" });
+    const followers = screen.getByRole("button", { name: "팔로워 100+명" });
+
+    expect(following).toHaveTextContent("팔로잉12");
+    expect(following).not.toHaveTextContent("(12)");
+    expect(followers).toHaveTextContent("팔로워100+");
+    expect(followers).not.toHaveTextContent("(100+)");
 
     expect(following.firstElementChild).toHaveStyle({
       "--tab-icon-src": "url(/icons/following-tab.svg)",

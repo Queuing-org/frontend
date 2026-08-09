@@ -24,7 +24,7 @@ export default function FollowersList() {
   const handleBlockClose = useCallback(() => setBlockTarget(null), []);
 
   if (followers.length === 0) {
-    return <FollowListState>팔로워가 없습니다.</FollowListState>;
+    return <FollowListState raised>팔로워가 없습니다.</FollowListState>;
   }
 
   return (
