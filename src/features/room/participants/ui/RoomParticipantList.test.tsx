@@ -16,8 +16,14 @@ vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => 
   useFollowingRelationship: vi.fn(),
 }));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
-  default: ({ initialRelationship }: { initialRelationship?: string }) => (
-    <button type="button">
+  default: ({
+    initialRelationship,
+    role,
+  }: {
+    initialRelationship?: string;
+    role?: "menuitem";
+  }) => (
+    <button type="button" role={role}>
       {initialRelationship === "FOLLOWING" ? "언팔로우" : "팔로우"}
     </button>
   ),
@@ -84,48 +90,47 @@ describe("RoomParticipantList", () => {
     } as ReturnType<typeof useFollowingRelationship>);
   });
 
-  it("방장은 회원 카드 전체를 눌러 요청한 관리 액션을 펼치고 다시 접는다", async () => {
+  it("방장은 회원의 더보기 버튼으로 채팅과 같은 관리 메뉴를 열고 다시 닫는다", async () => {
     const user = userEvent.setup();
     renderList();
     const trigger = screen.getByRole("button", {
-      name: "회원 참가자 관리 펼치기",
+      name: "회원 참가자 관리 메뉴",
     });
+    expect(screen.getByText("회원").closest("button")).toBeNull();
 
     await user.click(trigger);
 
-    expect(screen.getByRole("group", { name: "회원 참가자 관리" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "팔로우" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "신고" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "차단" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "내보내기" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "방장 위임" })).toBeVisible();
+    expect(screen.getByRole("menu", { name: "회원 참가자 관리" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "신고" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "차단" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "내보내기" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "방장 위임" })).toBeVisible();
 
-    await user.click(
-      screen.getByRole("button", { name: "회원 참가자 관리 접기" }),
-    );
-    expect(screen.queryByRole("group", { name: "회원 참가자 관리" })).toBeNull();
+    await user.click(trigger);
+    expect(screen.queryByRole("menu", { name: "회원 참가자 관리" })).toBeNull();
   });
 
   it("다른 카드, 바깥 클릭, Escape로 하나의 메뉴만 관리한다", async () => {
     const user = userEvent.setup();
     renderList();
     const memberTrigger = screen.getByRole("button", {
-      name: "회원 참가자 관리 펼치기",
+      name: "회원 참가자 관리 메뉴",
     });
 
     await user.click(memberTrigger);
     await user.click(
-      screen.getByRole("button", { name: "게스트 참가자 관리 펼치기" }),
+      screen.getByRole("button", { name: "게스트 참가자 관리 메뉴" }),
     );
-    expect(screen.queryByRole("group", { name: "회원 참가자 관리" })).toBeNull();
-    expect(screen.getByRole("group", { name: "게스트 참가자 관리" })).toBeVisible();
+    expect(screen.queryByRole("menu", { name: "회원 참가자 관리" })).toBeNull();
+    expect(screen.getByRole("menu", { name: "게스트 참가자 관리" })).toBeVisible();
 
     fireEvent.pointerDown(document.body);
-    expect(screen.queryByRole("group", { name: "게스트 참가자 관리" })).toBeNull();
+    expect(screen.queryByRole("menu", { name: "게스트 참가자 관리" })).toBeNull();
 
     await user.click(memberTrigger);
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.queryByRole("group", { name: "회원 참가자 관리" })).toBeNull();
+    expect(screen.queryByRole("menu", { name: "회원 참가자 관리" })).toBeNull();
     expect(memberTrigger).toHaveFocus();
   });
 
@@ -134,19 +139,54 @@ describe("RoomParticipantList", () => {
     renderList();
 
     await user.click(
-      screen.getByRole("button", { name: "게스트 참가자 관리 펼치기" }),
+      screen.getByRole("button", { name: "게스트 참가자 관리 메뉴" }),
     );
 
-    expect(screen.getByRole("button", { name: "내보내기" })).toBeVisible();
-    expect(screen.queryByRole("button", { name: "팔로우" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "신고" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "차단" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "방장 위임" })).toBeNull();
+    expect(screen.getByRole("menuitem", { name: "내보내기" })).toBeVisible();
+    expect(screen.queryByRole("menuitem", { name: "팔로우" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "신고" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "차단" })).toBeNull();
+    expect(screen.queryByRole("menuitem", { name: "방장 위임" })).toBeNull();
   });
 
-  it("방장이 아니면 참가자 카드를 거짓 클릭 영역으로 만들지 않는다", () => {
+  it("방장이 아니면 참가자 카드에 더보기 버튼을 만들지 않는다", () => {
     renderList(false);
 
-    expect(screen.queryByRole("button", { name: /참가자 관리/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /참가자 관리 메뉴/ })).toBeNull();
+  });
+
+  it("하단 공간이 부족하면 참가자 메뉴를 위로 연다", async () => {
+    const user = userEvent.setup();
+    renderList();
+    const list = screen.getByLabelText("참가자 목록");
+    const trigger = screen.getByRole("button", {
+      name: "회원 참가자 관리 메뉴",
+    });
+    vi.spyOn(list, "getBoundingClientRect").mockReturnValue({
+      bottom: 400,
+      height: 400,
+      left: 0,
+      right: 300,
+      top: 0,
+      width: 300,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue({
+      bottom: 390,
+      height: 28,
+      left: 250,
+      right: 278,
+      top: 362,
+      width: 28,
+      x: 250,
+      y: 362,
+      toJSON: () => ({}),
+    });
+
+    await user.click(trigger);
+
+    expect(screen.getByRole("menu")).toHaveAttribute("data-placement", "up");
   });
 });

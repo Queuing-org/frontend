@@ -48,7 +48,6 @@
 .participantItem {
   position: relative;
   flex-shrink: 0;
-  overflow: hidden;
   border: 1px solid transparent;
   border-radius: 10px;
   transition:
@@ -57,6 +56,7 @@
 }
 
 .participantItem[data-expanded="true"] {
+  z-index: 2;
   border-color: #e3e5e9;
   background: #fafafa;
 }
@@ -68,27 +68,12 @@
   gap: 12px;
   min-width: 0;
   min-height: 56px;
-  padding: 8px;
+  padding: 8px 40px 8px 8px;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
   text-align: left;
-}
-
-.participantTrigger {
-  cursor: pointer;
-}
-
-.participantTrigger:hover {
-  background: #f7f7f9;
-}
-
-.participantTrigger:focus-visible {
-  position: relative;
-  z-index: 1;
-  outline: 2px solid #2f86ed;
-  outline-offset: -2px;
 }
 
 .avatarWrap {
@@ -157,65 +142,47 @@
   height: 18px;
 }
 
-.participantActions {
-  display: flex;
-  flex-direction: column;
-  margin: 0 8px 8px;
-  overflow: hidden;
-  border: 1px solid #e4e4e6;
-  border-radius: 8px;
-  background: #ffffff;
+.participantManagement {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: 8px;
 }
 
-.participantFollowAction,
-.participantFollowAction > div {
-  display: flex;
-  width: 100%;
-}
-
-.participantActions .participantActionButton {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  height: 38px;
+.participantMenuButton {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
   align-items: center;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0;
   border: 0;
-  border-bottom: 1px solid #eeeeef;
-  border-radius: 0;
-  background: #ffffff;
-  color: #3c3c3c;
-  font: inherit;
-  font-size: 12px;
-  font-weight: var(--fw-semibold);
+  border-radius: 6px;
+  background: transparent;
+  color: #777777;
   cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 120ms ease,
+    background-color 120ms ease;
 }
 
-.participantActions > :last-child,
-.participantFollowAction:last-child .participantActionButton {
-  border-bottom: 0;
+.participantItem:hover .participantMenuButton,
+.participantItem:focus-within .participantMenuButton,
+.participantMenuButton[aria-expanded="true"] {
+  opacity: 1;
 }
 
-.participantActions .participantActionButton:hover:not(:disabled),
-.participantActions .participantActionButton:focus-visible {
-  background: #f7f7f9;
+.participantMenuButton:hover,
+.participantMenuButton:focus-visible {
+  background: #f0f0f0;
+  outline: none;
 }
 
-.participantActions .participantActionButton:focus-visible {
-  position: relative;
-  z-index: 1;
-  outline: 2px solid #2f86ed;
-  outline-offset: -2px;
-}
-
-.participantActions .participantActionButton:disabled {
-  cursor: wait;
-  opacity: 0.56;
-}
-
-.participantActions .reportAction {
-  color: #e32929;
+@media (hover: none) {
+  .participantMenuButton {
+    opacity: 1;
+  }
 }
 
 .empty {
@@ -270,8 +237,7 @@
 
   .title,
   .count,
-  .badgeLabel,
-  .participantActionButton {
+  .badgeLabel {
     font-size: 9.6px;
   }
 
@@ -289,7 +255,7 @@
   .participant {
     gap: 9.6px;
     min-height: 44.8px;
-    padding: 6.4px;
+    padding: 6.4px 32px 6.4px 6.4px;
   }
 
   .participantItem {
@@ -310,13 +276,13 @@
     height: 14.4px;
   }
 
-  .participantActions {
-    margin: 0 6.4px 6.4px;
-    border-radius: 6.4px;
+  .participantManagement {
+    top: 11.2px;
+    right: 6.4px;
   }
 
-  .participantActionButton {
-    height: 30.4px;
-    padding: 0 12.8px;
+  .participantMenuButton {
+    width: 22.4px;
+    height: 22.4px;
   }
 }
