@@ -4,3 +4,11 @@
   justify-content: center;
   line-height: 0;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .spinner > span {
+    width: var(--loading-spinner-compact-size) !important;
+    height: var(--loading-spinner-compact-size) !important;
+    border-width: 1.6px !important;
+  }
+}

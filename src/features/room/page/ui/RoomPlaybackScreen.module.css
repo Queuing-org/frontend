@@ -160,6 +160,33 @@
   z-index: 3;
 }
 
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .container {
+    --panel-horizontal-padding: 19.2px;
+    --panel-content-width: 512px;
+    --control-bar-width: min(297.6px, calc(100% - 6.4px), calc(100vw - 38.4px));
+    --control-bar-bottom-offset: 19.2px;
+    --control-bar-reserved-space: calc(
+      var(--control-bar-height) + var(--control-bar-bottom-offset) + 12.8px
+    );
+    padding-top: 48px;
+    border-radius: 9.6px;
+  }
+
+  .mainArea {
+    gap: 12.8px;
+  }
+
+  .roomActions {
+    gap: 6.4px;
+  }
+
+  .chatSection {
+    margin-right: -12.8px;
+    margin-left: -12.8px;
+  }
+}
+
 .mobilePage {
   background: #ffffff;
 }

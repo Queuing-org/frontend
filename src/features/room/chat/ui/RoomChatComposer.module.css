@@ -132,3 +132,35 @@
     height: 2rem;
   }
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .root {
+    gap: 8px;
+  }
+
+  .input {
+    border-radius: 12.8px;
+    padding: 8px 11.2px;
+    font-size: 12.8px;
+  }
+
+  .footer {
+    gap: 9.6px;
+  }
+
+  .count,
+  .error,
+  .notice {
+    font-size: 9.6px;
+  }
+
+  .submitButton {
+    width: 41.6px;
+    height: 22.4px;
+  }
+
+  .submitIcon {
+    width: 14.4px;
+    height: 12.8px;
+  }
+}

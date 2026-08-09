@@ -190,3 +190,18 @@
 .feedback[data-tone="status"] {
   color: #5f6368;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .root { gap: 6.4px; }
+  .controlRow { gap: 6.4px; }
+  .root[data-variant="create"] .uploadButton { width: 99.2px; height: 99.2px; }
+  .root[data-variant="edit"] .uploadButton { width: 121.6px; }
+  .placeholder { gap: 8px; padding: 9.6px; }
+  .cameraIcon { width: 27.2px; height: 27.2px; }
+  .root[data-variant="edit"] .cameraIcon { width: 32px; height: 32px; }
+  .thumbnailText { font-size: 9.6px; }
+  .root[data-variant="edit"] .thumbnailText { font-size: 14.4px; }
+  .clearButton { width: 22.4px; height: 22.4px; }
+  .clearIcon { width: 12.8px; height: 12.8px; }
+  .feedback { max-width: 176px; font-size: 10.4px; }
+}

@@ -315,3 +315,48 @@
     transform: translateX(100%);
   }
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .viewport {
+    padding: 2.4rem clamp(0.8rem, 4vw, 2.4rem) 12rem;
+    --stage-y-offset: -16px;
+    --card-current-size: 320px;
+    --card-near-size: 256px;
+    --card-far-size: 176px;
+    --gap-current-near: -102.4px;
+    --gap-near-far: -96px;
+  }
+
+  .rail {
+    height: clamp(19.2rem, 62vh, 30.4rem);
+  }
+
+  .emptyState {
+    top: 45%;
+    min-width: 208px;
+    gap: 19.2px;
+  }
+
+  .emptyState strong {
+    font-size: 16px;
+  }
+
+  .createRoomButton {
+    min-width: 105.6px;
+    min-height: 35.2px;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+
+  .retryButton {
+    min-height: 27.2px;
+    padding: 5.6px 11.2px;
+    border-radius: 6.4px;
+    font-size: 11.2px;
+  }
+
+  .skeletonCard {
+    border-width: 4px;
+    border-radius: 16px;
+  }
+}

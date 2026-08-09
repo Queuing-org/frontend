@@ -334,3 +334,64 @@
     text-align: left;
   }
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .accountPanel {
+    gap: 20.8px;
+  }
+
+  .contactCard {
+    grid-template-columns: minmax(0, 1fr) 168px;
+    gap: 33.6px;
+    padding: 46.4px 36.8px;
+  }
+
+  .contactTitleRow {
+    gap: 11.2px;
+  }
+
+  .contactIcon {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .contactTitle {
+    font-size: 16px;
+  }
+
+  .contactDescription,
+  .policyText,
+  .actionButton {
+    font-size: 12.8px;
+  }
+
+  .contactDescription {
+    margin-top: 24px;
+  }
+
+  .policyText {
+    margin-top: 19.2px;
+  }
+
+  .qrCard {
+    width: 128px;
+    min-height: 145.6px;
+    gap: 6.4px;
+    padding: 9.6px 9.6px 11.2px;
+    border-radius: 12.8px;
+  }
+
+  .qrImageFrame {
+    width: 105.6px;
+    height: 105.6px;
+  }
+
+  .qrImage {
+    width: 99.2px;
+    height: 99.2px;
+  }
+
+  .qrLabel { font-size: 10.4px; }
+  .openHint { font-size: 8.8px; }
+}
