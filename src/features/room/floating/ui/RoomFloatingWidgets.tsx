@@ -18,6 +18,7 @@ import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 import { getParticipantKickTargetForUser } from "@/src/features/room/participants/model/participantIdentity";
+import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
@@ -30,8 +31,12 @@ type Props = {
   currentEntry?: PlaylistEntry | null;
   currentTrackTitle?: string | null;
   currentUser: User | null;
+  hasNextParticipantsPage: boolean;
   isChatSending: boolean;
   isCurrentUserLoading: boolean;
+  isFetchingNextParticipantsPage: boolean;
+  isParticipantsLoadMoreError: boolean;
+  onLoadMoreParticipants: () => Promise<unknown>;
   onChatLoginClick?: () => void;
   onUserBlocked: (userSlug: string) => void;
   onSendChatMessage: (message: string) => boolean;
@@ -39,6 +44,7 @@ type Props = {
   onWidgetStop: (widgetId: WidgetId, data: DraggableData) => void;
   participants: PlaylistParticipant[];
   reportMessageKey?: string | null;
+  resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
@@ -53,8 +59,12 @@ export default function RoomFloatingWidgets({
   currentEntry,
   currentTrackTitle,
   currentUser,
+  hasNextParticipantsPage,
   isChatSending,
   isCurrentUserLoading,
+  isFetchingNextParticipantsPage,
+  isParticipantsLoadMoreError,
+  onLoadMoreParticipants,
   onChatLoginClick,
   onUserBlocked,
   onSendChatMessage,
@@ -62,6 +72,7 @@ export default function RoomFloatingWidgets({
   onWidgetStop,
   participants,
   reportMessageKey,
+  resolveParticipantByUserSlug,
   roomMeta,
   roomPassword,
   roomSlug,
@@ -106,12 +117,16 @@ export default function RoomFloatingWidgets({
                   currentRequester={currentRequester}
                   currentTrackTitle={currentTrackTitle}
                   isCurrentUserLoading={isCurrentUserLoading}
+                  hasUnloadedParticipants={hasNextParticipantsPage}
                   kickTarget={currentRequesterKickTarget}
                   onUserBlocked={onUserBlocked}
                   reportMessageKey={reportMessageKey}
                   roomMeta={roomMeta}
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
+                  resolveParticipantByUserSlug={
+                    resolveParticipantByUserSlug
+                  }
                 />
               </FloatingRoomPanelShell>
             </div>
@@ -144,6 +159,10 @@ export default function RoomFloatingWidgets({
                 <RoomParticipantsPanel
                   chatMessages={chatMessages}
                   currentUser={currentUser}
+                  hasNextPage={hasNextParticipantsPage}
+                  isFetchingNextPage={isFetchingNextParticipantsPage}
+                  isLoadMoreError={isParticipantsLoadMoreError}
+                  onLoadMore={onLoadMoreParticipants}
                   onUserBlocked={onUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}

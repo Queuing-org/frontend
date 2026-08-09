@@ -8,10 +8,20 @@ import { roomKeys } from "../model/queryKeys";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { ROOM_DISCOVERY_CACHE_POLICY } from "../model/roomDiscoveryCachePolicy";
 
+export function roomMetaQueryOptions(slug: string) {
+  const normalizedSlug = normalizeRoomSlug(slug);
+
+  return {
+    queryKey: roomKeys.meta(normalizedSlug),
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      fetchRoomMeta(normalizedSlug, signal),
+  };
+}
+
 export function useRoomMeta(slug: string) {
   return useSuspenseQuery<RoomMeta, ApiError>({
-    queryKey: roomKeys.meta(slug),
-    queryFn: () => fetchRoomMeta(slug),
+    ...roomMetaQueryOptions(slug),
+    refetchOnMount: false,
   });
 }
 
@@ -20,8 +30,8 @@ export function useRoomMetaQuery(slug: string | null | undefined) {
 
   return useQuery<RoomMeta, ApiError>({
     ...ROOM_DISCOVERY_CACHE_POLICY,
+    ...roomMetaQueryOptions(normalizedSlug),
     queryKey: roomKeys.meta(normalizedSlug || null),
-    queryFn: () => fetchRoomMeta(normalizedSlug),
     enabled: normalizedSlug.length > 0,
   });
 }

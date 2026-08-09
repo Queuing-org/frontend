@@ -5,9 +5,11 @@ import type { PublicUserBadgeList } from "../model/types";
 
 export async function fetchPublicUserBadges(
   userSlug: string,
+  signal?: AbortSignal,
 ): Promise<PublicUserBadgeList> {
   const res = await axiosInstance.get<ApiResponse<PublicUserBadgeList>>(
     `/api/v1/users/${encodeURIComponent(userSlug)}/badges`,
+    { signal },
   );
 
   return unwrapApiResponse(res.data);

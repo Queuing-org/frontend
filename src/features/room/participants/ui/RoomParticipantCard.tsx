@@ -11,6 +11,7 @@ import styles from "./RoomParticipantsPanel.module.css";
 
 type Props = {
   actions: readonly RoomMemberManagementAction[];
+  badgeUserSlug: string | null;
   expanded: boolean;
   isKickPending: boolean;
   isOwner: boolean;
@@ -31,6 +32,7 @@ type Props = {
 
 export default function RoomParticipantCard({
   actions,
+  badgeUserSlug,
   expanded,
   isKickPending,
   isOwner,
@@ -71,7 +73,11 @@ export default function RoomParticipantCard({
   };
 
   return (
-    <div className={styles.participantItem} data-expanded={expanded || undefined}>
+    <div
+      className={styles.participantItem}
+      data-badge-user-slug={badgeUserSlug ?? undefined}
+      data-expanded={expanded || undefined}
+    >
       <div className={styles.participant}>
         <div className={styles.avatarWrap}>
           {participant.profileImageUrl ? (

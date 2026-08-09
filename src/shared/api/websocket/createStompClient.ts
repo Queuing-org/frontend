@@ -8,6 +8,17 @@ type CreateStompClientOptions = {
 
 export const DEFAULT_STOMP_RECONNECT_DELAY_MS = 5000;
 
+function createDebugLogger(debugLabel: string) {
+  if (process.env.NODE_ENV !== "development") {
+    return () => {};
+  }
+
+  return (message: string) => {
+    const [summary = "STOMP event"] = message.split(/\r?\n/, 1);
+    console.debug(`[${debugLabel}]`, summary);
+  };
+}
+
 export function createStompClient({
   debugLabel = "STOMP",
   reconnectDelay = DEFAULT_STOMP_RECONNECT_DELAY_MS,
@@ -17,8 +28,6 @@ export function createStompClient({
     reconnectDelay,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
-    debug: (message) => {
-      console.log(`[${debugLabel}]`, message);
-    },
+    debug: createDebugLogger(debugLabel),
   });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   getRoomsFromPages,
   normalizeRoomsQueryParams,
@@ -11,10 +12,9 @@ import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
 import { useRoomTagsQuery } from "@/src/features/room/hooks/useRoomTags";
 import { useRandomEntryNavigation } from "@/src/features/room/hooks/useRandomEntryNavigation";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
-import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
-import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
-import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
-import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
+import { useRoomNavigator } from "@/src/features/room/hooks/useRoomNavigator";
+import { useLoadMoreRoomsNearEnd } from "@/src/features/room/hooks/useLoadMoreRoomsNearEnd";
+import { useAuthenticatedAction } from "@/src/features/auth/hooks/useAuthenticatedAction";
 import {
   DEFAULT_HOME_FILTERS,
   getHomeGenreFilterOptions,
@@ -22,27 +22,52 @@ import {
   getSelectedHomeGenreTags,
   type HomeFilterKey,
   type HomeFilterOption,
-} from "./HomeControlPanelShell";
+} from "@/src/features/room/discovery/ui/HomeControlPanelShell";
 import HomeTopBar from "./HomeTopBar";
-import HomeSearchControlDock from "./HomeSearchControlDock";
+import HomeSearchControlDock from "@/src/features/room/discovery/ui/HomeSearchControlDock";
 import MobileHomeRoomFeed from "./MobileHomeRoomFeed";
 import HomeRoomStage from "@/src/features/room/list/ui/HomeRoomStage";
-import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
-import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
-import FollowModal from "@/src/features/follow/ui/FollowModal";
-import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
+import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
+
+const RoomFormModal = dynamic(
+  () => import("@/src/features/room/create/ui/RoomFormModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="방 만들기 화면 로딩 중" />,
+  },
+);
+const RoomJoinPasswordModal = dynamic(
+  () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="방 입장 화면 로딩 중" />,
+  },
+);
+const FollowModal = dynamic(
+  () => import("@/src/features/follow/ui/FollowModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="친구 화면 로딩 중" />,
+  },
+);
+const SettingsModal = dynamic(
+  () => import("@/src/features/settings/ui/SettingsModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="설정 화면 로딩 중" />,
+  },
+);
 
 export default function HomeScreen() {
   const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");
-  const debouncedMobileSearchQuery = useDebouncedValue(mobileSearchQuery, 300);
   const [isCreateRoomModalOpen, setIsCreateRoomModalOpen] = useState(false);
   const [isFollowModalOpen, setIsFollowModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -64,13 +89,13 @@ export default function HomeScreen() {
     () =>
       normalizeRoomsQueryParams({
         createdOrder: roomListFilters.date,
-        keyword: isMobileLayout ? debouncedMobileSearchQuery : undefined,
+        keyword: isMobileLayout ? mobileSearchQuery : undefined,
         participantOrder: roomListFilters.participants,
         tags: getSelectedHomeGenreTags(roomListFilters.genre),
       }),
     [
-      debouncedMobileSearchQuery,
       isMobileLayout,
+      mobileSearchQuery,
       roomListFilters.date,
       roomListFilters.genre,
       roomListFilters.participants,
@@ -106,7 +131,6 @@ export default function HomeScreen() {
         activeFilters={roomListFilters}
         hasPageModalOpen={hasPageModalOpen}
         isMobileLayout={isMobileLayout}
-        mobileSearchQuery={mobileSearchQuery}
         onCreateRoom={requestCreateRoom}
         onMobileSearchQueryChange={setMobileSearchQuery}
         onOpenFollow={requestOpenFollow}
@@ -121,14 +145,12 @@ export default function HomeScreen() {
           onClose={() => setIsCreateRoomModalOpen(false)}
         />
       ) : null}
-      <FollowModal
-        open={isFollowModalOpen}
-        onClose={() => setIsFollowModalOpen(false)}
-      />
-      <SettingsModal
-        open={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-      />
+      {isFollowModalOpen ? (
+        <FollowModal open onClose={() => setIsFollowModalOpen(false)} />
+      ) : null}
+      {isSettingsModalOpen ? (
+        <SettingsModal open onClose={() => setIsSettingsModalOpen(false)} />
+      ) : null}
       <AuthRequiredModal
         open={isAuthRequiredModalOpen}
         description={authRequiredDescription}
@@ -143,7 +165,6 @@ type HomeRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
   hasPageModalOpen: boolean;
   isMobileLayout: boolean;
-  mobileSearchQuery: string;
   onCreateRoom: () => void;
   onMobileSearchQueryChange: (query: string) => void;
   onOpenFollow: () => void;
@@ -156,7 +177,6 @@ function HomeRoomsContent({
   activeFilters,
   hasPageModalOpen,
   isMobileLayout,
-  mobileSearchQuery,
   onCreateRoom,
   onMobileSearchQueryChange,
   onOpenFollow,
@@ -231,7 +251,6 @@ function HomeRoomsContent({
       <HomeTopBar
         currentRoom={visibleCurrentRoom}
         isChromeReduced={isChromeReduced}
-        mobileSearchQuery={mobileSearchQuery}
         onMobileSearchQueryChange={onMobileSearchQueryChange}
         roomMeta={roomMetaQuery.data ?? null}
       />
@@ -301,11 +320,13 @@ function HomeRoomsContent({
           />
         </>
       ) : null}
-      <RoomJoinPasswordModal
-        room={roomEntry.passwordRoom}
-        onClose={roomEntry.closePasswordModal}
-        onJoined={roomEntry.completePasswordEntry}
-      />
+      {roomEntry.passwordRoom ? (
+        <RoomJoinPasswordModal
+          room={roomEntry.passwordRoom}
+          onClose={roomEntry.closePasswordModal}
+          onJoined={roomEntry.completePasswordEntry}
+        />
+      ) : null}
     </>
   );
 }

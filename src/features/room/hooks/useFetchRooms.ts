@@ -16,6 +16,9 @@ import { ROOM_DISCOVERY_CACHE_POLICY } from "../model/roomDiscoveryCachePolicy";
 import { normalizeRoomTagSlugs } from "../model/roomTagFilters";
 
 const ROOMS_PAGE_SIZE = 30;
+export const ROOM_DISCOVERY_MAX_PAGES = 3;
+export const ROOM_DISCOVERY_MAX_ROOMS =
+  ROOMS_PAGE_SIZE * ROOM_DISCOVERY_MAX_PAGES;
 const DEFAULT_ROOMS_QUERY_PARAMS: RoomListQueryParams = {
   createdOrder: "RANDOM",
   participantOrder: "RANDOM",
@@ -35,8 +38,7 @@ type RoomsPageParam =
 
 export function getRoomsFromPages(data?: InfiniteData<RoomsResponse>): Room[] {
   const seenRoomIds = new Set<number>();
-
-  return (
+  const rooms =
     data?.pages.flatMap((page) =>
       page.rooms.filter((room) => {
         if (seenRoomIds.has(room.id)) {
@@ -46,8 +48,11 @@ export function getRoomsFromPages(data?: InfiniteData<RoomsResponse>): Room[] {
         seenRoomIds.add(room.id);
         return true;
       }),
-    ) ?? []
-  );
+    ) ?? [];
+
+  return rooms.length > ROOM_DISCOVERY_MAX_ROOMS
+    ? rooms.slice(-ROOM_DISCOVERY_MAX_ROOMS)
+    : rooms;
 }
 
 export function normalizeRoomsQueryParams(
@@ -100,12 +105,38 @@ function getCursorPageParam(lastPage: RoomsResponse): RoomsPageParam {
 
 function getNextRoomsPageParam(
   lastPage: RoomsResponse,
+  _allPages: readonly RoomsResponse[],
+  _lastPageParam: RoomsPageParam,
+  allPageParams: readonly RoomsPageParam[],
 ): RoomsPageParam {
   if (!lastPage.hasNext) {
     return undefined;
   }
 
-  return getCursorPageParam(lastPage);
+  const nextPageParam = getCursorPageParam(lastPage);
+  if (!nextPageParam) {
+    return undefined;
+  }
+
+  const cursorWasAlreadyRequested = allPageParams.some(
+    (pageParam) =>
+      pageParam != null && isSameRoomsPageParam(pageParam, nextPageParam),
+  );
+
+  return cursorWasAlreadyRequested ? undefined : nextPageParam;
+}
+
+function isSameRoomsPageParam(
+  left: Exclude<RoomsPageParam, undefined>,
+  right: Exclude<RoomsPageParam, undefined>,
+) {
+  return (
+    left.cursorSeed === right.cursorSeed &&
+    left.cursorLastId === right.cursorLastId &&
+    left.cursorLastCreatedAt === right.cursorLastCreatedAt &&
+    left.cursorLastRandomRank === right.cursorLastRandomRank &&
+    left.cursorLastParticipantCount === right.cursorLastParticipantCount
+  );
 }
 
 function getPageFetchParams(pageParam: RoomsPageParam): FetchRoomsParams {
@@ -135,14 +166,17 @@ export function useRoomsQuery(params: RoomsQueryParams = {}) {
   >({
     ...ROOM_DISCOVERY_CACHE_POLICY,
     queryKey,
-    queryFn: ({ pageParam }) =>
-      fetchRooms({
-        ...normalizedParams,
-        ...getPageFetchParams(pageParam),
-        size: ROOMS_PAGE_SIZE,
-      }),
+    queryFn: ({ pageParam, signal }) =>
+      fetchRooms(
+        {
+          ...normalizedParams,
+          ...getPageFetchParams(pageParam),
+          size: ROOMS_PAGE_SIZE,
+        },
+        signal,
+      ),
     initialPageParam: undefined,
-    getNextPageParam: (lastPage) =>
-      getNextRoomsPageParam(lastPage),
+    maxPages: ROOM_DISCOVERY_MAX_PAGES,
+    getNextPageParam: getNextRoomsPageParam,
   });
 }

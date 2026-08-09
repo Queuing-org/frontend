@@ -1,16 +1,8 @@
 import type {
-  BadgeCatalogItem,
-  BadgeCatalogResponse,
   BadgeSummary,
   UserBadge,
   UserBadgeList,
 } from "./types";
-
-export function getBadgeCatalogItems(
-  response: BadgeCatalogResponse,
-): BadgeCatalogItem[] {
-  return response.badges;
-}
 
 export function getUserBadgeItems(
   response: UserBadgeList | null | undefined,
@@ -43,8 +35,4 @@ export function getRepresentativeBadge(
   );
 
   return getBadgeSummaryFromUserBadge(representativeUserBadge);
-}
-
-export function getCatalogBadgeHint(badge: BadgeCatalogItem) {
-  return badge.acquisitionHint;
 }

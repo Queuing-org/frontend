@@ -20,7 +20,7 @@ export function useRoomChat({
 }: UseRoomChatParams) {
   const {
     appendMessage,
-    backfillLatestMessage,
+    backfillLatestMessages,
     hasOlderMessages,
     historyErrorMessage,
     initializeFromJoinData,
@@ -45,7 +45,7 @@ export function useRoomChat({
     currentUser,
     isEnabled,
     onMessage: appendMessage,
-    onPendingMessageBackfill: backfillLatestMessage,
+    onPendingMessageBackfill: backfillLatestMessages,
     roomPassword,
     slug,
   });

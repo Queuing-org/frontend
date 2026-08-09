@@ -4,6 +4,13 @@
   list-style: none;
 }
 
+.virtualSpacer {
+  display: block;
+  width: 1px;
+  min-height: 0;
+  pointer-events: none;
+}
+
 .state {
   display: flex;
   align-items: center;

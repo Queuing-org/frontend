@@ -191,13 +191,6 @@
   color: #d24b4b;
 }
 
-.error {
-  margin-top: 12px;
-  color: #d24b4b;
-  font-size: 0.78rem;
-  font-weight: var(--fw-medium);
-}
-
 .grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

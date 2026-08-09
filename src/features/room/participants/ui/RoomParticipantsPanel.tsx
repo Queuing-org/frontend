@@ -15,6 +15,7 @@ import { useTransientManagementError } from "@/src/features/room/management/mode
 import type { ChatMessage, RoomMeta } from "@/src/features/room/model/types";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { User } from "@/src/features/user/model/types";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import {
   getParticipantKickTargetKey,
   getParticipantUserSlug,
@@ -25,6 +26,10 @@ import styles from "./RoomParticipantsPanel.module.css";
 type Props = {
   chatMessages: readonly ChatMessage[];
   currentUser: User | null;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  isLoadMoreError: boolean;
+  onLoadMore: () => Promise<unknown>;
   onUserBlocked: (userSlug: string) => void;
   participants: PlaylistParticipant[];
   roomMeta: RoomMeta | null;
@@ -35,6 +40,10 @@ type Props = {
 export default function RoomParticipantsPanel({
   chatMessages,
   currentUser,
+  hasNextPage,
+  isFetchingNextPage,
+  isLoadMoreError,
+  onLoadMore,
   onUserBlocked,
   participants,
   roomMeta,
@@ -56,6 +65,7 @@ export default function RoomParticipantsPanel({
     show: showTransferOwnerError,
   } = useTransientManagementError();
   const owner = roomMeta?.owner ?? null;
+  const participantCount = roomMeta?.activeUsersCount;
   const canModerateParticipants = isRoomOwner(owner, currentUser);
 
   useEffect(() => {
@@ -115,7 +125,7 @@ export default function RoomParticipantsPanel({
     <div className={styles.root}>
       <div className={styles.header}>
         <div className={styles.title}>참가자</div>
-        <div className={styles.count}>{participants.length} 명</div>
+        <div className={styles.count}>{participantCount ?? "—"} 명</div>
       </div>
       {participants.length ? (
         <RoomParticipantList
@@ -146,6 +156,30 @@ export default function RoomParticipantsPanel({
       ) : (
         <div className={styles.empty}>참가자가 없습니다.</div>
       )}
+      {hasNextPage ? (
+        <div className={styles.loadMoreArea}>
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            disabled={isFetchingNextPage}
+            onClick={() => void onLoadMore()}
+          >
+            {isFetchingNextPage ? (
+              <LoadingSpinner
+                ariaLabel="참가자 더 불러오는 중"
+                size={16}
+              />
+            ) : isLoadMoreError
+                ? "참가자 다시 불러오기"
+                : "참가자 더보기"}
+          </button>
+          {isLoadMoreError ? (
+            <span className={styles.loadMoreError} role="alert">
+              참가자를 더 불러오지 못했습니다.
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {managementMessage ? (
         <div className={styles.message}>{managementMessage}</div>
       ) : null}

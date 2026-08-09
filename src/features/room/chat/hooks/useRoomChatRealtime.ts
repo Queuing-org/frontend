@@ -21,19 +21,30 @@ type UseRoomChatRealtimeParams = {
   currentUser: User | null;
   isEnabled: boolean;
   onMessage: (message: ChatMessage) => void;
-  onPendingMessageBackfill: (content: string) => Promise<boolean>;
+  onPendingMessageBackfill: (
+    contents: readonly string[],
+  ) => Promise<readonly string[]>;
   roomPassword?: string | null;
   slug: string;
 };
 
 const CHAT_SEND_BACKFILL_DELAY_MS = 2000;
 const CHAT_SEND_CONFIRM_TIMEOUT_MS = 8000;
+const CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE =
+  "채팅 전송 확인이 지연되었습니다. 네트워크 상태를 확인해주세요.";
 
 type PendingChatSend = {
-  backfillTimeoutId: ReturnType<typeof setTimeout>;
+  backfillAt: number;
+  backfillAttempted: boolean;
+  confirmAt: number;
   content: string;
   id: number;
-  timeoutId: ReturnType<typeof setTimeout>;
+};
+
+type PendingBackfillRequest = {
+  acceptsResult: boolean;
+  pendingIds: ReadonlySet<number>;
+  promise: Promise<readonly string[]>;
 };
 
 export function useRoomChatRealtime({
@@ -61,21 +72,74 @@ export function useRoomChatRealtime({
   const currentUserRef = useRef<User | null>(null);
   const pendingChatSendIdRef = useRef(0);
   const pendingChatSendsRef = useRef<PendingChatSend[]>([]);
+  const pendingGenerationRef = useRef(0);
+  const pendingCheckTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const pendingBackfillRequestRef = useRef<PendingBackfillRequest | null>(null);
+  const runPendingCheckRef = useRef<() => void>(() => undefined);
   const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
   const [isChatSending, setIsChatSending] = useState(false);
 
-  const clearPendingChatSendTimers = useCallback((pending: PendingChatSend) => {
-    clearTimeout(pending.backfillTimeoutId);
-    clearTimeout(pending.timeoutId);
+  const clearPendingCheckTimer = useCallback(() => {
+    if (pendingCheckTimeoutRef.current !== null) {
+      clearTimeout(pendingCheckTimeoutRef.current);
+      pendingCheckTimeoutRef.current = null;
+    }
   }, []);
 
   const clearAllPendingChatSends = useCallback(() => {
-    for (const pending of pendingChatSendsRef.current) {
-      clearPendingChatSendTimers(pending);
+    clearPendingCheckTimer();
+    pendingChatSendsRef.current = [];
+    if (pendingBackfillRequestRef.current) {
+      pendingBackfillRequestRef.current.acceptsResult = false;
+    }
+    pendingBackfillRequestRef.current = null;
+    pendingGenerationRef.current += 1;
+  }, [clearPendingCheckTimer]);
+
+  const releaseOrphanedBackfillRequest = useCallback(() => {
+    const request = pendingBackfillRequestRef.current;
+    if (
+      !request ||
+      pendingChatSendsRef.current.some((pending) =>
+        request.pendingIds.has(pending.id),
+      )
+    ) {
+      return false;
     }
 
-    pendingChatSendsRef.current = [];
-  }, [clearPendingChatSendTimers]);
+    request.acceptsResult = false;
+    pendingBackfillRequestRef.current = null;
+    return true;
+  }, []);
+
+  const schedulePendingCheck = useCallback(() => {
+    clearPendingCheckTimer();
+
+    if (pendingChatSendsRef.current.length === 0) {
+      return;
+    }
+
+    const now = Date.now();
+    const hasBackfillInFlight = pendingBackfillRequestRef.current !== null;
+    const nextCheckAt = pendingChatSendsRef.current.reduce((earliest, pending) => {
+      const isDueBackfillBlocked =
+        hasBackfillInFlight &&
+        !pending.backfillAttempted &&
+        pending.backfillAt <= now;
+      const pendingCheckAt =
+        pending.backfillAttempted || isDueBackfillBlocked
+          ? pending.confirmAt
+          : pending.backfillAt;
+
+      return Math.min(earliest, pendingCheckAt);
+    }, Number.POSITIVE_INFINITY);
+    pendingCheckTimeoutRef.current = setTimeout(() => {
+      pendingCheckTimeoutRef.current = null;
+      runPendingCheckRef.current();
+    }, Math.max(0, nextCheckAt - Date.now()));
+  }, [clearPendingCheckTimer]);
 
   const resolvePendingChatSend = useCallback(
     ({
@@ -102,8 +166,8 @@ export function useRoomChatRealtime({
         return false;
       }
 
-      const [pending] = pendingChatSendsRef.current.splice(pendingIndex, 1);
-      clearPendingChatSendTimers(pending);
+      pendingChatSendsRef.current.splice(pendingIndex, 1);
+      releaseOrphanedBackfillRequest();
       setIsChatSending(false);
 
       if (errorMessage) {
@@ -112,70 +176,176 @@ export function useRoomChatRealtime({
         setChatSendErrorMessage("");
       }
 
+      schedulePendingCheck();
+
       return true;
     },
-    [clearPendingChatSendTimers],
+    [releaseOrphanedBackfillRequest, schedulePendingCheck],
   );
 
-  const backfillPendingChatSend = useCallback(
-    async (id: number, content: string, shouldShowError: boolean) => {
-      const isStillPending = pendingChatSendsRef.current.some(
-        (pending) => pending.id === id,
-      );
-
-      if (!isStillPending) {
-        return false;
+  const requestPendingChatBackfill = useCallback(
+    (pendingSends: readonly PendingChatSend[]) => {
+      if (pendingBackfillRequestRef.current) {
+        return pendingBackfillRequestRef.current;
       }
 
-      let foundPersistedMessage = false;
-      try {
-        foundPersistedMessage = await onPendingMessageBackfill(content);
-      } catch {
-        foundPersistedMessage = false;
-      }
+      const pendingContents = pendingSends.map((pending) => pending.content);
+      const promise = (async () => {
+        try {
+          return await onPendingMessageBackfill(pendingContents);
+        } catch {
+          return [];
+        }
+      })();
+      const request: PendingBackfillRequest = {
+        acceptsResult: true,
+        pendingIds: new Set(pendingSends.map((pending) => pending.id)),
+        promise,
+      };
+      pendingBackfillRequestRef.current = request;
 
-      if (!pendingChatSendsRef.current.some((pending) => pending.id === id)) {
-        return foundPersistedMessage;
-      }
-
-      if (foundPersistedMessage) {
-        resolvePendingChatSend({ id });
-        return true;
-      }
-
-      if (shouldShowError) {
-        resolvePendingChatSend({
-          errorMessage:
-            "채팅 전송 확인이 지연되었습니다. 네트워크 상태를 확인해주세요.",
-          id,
-        });
-      }
-
-      return false;
+      return request;
     },
-    [onPendingMessageBackfill, resolvePendingChatSend],
+    [onPendingMessageBackfill],
   );
+
+  const resolvePersistedPendingChatSends = useCallback(
+    (
+      foundContents: readonly string[],
+      coveredPendingIds: ReadonlySet<number>,
+    ) => {
+      const foundContentCounts = new Map<string, number>();
+      foundContents.forEach((content) =>
+        foundContentCounts.set(
+          content,
+          (foundContentCounts.get(content) ?? 0) + 1,
+        ),
+      );
+      const remainingPendingSends: PendingChatSend[] = [];
+      let resolvedCount = 0;
+
+      pendingChatSendsRef.current.forEach((pending) => {
+        if (!coveredPendingIds.has(pending.id)) {
+          remainingPendingSends.push(pending);
+          return;
+        }
+
+        const foundCount = foundContentCounts.get(pending.content) ?? 0;
+        if (foundCount <= 0) {
+          remainingPendingSends.push(pending);
+          return;
+        }
+
+        resolvedCount += 1;
+        foundContentCounts.set(pending.content, foundCount - 1);
+      });
+      pendingChatSendsRef.current = remainingPendingSends;
+
+      if (resolvedCount > 0) {
+        setIsChatSending(false);
+        setChatSendErrorMessage("");
+      }
+
+      return resolvedCount;
+    },
+    [],
+  );
+
+  const expirePendingChatSends = useCallback((now: number) => {
+    const expiredIds = new Set(
+      pendingChatSendsRef.current
+        .filter((pending) => pending.confirmAt <= now)
+        .map((pending) => pending.id),
+    );
+    if (expiredIds.size === 0) {
+      return false;
+    }
+
+    pendingChatSendsRef.current = pendingChatSendsRef.current.filter(
+      (pending) => !expiredIds.has(pending.id),
+    );
+    releaseOrphanedBackfillRequest();
+    setIsChatSending(false);
+    setChatSendErrorMessage(CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE);
+    return true;
+  }, [releaseOrphanedBackfillRequest]);
+
+  const runPendingCheck = useCallback(async () => {
+    const pendingGeneration = pendingGenerationRef.current;
+    const now = Date.now();
+    let didExpirePendingSend = expirePendingChatSends(now);
+    const dueBackfillSends = pendingChatSendsRef.current.filter(
+      (pending) => !pending.backfillAttempted && pending.backfillAt <= now,
+    );
+
+    if (dueBackfillSends.length === 0) {
+      schedulePendingCheck();
+      return;
+    }
+
+    if (pendingBackfillRequestRef.current) {
+      schedulePendingCheck();
+      return;
+    }
+
+    dueBackfillSends.forEach((pending) => {
+      pending.backfillAttempted = true;
+    });
+
+    // The confirmation deadline must keep running even if this request hangs.
+    schedulePendingCheck();
+    const backfillRequest = requestPendingChatBackfill(dueBackfillSends);
+    const foundContents = await backfillRequest.promise;
+    if (
+      pendingGenerationRef.current !== pendingGeneration ||
+      !backfillRequest.acceptsResult
+    ) {
+      return;
+    }
+    if (pendingBackfillRequestRef.current === backfillRequest) {
+      pendingBackfillRequestRef.current = null;
+    }
+    didExpirePendingSend =
+      expirePendingChatSends(Date.now()) || didExpirePendingSend;
+    resolvePersistedPendingChatSends(
+      foundContents,
+      backfillRequest.pendingIds,
+    );
+    if (didExpirePendingSend) {
+      setChatSendErrorMessage(CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE);
+    }
+
+    schedulePendingCheck();
+  }, [
+    expirePendingChatSends,
+    requestPendingChatBackfill,
+    resolvePersistedPendingChatSends,
+    schedulePendingCheck,
+  ]);
+
+  useEffect(() => {
+    runPendingCheckRef.current = () => {
+      void runPendingCheck();
+    };
+  }, [runPendingCheck]);
 
   const registerPendingChatSend = useCallback(
     (content: string) => {
       const id = (pendingChatSendIdRef.current += 1);
-      const backfillTimeoutId = setTimeout(() => {
-        void backfillPendingChatSend(id, content, false);
-      }, CHAT_SEND_BACKFILL_DELAY_MS);
-      const timeoutId = setTimeout(() => {
-        void backfillPendingChatSend(id, content, true);
-      }, CHAT_SEND_CONFIRM_TIMEOUT_MS);
+      const registeredAt = Date.now();
 
       pendingChatSendsRef.current.push({
-        backfillTimeoutId,
+        backfillAt: registeredAt + CHAT_SEND_BACKFILL_DELAY_MS,
+        backfillAttempted: false,
+        confirmAt: registeredAt + CHAT_SEND_CONFIRM_TIMEOUT_MS,
         content,
         id,
-        timeoutId,
       });
+      schedulePendingCheck();
 
       return id;
     },
-    [backfillPendingChatSend],
+    [schedulePendingCheck],
   );
 
   const cleanupChatSubscription = useCallback(() => {

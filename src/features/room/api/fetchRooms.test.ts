@@ -33,6 +33,7 @@ describe("fetchRooms v26.8 cursor", () => {
         cursorLastParticipantCount: 3,
         size: 30,
       },
+      signal: undefined,
     });
   });
 
@@ -51,6 +52,21 @@ describe("fetchRooms v26.8 cursor", () => {
         cursorLastId: 9,
         tags: "anime,kpop",
       },
+      signal: undefined,
+    });
+  });
+
+  it("React Query의 AbortSignal을 방 탐색 요청에 전달한다", async () => {
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: { result: { rooms: [], hasNext: false } },
+    });
+    const abortController = new AbortController();
+
+    await fetchRooms({ keyword: "재즈" }, abortController.signal);
+
+    expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/rooms", {
+      params: { keyword: "재즈" },
+      signal: abortController.signal,
     });
   });
 });

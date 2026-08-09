@@ -71,3 +71,16 @@ pnpm install --frozen-lockfile
 - fix head Vercel preview: pass
 - fix head GitHub Actions `Lint, test, and build`: pass
 - residual risk: npm/pnpm lock 동시 추적 자체는 유지되므로 package manager 단일화 전까지 두 lock 동기화가 필요하다.
+
+## 2026-08-09 후속 해결
+
+프론트 런타임 감사 후속 작업에서 package manager를 npm으로 단일화했다.
+
+- `package.json`에 `packageManager: npm@10.9.3`을 선언했다.
+- CI가 이미 사용하는 `package-lock.json`을 canonical lockfile로 유지했다.
+- `pnpm-lock.yaml`을 제거해 Vercel이 파일 존재만으로 pnpm을 선택하는 조건을 없앴다.
+- delivery skill도 `package-lock.json` 갱신과 `npm ci`만 요구하도록 변경했다.
+
+이후 재사용 규칙은 다음과 같다.
+
+> 이 저장소는 npm 하나만 사용한다. dependency 변경 시 `package-lock.json`을 갱신하고 `npm ci`를 통과시키며, 다른 package manager lockfile을 추가하지 않는다.

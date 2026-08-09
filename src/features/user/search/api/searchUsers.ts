@@ -4,11 +4,12 @@ import type { ApiResponse } from "@/src/shared/api/types";
 import type { SearchUserParams, SearchUsersResponse } from "../model/types";
 
 export async function searchUsers(
-  params: SearchUserParams
+  params: SearchUserParams,
+  signal?: AbortSignal,
 ): Promise<SearchUsersResponse> {
   const res = await axiosInstance.get<ApiResponse<SearchUsersResponse>>(
     "/api/v1/user-profiles",
-    { params }
+    { params, signal },
   );
   return unwrapApiResponse(res.data);
 }

@@ -23,13 +23,14 @@ export function useMyRoomQueue(
   );
   const query = useInfiniteQuery({
     queryKey,
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam, signal }) =>
       fetchRoomQueuePage({
         slug,
         password,
         cursor: pageParam?.cursor,
         queueRevision: pageParam?.queueRevision,
         mine: true,
+        signal,
       }),
     initialPageParam: null as RoomQueuePageParam | null,
     getNextPageParam: getNextRoomQueuePageParam,

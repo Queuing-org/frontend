@@ -31,7 +31,11 @@ import { useTransientManagementError } from "@/src/features/room/management/mode
 import RoomMemberManagementMenu, {
   type RoomMemberManagementAction,
 } from "@/src/features/room/management/ui/RoomMemberManagementMenu";
-import type { ParticipantKickTarget } from "@/src/features/room/participants/model/participantIdentity";
+import {
+  getParticipantKickTarget,
+  type ParticipantKickTarget,
+} from "@/src/features/room/participants/model/participantIdentity";
+import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
 import ReportChatMessageModal, {
   type ReportChatMessageTarget,
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
@@ -43,10 +47,12 @@ type Props = {
   currentUser: User | null;
   currentRequester: CurrentRequesterProfile | null;
   currentTrackTitle?: string | null;
+  hasUnloadedParticipants?: boolean;
   isCurrentUserLoading: boolean;
   kickTarget: ParticipantKickTarget | null;
   onUserBlocked: (userSlug: string) => void;
   reportMessageKey?: string | null;
+  resolveParticipantByUserSlug?: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
@@ -79,10 +85,12 @@ function isCurrentUserProfile(
 export default function RoomProfilePanel({
   currentUser,
   currentRequester,
+  hasUnloadedParticipants = false,
   isCurrentUserLoading,
   kickTarget,
   onUserBlocked,
   reportMessageKey,
+  resolveParticipantByUserSlug,
   roomMeta,
   roomPassword,
   roomSlug,
@@ -94,6 +102,15 @@ export default function RoomProfilePanel({
   const [managementMessage, setManagementMessage] = useState<string | null>(
     null,
   );
+  const [participantResolutionError, setParticipantResolutionError] = useState<{
+    message: string;
+    targetSlug: string;
+  } | null>(null);
+  const [participantResolutionAction, setParticipantResolutionAction] =
+    useState<{
+      action: "kick" | "transfer";
+      targetSlug: string;
+    } | null>(null);
   const [musicPowerNotice, setMusicPowerNotice] =
     useState<MusicPowerNotice | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
@@ -101,9 +118,18 @@ export default function RoomProfilePanel({
   const musicPowerNoticeTimerRef = useRef<number | null>(null);
   const musicPowerNoticeSequenceRef = useRef(0);
   const targetSlug = currentRequester?.slug ?? null;
-  const { data: publicProfile, isLoading: isPublicProfileLoading } =
-    useUserProfile(targetSlug);
-  const musicPowerQuery = useMusicPower(targetSlug);
+  const {
+    data: publicProfile,
+    isError: isPublicProfileError,
+    isLoading: isPublicProfileLoading,
+  } = useUserProfile(targetSlug);
+  const shouldLoadMusicPowerFallback =
+    Boolean(targetSlug) &&
+    (isPublicProfileError ||
+      (Boolean(publicProfile) && typeof publicProfile?.musicPower !== "number"));
+  const musicPowerQuery = useMusicPower(
+    shouldLoadMusicPowerFallback ? targetSlug : null,
+  );
   const musicPowerVote = useCurrentTrackMusicPowerVote();
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
@@ -113,8 +139,13 @@ export default function RoomProfilePanel({
     message: transferOwnerErrorMessage,
     show: showTransferOwnerError,
   } = useTransientManagementError();
+  const shouldLoadBadgeFallback =
+    Boolean(targetSlug) &&
+    (isPublicProfileError ||
+      (Boolean(publicProfile) &&
+        publicProfile?.representativeBadge === undefined));
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
-    usePublicUserBadges(targetSlug);
+    usePublicUserBadges(shouldLoadBadgeFallback ? targetSlug : null);
 
   const isSelf = isCurrentUserProfile(currentRequester, currentUser);
   const shouldShowFollowAction = Boolean(currentRequester) && !isSelf;
@@ -127,7 +158,10 @@ export default function RoomProfilePanel({
     isCurrentUserRoomOwner &&
     !isTargetRoomOwner &&
     !isSelf &&
-    Boolean(kickTarget);
+    Boolean(
+      kickTarget ||
+        (hasUnloadedParticipants && resolveParticipantByUserSlug),
+    );
   const canTransfer = canKick && Boolean(targetSlug);
   const managementActions: RoomMemberManagementAction[] = canManage
     ? [
@@ -155,16 +189,20 @@ export default function RoomProfilePanel({
   }
 
   const representativeBadge =
-    publicProfile?.representativeBadge ?? getRepresentativeBadge(publicBadges);
+    publicProfile?.representativeBadge === undefined
+      ? getRepresentativeBadge(publicBadges)
+      : publicProfile.representativeBadge;
   const displayNickname =
     publicProfile?.nickname ?? currentRequester?.nickname ?? "";
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
   const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
-  const isBadgeLoading = isPublicProfileLoading || isPublicBadgesLoading;
+  const isBadgeLoading =
+    isPublicProfileLoading ||
+    (shouldLoadBadgeFallback && isPublicBadgesLoading);
   const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
-    musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
+    publicProfile?.musicPower ?? musicPowerQuery.data?.musicPower;
   const listeningDurationSeconds =
     publicProfile?.listeningDurationSeconds ??
     (isSelf ? currentUser?.listeningDurationSeconds : undefined);
@@ -274,16 +312,63 @@ export default function RoomProfilePanel({
     setBlockTarget({ nickname: displayNickname, slug: targetSlug });
   };
 
-  const handleKick = () => {
-    if (!kickTarget || !canKick) {
+  const resolveCurrentRequesterKickTarget = async (
+    lookupSlug: string,
+  ) => {
+    if (!resolveParticipantByUserSlug) {
+      return null;
+    }
+    const participant = await resolveParticipantByUserSlug(lookupSlug);
+    if (
+      participant?.participantType !== "USER" ||
+      participant.userSlug?.trim() !== lookupSlug
+    ) {
+      return null;
+    }
+
+    return getParticipantKickTarget(participant);
+  };
+
+  const handleKick = async () => {
+    if (!targetSlug || !canKick) {
       return;
     }
 
+    let resolvedKickTarget = kickTarget;
     setManagementMessage(null);
+    setParticipantResolutionError(null);
+    if (!resolvedKickTarget) {
+      setParticipantResolutionAction({ action: "kick", targetSlug });
+      try {
+        resolvedKickTarget = await resolveCurrentRequesterKickTarget(
+          targetSlug,
+        );
+      } catch {
+        setParticipantResolutionError({
+          message: "참가자 정보를 확인하지 못했습니다.",
+          targetSlug,
+        });
+        return;
+      } finally {
+        setParticipantResolutionAction((current) =>
+          current?.action === "kick" && current.targetSlug === targetSlug
+            ? null
+            : current,
+        );
+      }
+    }
+    if (!resolvedKickTarget) {
+      setParticipantResolutionError({
+        message: "현재 참가 중인 회원을 찾지 못했습니다.",
+        targetSlug,
+      });
+      return;
+    }
+
     kickParticipant.reset();
     kickParticipant.mutate(
       {
-        ...kickTarget,
+        ...resolvedKickTarget,
         password: roomPassword,
         slug: roomSlug,
       },
@@ -295,8 +380,38 @@ export default function RoomProfilePanel({
     );
   };
 
-  const handleTransfer = () => {
+  const handleTransfer = async () => {
     if (!targetSlug || !canTransfer) {
+      return;
+    }
+
+    let resolvedKickTarget = kickTarget;
+    setParticipantResolutionError(null);
+    if (!resolvedKickTarget) {
+      setParticipantResolutionAction({ action: "transfer", targetSlug });
+      try {
+        resolvedKickTarget = await resolveCurrentRequesterKickTarget(
+          targetSlug,
+        );
+      } catch {
+        setParticipantResolutionError({
+          message: "참가자 정보를 확인하지 못했습니다.",
+          targetSlug,
+        });
+        return;
+      } finally {
+        setParticipantResolutionAction((current) =>
+          current?.action === "transfer" && current.targetSlug === targetSlug
+            ? null
+            : current,
+        );
+      }
+    }
+    if (!resolvedKickTarget) {
+      setParticipantResolutionError({
+        message: "현재 참가 중인 회원을 찾지 못했습니다.",
+        targetSlug,
+      });
       return;
     }
 
@@ -396,6 +511,7 @@ export default function RoomProfilePanel({
                     }
                     onClick={() => {
                       setManagementMessage(null);
+                      setParticipantResolutionError(null);
                       setIsManagementOpen((current) => !current);
                     }}
                   >
@@ -411,8 +527,18 @@ export default function RoomProfilePanel({
                   {isManagementOpen ? (
                     <RoomMemberManagementMenu
                       actions={managementActions}
-                      isKickPending={kickParticipant.isPending}
-                      isTransferPending={transferOwner.isPending}
+                      isKickPending={
+                        kickParticipant.isPending ||
+                        (participantResolutionAction?.action === "kick" &&
+                          participantResolutionAction.targetSlug ===
+                            targetSlug)
+                      }
+                      isTransferPending={
+                        transferOwner.isPending ||
+                        (participantResolutionAction?.action === "transfer" &&
+                          participantResolutionAction.targetSlug ===
+                            targetSlug)
+                      }
                       label="프로필 관리"
                       menuId={managementMenuId}
                       onBlock={handleBlock}
@@ -437,6 +563,11 @@ export default function RoomProfilePanel({
             <p className={styles.managementError} role="alert">
               {kickParticipant.error.message ||
                 "사용자 관리 요청을 처리하지 못했습니다."}
+            </p>
+          ) : null}
+          {participantResolutionError?.targetSlug === targetSlug ? (
+            <p className={styles.managementError} role="alert">
+              {participantResolutionError.message}
             </p>
           ) : null}
           {transferOwnerErrorMessage ? (

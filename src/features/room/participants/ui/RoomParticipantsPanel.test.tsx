@@ -11,6 +11,7 @@ const kickReset = vi.fn();
 const transferMutate = vi.fn();
 const transferReset = vi.fn();
 const onUserBlocked = vi.fn();
+const onLoadMore = vi.fn();
 
 const member: PlaylistParticipant = {
   nickname: "회원",
@@ -112,6 +113,10 @@ function renderPanel(messages = [
         slug: "owner",
         userId: 1,
       }}
+      hasNextPage
+      isFetchingNextPage={false}
+      isLoadMoreError={false}
+      onLoadMore={onLoadMore}
       onUserBlocked={onUserBlocked}
       participants={[member]}
       roomMeta={{
@@ -161,6 +166,18 @@ describe("RoomParticipantsPanel", () => {
     await user.click(screen.getByRole("button", { name: "회원 신고" }));
 
     expect(screen.getByRole("dialog")).toHaveTextContent("message-latest");
+  });
+
+  it("전체 인원은 room meta로 표시하고 다음 page는 명시적으로 요청한다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    expect(screen.getByText("2 명")).toBeVisible();
+    expect(screen.queryByText("1 명")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "참가자 더보기" }));
+
+    expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
   it("신고할 채팅이 없으면 요청 target 대신 안내를 표시한다", async () => {

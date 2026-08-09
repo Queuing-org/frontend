@@ -8,6 +8,7 @@ import type { ChatHistoryResponse } from "../model/types";
 export type FetchRoomChatsParams = {
   cursorId?: number | null;
   password?: string | null;
+  signal?: AbortSignal;
   size?: number;
   slug: string;
 };
@@ -15,6 +16,7 @@ export type FetchRoomChatsParams = {
 export async function fetchRoomChats({
   cursorId,
   password,
+  signal,
   size = 30,
   slug,
 }: FetchRoomChatsParams): Promise<ChatHistoryResponse> {
@@ -26,6 +28,7 @@ export async function fetchRoomChats({
         size,
       },
       headers: buildRoomPasswordHeaders(password),
+      signal,
     },
   );
 

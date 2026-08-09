@@ -9,8 +9,12 @@ import type {
   RoomQueueRequestParams,
 } from "../model/types";
 
-const QUEUE_PAGE_SIZE = 100;
+export const QUEUE_PAGE_SIZE = 30;
 export const QUEUE_CONFLICT_CODE = "room.queue-mutation-conflict";
+
+type FetchRoomQueuePageParams = RoomQueueRequestParams & {
+  signal?: AbortSignal;
+};
 
 export function getNextRoomQueuePageParam(page: RoomQueuePage) {
   if (!page.hasNext) {
@@ -36,9 +40,10 @@ export async function fetchRoomQueuePage({
   password,
   cursor,
   queueRevision,
+  signal,
   size = QUEUE_PAGE_SIZE,
   mine = false,
-}: RoomQueueRequestParams): Promise<RoomQueuePage> {
+}: FetchRoomQueuePageParams): Promise<RoomQueuePage> {
   const playlistPath = mine ? "/playlist/me" : "/playlist";
   const res = await axiosInstance.get<ApiResponse<RoomQueuePage>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}${playlistPath}`,
@@ -50,6 +55,7 @@ export async function fetchRoomQueuePage({
         size,
       },
       headers: buildRoomPasswordHeaders(password),
+      signal,
     },
   );
 

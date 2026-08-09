@@ -1,6 +1,7 @@
 import type { IFrame, StompSubscription } from "@stomp/stompjs";
 import { ApiError } from "@/src/shared/api/api-error";
 import {
+  acquireSocketSession,
   addSocketListener,
   connectSocket,
   getSocketClient,
@@ -152,7 +153,13 @@ export async function joinRoom(
     });
   }
 
-  await waitForSocketConnected(options.signal);
+  const releaseSocketSession = acquireSocketSession();
+  try {
+    await waitForSocketConnected(options.signal);
+  } catch (error) {
+    releaseSocketSession();
+    throw error;
+  }
 
   return new Promise<JoinRoomResult>((resolve, reject) => {
     let settled = false;
@@ -255,5 +262,5 @@ export async function joinRoom(
         }),
       );
     }
-  });
+  }).finally(releaseSocketSession);
 }

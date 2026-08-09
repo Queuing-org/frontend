@@ -2,6 +2,7 @@
   "name": "queuing-org",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@10.9.3",
   "scripts": {
     "setup:https": "mkdir -p certificates && TRUST_STORES=system mkcert -cert-file ./certificates/local-queuing-cc.pem -key-file ./certificates/local-queuing-cc-key.pem local.queuing.cc localhost 127.0.0.1 ::1",
     "dev": "next dev -H local.queuing.cc -p 3000 --experimental-https --experimental-https-key ./certificates/local-queuing-cc-key.pem --experimental-https-cert ./certificates/local-queuing-cc.pem",
@@ -41,7 +42,6 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "jsdom": "^29.1.1",
-    "qrcode": "^1.5.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"

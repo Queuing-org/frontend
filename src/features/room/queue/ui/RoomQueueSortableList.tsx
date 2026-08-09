@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   closestCenter,
   DndContext,
@@ -26,6 +26,7 @@ import RoomQueueCard from "./RoomQueueCard";
 import listStyles from "./RoomQueueList.module.css";
 import styles from "./RoomQueueSortableList.module.css";
 import { createPortal } from "react-dom";
+import { useQueueRenderWindow } from "./useQueueRenderWindow";
 
 type MovePayload = {
   movedEntryId: string;
@@ -86,6 +87,7 @@ function SortableQueueCard({
         "aria-label": `${entry.track.title} 순서 변경`,
       }}
       entry={entry}
+      data-queue-virtual-item="true"
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -96,6 +98,124 @@ function SortableQueueCard({
       onDelete={onDelete}
       showDeleteButton={showDeleteButton}
     />
+  );
+}
+
+type StaticQueueListProps = {
+  canDeleteEntry?: (entry: PlaylistEntry) => boolean;
+  className: string;
+  entries: PlaylistEntry[];
+  isDeletePending?: boolean;
+  onDelete?: (entryId: string) => void;
+};
+
+function StaticQueueList({
+  canDeleteEntry,
+  className,
+  entries,
+  isDeletePending = false,
+  onDelete,
+}: StaticQueueListProps) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const { endIndex, paddingBottom, paddingTop, startIndex } =
+    useQueueRenderWindow(entries.length, listRef);
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul ref={listRef} className={className}>
+      {paddingTop > 0 ? (
+        <li
+          aria-hidden="true"
+          className={styles.virtualSpacer}
+          style={{ height: paddingTop }}
+        />
+      ) : null}
+      {entries.slice(startIndex, endIndex).map((entry) => (
+        <RoomQueueCard
+          key={entry.entryId}
+          entry={entry}
+          data-drag-disabled="true"
+          data-queue-virtual-item="true"
+          isDeletePending={isDeletePending}
+          onDelete={onDelete}
+          showDeleteButton={canDeleteEntry?.(entry) ?? false}
+        />
+      ))}
+      {paddingBottom > 0 ? (
+        <li
+          aria-hidden="true"
+          className={styles.virtualSpacer}
+          style={{ height: paddingBottom }}
+        />
+      ) : null}
+    </ul>
+  );
+}
+
+type SortableQueueListWindowProps = {
+  activeEntryId: string | null;
+  canDeleteEntry?: (entry: PlaylistEntry) => boolean;
+  entries: PlaylistEntry[];
+  isDeletePending: boolean;
+  isMovePending: boolean;
+  onDelete?: (entryId: string) => void;
+};
+
+function SortableQueueListWindow({
+  activeEntryId,
+  canDeleteEntry,
+  entries,
+  isDeletePending,
+  isMovePending,
+  onDelete,
+}: SortableQueueListWindowProps) {
+  const listRef = useRef<HTMLUListElement>(null);
+  const { endIndex, paddingBottom, paddingTop, startIndex } =
+    useQueueRenderWindow(entries.length, listRef, activeEntryId !== null);
+  const isDragging = activeEntryId !== null;
+  const renderedEntries = isDragging
+    ? entries
+    : entries.slice(startIndex, endIndex);
+
+  return (
+    <SortableContext
+      items={entries.map((entry) => entry.entryId)}
+      strategy={verticalListSortingStrategy}
+    >
+      <ul
+        ref={listRef}
+        className={styles.sortableList}
+        data-render-window={isDragging ? "all-during-drag" : "virtualized"}
+      >
+        {!isDragging && paddingTop > 0 ? (
+          <li
+            aria-hidden="true"
+            className={styles.virtualSpacer}
+            style={{ height: paddingTop }}
+          />
+        ) : null}
+        {renderedEntries.map((entry) => (
+          <SortableQueueCard
+            key={entry.entryId}
+            disabled={isMovePending || entries.length < 2}
+            entry={entry}
+            isDeletePending={isDeletePending}
+            onDelete={onDelete}
+            showDeleteButton={canDeleteEntry?.(entry) ?? true}
+          />
+        ))}
+        {!isDragging && paddingBottom > 0 ? (
+          <li
+            aria-hidden="true"
+            className={styles.virtualSpacer}
+            style={{ height: paddingBottom }}
+          />
+        ) : null}
+      </ul>
+    </SortableContext>
   );
 }
 
@@ -224,29 +344,19 @@ export default function RoomQueueSortableList({
   return (
     <div className={styles.root}>
       {activeFixedEntries.length > 0 ? (
-        <ul className={styles.fixedTopList}>
-          {activeFixedEntries.map((entry) => (
-            <RoomQueueCard
-              key={entry.entryId}
-              entry={entry}
-              data-drag-disabled="true"
-            />
-          ))}
-        </ul>
+        <StaticQueueList
+          className={styles.fixedTopList}
+          entries={activeFixedEntries}
+        />
       ) : null}
       {lockedPendingEntries.length > 0 ? (
-        <ul className={styles.fixedTopList}>
-          {lockedPendingEntries.map((entry) => (
-            <RoomQueueCard
-              key={entry.entryId}
-              entry={entry}
-              data-drag-disabled="true"
-              isDeletePending={isDeletePending}
-              onDelete={onDelete}
-              showDeleteButton={canDeleteEntry?.(entry) ?? true}
-            />
-          ))}
-        </ul>
+        <StaticQueueList
+          canDeleteEntry={canDeleteEntry ?? (() => true)}
+          className={styles.fixedTopList}
+          entries={lockedPendingEntries}
+          isDeletePending={isDeletePending}
+          onDelete={onDelete}
+        />
       ) : null}
       {pendingEntries.length > 0 ? (
         <DndContext
@@ -256,23 +366,14 @@ export default function RoomQueueSortableList({
           onDragEnd={handleDragEnd}
           onDragStart={handleDragStart}
         >
-          <SortableContext
-            items={pendingEntries.map((entry) => entry.entryId)}
-            strategy={verticalListSortingStrategy}
-          >
-            <ul className={styles.sortableList}>
-              {pendingEntries.map((entry) => (
-                <SortableQueueCard
-                  key={entry.entryId}
-                  disabled={isMovePending || pendingEntries.length < 2}
-                  entry={entry}
-                  isDeletePending={isDeletePending}
-                  onDelete={onDelete}
-                  showDeleteButton={canDeleteEntry?.(entry) ?? true}
-                />
-              ))}
-            </ul>
-          </SortableContext>
+          <SortableQueueListWindow
+            activeEntryId={activeEntryId}
+            canDeleteEntry={canDeleteEntry}
+            entries={pendingEntries}
+            isDeletePending={isDeletePending}
+            isMovePending={isMovePending}
+            onDelete={onDelete}
+          />
           {typeof document !== "undefined"
             ? createPortal(
                 <DragOverlay>
@@ -286,15 +387,10 @@ export default function RoomQueueSortableList({
         </DndContext>
       ) : null}
       {fixedEntries.length > 0 ? (
-        <ul className={styles.fixedList}>
-          {fixedEntries.map((entry) => (
-            <RoomQueueCard
-              key={entry.entryId}
-              entry={entry}
-              data-drag-disabled="true"
-            />
-          ))}
-        </ul>
+        <StaticQueueList
+          className={styles.fixedList}
+          entries={fixedEntries}
+        />
       ) : null}
     </div>
   );

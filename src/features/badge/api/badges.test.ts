@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { fetchBadges } from "./fetchBadges";
 import { fetchMyBadges } from "./fetchMyBadges";
+import { fetchPublicUserBadges } from "./fetchPublicUserBadges";
 import { clearRepresentativeBadge } from "./clearRepresentativeBadge";
 import { updateRepresentativeBadge } from "./updateRepresentativeBadge";
+import {
+  publicUserBadgesQueryOptions,
+  PUBLIC_USER_BADGES_STALE_TIME_MS,
+} from "../hooks/usePublicUserBadges";
 
 vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: {
@@ -16,29 +20,6 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
 describe("칭호 API 계약", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("카탈로그의 badgeCode/tier/active/acquired 응답을 유지한다", async () => {
-    const response = {
-      badges: [
-        {
-          badgeCode: "ROOM_CREATE_00001",
-          name: "방 팠음",
-          description: "설명",
-          category: "ROOM_CREATION",
-          tier: "TIER_1",
-          acquisitionHint: "방을 만들어보세요.",
-          active: true,
-          acquired: false,
-        },
-      ],
-    };
-    vi.mocked(axiosInstance.get).mockResolvedValue({
-      data: { result: response },
-    });
-
-    await expect(fetchBadges()).resolves.toEqual(response);
-    expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/badges");
   });
 
   it("획득 칭호의 representative/acquiredAt과 대표 badgeCode를 파싱한다", async () => {
@@ -78,6 +59,33 @@ describe("칭호 API 계약", () => {
       "/api/v1/users/me/badges/representative",
       { badgeCode: "ROOM_CREATE_00001" },
     );
+  });
+
+  it("공개 칭호 조회는 query signal과 5분 freshness를 사용한다", async () => {
+    const response = { badges: [], representativeBadge: null };
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: { result: response },
+    });
+    const abortController = new AbortController();
+    const options = publicUserBadgesQueryOptions("user slug");
+    const queryFn = options.queryFn;
+
+    expect(options.staleTime).toBe(PUBLIC_USER_BADGES_STALE_TIME_MS);
+    if (typeof queryFn !== "function") {
+      throw new Error("공개 칭호 queryFn이 없습니다.");
+    }
+
+    await expect(
+      queryFn({ signal: abortController.signal } as never),
+    ).resolves.toEqual(response);
+    expect(axiosInstance.get).toHaveBeenCalledWith(
+      "/api/v1/users/user%20slug/badges",
+      { signal: abortController.signal },
+    );
+
+    await expect(
+      fetchPublicUserBadges("user slug", abortController.signal),
+    ).resolves.toEqual(response);
   });
 
   it("대표 칭호를 동일 경로 DELETE로 해제한다", async () => {

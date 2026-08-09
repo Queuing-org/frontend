@@ -9,7 +9,7 @@ import type { MusicPowerResponse } from "../model/types";
 export function useMusicPower(userSlug: string | null | undefined) {
   return useQuery<MusicPowerResponse, ApiError>({
     queryKey: userKeys.musicPower(userSlug),
-    queryFn: () => fetchMusicPower(userSlug!),
+    queryFn: ({ signal }) => fetchMusicPower(userSlug!, signal),
     enabled: Boolean(userSlug),
   });
 }

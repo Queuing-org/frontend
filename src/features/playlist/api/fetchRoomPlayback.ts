@@ -8,14 +8,20 @@ import type {
   RoomPlayback,
 } from "../model/types";
 
+type FetchRoomPlaybackParams = PlaylistProtectedRequestParams & {
+  signal?: AbortSignal;
+};
+
 export async function fetchRoomPlayback({
   slug,
   password,
-}: PlaylistProtectedRequestParams): Promise<RoomPlayback> {
+  signal,
+}: FetchRoomPlaybackParams): Promise<RoomPlayback> {
   const res = await axiosInstance.get<ApiResponse<RoomPlayback>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/playback`,
     {
       headers: buildRoomPasswordHeaders(password),
+      signal,
     },
   );
 

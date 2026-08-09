@@ -18,7 +18,3 @@ export function getDesktopViewportDensity(
 
   return isDesktop && isLaptopWidth && isLaptopHeight ? "compact" : "normal";
 }
-
-export function isLaptopCompactViewport(viewportSize: ViewportSize) {
-  return getDesktopViewportDensity(viewportSize) === "compact";
-}

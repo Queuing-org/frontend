@@ -96,6 +96,7 @@ const messages = [
 const onUserBlocked = vi.fn();
 const kickMutate = vi.fn();
 const transferMutate = vi.fn();
+const resolveParticipantByUserSlug = vi.fn();
 
 const participants = [
   {
@@ -109,10 +110,14 @@ const participants = [
 
 function ChatAreaHarness({
   chatMessages,
+  hasUnloadedParticipants = false,
   isOwner = false,
+  participantItems = participants,
 }: {
   chatMessages: ChatMessage[];
+  hasUnloadedParticipants?: boolean;
   isOwner?: boolean;
+  participantItems?: typeof participants;
 }) {
   const [blockedSenderSlugs, setBlockedSenderSlugs] = useState<
     ReadonlySet<string>
@@ -122,6 +127,7 @@ function ChatAreaHarness({
     <ChatArea
       blockedSenderSlugs={blockedSenderSlugs}
       currentUser={currentUser}
+      hasUnloadedParticipants={hasUnloadedParticipants}
       hasOlderMessages={false}
       isLoadingOlderMessages={false}
       messages={chatMessages}
@@ -134,7 +140,8 @@ function ChatAreaHarness({
           return next;
         });
       }}
-      participants={participants}
+      participants={participantItems}
+      resolveParticipantByUserSlug={resolveParticipantByUserSlug}
       roomMeta={{
         activeUsersCount: 2,
         hasPassword: false,
@@ -155,9 +162,21 @@ function ChatAreaHarness({
   );
 }
 
-function renderChat(chatMessages = messages, isOwner = false) {
+function renderChat(
+  chatMessages = messages,
+  isOwner = false,
+  options?: {
+    hasUnloadedParticipants?: boolean;
+    participantItems?: typeof participants;
+  },
+) {
   return render(
-    <ChatAreaHarness chatMessages={chatMessages} isOwner={isOwner} />,
+    <ChatAreaHarness
+      chatMessages={chatMessages}
+      hasUnloadedParticipants={options?.hasUnloadedParticipants}
+      isOwner={isOwner}
+      participantItems={options?.participantItems}
+    />,
   );
 }
 
@@ -174,6 +193,7 @@ describe("ChatArea 관리 메뉴", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    resolveParticipantByUserSlug.mockResolvedValue(null);
     vi.mocked(useFollowingRelationship).mockReturnValue({
       data: false,
       isLoading: false,
@@ -242,6 +262,50 @@ describe("ChatArea 관리 메뉴", () => {
     );
     expect(transferOptions).not.toHaveProperty("onSuccess");
     expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
+  });
+
+  it("미로드 page 후보는 관리 메뉴를 유지하고 실행 시에만 참가 여부를 resolve한다", async () => {
+    const user = userEvent.setup();
+    resolveParticipantByUserSlug.mockResolvedValue(participants[0]);
+    renderChat(messages, true, {
+      hasUnloadedParticipants: true,
+      participantItems: [],
+    });
+
+    await user.click(getMenuTrigger("회원"));
+    expect(screen.getByRole("menuitem", { name: "내보내기" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "방장 위임" })).toBeVisible();
+    expect(resolveParticipantByUserSlug).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("menuitem", { name: "내보내기" }));
+
+    await waitFor(() =>
+      expect(resolveParticipantByUserSlug).toHaveBeenCalledWith("회원-slug"),
+    );
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        password: "secret",
+        slug: "room-slug",
+        userSlug: "회원-slug",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it("cursor를 끝까지 탐색해도 참가자가 없으면 mutation을 막고 오류를 표시한다", async () => {
+    const user = userEvent.setup();
+    renderChat(messages, true, {
+      hasUnloadedParticipants: true,
+      participantItems: [],
+    });
+
+    await user.click(getMenuTrigger("회원"));
+    await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+
+    expect(
+      await screen.findByText("현재 참가 중인 회원을 찾지 못했습니다."),
+    ).toBeVisible();
+    expect(transferMutate).not.toHaveBeenCalled();
   });
 
   it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {

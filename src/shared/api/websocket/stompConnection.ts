@@ -3,7 +3,6 @@ import {
   createStompClient,
   DEFAULT_STOMP_RECONNECT_DELAY_MS,
 } from "./createStompClient";
-import { WEB_SOCKET_URL } from "@/src/shared/api/config";
 
 type SocketListener = {
   onConnect?: (frame: IFrame) => void;
@@ -13,37 +12,41 @@ type SocketListener = {
 };
 
 const socketListeners = new Set<SocketListener>();
+const SOCKET_DISCONNECT_IDLE_MS = 1_000;
+let socketSessionCount = 0;
+let disconnectTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
 const client = createStompClient();
 
 client.onConnect = (frame) => {
-  console.log("STOMP connected");
   for (const listener of socketListeners) {
     listener.onConnect?.(frame);
   }
 };
 
 client.onStompError = (frame) => {
-  console.error("STOMP error:", frame.headers["message"], frame.body);
+  console.error("STOMP broker error", {
+    message: frame.headers["message"] ?? "Unknown broker error",
+  });
   for (const listener of socketListeners) {
     listener.onStompError?.(frame);
   }
 };
 
 client.onWebSocketError = (event) => {
-  console.error("WebSocket error event:", event);
+  console.error("WebSocket transport error");
   for (const listener of socketListeners) {
     listener.onWebSocketError?.(event);
   }
 };
 
 client.onWebSocketClose = (event) => {
-  console.error("WebSocket closed:", {
-    url: WEB_SOCKET_URL,
-    code: event.code,
-    reason: event.reason,
-    wasClean: event.wasClean,
-  });
+  if (!event.wasClean) {
+    console.error("WebSocket closed unexpectedly", {
+      code: event.code,
+      wasClean: event.wasClean,
+    });
+  }
   for (const listener of socketListeners) {
     listener.onWebSocketClose?.(event);
   }
@@ -55,7 +58,35 @@ export function connectSocket() {
 }
 
 export function disconnectSocket() {
-  client.deactivate();
+  void client.deactivate();
+}
+
+export function acquireSocketSession() {
+  if (disconnectTimeoutId !== null) {
+    clearTimeout(disconnectTimeoutId);
+    disconnectTimeoutId = null;
+  }
+  socketSessionCount += 1;
+  let released = false;
+
+  return () => {
+    if (released) {
+      return;
+    }
+
+    released = true;
+    socketSessionCount = Math.max(0, socketSessionCount - 1);
+    if (socketSessionCount > 0 || disconnectTimeoutId !== null) {
+      return;
+    }
+
+    disconnectTimeoutId = setTimeout(() => {
+      disconnectTimeoutId = null;
+      if (socketSessionCount === 0) {
+        disconnectSocket();
+      }
+    }, SOCKET_DISCONNECT_IDLE_MS);
+  };
 }
 
 export function stopSocketAutoReconnect() {

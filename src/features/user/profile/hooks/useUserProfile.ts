@@ -9,7 +9,7 @@ import type { UserProfile } from "../model/types";
 export function useUserProfile(userSlug: string | null | undefined) {
   return useQuery<UserProfile, ApiError>({
     queryKey: userKeys.profile(userSlug),
-    queryFn: () => fetchUserProfile(userSlug!),
+    queryFn: ({ signal }) => fetchUserProfile(userSlug!, signal),
     enabled: Boolean(userSlug),
   });
 }
