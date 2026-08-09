@@ -25,13 +25,14 @@ export function useRoomQueue(
   );
   const query = useSuspenseInfiniteQuery({
     queryKey,
-    queryFn: ({ pageParam }) =>
+    queryFn: ({ pageParam, signal }) =>
       fetchRoomQueuePage({
         slug,
         password,
         cursor: pageParam?.cursor,
         queueRevision: pageParam?.queueRevision,
         mine: false,
+        signal,
       }),
     initialPageParam: null as RoomQueuePageParam | null,
     getNextPageParam: getNextRoomQueuePageParam,

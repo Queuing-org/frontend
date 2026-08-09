@@ -7,7 +7,7 @@ import {
   type Dispatch,
   type SetStateAction,
 } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useRouter } from "next/navigation";
 import type { RoomPlayback } from "@/src/features/playlist/model/types";
@@ -38,12 +38,18 @@ import {
 } from "@/src/features/room/join/model/roomJoinErrors";
 import { ApiError } from "@/src/shared/api/api-error";
 import {
+  acquireSocketSession,
   addSocketListener,
   getSocketClient,
   stopSocketAutoReconnect,
 } from "@/src/shared/api/websocket/stompConnection";
 import { parseRoomJoinEvent } from "@/src/features/room/api/websocket/subscribeUserJoinEvents";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import {
+  cancelScheduledQueryInvalidation,
+  scheduleQueryInvalidation,
+} from "@/src/shared/api/query/scheduleQueryInvalidation";
+import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomReadInvalidationScope";
 import {
   applyMusicPowerChange,
   applyMusicPowerToProfile,
@@ -60,6 +66,11 @@ const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
 const SESSION_REPLACED_ERROR_CODE = "user.session-replaced";
 const SESSION_REPLACED_MESSAGE =
   "현재 방은 다른 창에서 마지막으로 열렸습니다.";
+type RoomInvalidationTarget =
+  | "meta"
+  | "participants"
+  | "playback"
+  | "queue";
 
 function isPlaybackSyncData(data: unknown): data is PlaybackSyncData {
   if (!data || typeof data !== "object") {
@@ -140,6 +151,14 @@ export function useRoomRealtimeEvents({
   const reconnectPendingRef = useRef(false);
   const rejoinAbortControllerRef = useRef<AbortController | null>(null);
   const hasRedirectedAfterKickRef = useRef(false);
+  const scheduledRoomInvalidationScopesRef = useRef(new Set<string>());
+
+  const clearScheduledRoomInvalidations = useCallback(() => {
+    for (const scopeKey of scheduledRoomInvalidationScopesRef.current) {
+      cancelScheduledQueryInvalidation(queryClient, scopeKey);
+    }
+    scheduledRoomInvalidationScopesRef.current.clear();
+  }, [queryClient]);
 
   const cleanupBrokerSubscription = useCallback(() => {
     try {
@@ -165,15 +184,22 @@ export function useRoomRealtimeEvents({
   }, []);
 
   const cleanupRoomSubscription = useCallback(() => {
+    clearScheduledRoomInvalidations();
     cancelRejoin();
     cleanupBrokerSubscription();
     cleanupUserSubscription();
     roomSubscriptionConfigRef.current = null;
     reconnectPendingRef.current = false;
-  }, [cancelRejoin, cleanupBrokerSubscription, cleanupUserSubscription]);
+  }, [
+    cancelRejoin,
+    cleanupBrokerSubscription,
+    cleanupUserSubscription,
+    clearScheduledRoomInvalidations,
+  ]);
 
   const leaveRoomSession = useCallback(() => {
     const config = roomSubscriptionConfigRef.current;
+    clearScheduledRoomInvalidations();
     cancelRejoin();
     cleanupBrokerSubscription();
     cleanupUserSubscription();
@@ -183,7 +209,33 @@ export function useRoomRealtimeEvents({
     if (config) {
       publishLeaveRequest(config.slug);
     }
-  }, [cancelRejoin, cleanupBrokerSubscription, cleanupUserSubscription]);
+  }, [
+    cancelRejoin,
+    cleanupBrokerSubscription,
+    cleanupUserSubscription,
+    clearScheduledRoomInvalidations,
+  ]);
+
+  const scheduleRoomInvalidation = useCallback(
+    (roomSlug: string, targets: readonly RoomInvalidationTarget[]) => {
+      const queryKeys: QueryKey[] = targets.map((target) => {
+        switch (target) {
+          case "playback":
+            return playlistKeys.roomPlaybackPrefix(roomSlug);
+          case "participants":
+            return playlistKeys.roomParticipantsPrefix(roomSlug);
+          case "queue":
+            return playlistKeys.roomQueuePrefix(roomSlug);
+          case "meta":
+            return roomKeys.meta(roomSlug);
+        }
+      });
+      const scopeKey = getRoomReadInvalidationScope(roomSlug);
+      scheduledRoomInvalidationScopesRef.current.add(scopeKey);
+      scheduleQueryInvalidation({ queryClient, queryKeys, scopeKey });
+    },
+    [queryClient],
+  );
 
   const invalidateRoomReads = useCallback(
     (roomSlug: string) => {
@@ -195,6 +247,10 @@ export function useRoomRealtimeEvents({
       });
       void queryClient.invalidateQueries({
         queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+      });
+      void queryClient.refetchQueries({
+        queryKey: roomKeys.meta(roomSlug),
+        type: "all",
       });
     },
     [queryClient],
@@ -251,15 +307,7 @@ export function useRoomRealtimeEvents({
           (current) =>
             applyTrackStarted(current, trackStarted, event.timestamp),
         );
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomQueuePrefix(roomSlug),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: roomKeys.meta(roomSlug),
-        });
+        scheduleRoomInvalidation(roomSlug, ["playback", "queue", "meta"]);
         return;
       }
 
@@ -269,36 +317,25 @@ export function useRoomRealtimeEvents({
         event.type === "QUEUE_REORDERED" ||
         event.type === "TRACK_ENDED"
       ) {
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomQueuePrefix(roomSlug),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
-        });
-        if (event.type === "TRACK_ENDED") {
-          void queryClient.invalidateQueries({
-            queryKey: roomKeys.meta(roomSlug),
-          });
-        }
+        scheduleRoomInvalidation(
+          roomSlug,
+          event.type === "TRACK_ENDED"
+            ? ["queue", "playback", "meta"]
+            : ["queue", "playback"],
+        );
         return;
       }
 
       if (event.type === "ROOM_JOINED" || event.type === "ROOM_LEFT") {
-        void queryClient.invalidateQueries({
-          queryKey: roomKeys.meta(roomSlug),
-        });
-        void queryClient.invalidateQueries({
-          queryKey: playlistKeys.roomParticipantsPrefix(roomSlug),
-        });
+        scheduleRoomInvalidation(roomSlug, ["meta", "participants"]);
         return;
       }
 
       if (event.type === "BADGE_AWARDED") {
-        void queryClient.invalidateQueries({ queryKey: badgeKeys.catalog() });
         void queryClient.invalidateQueries({ queryKey: badgeKeys.me() });
       }
     },
-    [queryClient, setLivePlaybackStatus],
+    [queryClient, scheduleRoomInvalidation, setLivePlaybackStatus],
   );
 
   const subscribeWithConfig = useCallback(
@@ -341,6 +378,7 @@ export function useRoomRealtimeEvents({
       }
 
       cancelRejoin();
+      clearScheduledRoomInvalidations();
       cleanupBrokerSubscription();
       cleanupUserSubscription();
       roomSubscriptionConfigRef.current = null;
@@ -363,6 +401,7 @@ export function useRoomRealtimeEvents({
     },
     [
       cancelRejoin,
+      clearScheduledRoomInvalidations,
       cleanupBrokerSubscription,
       cleanupChatSubscriptions,
       cleanupUserSubscription,
@@ -403,6 +442,19 @@ export function useRoomRealtimeEvents({
 
   useEffect(() => {
     hasRedirectedAfterKickRef.current = false;
+  }, [slug]);
+
+  useEffect(() => clearScheduledRoomInvalidations, [
+    clearScheduledRoomInvalidations,
+    slug,
+  ]);
+
+  useEffect(() => {
+    if (!slug) {
+      return;
+    }
+
+    return acquireSocketSession();
   }, [slug]);
 
   useEffect(() => {
@@ -486,6 +538,7 @@ export function useRoomRealtimeEvents({
         }
 
         cancelRejoin();
+        clearScheduledRoomInvalidations();
         cleanupBrokerSubscription();
         cleanupUserSubscription();
         cleanupChatSubscriptions();
@@ -536,6 +589,7 @@ export function useRoomRealtimeEvents({
     cleanupChatSubscriptions,
     cleanupRoomSubscription,
     cancelRejoin,
+    clearScheduledRoomInvalidations,
     cleanupBrokerSubscription,
     cleanupUserSubscription,
     initializeChatStateFromJoinData,

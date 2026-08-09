@@ -1,11 +1,12 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import {
+  acquireSocketSession,
   addSocketListener,
   getSocketClient,
   stopSocketAutoReconnect,
@@ -28,6 +29,7 @@ vi.mock(
   }),
 );
 vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
+  acquireSocketSession: vi.fn(),
   addSocketListener: vi.fn(),
   getSocketClient: vi.fn(),
   stopSocketAutoReconnect: vi.fn(),
@@ -36,9 +38,14 @@ vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
 describe("useRoomRealtimeEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(acquireSocketSession).mockReturnValue(vi.fn());
     vi.mocked(getSocketClient).mockReturnValue({
       subscribe: vi.fn(() => ({ id: "user-events", unsubscribe: vi.fn() })),
     } as never);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it("같은 방 session-replaced를 받으면 방 연결만 정리하고 재접속을 중단한다", async () => {
@@ -120,11 +127,13 @@ describe("useRoomRealtimeEvents", () => {
     expect(publishLeaveRequest).not.toHaveBeenCalled();
   });
 
-  it("곡 시작과 마지막 곡 종료 시 방 메타를 즉시 무효화한다", () => {
+  it("곡 시작 cache update는 즉시 적용하고 관련 invalidation만 합친다", async () => {
+    vi.useFakeTimers();
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const setQueriesData = vi.spyOn(queryClient, "setQueriesData");
     let roomEventHandler:
       | Parameters<typeof subscribeRoomEvents>[1]
       | undefined;
@@ -185,6 +194,12 @@ describe("useRoomRealtimeEvents", () => {
       } as never);
     });
 
+    expect(setQueriesData).toHaveBeenCalledTimes(1);
+    expect(invalidateQueries).not.toHaveBeenCalled();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(75);
+    });
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["roomMeta", "room"],
     });
@@ -201,6 +216,10 @@ describe("useRoomRealtimeEvents", () => {
       } as never);
     });
 
+    expect(invalidateQueries).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(75);
+    });
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["roomMeta", "room"],
     });
@@ -208,12 +227,185 @@ describe("useRoomRealtimeEvents", () => {
     unmount();
   });
 
-  it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {
+  it("같은 room event 10회 burst를 query target별 1회로 제한한다", async () => {
+    vi.useFakeTimers();
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const cancelQueries = vi.spyOn(queryClient, "cancelQueries");
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    let roomEventHandler:
+      | Parameters<typeof subscribeRoomEvents>[1]
+      | undefined;
+    vi.mocked(subscribeRoomEvents).mockImplementation((_slug, handler) => {
+      roomEventHandler = handler;
+      return { id: "room-events", unsubscribe: vi.fn() };
+    });
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result, unmount } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions: vi.fn(),
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState: vi.fn(),
+          setJoinErrorMessage: vi.fn(),
+          setLivePlaybackStatus: vi.fn(),
+          setStatus: vi.fn(),
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => {
+      for (let index = 0; index < 10; index += 1) {
+        roomEventHandler?.({
+          body: JSON.stringify({
+            type: "QUEUE_ADDED",
+            roomSlug: "room",
+            timestamp: index,
+            data: {},
+          }),
+        } as never);
+      }
+    });
+
+    act(() => vi.advanceTimersByTime(74));
+    expect(invalidateQueries).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(cancelQueries).toHaveBeenCalledTimes(2);
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomPlayback", "room"],
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomQueue", "room"],
+    });
+
+    invalidateQueries.mockClear();
+    cancelQueries.mockClear();
+    act(() => {
+      for (let index = 0; index < 10; index += 1) {
+        roomEventHandler?.({
+          body: JSON.stringify({
+            type: "ROOM_JOINED",
+            roomSlug: "room",
+            timestamp: index,
+            data: {},
+          }),
+        } as never);
+      }
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(75);
+    });
+    expect(invalidateQueries).toHaveBeenCalledTimes(2);
+    expect(cancelQueries).toHaveBeenCalledTimes(2);
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomParticipants", "room"],
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["roomMeta", "room"],
+    });
+
+    unmount();
+  });
+
+  it("slug 전환과 unmount에서 예약한 invalidation을 폐기한다", () => {
+    vi.useFakeTimers();
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const roomEventHandlers = new Map<
+      string,
+      Parameters<typeof subscribeRoomEvents>[1]
+    >();
+    vi.mocked(subscribeRoomEvents).mockImplementation((roomSlug, handler) => {
+      roomEventHandlers.set(roomSlug, handler);
+      return { id: roomSlug, unsubscribe: vi.fn() };
+    });
+    const cleanupChatSubscriptions = vi.fn();
+    const initializeChatStateFromJoinData = vi.fn();
+    const resetChatState = vi.fn();
+    const setJoinErrorMessage = vi.fn();
+    const setLivePlaybackStatus = vi.fn();
+    const setStatus = vi.fn();
+
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result, rerender, unmount } = renderHook(
+      ({ roomSlug }: { roomSlug: string }) =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions,
+          initializeChatStateFromJoinData,
+          resetChatState,
+          setJoinErrorMessage,
+          setLivePlaybackStatus,
+          setStatus,
+          slug: roomSlug,
+        }),
+      { initialProps: { roomSlug: "room" }, wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => {
+      roomEventHandlers.get("room")?.({
+        body: JSON.stringify({
+          type: "QUEUE_ADDED",
+          roomSlug: "room",
+          timestamp: 1,
+          data: {},
+        }),
+      } as never);
+    });
+    rerender({ roomSlug: "other-room" });
+    act(() => vi.advanceTimersByTime(75));
+    expect(invalidateQueries).not.toHaveBeenCalled();
+
+    act(() => result.current.ensureRoomSubscription("other-room", null));
+    act(() => {
+      roomEventHandlers.get("other-room")?.({
+        body: JSON.stringify({
+          type: "ROOM_JOINED",
+          roomSlug: "other-room",
+          timestamp: 2,
+          data: {},
+        }),
+      } as never);
+    });
+    unmount();
+    act(() => vi.advanceTimersByTime(75));
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const fetchReconnectedMeta = vi.fn().mockResolvedValue({
+      activeUsersCount: 2,
+      hasPassword: false,
+      isPublic: true,
+      slug: "room",
+      tags: [],
+      title: "복구된 방",
+    });
+    await queryClient.fetchQuery({
+      queryKey: ["roomMeta", "room"],
+      queryFn: fetchReconnectedMeta,
+    });
+    fetchReconnectedMeta.mockClear();
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const removeSocketListener = vi.fn();
+    const releaseSocketSession = vi.fn();
+    vi.mocked(acquireSocketSession).mockReturnValue(releaseSocketSession);
     let socketListener:
       | Parameters<typeof addSocketListener>[0]
       | undefined;
@@ -302,6 +494,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["roomQueue", "room"],
     });
+    await waitFor(() => expect(fetchReconnectedMeta).toHaveBeenCalledOnce());
 
     act(() => {
       socketListener?.onConnect?.({} as never);
@@ -328,6 +521,8 @@ describe("useRoomRealtimeEvents", () => {
 
     unmount();
     expect(removeSocketListener).toHaveBeenCalledTimes(1);
+    expect(acquireSocketSession).toHaveBeenCalledTimes(1);
+    expect(releaseSocketSession).toHaveBeenCalledTimes(1);
   });
 
   it("재입장 진행 중 방을 나가면 요청을 취소하고 leave를 한 번만 보낸다", async () => {

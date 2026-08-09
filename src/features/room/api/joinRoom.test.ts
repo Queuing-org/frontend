@@ -1,6 +1,7 @@
 import type { IFrame } from "@stomp/stompjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  acquireSocketSession,
   addSocketListener,
   connectSocket,
   getSocketClient,
@@ -14,6 +15,7 @@ import {
 import { joinRoom } from "./joinRoom";
 
 vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
+  acquireSocketSession: vi.fn(),
   addSocketListener: vi.fn(),
   connectSocket: vi.fn(),
   getSocketClient: vi.fn(),
@@ -35,6 +37,7 @@ describe("joinRoom socket lifecycle", () => {
   };
   let socketListeners: Parameters<typeof addSocketListener>[0][];
   let joinHandlers: JoinHandlers | undefined;
+  let releaseSocketSession: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -43,7 +46,9 @@ describe("joinRoom socket lifecycle", () => {
     client.connected = false;
     socketListeners = [];
     joinHandlers = undefined;
+    releaseSocketSession = vi.fn();
 
+    vi.mocked(acquireSocketSession).mockReturnValue(releaseSocketSession);
     vi.mocked(getSocketClient).mockReturnValue(client as never);
     vi.mocked(addSocketListener).mockImplementation((listener) => {
       socketListeners.push(listener);
@@ -88,6 +93,7 @@ describe("joinRoom socket lifecycle", () => {
     });
 
     await expect(request).resolves.toMatchObject({ roomSlug: "room" });
+    expect(releaseSocketSession).toHaveBeenCalledTimes(1);
   });
 
   it("join publish 뒤 취소되면 같은 socket session에 leave를 보낸다", async () => {
@@ -103,6 +109,7 @@ describe("joinRoom socket lifecycle", () => {
       code: "room.join-cancelled",
     });
     expect(publishLeaveRequest).toHaveBeenCalledWith("room");
+    expect(releaseSocketSession).toHaveBeenCalledTimes(1);
   });
 
   it("상위 room session owner가 leave를 맡으면 abort에서 중복 발행하지 않는다", async () => {

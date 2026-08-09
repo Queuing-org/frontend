@@ -9,6 +9,8 @@ import {
   type RoomQueueData,
 } from "./queueOrderOptimistic";
 import { playlistKeys } from "./queryKeys";
+import { scheduleQueryInvalidation } from "@/src/shared/api/query/scheduleQueryInvalidation";
+import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomReadInvalidationScope";
 
 type RoomQueueSnapshot = [readonly unknown[], RoomQueueData | undefined];
 
@@ -45,12 +47,12 @@ export function useDeleteMyQueueEntry() {
         queryKey: playlistKeys.roomQueuePrefix(variables.slug),
       });
     },
-    onSuccess: async (_result, variables) => {
-      await queryClient.resetQueries({
-        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
-      });
-      await queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomPlaybackPrefix(variables.slug),
+    onSuccess: (_result, variables) => {
+      scheduleQueryInvalidation({
+        queryClient,
+        queryKeys: [playlistKeys.roomPlaybackPrefix(variables.slug)],
+        resetQueryKeys: [playlistKeys.roomQueuePrefix(variables.slug)],
+        scopeKey: getRoomReadInvalidationScope(variables.slug),
       });
     },
   });

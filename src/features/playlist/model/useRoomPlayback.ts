@@ -13,7 +13,8 @@ export function useRoomPlayback(
 ) {
   return useQuery<RoomPlayback, ApiError>({
     queryKey: playlistKeys.roomPlayback(slug, password),
-    queryFn: () => fetchRoomPlayback({ slug: slug!, password }),
+    queryFn: ({ signal }) =>
+      fetchRoomPlayback({ slug: slug!, password, signal }),
     enabled: enabled && !!slug,
   });
 }

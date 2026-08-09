@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { fetchRoomParticipants } from "./fetchRoomParticipants";
+import {
+  fetchRoomParticipantsPage,
+  getNextRoomParticipantsPageParam,
+} from "./fetchRoomParticipants";
 import { fetchRoomPlayback } from "./fetchRoomPlayback";
 import { fetchRoomQueuePage } from "./fetchRoomQueue";
 
@@ -41,6 +44,7 @@ describe("v26.8.0 방 조회 API", () => {
   });
 
   it("큐 첫 페이지는 size만, 다음 페이지는 cursor와 queueRevision을 함께 보낸다", async () => {
+    const abortController = new AbortController();
     vi.mocked(axiosInstance.get)
       .mockResolvedValueOnce({
         data: {
@@ -66,7 +70,11 @@ describe("v26.8.0 방 조회 API", () => {
       });
 
     await expect(
-      fetchRoomQueuePage({ slug: "room", password: "secret" }),
+      fetchRoomQueuePage({
+        slug: "room",
+        password: "secret",
+        signal: abortController.signal,
+      }),
     ).resolves.toMatchObject({ totalPendingCount: 2 });
     await fetchRoomQueuePage({
       slug: "room",
@@ -79,8 +87,9 @@ describe("v26.8.0 방 조회 API", () => {
       1,
       "/api/v1/rooms/room/playlist",
       {
-        params: { size: 100 },
+        params: { size: 30 },
         headers: { "X-Room-Password": "secret" },
+        signal: abortController.signal,
       },
     );
     expect(axiosInstance.get).toHaveBeenNthCalledWith(
@@ -90,9 +99,10 @@ describe("v26.8.0 방 조회 API", () => {
         params: {
           cursor: "entry-1",
           queueRevision: 12,
-          size: 100,
+          size: 30,
         },
         headers: { "X-Room-Password": "secret" },
+        signal: undefined,
       },
     );
   });
@@ -118,7 +128,8 @@ describe("v26.8.0 방 조회 API", () => {
     );
   });
 
-  it("participant cursor 페이지를 모두 합친다", async () => {
+  it("participant 첫 페이지와 명시적으로 요청한 cursor 페이지만 조회한다", async () => {
+    const signal = new AbortController().signal;
     vi.mocked(axiosInstance.get)
       .mockResolvedValueOnce({
         data: {
@@ -151,11 +162,48 @@ describe("v26.8.0 방 조회 API", () => {
         },
       });
 
-    await expect(fetchRoomParticipants({ slug: "room" })).resolves.toHaveLength(
-      2,
+    await expect(
+      fetchRoomParticipantsPage({
+        slug: "room",
+        password: "secret",
+        signal,
+      }),
+    ).resolves.toMatchObject({ hasNext: true, nextCursor: "a" });
+    expect(axiosInstance.get).toHaveBeenCalledTimes(1);
+    expect(axiosInstance.get).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/rooms/room/participants",
+      {
+        params: { size: 100 },
+        headers: { "X-Room-Password": "secret" },
+        signal,
+      },
     );
-    expect(vi.mocked(axiosInstance.get).mock.calls[1]?.[1]).toMatchObject({
-      params: { cursor: "a", size: 100 },
-    });
+
+    await fetchRoomParticipantsPage({ slug: "room", cursor: "a" });
+
+    expect(axiosInstance.get).toHaveBeenCalledTimes(2);
+    expect(axiosInstance.get).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/rooms/room/participants",
+      {
+        params: { cursor: "a", size: 100 },
+        headers: undefined,
+        signal: undefined,
+      },
+    );
+  });
+
+  it("participant nextCursor가 이전 page에서 이미 노출됐으면 pagination을 종료한다", () => {
+    const pages = [
+      { hasNext: true, items: [], nextCursor: "cursor-a" },
+      { hasNext: true, items: [], nextCursor: "cursor-b" },
+      { hasNext: true, items: [], nextCursor: "cursor-a" },
+    ];
+
+    expect(
+      getNextRoomParticipantsPageParam(pages[1], pages.slice(0, 2)),
+    ).toBe("cursor-b");
+    expect(getNextRoomParticipantsPageParam(pages[2], pages)).toBeUndefined();
   });
 });

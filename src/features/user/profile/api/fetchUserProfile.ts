@@ -5,9 +5,11 @@ import type { UserProfile } from "../model/types";
 
 export async function fetchUserProfile(
   userSlug: string,
+  signal?: AbortSignal,
 ): Promise<UserProfile> {
   const { data } = await axiosInstance.get<ApiResponse<UserProfile>>(
     `/api/v1/user-profiles/${encodeURIComponent(userSlug)}`,
+    { signal },
   );
 
   return unwrapApiResponse(data);

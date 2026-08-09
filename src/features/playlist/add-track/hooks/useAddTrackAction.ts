@@ -10,6 +10,8 @@ import { subscribeUserRoomEvents } from "@/src/features/room/api/websocket/subsc
 import type { WsErrorData, WsEvent } from "@/src/features/room/model/types";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import { scheduleQueryInvalidation } from "@/src/shared/api/query/scheduleQueryInvalidation";
+import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomReadInvalidationScope";
 import {
   ADD_TRACK_STORY_MAX_LENGTH,
   useAddTrackForm,
@@ -106,11 +108,13 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
 
   const refreshQueueState = useCallback(
     (roomSlug: string) => {
-      void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomQueuePrefix(roomSlug),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+      scheduleQueryInvalidation({
+        queryClient,
+        queryKeys: [
+          playlistKeys.roomQueuePrefix(roomSlug),
+          playlistKeys.roomPlaybackPrefix(roomSlug),
+        ],
+        scopeKey: getRoomReadInvalidationScope(roomSlug),
       });
     },
     [queryClient],
