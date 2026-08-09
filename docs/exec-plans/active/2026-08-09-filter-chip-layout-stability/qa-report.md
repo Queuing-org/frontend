@@ -16,6 +16,12 @@
 - `git diff --check`: pass
 - fresh read-only QA: pass
 
+## 원격 검증
+
+- GitHub Actions `Lint, test, and build`: pass
+- Vercel: pass
+- CodeRabbit: pass (Draft PR review skipped)
+
 ## 보존
 
 - 기존 사용자 변경 `src/features/follow/ui/FollowModal.module.css`는 수정·커밋 대상에서 제외했다.

@@ -2,7 +2,7 @@
 
 ## 상태
 
-- 단계: local-verified
+- 단계: ready
 - 브랜치: `dev`
 - 전달 대상: Draft PR #36
 
@@ -23,4 +23,4 @@
 - [x] 원인 및 PR 상태 확인
 - [x] CSS 수정
 - [x] 로컬 검증
-- [ ] push 및 원격 CI 확인
+- [x] push 및 원격 CI 확인
