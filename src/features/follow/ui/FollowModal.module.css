@@ -49,20 +49,21 @@
 
 .openAddFriendButton {
   display: inline-flex;
+  width: 119px;
+  height: 36px;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-width: 116px;
-  height: 40px;
+  box-sizing: border-box;
   margin-left: auto;
-  padding: 0 18px;
+  padding: 8px 24px;
   border: 0;
   border-radius: 999px;
-  background: #3f83f8;
+  background: #3b82f6;
   color: #ffffff;
   font-family: inherit;
   font-size: 14px;
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-extrabold);
   line-height: 1;
   cursor: pointer;
   transition:
@@ -81,6 +82,30 @@
 .openAddFriendButton:focus-visible {
   outline: 3px solid rgba(63, 131, 248, 0.32);
   outline-offset: 3px;
+}
+
+.addFriendIcon {
+  position: relative;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+}
+
+.addFriendIcon::before,
+.addFriendIcon::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.addFriendIcon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .searchForm {

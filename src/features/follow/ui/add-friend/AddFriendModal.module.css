@@ -32,15 +32,15 @@
   margin: 0;
   color: #3c3c3c;
   font-size: 24px;
-  font-weight: var(--fw-bold);
+  font-weight: var(--fw-semibold);
   line-height: 1.35;
 }
 
 .description {
   margin: 0;
-  color: #b0b0b5;
-  font-size: 15px;
-  font-weight: var(--fw-medium);
+  color: #aaaaaa;
+  font-size: 16px;
+  font-weight: var(--fw-light);
   line-height: 1.5;
 }
 
@@ -58,12 +58,12 @@
 
 .inputWrap {
   display: flex;
-  height: 58px;
+  min-height: 48px;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 16px 0 20px;
+  padding: 12px 16px;
   border: 1.5px solid #d9d9d9;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #f7f7f9;
   transition:
     border-color 160ms ease,
@@ -76,12 +76,12 @@
 }
 
 .inputWrap[data-tone="error"] {
-  border-color: #ff4d4f;
+  border-color: #ff0000;
   box-shadow: none;
 }
 
 .inputWrap[data-tone="success"] {
-  border-color: #38c96b;
+  border-color: #34c759;
   box-shadow: none;
 }
 
@@ -90,10 +90,11 @@
   flex: 1 1 auto;
   border: 0;
   background: transparent;
-  color: #3c3c3c;
+  color: #242424;
   font-family: inherit;
   font-size: 16px;
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-regular);
+  line-height: 1.5;
   outline: none;
 }
 
@@ -124,16 +125,16 @@
   min-height: 22px;
   margin: 6px 4px 0;
   font-size: 14px;
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-regular);
   line-height: 1.5;
 }
 
 .feedback[data-tone="error"] {
-  color: #ff3b3f;
+  color: #ff0000;
 }
 
 .feedback[data-tone="success"] {
-  color: #38c96b;
+  color: #34c759;
 }
 
 .results {
@@ -224,7 +225,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 54px;
+  gap: 10px;
   margin-top: auto;
   padding-top: 44px;
 }
@@ -232,15 +233,13 @@
 .cancelButton,
 .followButton {
   display: inline-flex;
-  min-width: 66px;
-  height: 40px;
   align-items: center;
   justify-content: center;
-  padding: 0 8px;
+  padding: 8px 24px;
   border: 0;
   background: transparent;
   font-family: inherit;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: var(--fw-semibold);
   line-height: 1;
   cursor: pointer;
@@ -251,7 +250,7 @@
 }
 
 .followButton {
-  color: #3f83f8;
+  color: #3b82f6;
 }
 
 .followButton:disabled {
@@ -271,7 +270,4 @@
     padding: 40px 24px 32px;
   }
 
-  .actions {
-    gap: 30px;
-  }
 }

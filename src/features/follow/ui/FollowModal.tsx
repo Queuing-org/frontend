@@ -46,7 +46,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
             aria-label="친구 추가"
             onClick={modal.openAddFriend}
           >
-            <span aria-hidden="true">＋</span>
+            <span className={styles.addFriendIcon} aria-hidden="true" />
             <span>친구 추가</span>
           </button>
         </header>
