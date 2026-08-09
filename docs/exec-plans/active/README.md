@@ -1,7 +1,5 @@
 # Active Execution Plans
 
-- [2026-08-09-profile-tags-server-migration](./2026-08-09-profile-tags-server-migration/plan.md): implementing — 프로필 이용 시간·방 태그 필터·queuing.cc 주소 전환
-
 - [2026-08-09-friend-add-flow](./2026-08-09-friend-add-flow/plan.md): ready — FRIEND 패널 친구 추가 검색 모달 흐름 개편
 
 - [2026-08-09-follow-relationship-page-size](./2026-08-09-follow-relationship-page-size/plan.md): ci-pending — 팔로워 관계 조회 API 페이지 크기 계약 수정

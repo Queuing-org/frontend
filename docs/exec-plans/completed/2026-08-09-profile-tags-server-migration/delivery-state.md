@@ -2,7 +2,7 @@
 
 - Branch: `dev`
 - PR: #36 (Draft, existing head)
-- Current phase: local-verified
+- Current phase: complete
 - Existing user-owned unstaged change excluded: `src/features/follow/ui/FollowModal.module.css`
 
 ## Commits
@@ -17,3 +17,10 @@
 - `npm run lint`: pass
 - `npm run build`: pass
 - fresh read-only QA: pass
+
+## Remote gates
+
+- Draft PR #36 updated and pushed
+- GitHub Actions `Lint, test, and build`: pass
+- Vercel deployment: pass
+- CodeRabbit: pass (Draft PR review skipped)

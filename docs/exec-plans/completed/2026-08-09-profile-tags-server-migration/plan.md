@@ -2,7 +2,7 @@
 
 ## 상태
 
-- 단계: local-verified
+- 단계: complete
 - 브랜치: `dev`
 - 전달 대상: 기존 Draft PR #36
 
@@ -27,7 +27,7 @@
 - [x] 태그 필터 API 연결 및 선택 제한 구현
 - [x] 서버 주소 및 로컬 개발 인증서 전환
 - [x] 전체 로컬 검증
-- [ ] PR push 및 원격 CI 확인
+- [x] PR push 및 원격 CI 확인
 
 ## 결정
 

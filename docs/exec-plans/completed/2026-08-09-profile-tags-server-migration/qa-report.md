@@ -27,3 +27,9 @@
 
 - 인앱 브라우저 인스턴스가 없어 브라우저 자동화는 수행하지 못했다.
 - 대신 별도 작업 복제본에서 새 HTTPS dev 서버를 기동해 컴파일과 HTTP 응답을 검증했다.
+
+## 원격 검증
+
+- GitHub Actions `Lint, test, and build`: passed
+- Vercel: passed
+- CodeRabbit: passed (Draft PR review skipped)
