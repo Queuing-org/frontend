@@ -55,6 +55,7 @@ Do not use it for purely visual CSS changes with no data flow.
 - Public identity is slug-based: chat uses nullable `senderSlug`, requesters use nullable `addedBy.slug`, owners use `owner.slug`, and participants use `userSlug` plus `participantId`. Do not fall back to numeric IDs or nicknames.
 - Chat send confirmation is driven by `CHAT_MESSAGE`, but if that real-time event is missed, backfill the latest chat history before requiring a manual refresh.
 - Room list/meta `thumbnailUrl(s)` represent the current track image. Prefer the server image and use the local empty-room image only when the server returns no thumbnail.
+- Every cancellable TanStack GET query must pass `QueryFunctionContext.signal` through the API client and every cursor-page request. Calling `cancelQueries` without transport-level signal propagation is not cancellation.
 
 ## Outputs
 

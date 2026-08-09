@@ -51,6 +51,7 @@ Do not use it for API-only changes unless the UI behavior also changes.
 - A `user.session-replaced` event is terminal for that room connection: clear room-local subscriptions/state, show the replacement message, and do not publish join again. Keep unrelated app-wide realtime clients alive.
 - CSS chip and modal sizing should be controlled in the relevant module, not by inline patching across call sites.
 - Do not introduce marketing-style landing sections for app surfaces; build the usable workflow.
+- Realtime or infinite lists need an explicit request, state, and mounted-DOM upper bound. Fetch per-row secondary data only for visible rows when the backend cannot provide a batch contract, and keep hover/focus-only animation work dormant otherwise.
 
 ## Outputs
 

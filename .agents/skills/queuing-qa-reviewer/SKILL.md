@@ -66,4 +66,5 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Account-specific failures require same-account and same-backend-state comparisons before assigning a frontend root cause.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.
+- Performance fixes include burst/large-fixture tests that assert transport calls, retained state, and mounted DOM remain within an explicit upper bound; a subjective "feels faster" check is insufficient.
 - Build/lint results are reported honestly, including pre-existing warnings.

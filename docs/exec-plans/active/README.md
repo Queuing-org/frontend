@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-09-runtime-audit-remediation](./2026-08-09-runtime-audit-remediation/plan.md): implementing — 프론트 런타임 감사 confirmed finding 후속 최적화
+
 - [2026-08-09-frontend-runtime-audit](./2026-08-09-frontend-runtime-audit/plan.md): ready — 프론트 전 영역 미사용 코드·런타임 성능·구조 병렬 감사 완료, 전달 대기
 
 - [2026-08-09-transfer-owner-error-feedback](./2026-08-09-transfer-owner-error-feedback/plan.md): ready — 방장 위임 성공 문구 제거와 실패 안내 자동 해제
