@@ -8,9 +8,13 @@
   gap: 12px;
   box-sizing: border-box;
   padding: 32px 24px;
-  color: #8d8d8d;
-  font-size: 14px;
-  font-weight: var(--fw-medium);
+  color: #aaaaaa;
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
   line-height: 1.4;
   text-align: center;
+}
+
+.raised {
+  transform: translateY(-12px);
 }

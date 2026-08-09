@@ -1,44 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers";
-import type { SearchUser } from "@/src/features/user/search/model/types";
+import { useFollowTabCounts } from "./useFollowTabCounts";
 
 export type FollowTab = "following" | "followers" | "blocked";
 
 type UseFollowModalStateParams = {
   onClose: () => void;
+  open: boolean;
 };
 
-export function useFollowModalState({ onClose }: UseFollowModalStateParams) {
-  const [query, setQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
+export function useFollowModalState({ onClose, open }: UseFollowModalStateParams) {
   const [activeTab, setActiveTab] = useState<FollowTab>("following");
-  const { data, isLoading, isError } = useSearchUsers({ query });
-
-  const updateQuery = (value: string) => {
-    setQuery(value);
-    setSelectedUser(null);
-  };
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const tabCounts = useFollowTabCounts(open);
 
   const closeModal = () => {
-    setQuery("");
-    setSelectedUser(null);
     setActiveTab("following");
+    setIsAddFriendOpen(false);
     onClose();
   };
 
   return {
     activeTab,
+    closeAddFriend: () => setIsAddFriendOpen(false),
     closeModal,
-    isSearchError: isError,
-    isSearchLoading: isLoading,
-    query,
-    selectedUser,
+    isAddFriendOpen,
+    openAddFriend: () => setIsAddFriendOpen(true),
     setActiveTab,
-    setSelectedUser,
-    tabCounts: {} satisfies Partial<Record<FollowTab, string>>,
-    updateQuery,
-    users: data?.items ?? [],
+    tabCounts,
   };
 }

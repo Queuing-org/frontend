@@ -1,0 +1,26 @@
+# Delivery State
+
+- Branch: `dev`
+- Status: verified
+- Selected skills:
+  - `queuing-feature-delivery`
+  - `queuing-ui-flow`
+  - `queuing-api-boundary`
+  - `frontend-architecture-guardrails`
+  - `queuing-qa-reviewer`
+- User-owned worktree change preserved:
+  - `src/features/follow/ui/FollowModal.module.css`의 `.searchInput` 폭/여백 수정
+- Delivery target: 현재 `dev` Draft PR 확인 후 갱신
+- Verification:
+  - targeted tests: 11 passed
+  - full test: 178 passed
+  - lint: passed
+  - production build: passed
+  - fresh read-only QA: pass
+- Browser QA: 실행 환경에 연결된 브라우저 인스턴스가 없어 미실행
+- Follow-up verification:
+  - targeted tests: 10 passed
+  - full test: 180 passed
+  - lint: passed
+  - production build: passed
+  - fresh read-only QA: pass

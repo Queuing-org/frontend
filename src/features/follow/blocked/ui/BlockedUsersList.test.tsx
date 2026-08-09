@@ -124,4 +124,20 @@ describe("BlockedUsersList", () => {
     expect(pendingButtons).toHaveLength(2);
     pendingButtons.forEach((button) => expect(button).toBeDisabled());
   });
+
+  it("빈 목록 안내 문구를 표시한다", () => {
+    vi.mocked(useBlockedUsers).mockReturnValue({
+      data: {
+        pageParams: [null],
+        pages: [{ hasNext: false, items: [], nextCursor: null }],
+      },
+      fetchNextPage,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+    } as unknown as ReturnType<typeof useBlockedUsers>);
+
+    render(<BlockedUsersList />);
+
+    expect(screen.getByText("차단된 사용자가 없습니다.")).toBeInTheDocument();
+  });
 });

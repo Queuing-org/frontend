@@ -5,8 +5,8 @@ import type { FollowTab } from "@/src/features/follow/hooks/useFollowModalState"
 import styles from "../FollowModal.module.css";
 
 const followTabs: Array<{ key: FollowTab; label: string; iconSrc: string }> = [
-  { key: "following", label: "팔로잉", iconSrc: "/icons/follwer.svg" },
-  { key: "followers", label: "팔로워", iconSrc: "/icons/follwer.svg" },
+  { key: "following", label: "팔로잉", iconSrc: "/icons/following-tab.svg" },
+  { key: "followers", label: "팔로워", iconSrc: "/icons/follower-tab.svg" },
   { key: "blocked", label: "차단", iconSrc: "/icons/block.svg" },
 ];
 
@@ -29,6 +29,9 @@ export default function FollowTabs({
           type="button"
           className={styles.tabButton}
           data-active={activeTab === tab.key}
+          aria-label={
+            counts[tab.key] ? `${tab.label} ${counts[tab.key]}명` : tab.label
+          }
           onClick={() => onChange(tab.key)}
         >
           <span
@@ -42,7 +45,7 @@ export default function FollowTabs({
           />
           <span className={styles.tabLabel}>{tab.label}</span>
           {counts[tab.key] ? (
-            <span className={styles.tabCount}>({counts[tab.key]})</span>
+            <span className={styles.tabCount}>{counts[tab.key]}</span>
           ) : null}
         </button>
       ))}

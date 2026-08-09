@@ -7,7 +7,7 @@
 
 ## Follow Relationship
 
-- 팔로워 카드의 현재 관계는 `GET /api/v1/follows/followings`를 `size=200`으로 조회한다.
+- 팔로워 카드의 현재 관계는 `GET /api/v1/follows/followings`를 API 최대 허용값인 `size=100`으로 조회한다.
 - 첫 요청에는 `lastId`를 보내지 않고, `hasNext: true`이면 같은 응답의 `nextCursor`를 다음 요청의 `lastId`로 보낸다.
 - 모든 page를 합친 뒤 target `slug`를 비교하며, cursor가 없거나 반복되는 잘못된 응답은 `NONE`으로 오판하지 않고 오류로 처리한다.
 - 전체 관계 cache는 presence page updater가 응답 shape를 오인하지 않도록 `followingsRoot` 밖의 전용 query key를 사용한다.

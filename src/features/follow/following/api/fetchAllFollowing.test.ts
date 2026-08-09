@@ -39,12 +39,12 @@ describe("fetchAllFollowing", () => {
     ]);
     expect(fetchFollowing).toHaveBeenNthCalledWith(
       1,
-      { size: 200 },
+      { size: 100 },
       signal,
     );
     expect(fetchFollowing).toHaveBeenNthCalledWith(
       2,
-      { lastId: 90, size: 200 },
+      { lastId: 90, size: 100 },
       signal,
     );
   });

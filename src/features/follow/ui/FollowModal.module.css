@@ -47,6 +47,67 @@
   line-height: 1.4;
 }
 
+.openAddFriendButton {
+  display: inline-flex;
+  width: 119px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  margin-left: auto;
+  padding: 8px 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #3b82f6;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-extrabold);
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.openAddFriendButton:hover {
+  background: #2f74ea;
+}
+
+.openAddFriendButton:active {
+  transform: translateY(1px);
+}
+
+.openAddFriendButton:focus-visible {
+  outline: 3px solid rgba(63, 131, 248, 0.32);
+  outline-offset: 3px;
+}
+
+.addFriendIcon {
+  position: relative;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+}
+
+.addFriendIcon::before,
+.addFriendIcon::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: currentColor;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.addFriendIcon::after {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
 .searchForm {
   position: relative;
   flex: 1 1 auto;
@@ -209,8 +270,8 @@
 
 .tabIcon {
   flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   background-color: currentColor;
   mask: var(--tab-icon-src) center / contain no-repeat;
   -webkit-mask: var(--tab-icon-src) center / contain no-repeat;
