@@ -2,7 +2,8 @@
 
 ## Scope
 
-- 방장이 참가자 카드 전체를 눌러 관리 액션을 펼치거나 접을 수 있게 한다.
+- 방장이 관리 가능한 참가자 카드에 hover/focus하면 채팅과 같은 `…` trigger를 노출한다.
+- `…` trigger를 누르면 채팅과 같은 타이트한 공통 dropdown으로 관리 액션을 제공한다.
 - 회원 참가자에게 팔로우/언팔로우, 신고, 차단, 내보내기, 방장 위임을 제공한다.
 - 게스트 참가자에게는 식별자가 지원되는 내보내기만 제공하고 회원 전용 액션은 숨긴다.
 - 바깥 클릭, 같은 참가자 카드 재클릭, Escape로 열린 메뉴를 닫는다.
@@ -26,10 +27,10 @@
 
 ## Acceptance Criteria
 
-- 방장이 관리 가능한 참가자 카드 위 어디에 마우스를 올려도 pointer cursor가 유지된다.
+- 관리 가능한 참가자 카드 hover/focus에서 `…` trigger가 보이고 카드 본문은 거짓 클릭 영역이 아니다.
 - 기존 참가자 행의 단독 `내보내기` 버튼은 제거된다.
-- 방장이 본인이 아닌 참가자 카드를 누르면 관리 액션 목록이 열린다.
-- 같은 카드를 다시 누르거나 바깥을 누르거나 Escape를 누르면 목록이 닫힌다.
+- 방장이 본인이 아닌 참가자의 `…`를 누르면 채팅과 동일한 크기의 관리 dropdown이 열린다.
+- 같은 `…`를 다시 누르거나 바깥을 누르거나 Escape를 누르면 목록이 닫힌다.
 - 회원에게는 현재 관계에 따른 팔로우/언팔로우, 신고, 차단, 내보내기, 방장 위임이 표시된다.
 - 게스트는 회원 slug와 채팅 발신자 식별이 필요한 팔로우, 신고, 차단, 방장 위임이 표시되지 않고 내보내기만 표시된다.
 - 방장 위임은 `PATCH /api/v1/rooms/{slug}/owner`에 `{ userSlug }`를 전송한다.
@@ -45,7 +46,10 @@
 - [x] targeted/full QA
 - [x] user-owned CSS를 제외한 explicit staging과 code commit
 - [x] `dev` push와 Draft PR #36 갱신
-- [ ] GitHub Actions 최종 결과 확인
+- [x] 참가자 카드 전체 trigger를 hover/focus `…` trigger로 교체
+- [x] 채팅 공통 dropdown 재사용과 targeted/full QA
+- [x] commit
+- [ ] push, Draft PR #36 갱신
 
 ## Residual Risk
 
