@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): publish-pending — 참가자 카드 관리 메뉴와 방장 위임
+
 - [2026-08-09-filter-chip-layout-stability](./2026-08-09-filter-chip-layout-stability/plan.md): implementing — 필터 칩 선택 시 크기·줄바꿈 변동 제거
 
 - [2026-08-09-friend-add-flow](./2026-08-09-friend-add-flow/plan.md): ready — FRIEND 패널 친구 추가 검색 모달 흐름 개편
