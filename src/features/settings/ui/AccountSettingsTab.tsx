@@ -9,7 +9,7 @@ import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
 import styles from "./AccountSettingsTab.module.css";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
-const PRIVACY_POLICY_URL = "https://queuing.patulus.com/privacy";
+const PRIVACY_POLICY_URL = "https://queuing.cc/privacy";
 
 type AccountSettingsTabProps = {
   onLoggedOut: () => void;

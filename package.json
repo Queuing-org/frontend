@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -H local.queuing.patulus.com -p 3000 --experimental-https --experimental-https-key ./certificates/local-key.pem --experimental-https-cert ./certificates/local.pem",
+    "setup:https": "mkdir -p certificates && TRUST_STORES=system mkcert -cert-file ./certificates/local-queuing-cc.pem -key-file ./certificates/local-queuing-cc-key.pem local.queuing.cc localhost 127.0.0.1 ::1",
+    "dev": "next dev -H local.queuing.cc -p 3000 --experimental-https --experimental-https-key ./certificates/local-queuing-cc-key.pem --experimental-https-cert ./certificates/local-queuing-cc.pem",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

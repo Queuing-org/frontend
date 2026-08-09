@@ -10,12 +10,20 @@ Next.js(App Router) · TypeScript · CSS Modules · TanStack Query(React Query) 
 
 ## Run
 
+로컬 HTTPS 인증서는 `mkcert`를 설치하고 신뢰 루트 인증서를 등록한 뒤 한 번 생성합니다.
+
+```bash
+brew install mkcert
+mkcert -install
+```
+
 ```bash
 npm install
+npm run setup:https
 npm run dev
 ```
 
-https://local.queuing.patulus.com:3000
+https://local.queuing.cc:3000
 
 ```bash
 npm run lint
@@ -27,8 +35,9 @@ npm run build
 `.env.local`
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://api.queuing.patulus.com
-NEXT_PUBLIC_WS_URL=wss://api.queuing.patulus.com/ws
+NEXT_PUBLIC_API_BASE_URL=https://api.queuing.cc
+NEXT_PUBLIC_WS_URL=wss://api.queuing.cc/ws
+NEXT_PUBLIC_SITE_URL=https://local.queuing.cc:3000
 ```
 
 ## Features
