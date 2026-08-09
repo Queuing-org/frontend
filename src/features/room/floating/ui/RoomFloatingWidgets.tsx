@@ -86,6 +86,7 @@ export default function RoomFloatingWidgets({
           }}
         >
           <Draggable
+            key={widgets.profile.layoutKey}
             bounds={widgets.profile.bounds}
             defaultPosition={widgets.profile.offset}
             handle="[data-drag-handle='true']"
@@ -125,6 +126,7 @@ export default function RoomFloatingWidgets({
           }}
         >
           <Draggable
+            key={widgets.participants.layoutKey}
             bounds={widgets.participants.bounds}
             defaultPosition={widgets.participants.offset}
             handle="[data-drag-handle='true']"
@@ -159,6 +161,7 @@ export default function RoomFloatingWidgets({
           }}
         >
           <Draggable
+            key={widgets.queue.layoutKey}
             bounds={widgets.queue.bounds}
             defaultPosition={widgets.queue.offset}
             handle="[data-drag-handle='true']"
@@ -194,6 +197,7 @@ export default function RoomFloatingWidgets({
           }}
         >
           <Draggable
+            key={widgets.chat.layoutKey}
             bounds={widgets.chat.bounds}
             defaultPosition={widgets.chat.offset}
             handle="[data-drag-handle='true']"
