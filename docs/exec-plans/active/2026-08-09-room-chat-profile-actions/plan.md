@@ -48,7 +48,7 @@
 - [x] 채팅 합성 깜빡임 수정
 - [x] targeted/full QA
 - [x] commit
-- [ ] push, Draft PR #36 갱신
+- [x] push, Draft PR #36 갱신
 
 ## Constraints
 
