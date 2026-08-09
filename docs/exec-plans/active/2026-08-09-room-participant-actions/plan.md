@@ -50,6 +50,7 @@
 - [x] 채팅 공통 dropdown 재사용과 targeted/full QA
 - [x] commit
 - [x] push, Draft PR #36 갱신
+- [x] 팔로우/언팔로우 hover divider 색을 다른 관리 액션과 통일
 
 ## Residual Risk
 
