@@ -44,7 +44,8 @@
 - [x] 참가자 카드 액션 메뉴와 modal 연결
 - [x] targeted/full QA
 - [x] user-owned CSS를 제외한 explicit staging과 code commit
-- [ ] push, Draft PR 갱신, CI 확인
+- [x] `dev` push와 Draft PR #36 갱신
+- [ ] GitHub Actions 최종 결과 확인
 
 ## Residual Risk
 
