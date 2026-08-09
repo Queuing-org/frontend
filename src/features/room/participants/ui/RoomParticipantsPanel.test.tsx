@@ -32,15 +32,18 @@ vi.mock("./RoomParticipantList", () => ({
     onKickParticipant,
     onReportParticipant,
     onTransferOwner,
-    showParticipantActions,
+    canModerateParticipants,
   }: {
     onBlockParticipant: (participant: PlaylistParticipant) => void;
     onKickParticipant: (target: { userSlug: string }) => void;
     onReportParticipant: (participant: PlaylistParticipant) => void;
     onTransferOwner: (participant: PlaylistParticipant) => void;
-    showParticipantActions: boolean;
+    canModerateParticipants: boolean;
   }) => (
-    <div data-testid="participant-list" data-can-manage={showParticipantActions}>
+    <div
+      data-testid="participant-list"
+      data-can-manage={canModerateParticipants}
+    >
       <button type="button" onClick={() => onReportParticipant(member)}>
         회원 신고
       </button>

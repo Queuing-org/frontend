@@ -56,7 +56,7 @@ export default function RoomParticipantsPanel({
     show: showTransferOwnerError,
   } = useTransientManagementError();
   const owner = roomMeta?.owner ?? null;
-  const canManageParticipants = isRoomOwner(owner, currentUser);
+  const canModerateParticipants = isRoomOwner(owner, currentUser);
 
   useEffect(() => {
     clearTransferOwnerError();
@@ -140,7 +140,7 @@ export default function RoomParticipantsPanel({
           onTransferOwner={handleTransferOwner}
           owner={owner}
           participants={participants}
-          showParticipantActions={canManageParticipants}
+          canModerateParticipants={canModerateParticipants}
           transferringUserSlug={transferOwner.variables?.userSlug ?? null}
         />
       ) : (
