@@ -26,4 +26,5 @@
 
 ## 잔여 확인
 
-- Draft PR CI pending
+- Draft PR #36 CI pass
+- 실제 노트북 viewport 시각 확인은 PR preview에서 진행

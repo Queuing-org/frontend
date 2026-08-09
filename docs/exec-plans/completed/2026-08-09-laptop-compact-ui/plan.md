@@ -47,4 +47,4 @@
 
 ## 상태
 
-- implemented; final QA 및 delivery 진행 중
+- complete — Draft PR #36, local/CI/fresh QA pass
