@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
+import { formatListeningDuration } from "@/src/features/user/profile/model/formatListeningDuration";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
@@ -136,6 +137,9 @@ export default function RoomProfilePanel({
   const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
+  const listeningDurationSeconds =
+    publicProfile?.listeningDurationSeconds ??
+    (isSelf ? currentUser?.listeningDurationSeconds : undefined);
   const isMusicPowerVoteDisabled =
     isCurrentUserLoading ||
     isSelf ||
@@ -401,7 +405,9 @@ export default function RoomProfilePanel({
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>이용 시간</div>
-              <div className={styles.cardValue}>개발중입니다.</div>
+              <div className={styles.cardValue}>
+                {formatListeningDuration(listeningDurationSeconds)}
+              </div>
             </div>
           </div>
           <div className={styles.musicPowerRow}>

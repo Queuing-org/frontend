@@ -124,6 +124,7 @@ export default function ProfileSettingsTab() {
         />
       </div>
       <ProfileStats
+        listeningDurationSeconds={form.me?.listeningDurationSeconds}
         musicPower={form.me?.musicPower}
         queuingCount={form.me?.queuingCount}
       />

@@ -9,6 +9,7 @@ export interface User {
   representativeBadge?: BadgeSummary | null;
   musicPower?: number;
   queuingCount?: number;
+  listeningDurationSeconds?: number;
 }
 
 export type OnboardingPayload = {

@@ -161,6 +161,7 @@ describe("RoomProfilePanel", () => {
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         nickname: "대상",
+        listeningDurationSeconds: 14_700,
         profileImageUrl: null,
         queuingCount: 1234,
         slug: "target-user",
@@ -200,6 +201,7 @@ describe("RoomProfilePanel", () => {
     renderPanel();
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
+    expect(screen.getByText("4시간 5분")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
     expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
