@@ -563,6 +563,8 @@ function RoomPlaybackJoinedContent({
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
                       onUserBlocked={handleUserBlocked}
+                      participants={participants}
+                      roomMeta={roomMeta}
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
@@ -702,6 +704,8 @@ function RoomPlaybackJoinedContent({
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
               onUserBlocked={handleUserBlocked}
+              participants={participants}
+              roomMeta={roomMeta}
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}

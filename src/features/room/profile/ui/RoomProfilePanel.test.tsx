@@ -6,6 +6,7 @@ import { useFollowingRelationship } from "@/src/features/follow/following/hooks/
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
+import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import RoomProfilePanel from "./RoomProfilePanel";
 
@@ -44,17 +45,22 @@ vi.mock("../hooks/useCurrentTrackMusicPowerVote", () => ({
 vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
   useKickRoomParticipant: vi.fn(),
 }));
+vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
+  useTransferRoomOwner: vi.fn(),
+}));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
   default: ({
     followingLabel,
     initialRelationship,
+    role,
   }: {
     followingLabel?: string;
     initialRelationship?: string;
+    role?: "menuitem";
   }) => (
-    <button type="button">
+    <button type="button" role={role}>
       {initialRelationship === "FOLLOWING"
-        ? followingLabel ?? "언팔로우"
+        ? (followingLabel ?? "언팔로우")
         : "팔로우"}
     </button>
   ),
@@ -116,6 +122,8 @@ const roomMeta = {
 const mutate = vi.fn();
 const kickMutate = vi.fn();
 const kickReset = vi.fn();
+const transferMutate = vi.fn();
+const transferReset = vi.fn();
 const onUserBlocked = vi.fn();
 
 function renderPanel(
@@ -175,6 +183,7 @@ describe("RoomProfilePanel", () => {
     } as ReturnType<typeof usePublicUserBadges>);
     vi.mocked(useFollowingRelationship).mockReturnValue({
       data: false,
+      isLoading: false,
     } as ReturnType<typeof useFollowingRelationship>);
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
@@ -195,6 +204,12 @@ describe("RoomProfilePanel", () => {
       mutate: kickMutate,
       reset: kickReset,
     } as unknown as ReturnType<typeof useKickRoomParticipant>);
+    vi.mocked(useTransferRoomOwner).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate: transferMutate,
+      reset: transferReset,
+    } as unknown as ReturnType<typeof useTransferRoomOwner>);
   });
 
   it("통계와 한 줄 소개, 양방향 음악력 버튼을 표시한다", () => {
@@ -283,7 +298,7 @@ describe("RoomProfilePanel", () => {
     );
   });
 
-  it("성공 클릭에는 안내를 표시하지 않고 서버 오류만 2초 동안 표시한다", () => {
+  it("서버 오류를 음악력 제목 오른쪽에 2초 동안 표시한다", () => {
     vi.useFakeTimers();
     renderPanel();
 
@@ -301,9 +316,11 @@ describe("RoomProfilePanel", () => {
       );
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
+    const notice = screen.getByRole("alert");
+    expect(notice).toHaveTextContent(
       "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
     );
+    expect(screen.getByText("음악력").parentElement).toContainElement(notice);
 
     act(() => {
       vi.advanceTimersByTime(1_999);
@@ -391,9 +408,6 @@ describe("RoomProfilePanel", () => {
       screen.queryByRole("button", { name: "음악력 내리기" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("group", { name: "프로필 액션" }),
-    ).not.toBeInTheDocument();
-    expect(
       screen.queryByRole("button", { name: "관리" }),
     ).not.toBeInTheDocument();
   });
@@ -466,9 +480,10 @@ describe("RoomProfilePanel", () => {
     ).toBeDisabled();
   });
 
-  it("상단 아래에 팔로잉과 관리 액션을 표시하고 온라인 점은 표시하지 않는다", () => {
+  it("프로필 상단 아래에 팔로잉과 관리 액션을 상시 표시한다", () => {
     vi.mocked(useFollowingRelationship).mockReturnValue({
       data: true,
+      isLoading: false,
     } as ReturnType<typeof useFollowingRelationship>);
     renderPanel();
 
@@ -510,10 +525,16 @@ describe("RoomProfilePanel", () => {
     expect(
       screen.getByRole("menu", { name: "프로필 관리" }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "팔로우" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "차단" })).toBeInTheDocument();
     expect(
       screen.queryByRole("menuitem", { name: "내보내기" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("menuitem", { name: "방장 위임" }),
     ).not.toBeInTheDocument();
   });
 
@@ -649,6 +670,22 @@ describe("RoomProfilePanel", () => {
         slug: "room",
         userSlug: "target-user",
       },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it("현재 사용자가 방장이면 대상에게 방장 위임을 연결한다", async () => {
+    const user = userEvent.setup();
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+    });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+
+    expect(transferReset).toHaveBeenCalledOnce();
+    expect(transferMutate).toHaveBeenCalledWith(
+      { slug: "room", userSlug: "target-user" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });

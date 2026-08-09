@@ -42,8 +42,9 @@ describe("getChatMessageManagementActions", () => {
     expect(getChatMessageManagementActions(message({}), null)).toEqual([]);
   });
 
-  it("회원 메시지는 신고와 차단을 모두 제공한다", () => {
+  it("회원 메시지는 팔로우, 신고와 차단을 제공한다", () => {
     expect(getChatMessageManagementActions(message({}), currentUser)).toEqual([
+      "follow",
       "report",
       "block",
     ]);
@@ -58,13 +59,32 @@ describe("getChatMessageManagementActions", () => {
     ).toEqual(["report"]);
   });
 
-  it("구형 메시지는 senderSlug가 있을 때 차단만 제공한다", () => {
+  it("구형 회원 메시지는 팔로우와 차단을 제공한다", () => {
     expect(
       getChatMessageManagementActions(
         message({ messageKey: null }),
         currentUser,
       ),
-    ).toEqual(["block"]);
+    ).toEqual(["follow", "block"]);
+  });
+
+  it("현재 방장이 참여 중인 회원을 관리하면 내보내기와 방장 위임을 추가한다", () => {
+    expect(
+      getChatMessageManagementActions(message({}), currentUser, {
+        canKick: true,
+        canTransfer: true,
+      }),
+    ).toEqual(["follow", "report", "block", "kick", "transfer"]);
+  });
+
+  it("게스트 메시지에는 방장 옵션이 와도 회원 전용 액션을 추가하지 않는다", () => {
+    expect(
+      getChatMessageManagementActions(
+        message({ senderSlug: null }),
+        currentUser,
+        { canKick: true, canTransfer: true },
+      ),
+    ).toEqual(["report"]);
   });
 
   it("필요한 식별자가 없으면 관리 액션을 제공하지 않는다", () => {

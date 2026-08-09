@@ -1,0 +1,172 @@
+"use client";
+
+import { useEffect, useRef, type RefObject } from "react";
+import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
+import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import styles from "./RoomMemberManagementMenu.module.css";
+
+type Props = {
+  actions: readonly RoomMemberManagementAction[];
+  isKickPending: boolean;
+  isTransferPending: boolean;
+  label: string;
+  menuId: string;
+  onBlock: () => void;
+  onClose: () => void;
+  onKick: () => void;
+  onReport: () => void;
+  onTransfer: () => void;
+  placement?: "down" | "up";
+  targetUserSlug: string | null;
+  triggerRef: RefObject<HTMLButtonElement | null>;
+};
+
+export type RoomMemberManagementAction =
+  | "follow"
+  | "report"
+  | "block"
+  | "kick"
+  | "transfer";
+
+export default function RoomMemberManagementMenu({
+  actions,
+  isKickPending,
+  isTransferPending,
+  label,
+  menuId,
+  onBlock,
+  onClose,
+  onKick,
+  onReport,
+  onTransfer,
+  placement = "down",
+  targetUserSlug,
+  triggerRef,
+}: Props) {
+  const menuRef = useRef<HTMLDivElement>(null);
+  const canFollow = actions.includes("follow") && Boolean(targetUserSlug);
+  const { data: isFollowing, isLoading: isRelationshipLoading } =
+    useFollowingRelationship(canFollow ? targetUserSlug : null);
+
+  useEffect(() => {
+    menuRef.current
+      ?.querySelector<HTMLButtonElement>("[role='menuitem']:not(:disabled)")
+      ?.focus();
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+      if (
+        menuRef.current?.contains(target) ||
+        triggerRef.current?.contains(target)
+      ) {
+        return;
+      }
+      onClose();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+      event.preventDefault();
+      onClose();
+      triggerRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, triggerRef]);
+
+  const runAndClose = (action: () => void) => {
+    action();
+    onClose();
+  };
+
+  return (
+    <div
+      ref={menuRef}
+      id={menuId}
+      className={styles.menu}
+      role="menu"
+      aria-label={label}
+      data-placement={placement}
+    >
+      {canFollow ? (
+        <div className={styles.followAction}>
+          <FollowToggleButton
+            className={styles.menuItem}
+            disabled={isRelationshipLoading}
+            disabledLabel={
+              isRelationshipLoading ? (
+                <LoadingSpinner ariaLabel="팔로우 관계 확인 중" size={16} />
+              ) : (
+                "팔로우"
+              )
+            }
+            initialRelationship={isFollowing ? "FOLLOWING" : "NONE"}
+            onSuccess={onClose}
+            role="menuitem"
+            targetSlug={targetUserSlug}
+          />
+        </div>
+      ) : null}
+      {actions.includes("report") ? (
+        <button
+          type="button"
+          className={`${styles.menuItem} ${styles.reportItem}`}
+          role="menuitem"
+          onClick={() => runAndClose(onReport)}
+        >
+          신고
+        </button>
+      ) : null}
+      {actions.includes("block") ? (
+        <button
+          type="button"
+          className={styles.menuItem}
+          role="menuitem"
+          onClick={() => runAndClose(onBlock)}
+        >
+          차단
+        </button>
+      ) : null}
+      {actions.includes("kick") ? (
+        <button
+          type="button"
+          className={styles.menuItem}
+          role="menuitem"
+          disabled={isKickPending}
+          onClick={() => runAndClose(onKick)}
+        >
+          {isKickPending ? (
+            <LoadingSpinner ariaLabel="참가자 내보내는 중" size={16} />
+          ) : (
+            "내보내기"
+          )}
+        </button>
+      ) : null}
+      {actions.includes("transfer") ? (
+        <button
+          type="button"
+          className={styles.menuItem}
+          role="menuitem"
+          disabled={isTransferPending}
+          onClick={() => runAndClose(onTransfer)}
+        >
+          {isTransferPending ? (
+            <LoadingSpinner ariaLabel="방장 위임 중" size={16} />
+          ) : (
+            "방장 위임"
+          )}
+        </button>
+      ) : null}
+    </div>
+  );
+}

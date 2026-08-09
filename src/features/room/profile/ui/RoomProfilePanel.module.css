@@ -138,8 +138,8 @@
 .followButton {
   width: 100%;
   min-width: 0;
-  padding: 4 28px;
   height: 28px;
+  padding: 4px 28px;
   border: 0.5px solid #e9ebee;
   border-radius: 4px;
   background: #f8f8fa;
@@ -158,13 +158,13 @@
 
 .manageButton {
   display: inline-flex;
-  min-width: 0;
   width: 100%;
+  min-width: 0;
   height: 28px;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 4 28px;
+  padding: 4px 28px;
   border: 0.5px solid #e9ebee;
   border-radius: 4px;
   background: #f7f7f9;
@@ -245,6 +245,19 @@
   margin-top: 20px;
 }
 
+.musicPowerHeading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.musicPowerHeading > .cardTitle {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .musicPowerActions {
   position: absolute;
   right: 18px;
@@ -254,11 +267,7 @@
 }
 
 .musicPowerNotice {
-  position: absolute;
-  right: 18px;
-  bottom: 2px;
-  left: 18px;
-  max-height: 24px;
+  min-width: 0;
   overflow: hidden;
   margin: 0;
   color: #c94343;
@@ -267,6 +276,8 @@
   line-height: 1.2;
   pointer-events: none;
   text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .musicPowerButton {
@@ -331,11 +342,6 @@
     bottom: 1.5rem;
   }
 
-  .musicPowerNotice {
-    right: 1rem;
-    bottom: 0;
-    left: 1rem;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -426,9 +432,6 @@
   }
 
   .musicPowerNotice {
-    right: 14.4px;
-    bottom: 1.6px;
-    left: 14.4px;
     font-size: 8px;
   }
 

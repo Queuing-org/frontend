@@ -5,10 +5,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { BlockUserTarget } from "@/src/features/follow/blocked/ui/BlockUserModal";
+import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
+import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import ChatArea from "./ChatArea";
 
 vi.mock("next/image", () => ({
   default: () => <span data-testid="chat-avatar" />,
+}));
+vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
+  useFollowingRelationship: vi.fn(),
+}));
+vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
+  default: ({
+    initialRelationship,
+    role,
+  }: {
+    initialRelationship?: string;
+    role?: "menuitem";
+  }) => (
+    <button type="button" role={role}>
+      {initialRelationship === "FOLLOWING" ? "언팔로우" : "팔로우"}
+    </button>
+  ),
+}));
+vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
+  useKickRoomParticipant: vi.fn(),
+}));
+vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
+  useTransferRoomOwner: vi.fn(),
 }));
 vi.mock("@/src/features/follow/blocked/ui/BlockUserModal", () => ({
   default: ({
@@ -69,8 +94,26 @@ const messages = [
 ];
 
 const onUserBlocked = vi.fn();
+const kickMutate = vi.fn();
+const transferMutate = vi.fn();
 
-function ChatAreaHarness({ chatMessages }: { chatMessages: ChatMessage[] }) {
+const participants = [
+  {
+    nickname: "회원",
+    participantId: "participant-member",
+    participantType: "USER" as const,
+    profileImageUrl: null,
+    userSlug: "회원-slug",
+  },
+];
+
+function ChatAreaHarness({
+  chatMessages,
+  isOwner = false,
+}: {
+  chatMessages: ChatMessage[];
+  isOwner?: boolean;
+}) {
   const [blockedSenderSlugs, setBlockedSenderSlugs] = useState<
     ReadonlySet<string>
   >(new Set());
@@ -91,6 +134,20 @@ function ChatAreaHarness({ chatMessages }: { chatMessages: ChatMessage[] }) {
           return next;
         });
       }}
+      participants={participants}
+      roomMeta={{
+        activeUsersCount: 2,
+        hasPassword: false,
+        isPublic: true,
+        owner: {
+          nickname: "방장",
+          profileImageUrl: null,
+          slug: isOwner ? "me" : "owner",
+        },
+        slug: "room-slug",
+        tags: [],
+        title: "방",
+      }}
       roomPassword="secret"
       roomSlug="room-slug"
       scrollToLatestKey={0}
@@ -98,8 +155,10 @@ function ChatAreaHarness({ chatMessages }: { chatMessages: ChatMessage[] }) {
   );
 }
 
-function renderChat(chatMessages = messages) {
-  return render(<ChatAreaHarness chatMessages={chatMessages} />);
+function renderChat(chatMessages = messages, isOwner = false) {
+  return render(
+    <ChatAreaHarness chatMessages={chatMessages} isOwner={isOwner} />,
+  );
 }
 
 function getMenuTrigger(nickname: string) {
@@ -111,6 +170,24 @@ function getMenuTrigger(nickname: string) {
 describe("ChatArea 관리 메뉴", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useFollowingRelationship).mockReturnValue({
+      data: false,
+      isLoading: false,
+    } as ReturnType<typeof useFollowingRelationship>);
+    vi.mocked(useKickRoomParticipant).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate: kickMutate,
+      reset: vi.fn(),
+      variables: undefined,
+    } as unknown as ReturnType<typeof useKickRoomParticipant>);
+    vi.mocked(useTransferRoomOwner).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate: transferMutate,
+      reset: vi.fn(),
+      variables: undefined,
+    } as unknown as ReturnType<typeof useTransferRoomOwner>);
   });
 
   it("작성자 유형과 식별자에 맞는 메뉴만 표시하고 한 번에 하나만 연다", async () => {
@@ -121,6 +198,7 @@ describe("ChatArea 관리 메뉴", () => {
     expect(screen.queryByRole("button", { name: /식별없음 메시지.*관리 메뉴/ })).not.toBeInTheDocument();
 
     await user.click(getMenuTrigger("회원"));
+    expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "차단" })).toBeInTheDocument();
 
@@ -128,10 +206,35 @@ describe("ChatArea 관리 메뉴", () => {
     expect(screen.getAllByRole("menu")).toHaveLength(1);
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "차단" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "팔로우" })).not.toBeInTheDocument();
 
     await user.click(getMenuTrigger("구형"));
     expect(screen.queryByRole("menuitem", { name: "신고" })).not.toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "차단" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeInTheDocument();
+  });
+
+  it("방장은 현재 참여 중인 회원 채팅에서 내보내기와 방장 위임을 실행한다", async () => {
+    const user = userEvent.setup();
+    renderChat(messages, true);
+
+    await user.click(getMenuTrigger("회원"));
+    await user.click(screen.getByRole("menuitem", { name: "내보내기" }));
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        password: "secret",
+        slug: "room-slug",
+        userSlug: "회원-slug",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+
+    await user.click(getMenuTrigger("회원"));
+    await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+    expect(transferMutate).toHaveBeenCalledWith(
+      { slug: "room-slug", userSlug: "회원-slug" },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 
   it("Escape, 바깥 클릭, 스크롤로 메뉴를 닫고 Escape는 포커스를 복원한다", async () => {

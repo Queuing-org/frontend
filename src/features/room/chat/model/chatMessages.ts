@@ -147,7 +147,17 @@ export function isChatMessageFromUser(
   return Boolean(message.senderSlug && message.senderSlug === user.slug);
 }
 
-export type ChatMessageManagementAction = "block" | "report";
+export type ChatMessageManagementAction =
+  | "follow"
+  | "report"
+  | "block"
+  | "kick"
+  | "transfer";
+
+type ChatMessageManagementOptions = {
+  canKick?: boolean;
+  canTransfer?: boolean;
+};
 
 const BLOCKED_CHAT_MESSAGE_CONTENT = "차단된 사용자의 채팅입니다";
 
@@ -167,17 +177,27 @@ export function shouldDisplayChatMessage(
 export function getChatMessageManagementActions(
   message: ChatMessage,
   currentUser: User | null,
+  { canKick = false, canTransfer = false }: ChatMessageManagementOptions = {},
 ): ChatMessageManagementAction[] {
   if (!currentUser || isChatMessageFromUser(message, currentUser)) {
     return [];
   }
 
   const actions: ChatMessageManagementAction[] = [];
+  if (message.senderSlug?.trim()) {
+    actions.push("follow");
+  }
   if (message.messageKey?.trim()) {
     actions.push("report");
   }
   if (message.senderSlug?.trim()) {
     actions.push("block");
+  }
+  if (canKick && message.senderSlug?.trim()) {
+    actions.push("kick");
+  }
+  if (canTransfer && message.senderSlug?.trim()) {
+    actions.push("transfer");
   }
 
   return actions;
