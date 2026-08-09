@@ -599,7 +599,9 @@ function RoomPlaybackJoinedContent({
             {mobileTab === "participants" ? (
               <section className={styles.mobilePanel} aria-label="참가자">
                 <RoomParticipantsPanel
+                  chatMessages={chatMessages}
                   currentUser={currentUser ?? null}
+                  onUserBlocked={handleUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
                   roomPassword={roomPassword}
@@ -723,6 +725,7 @@ function RoomPlaybackJoinedContent({
         </div>
       </div>
       <RoomFloatingWidgets
+        chatMessages={chatMessages}
         chatDisabledReason={chatDisabledReason}
         chatErrorMessage={chatSendErrorMessage}
         currentRequester={playback.currentRequester}

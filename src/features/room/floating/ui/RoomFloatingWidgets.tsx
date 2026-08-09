@@ -11,7 +11,7 @@ import type {
   PlaylistEntry,
   PlaylistParticipant,
 } from "@/src/features/playlist/model/types";
-import type { RoomMeta } from "@/src/features/room/model/types";
+import type { ChatMessage, RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
 import RoomProfilePanel from "@/src/features/room/profile/ui/RoomProfilePanel";
@@ -23,6 +23,7 @@ import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
+  chatMessages: readonly ChatMessage[];
   chatDisabledReason?: string;
   chatErrorMessage?: string;
   currentRequester: CurrentRequesterProfile | null;
@@ -45,6 +46,7 @@ type Props = {
 };
 
 export default function RoomFloatingWidgets({
+  chatMessages,
   chatDisabledReason,
   chatErrorMessage,
   currentRequester,
@@ -140,7 +142,9 @@ export default function RoomFloatingWidgets({
                 width={widgets.participants.width}
               >
                 <RoomParticipantsPanel
+                  chatMessages={chatMessages}
                   currentUser={currentUser}
+                  onUserBlocked={onUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
                   roomPassword={roomPassword}

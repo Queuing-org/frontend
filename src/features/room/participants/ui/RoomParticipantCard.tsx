@@ -1,28 +1,47 @@
 import Image from "next/image";
-import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { useId, useRef } from "react";
 import type { BadgeSummary } from "@/src/features/badge/model/types";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import RoomParticipantActionsMenu from "./RoomParticipantActionsMenu";
 import styles from "./RoomParticipantsPanel.module.css";
 
 type Props = {
-  canKick: boolean;
+  canManage: boolean;
+  expanded: boolean;
   isKickPending: boolean;
   isOwner: boolean;
+  isTransferPending: boolean;
+  onBlock: () => void;
+  onClose: () => void;
   onKick: () => void;
+  onReport: () => void;
+  onToggle: () => void;
+  onTransfer: () => void;
   participant: PlaylistParticipant;
   representativeBadge?: BadgeSummary | null;
+  userSlug: string | null;
 };
 
 export default function RoomParticipantCard({
-  canKick,
+  canManage,
+  expanded,
   isKickPending,
   isOwner,
+  isTransferPending,
+  onBlock,
+  onClose,
   onKick,
+  onReport,
+  onToggle,
+  onTransfer,
   participant,
   representativeBadge,
+  userSlug,
 }: Props) {
-  return (
-    <div className={styles.participant}>
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const actionsId = useId();
+  const content = (
+    <>
       <div className={styles.avatarWrap}>
         {participant.profileImageUrl ? (
           <Image
@@ -56,19 +75,40 @@ export default function RoomParticipantCard({
           <div className={styles.badgeLabel}>{representativeBadge.name}</div>
         ) : null}
       </div>
-      {canKick ? (
+    </>
+  );
+
+  return (
+    <div className={styles.participantItem} data-expanded={expanded || undefined}>
+      {canManage ? (
         <button
+          ref={triggerRef}
           type="button"
-          className={styles.kickButton}
-          disabled={isKickPending}
-          onClick={onKick}
+          className={`${styles.participant} ${styles.participantTrigger}`}
+          aria-controls={actionsId}
+          aria-expanded={expanded}
+          aria-label={`${participant.nickname} 참가자 관리 ${expanded ? "접기" : "펼치기"}`}
+          onClick={onToggle}
         >
-          {isKickPending ? (
-            <LoadingSpinner ariaLabel="참가자 내보내는 중" size={16} />
-          ) : (
-            "내보내기"
-          )}
+          {content}
         </button>
+      ) : (
+        <div className={styles.participant}>{content}</div>
+      )}
+      {canManage && expanded ? (
+        <RoomParticipantActionsMenu
+          isKickPending={isKickPending}
+          isTransferPending={isTransferPending}
+          menuId={actionsId}
+          nickname={participant.nickname}
+          onBlock={onBlock}
+          onClose={onClose}
+          onKick={onKick}
+          onReport={onReport}
+          onTransfer={onTransfer}
+          triggerRef={triggerRef}
+          userSlug={userSlug}
+        />
       ) : null}
     </div>
   );
