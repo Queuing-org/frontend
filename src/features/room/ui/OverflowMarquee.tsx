@@ -11,6 +11,34 @@ import styles from "./OverflowMarquee.module.css";
 const COPY_GAP_PX = 32;
 const PIXELS_PER_SECOND = 36;
 
+const resizeCallbacks = new WeakMap<Element, () => void>();
+let sharedResizeObserver: ResizeObserver | null = null;
+
+function observeMarqueeResize(element: Element, callback: () => void) {
+  if (typeof ResizeObserver === "undefined") {
+    window.addEventListener("resize", callback);
+    return () => window.removeEventListener("resize", callback);
+  }
+
+  if (!sharedResizeObserver) {
+    sharedResizeObserver = new ResizeObserver((entries) => {
+      entries.forEach((entry) => resizeCallbacks.get(entry.target)?.());
+    });
+  }
+
+  resizeCallbacks.set(element, callback);
+  sharedResizeObserver.observe(element);
+
+  return () => {
+    if (resizeCallbacks.get(element) !== callback) {
+      return;
+    }
+
+    resizeCallbacks.delete(element);
+    sharedResizeObserver?.unobserve(element);
+  };
+}
+
 type Props = {
   className?: string;
   text: string;
@@ -71,15 +99,7 @@ export default function OverflowMarquee({ className, text }: Props) {
 
     update();
 
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", update);
-      return () => window.removeEventListener("resize", update);
-    }
-
-    const observer = new ResizeObserver(update);
-    observer.observe(viewport);
-    observer.observe(copy);
-    return () => observer.disconnect();
+    return observeMarqueeResize(viewport, update);
   }, [text]);
 
   const marqueeStyle: MarqueeStyle = {

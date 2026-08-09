@@ -43,17 +43,31 @@ function createErrorEvent(code: string, message: string, statusCode: number) {
   } as IMessage;
 }
 
-function renderRealtimeChat() {
+function createDeferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise;
+  });
+
+  return { promise, resolve };
+}
+
+function renderRealtimeChat(
+  onPendingMessageBackfill = vi.fn(async () => [] as string[]),
+) {
+  const onMessage = vi.fn();
+  const currentUser = {
+    nickname: "사용자",
+    profileImageUrl: null,
+    slug: "user",
+  };
+
   return renderHook(() =>
     useRoomChatRealtime({
-      currentUser: {
-        nickname: "사용자",
-        profileImageUrl: null,
-        slug: "user",
-      },
+      currentUser,
       isEnabled: true,
-      onMessage: vi.fn(),
-      onPendingMessageBackfill: vi.fn(async () => false),
+      onMessage,
+      onPendingMessageBackfill,
       slug: "room",
     }),
   );
@@ -113,5 +127,155 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
       "채팅을 전송하지 못했습니다.",
     );
     unmount();
+  });
+
+  it("pending 전송 burst를 방 단위 timer와 single-flight backfill로 합친다", async () => {
+    vi.useFakeTimers();
+    const backfill = vi.fn(async () => [] as string[]);
+    const { result, unmount } = renderRealtimeChat(backfill);
+
+    act(() => {
+      for (let index = 0; index < 20; index += 1) {
+        expect(result.current.sendMessage(`메시지 ${index}`)).toBe(true);
+      }
+    });
+
+    expect(vi.getTimerCount()).toBe(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledTimes(1);
+    expect(backfill).toHaveBeenLastCalledWith(
+      Array.from({ length: 20 }, (_, index) => `메시지 ${index}`),
+    );
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+    expect(backfill).toHaveBeenCalledTimes(1);
+    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(vi.getTimerCount()).toBe(0);
+    unmount();
+  });
+
+  it("in-flight snapshot 뒤 등록된 동일 내용 pending은 이전 결과로 해소하지 않고 후속 backfill한다", async () => {
+    vi.useFakeTimers();
+    const firstBackfill = createDeferred<readonly string[]>();
+    const secondBackfill = createDeferred<readonly string[]>();
+    const backfill = vi
+      .fn<(contents: readonly string[]) => Promise<readonly string[]>>()
+      .mockImplementationOnce(() => firstBackfill.promise)
+      .mockImplementationOnce(() => secondBackfill.promise);
+    const { result, unmount } = renderRealtimeChat(backfill);
+
+    act(() => {
+      expect(result.current.sendMessage("같은 내용")).toBe(true);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledTimes(1);
+    expect(backfill).toHaveBeenLastCalledWith(["같은 내용"]);
+
+    act(() => {
+      expect(result.current.sendMessage("같은 내용")).toBe(true);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(4_000);
+    });
+    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(backfill).toHaveBeenCalledTimes(2);
+    expect(backfill).toHaveBeenLastCalledWith(["같은 내용"]);
+
+    await act(async () => {
+      firstBackfill.resolve(["같은 내용"]);
+      await firstBackfill.promise;
+      await Promise.resolve();
+    });
+    expect(backfill).toHaveBeenCalledTimes(2);
+    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    unmount();
+  });
+
+  it("backfill이 끝나지 않아도 등록 후 8초에 pending을 종료한다", async () => {
+    vi.useFakeTimers();
+    const deferredBackfill = createDeferred<readonly string[]>();
+    const backfill = vi
+      .fn<(contents: readonly string[]) => Promise<readonly string[]>>()
+      .mockImplementationOnce(() => deferredBackfill.promise)
+      .mockResolvedValueOnce([]);
+    const { result, unmount } = renderRealtimeChat(backfill);
+
+    act(() => {
+      expect(result.current.sendMessage("응답 없는 backfill")).toBe(true);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(vi.getTimerCount()).toBe(0);
+
+    act(() => {
+      expect(result.current.sendMessage("후속 전송")).toBe(true);
+    });
+    expect(result.current.sendErrorMessage).toBe("");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledTimes(2);
+    expect(backfill).toHaveBeenLastCalledWith(["후속 전송"]);
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => {
+      deferredBackfill.resolve(["응답 없는 backfill"]);
+      await Promise.resolve();
+    });
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(vi.getTimerCount()).toBe(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(vi.getTimerCount()).toBe(0);
+    unmount();
+  });
+
+  it("in-flight backfill 중 unmount하면 deadline timer와 stale 결과를 정리한다", async () => {
+    vi.useFakeTimers();
+    const deferredBackfill = createDeferred<readonly string[]>();
+    const backfill = vi.fn(() => deferredBackfill.promise);
+    const { result, unmount } = renderRealtimeChat(backfill);
+
+    act(() => {
+      expect(result.current.sendMessage("화면 이탈")).toBe(true);
+    });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(backfill).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+
+    await act(async () => {
+      deferredBackfill.resolve(["화면 이탈"]);
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(6_000);
+    });
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

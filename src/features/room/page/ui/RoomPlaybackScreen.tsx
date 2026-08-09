@@ -5,16 +5,20 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type Dispatch,
   type SetStateAction,
 } from "react";
 import { useParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
-import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
-import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
+import {
+  roomMetaQueryOptions,
+  useRoomMeta,
+} from "@/src/features/room/hooks/useRoomMeta";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
@@ -51,6 +55,10 @@ import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
+import {
+  createRoomParticipantPageCoordinator,
+  type ResolveRoomParticipantByUserSlug,
+} from "@/src/features/room/participants/model/roomParticipantPaging";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import {
@@ -84,6 +92,7 @@ export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
   const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const slug = normalizeRoomSlug(params.slug ?? "");
+  const queryClient = useQueryClient();
   const activeJoinAbortControllerRef = useRef<AbortController | null>(null);
   const [joinStateSlug, setJoinStateSlug] = useState(slug);
   const [status, setStatus] = useState<JoinStatus>("joining");
@@ -109,15 +118,60 @@ export default function RoomPlaybackScreen() {
     refetch: refetchRoomPlayback,
   } = useRoomPlayback(slug, currentRoomPassword, currentStatus === "joined");
   const {
-    data: participants = [],
+    data: participantPages,
     error: participantsError,
+    fetchNextPage: fetchNextParticipantsPage,
+    hasNextPage: hasNextParticipantsPage = false,
     isError: isParticipantsError,
+    isFetchNextPageError: isParticipantsLoadMoreError,
+    isFetchingNextPage: isFetchingNextParticipantsPage,
     isLoading: isParticipantsLoading,
     refetch: refetchParticipants,
   } = useRoomParticipants(
     slug,
     currentRoomPassword,
     currentStatus === "joined",
+  );
+  const participants = useMemo(
+    () => participantPages?.pages.flatMap((page) => page.items) ?? [],
+    [participantPages],
+  );
+  const participantPageCoordinator = useMemo(
+    () =>
+      createRoomParticipantPageCoordinator(
+        JSON.stringify([slug, currentRoomPassword]),
+      ),
+    [currentRoomPassword, slug],
+  );
+  useEffect(() => {
+    participantPageCoordinator.update(
+      {
+        hasNextPage: hasNextParticipantsPage,
+        pages: participantPages?.pages ?? [],
+      },
+      async () => {
+        const nextPageResult = await fetchNextParticipantsPage();
+
+        return {
+          hasNextPage: Boolean(nextPageResult.hasNextPage),
+          pages: nextPageResult.data?.pages ?? [],
+        };
+      },
+    );
+  }, [
+    fetchNextParticipantsPage,
+    hasNextParticipantsPage,
+    participantPageCoordinator,
+    participantPages,
+  ]);
+  const handleLoadNextParticipantsPage = useCallback(
+    () => participantPageCoordinator.loadNextPage(),
+    [participantPageCoordinator],
+  );
+  const resolveParticipantByUserSlug = useCallback(
+    (userSlug: string) =>
+      participantPageCoordinator.resolveParticipantByUserSlug(userSlug),
+    [participantPageCoordinator],
   );
   const { data: currentUser, isLoading: isCurrentUserLoading } = useMe();
   const roomChat = useRoomChat({
@@ -201,7 +255,9 @@ export default function RoomPlaybackScreen() {
       let joinPassword: string | null = null;
 
       try {
-        const roomMeta = await fetchRoomMeta(slug);
+        const roomMeta = await queryClient.fetchQuery(
+          roomMetaQueryOptions(slug),
+        );
         if (abortController.signal.aborted) return;
 
         requiresPassword = roomRequiresPassword(roomMeta);
@@ -275,20 +331,8 @@ export default function RoomPlaybackScreen() {
     ensureRoomSubscription,
     initializeChatStateFromJoinData,
     leaveRoomSession,
+    queryClient,
     resetChatState,
-    slug,
-  ]);
-
-  useEffect(() => {
-    if (!slug || currentStatus !== "joined") {
-      return;
-    }
-
-    void Promise.all([refetchRoomPlayback(), refetchParticipants()]);
-  }, [
-    currentStatus,
-    refetchParticipants,
-    refetchRoomPlayback,
     slug,
   ]);
 
@@ -328,7 +372,7 @@ export default function RoomPlaybackScreen() {
     );
   }
 
-  if (isRoomPlaybackError || isParticipantsError) {
+  if (isRoomPlaybackError || (isParticipantsError && !participantPages)) {
     return (
       <div className={styles.statusState} role="alert">
         <span>
@@ -362,10 +406,15 @@ export default function RoomPlaybackScreen() {
       <RoomPlaybackJoinedContent
         currentUser={currentUser ?? null}
         floatingWidgets={floatingWidgets}
+        hasNextParticipantsPage={hasNextParticipantsPage}
         isCurrentUserLoading={isCurrentUserLoading}
+        isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
         isMobileLayout={isMobileLayout}
+        isParticipantsLoadMoreError={isParticipantsLoadMoreError}
         livePlaybackStatus={livePlaybackStatus}
         mobileTab={mobileTab}
+        onLoadMoreParticipants={handleLoadNextParticipantsPage}
+        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
         roomChat={roomChat}
         roomPassword={currentRoomPassword}
         participants={participants}
@@ -380,10 +429,15 @@ export default function RoomPlaybackScreen() {
 type RoomPlaybackJoinedContentProps = {
   currentUser: User | null;
   floatingWidgets: ReturnType<typeof useFloatingWidgetsState>;
+  hasNextParticipantsPage: boolean;
   isCurrentUserLoading: boolean;
+  isFetchingNextParticipantsPage: boolean;
   isMobileLayout: boolean;
+  isParticipantsLoadMoreError: boolean;
   livePlaybackStatus: LivePlaybackState | null;
   mobileTab: MobileRoomTab;
+  onLoadMoreParticipants: () => Promise<unknown>;
+  resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomChat: ReturnType<typeof useRoomChat>;
   roomPassword: string | null;
   participants: PlaylistParticipant[];
@@ -395,10 +449,15 @@ type RoomPlaybackJoinedContentProps = {
 function RoomPlaybackJoinedContent({
   currentUser,
   floatingWidgets,
+  hasNextParticipantsPage,
   isCurrentUserLoading,
+  isFetchingNextParticipantsPage,
   isMobileLayout,
+  isParticipantsLoadMoreError,
   livePlaybackStatus,
   mobileTab,
+  onLoadMoreParticipants,
+  resolveParticipantByUserSlug,
   roomChat,
   roomPassword,
   participants,
@@ -562,8 +621,12 @@ function RoomPlaybackJoinedContent({
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      hasUnloadedParticipants={hasNextParticipantsPage}
                       onUserBlocked={handleUserBlocked}
                       participants={participants}
+                      resolveParticipantByUserSlug={
+                        resolveParticipantByUserSlug
+                      }
                       roomMeta={roomMeta}
                       roomPassword={roomPassword}
                       roomSlug={slug}
@@ -603,6 +666,10 @@ function RoomPlaybackJoinedContent({
                 <RoomParticipantsPanel
                   chatMessages={chatMessages}
                   currentUser={currentUser ?? null}
+                  hasNextPage={hasNextParticipantsPage}
+                  isFetchingNextPage={isFetchingNextParticipantsPage}
+                  isLoadMoreError={isParticipantsLoadMoreError}
+                  onLoadMore={onLoadMoreParticipants}
                   onUserBlocked={handleUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
@@ -703,8 +770,10 @@ function RoomPlaybackJoinedContent({
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              hasUnloadedParticipants={hasNextParticipantsPage}
               onUserBlocked={handleUserBlocked}
               participants={participants}
+              resolveParticipantByUserSlug={resolveParticipantByUserSlug}
               roomMeta={roomMeta}
               roomPassword={roomPassword}
               roomSlug={slug}
@@ -739,6 +808,11 @@ function RoomPlaybackJoinedContent({
         currentUser={currentUser}
         isChatSending={isChatSending}
         isCurrentUserLoading={isCurrentUserLoading}
+        hasNextParticipantsPage={hasNextParticipantsPage}
+        isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
+        isParticipantsLoadMoreError={isParticipantsLoadMoreError}
+        onLoadMoreParticipants={onLoadMoreParticipants}
+        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
         onChatLoginClick={
           showChatLoginAction ? redirectToGoogleLogin : undefined
         }

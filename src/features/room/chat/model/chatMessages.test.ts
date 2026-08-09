@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
+  appendUniqueChatMessage,
+  createChatMessageIdentityIndex,
   getChatMessageManagementActions,
   getLatestReportableChatMessageKey,
+  getVisibleChatMessageWindow,
   shouldDisplayChatMessage,
 } from "./chatMessages";
 
@@ -140,5 +143,69 @@ describe("getLatestReportableChatMessageKey", () => {
       ),
     ).toBeNull();
     expect(getLatestReportableChatMessageKey([message({})], null)).toBeNull();
+  });
+});
+
+describe("chat message identity window", () => {
+  it("10k 실시간 이벤트 뒤에도 최근 window만 유지한다", () => {
+    let messages: ChatMessage[] = [];
+    const index = createChatMessageIdentityIndex(messages);
+
+    for (let messageId = 1; messageId <= 10_000; messageId += 1) {
+      messages = appendUniqueChatMessage(
+        messages,
+        message({ messageId, messageKey: `message-${messageId}` }),
+        index,
+        500,
+      );
+    }
+
+    expect(messages).toHaveLength(500);
+    expect(messages[0]?.messageId).toBe(9_501);
+    expect(messages.at(-1)?.messageId).toBe(10_000);
+    expect(index.size).toBe(1_000);
+  });
+
+  it("buffer key와 DB id가 순차 도착해도 한 메시지만 증분 갱신한다", () => {
+    let messages: ChatMessage[] = [];
+    const index = createChatMessageIdentityIndex(messages);
+
+    messages = appendUniqueChatMessage(
+      messages,
+      message({ messageId: null, messageKey: "buffer-key" }),
+      index,
+      500,
+    );
+    messages = appendUniqueChatMessage(
+      messages,
+      message({ messageId: 77, messageKey: "buffer-key" }),
+      index,
+      500,
+    );
+    messages = appendUniqueChatMessage(
+      messages,
+      message({ content: "DB 반영", messageId: 77, messageKey: null }),
+      index,
+      500,
+    );
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toMatchObject({
+      content: "DB 반영",
+      messageId: 77,
+      messageKey: "buffer-key",
+    });
+  });
+
+  it("UI에 전달할 message window도 최근 500개로 제한한다", () => {
+    const messages = Array.from({ length: 650 }, (_, index) =>
+      message({ messageId: index, messageKey: `message-${index}` }),
+    );
+
+    const visibleMessages = getVisibleChatMessageWindow(messages, new Set());
+
+    expect(visibleMessages).toHaveLength(500);
+    expect(visibleMessages[0]?.messageId).toBe(150);
+    expect(visibleMessages.at(-1)?.messageId).toBe(649);
   });
 });

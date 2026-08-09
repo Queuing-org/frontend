@@ -16,7 +16,7 @@ type UseChatScrollRestorationParams = {
   externalWheelRegionRef?: RefObject<HTMLElement | null>;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
-  messageCount: number;
+  messageKeys: readonly string[];
   onLoadOlderMessages: () => void;
   scrollToLatestKey: number;
 };
@@ -119,11 +119,33 @@ function isWheelInsideRegion(event: WheelEvent, region: HTMLElement) {
   );
 }
 
+export function getLeadingMessageRemovalOffset(
+  previousMessageKeys: readonly string[],
+  currentFirstMessageKey: string | undefined,
+  previousOffsets: ReadonlyMap<string, number>,
+) {
+  if (!currentFirstMessageKey || previousMessageKeys[0] === currentFirstMessageKey) {
+    return 0;
+  }
+
+  const previousFirstOffset = previousOffsets.get(previousMessageKeys[0] ?? "");
+  const currentFirstPreviousOffset = previousOffsets.get(currentFirstMessageKey);
+
+  if (
+    typeof previousFirstOffset !== "number" ||
+    typeof currentFirstPreviousOffset !== "number"
+  ) {
+    return 0;
+  }
+
+  return Math.max(0, currentFirstPreviousOffset - previousFirstOffset);
+}
+
 export function useChatScrollRestoration({
   externalWheelRegionRef,
   hasOlderMessages,
   isLoadingOlderMessages,
-  messageCount,
+  messageKeys,
   onLoadOlderMessages,
   scrollToLatestKey,
 }: UseChatScrollRestorationParams) {
@@ -133,6 +155,10 @@ export function useChatScrollRestoration({
   const restoreScrollRef = useRef<{
     scrollHeight: number;
     scrollTop: number;
+  } | null>(null);
+  const previousMessageLayoutRef = useRef<{
+    keys: readonly string[];
+    offsets: ReadonlyMap<string, number>;
   } | null>(null);
 
   const requestOlderMessages = useCallback(() => {
@@ -174,13 +200,31 @@ export function useChatScrollRestoration({
       const { scrollHeight, scrollTop } = restoreScrollRef.current;
       list.scrollTop = list.scrollHeight - scrollHeight + scrollTop;
       restoreScrollRef.current = null;
-      return;
+    } else if (shouldStickToBottomRef.current) {
+      list.scrollTop = list.scrollHeight;
+    } else if (previousMessageLayoutRef.current) {
+      const removedHeight = getLeadingMessageRemovalOffset(
+        previousMessageLayoutRef.current.keys,
+        messageKeys[0],
+        previousMessageLayoutRef.current.offsets,
+      );
+      if (removedHeight > 0) {
+        list.scrollTop = Math.max(0, list.scrollTop - removedHeight);
+      }
     }
 
-    if (shouldStickToBottomRef.current) {
-      list.scrollTop = list.scrollHeight;
-    }
-  }, [isLoadingOlderMessages, messageCount]);
+    previousMessageLayoutRef.current = {
+      keys: messageKeys,
+      offsets: new Map(
+        Array.from(
+          list.querySelectorAll<HTMLElement>("[data-chat-message-key]"),
+        ).flatMap((element) => {
+          const messageKey = element.dataset.chatMessageKey;
+          return messageKey ? [[messageKey, element.offsetTop] as const] : [];
+        }),
+      ),
+    };
+  }, [isLoadingOlderMessages, messageKeys]);
 
   useLayoutEffect(() => {
     const list = listRef.current;

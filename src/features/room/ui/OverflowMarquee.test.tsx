@@ -4,9 +4,13 @@ import OverflowMarquee, { getMarqueeMetrics } from "./OverflowMarquee";
 
 class ResizeObserverMock {
   static callback: ResizeObserverCallback | null = null;
+  static instanceCount = 0;
+  static latest: ResizeObserverMock | null = null;
 
   constructor(callback: ResizeObserverCallback) {
     ResizeObserverMock.callback = callback;
+    ResizeObserverMock.instanceCount += 1;
+    ResizeObserverMock.latest = this;
   }
 
   disconnect = vi.fn();
@@ -19,6 +23,8 @@ describe("OverflowMarquee", () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     ResizeObserverMock.callback = null;
+    ResizeObserverMock.instanceCount = 0;
+    ResizeObserverMock.latest = null;
   });
 
   it("overflow 여부와 읽기 속도에 맞는 이동 값을 계산한다", () => {
@@ -35,10 +41,18 @@ describe("OverflowMarquee", () => {
     vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(120);
     vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockReturnValue(320);
 
-    const { container } = render(<OverflowMarquee text="아주 긴 신청 사연" />);
+    const { container } = render(
+      <>
+        <OverflowMarquee text="아주 긴 신청 사연" />
+        <OverflowMarquee text="또 다른 긴 신청 사연" />
+      </>,
+    );
     act(() => ResizeObserverMock.callback?.([], {} as ResizeObserver));
 
     expect(screen.getAllByText("아주 긴 신청 사연")).toHaveLength(2);
+    expect(screen.getAllByText("또 다른 긴 신청 사연")).toHaveLength(2);
+    expect(ResizeObserverMock.instanceCount).toBe(1);
+    expect(ResizeObserverMock.latest?.observe).toHaveBeenCalledTimes(2);
     expect(
       container.querySelector('[data-overflowing="true"]'),
     ).toHaveAttribute("title", "아주 긴 신청 사연");

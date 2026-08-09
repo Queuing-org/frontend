@@ -4,48 +4,47 @@ import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
-  PlaylistParticipant,
   RoomParticipantsPage,
   RoomParticipantsRequestParams,
 } from "../model/types";
 
-const PARTICIPANT_PAGE_SIZE = 100;
+export const PARTICIPANT_PAGE_SIZE = 100;
+
+type FetchRoomParticipantsPageParams = RoomParticipantsRequestParams & {
+  signal?: AbortSignal;
+};
+
+export function getNextRoomParticipantsPageParam(
+  lastPage: RoomParticipantsPage,
+  allPages: readonly RoomParticipantsPage[],
+) {
+  const nextCursor = lastPage.hasNext ? lastPage.nextCursor : null;
+  if (!nextCursor) {
+    return undefined;
+  }
+
+  const wasAlreadyExposed = allPages
+    .slice(0, -1)
+    .some((page) => page.nextCursor === nextCursor);
+
+  return wasAlreadyExposed ? undefined : nextCursor;
+}
 
 export async function fetchRoomParticipantsPage({
   slug,
   password,
   cursor,
+  signal,
   size = PARTICIPANT_PAGE_SIZE,
-}: RoomParticipantsRequestParams): Promise<RoomParticipantsPage> {
+}: FetchRoomParticipantsPageParams): Promise<RoomParticipantsPage> {
   const { data } = await axiosInstance.get<ApiResponse<RoomParticipantsPage>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/participants`,
     {
       params: { ...(cursor ? { cursor } : {}), size },
       headers: buildRoomPasswordHeaders(password),
+      signal,
     },
   );
 
   return unwrapApiResponse(data);
-}
-
-export async function fetchRoomParticipants(
-  params: Pick<RoomParticipantsRequestParams, "slug" | "password">,
-): Promise<PlaylistParticipant[]> {
-  const participants: PlaylistParticipant[] = [];
-  let cursor: string | null = null;
-
-  do {
-    const page = await fetchRoomParticipantsPage({
-      ...params,
-      cursor,
-      size: PARTICIPANT_PAGE_SIZE,
-    });
-    participants.push(...page.items);
-
-    if (!page.hasNext || !page.nextCursor) {
-      return participants;
-    }
-
-    cursor = page.nextCursor;
-  } while (true);
 }

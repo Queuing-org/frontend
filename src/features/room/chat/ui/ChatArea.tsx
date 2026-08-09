@@ -28,12 +28,13 @@ import {
   isParticipantRoomOwner,
   isSameUser,
 } from "@/src/features/room/participants/model/participantIdentity";
+import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
 import RoomMemberManagementMenu from "@/src/features/room/management/ui/RoomMemberManagementMenu";
 import { useChatScrollRestoration } from "../hooks/useChatScrollRestoration";
 import {
   getChatMessageManagementActions,
   getChatMessageRenderKey,
-  shouldDisplayChatMessage,
+  getVisibleChatMessageWindow,
   type ChatMessageManagementAction,
 } from "../model/chatMessages";
 import ReportChatMessageModal, {
@@ -45,12 +46,14 @@ type Props = {
   blockedSenderSlugs: ReadonlySet<string>;
   currentUser: User | null;
   errorMessage?: string;
+  hasUnloadedParticipants: boolean;
   hasOlderMessages: boolean;
   isLoadingOlderMessages: boolean;
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
   onUserBlocked: (userSlug: string) => void;
   participants: PlaylistParticipant[];
+  resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
@@ -102,7 +105,7 @@ function ChatMessageRow({
   const menuId = `chat-message-menu-${messageKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
   return (
-    <li className={styles.message}>
+    <li className={styles.message} data-chat-message-key={messageKey}>
       <div className={styles.avatarWrap}>
         {message.senderProfileImageUrl ? (
           <Image
@@ -169,12 +172,14 @@ export default function ChatArea({
   blockedSenderSlugs,
   currentUser,
   errorMessage,
+  hasUnloadedParticipants,
   hasOlderMessages,
   isLoadingOlderMessages,
   messages,
   onLoadOlderMessages,
   onUserBlocked,
   participants,
+  resolveParticipantByUserSlug,
   roomMeta,
   roomPassword,
   roomSlug,
@@ -189,6 +194,15 @@ export default function ChatArea({
   const [managementMessage, setManagementMessage] = useState<string | null>(
     null,
   );
+  const [participantResolutionError, setParticipantResolutionError] = useState<{
+    message: string;
+    roomSlug: string;
+  } | null>(null);
+  const [participantResolutionAction, setParticipantResolutionAction] =
+    useState<{
+      action: "kick" | "transfer";
+      userSlug: string;
+    } | null>(null);
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
@@ -212,8 +226,13 @@ export default function ChatArea({
     return lookup;
   }, [participants]);
   const currentUserIsRoomOwner = isRoomOwner(roomMeta?.owner, currentUser);
-  const visibleMessages = messages.filter((message) =>
-    shouldDisplayChatMessage(message, blockedSenderSlugs),
+  const visibleMessages = useMemo(
+    () => getVisibleChatMessageWindow(messages, blockedSenderSlugs),
+    [blockedSenderSlugs, messages],
+  );
+  const visibleMessageKeys = useMemo(
+    () => visibleMessages.map(getChatMessageRenderKey),
+    [visibleMessages],
   );
   const {
     handleScroll,
@@ -224,7 +243,7 @@ export default function ChatArea({
     externalWheelRegionRef,
     hasOlderMessages,
     isLoadingOlderMessages,
-    messageCount: visibleMessages.length,
+    messageKeys: visibleMessageKeys,
     onLoadOlderMessages,
     scrollToLatestKey,
   });
@@ -254,6 +273,7 @@ export default function ChatArea({
           ? "up"
           : "down",
       );
+      setParticipantResolutionError(null);
       setOpenMenuKey((currentKey) =>
         currentKey === messageKey ? null : messageKey,
       );
@@ -261,25 +281,65 @@ export default function ChatArea({
     [listRef],
   );
 
-  const getModerationParticipant = useCallback(
+  const getModerationUserSlug = useCallback(
     (message: ChatMessage) => {
       const senderSlug = message.senderSlug?.trim();
       if (!currentUserIsRoomOwner || !senderSlug) {
         return null;
       }
       const participant = participantByUserSlug.get(senderSlug);
+      if (participant) {
+        return isSameUser(participant, currentUser) ||
+          isParticipantRoomOwner(roomMeta?.owner, participant)
+          ? null
+          : senderSlug;
+      }
       if (
-        !participant ||
-        isSameUser(participant, currentUser) ||
-        isParticipantRoomOwner(roomMeta?.owner, participant)
+        !hasUnloadedParticipants ||
+        senderSlug === currentUser?.slug?.trim() ||
+        senderSlug === roomMeta?.owner?.slug?.trim()
       ) {
         return null;
       }
-      return participant;
+
+      return senderSlug;
     }, [
       currentUser,
       currentUserIsRoomOwner,
+      hasUnloadedParticipants,
       participantByUserSlug,
+      roomMeta?.owner,
+    ],
+  );
+  const resolveModerationParticipant = useCallback(
+    async (message: ChatMessage) => {
+      const userSlug = getModerationUserSlug(message);
+      if (!userSlug) {
+        return null;
+      }
+
+      const loadedParticipant = participantByUserSlug.get(userSlug);
+      if (loadedParticipant) {
+        return loadedParticipant;
+      }
+
+      const resolvedParticipant =
+        await resolveParticipantByUserSlug(userSlug);
+      if (
+        resolvedParticipant?.participantType !== "USER" ||
+        resolvedParticipant.userSlug?.trim() !== userSlug ||
+        isSameUser(resolvedParticipant, currentUser) ||
+        isParticipantRoomOwner(roomMeta?.owner, resolvedParticipant)
+      ) {
+        return null;
+      }
+
+      return resolvedParticipant;
+    }, [
+      currentUser,
+      getModerationUserSlug,
+      participantByUserSlug,
+      resolveParticipantByUserSlug,
       roomMeta?.owner,
     ],
   );
@@ -312,12 +372,39 @@ export default function ChatArea({
     [currentUser, roomPassword, roomSlug],
   );
   const handleKick = useCallback(
-    (message: ChatMessage) => {
-      const participant = getModerationParticipant(message);
+    async (message: ChatMessage) => {
+      const userSlug = getModerationUserSlug(message);
+      if (!userSlug) {
+        return;
+      }
+      setParticipantResolutionError(null);
+      let participant = participantByUserSlug.get(userSlug) ?? null;
+      if (!participant) {
+        setParticipantResolutionAction({ action: "kick", userSlug });
+        try {
+          participant = await resolveModerationParticipant(message);
+        } catch {
+          setParticipantResolutionError({
+            message: "참가자 정보를 확인하지 못했습니다.",
+            roomSlug,
+          });
+          return;
+        } finally {
+          setParticipantResolutionAction((current) =>
+            current?.action === "kick" && current.userSlug === userSlug
+              ? null
+              : current,
+          );
+        }
+      }
       const kickTarget = participant
         ? getParticipantKickTarget(participant)
         : null;
       if (!kickTarget) {
+        setParticipantResolutionError({
+          message: "현재 참가 중인 회원을 찾지 못했습니다.",
+          roomSlug,
+        });
         return;
       }
       clearTransferOwnerError();
@@ -335,16 +422,50 @@ export default function ChatArea({
       );
     }, [
       clearTransferOwnerError,
-      getModerationParticipant,
+      getModerationUserSlug,
       kickParticipant,
+      participantByUserSlug,
+      resolveModerationParticipant,
       roomPassword,
       roomSlug,
     ]);
   const handleTransfer = useCallback(
-    (message: ChatMessage) => {
-      const participant = getModerationParticipant(message);
+    async (message: ChatMessage) => {
+      const moderationUserSlug = getModerationUserSlug(message);
+      if (!moderationUserSlug) {
+        return;
+      }
+      setParticipantResolutionError(null);
+      let participant =
+        participantByUserSlug.get(moderationUserSlug) ?? null;
+      if (!participant) {
+        setParticipantResolutionAction({
+          action: "transfer",
+          userSlug: moderationUserSlug,
+        });
+        try {
+          participant = await resolveModerationParticipant(message);
+        } catch {
+          setParticipantResolutionError({
+            message: "참가자 정보를 확인하지 못했습니다.",
+            roomSlug,
+          });
+          return;
+        } finally {
+          setParticipantResolutionAction((current) =>
+            current?.action === "transfer" &&
+            current.userSlug === moderationUserSlug
+              ? null
+              : current,
+          );
+        }
+      }
       const userSlug = getParticipantUserSlug(participant);
       if (participant?.participantType !== "USER" || !userSlug) {
+        setParticipantResolutionError({
+          message: "현재 참가 중인 회원을 찾지 못했습니다.",
+          roomSlug,
+        });
         return;
       }
       const transferSequence = beginTransferOwnerRequest();
@@ -363,7 +484,9 @@ export default function ChatArea({
       );
     }, [
       beginTransferOwnerRequest,
-      getModerationParticipant,
+      getModerationUserSlug,
+      participantByUserSlug,
+      resolveModerationParticipant,
       roomSlug,
       showTransferOwnerError,
       transferOwner,
@@ -409,6 +532,11 @@ export default function ChatArea({
                 "사용자 관리 요청을 처리하지 못했습니다."}
             </div>
           ) : null}
+          {participantResolutionError?.roomSlug === roomSlug ? (
+            <div className={styles.managementError} role="alert">
+              {participantResolutionError.message}
+            </div>
+          ) : null}
           {transferOwnerErrorMessage ? (
             <div className={styles.managementError} role="alert">
               {transferOwnerErrorMessage}
@@ -420,23 +548,16 @@ export default function ChatArea({
             <ol className={styles.messages}>
               {visibleMessages.map((message) => {
                 const messageKey = getChatMessageRenderKey(message);
-                const moderationParticipant =
-                  getModerationParticipant(message);
-                const kickTarget = moderationParticipant
-                  ? getParticipantKickTarget(moderationParticipant)
+                const targetUserSlug = getModerationUserSlug(message);
+                const kickTarget = targetUserSlug
+                  ? { userSlug: targetUserSlug }
                   : null;
-                const targetUserSlug = getParticipantUserSlug(
-                  moderationParticipant,
-                );
                 const actions = getChatMessageManagementActions(
                   message,
                   currentUser,
                   {
                     canKick: Boolean(kickTarget),
-                    canTransfer: Boolean(
-                      moderationParticipant?.participantType === "USER" &&
-                        targetUserSlug,
-                    ),
+                    canTransfer: Boolean(targetUserSlug),
                   },
                 );
                 return (
@@ -444,16 +565,23 @@ export default function ChatArea({
                     key={messageKey}
                     actions={actions}
                     isKickPending={
-                      kickParticipant.isPending &&
-                      getParticipantKickTargetKey(kickTarget) ===
-                        getParticipantKickTargetKey(
-                          kickParticipant.variables ?? null,
-                        )
+                      (kickParticipant.isPending &&
+                        getParticipantKickTargetKey(kickTarget) ===
+                          getParticipantKickTargetKey(
+                            kickParticipant.variables ?? null,
+                          )) ||
+                      (participantResolutionAction?.action === "kick" &&
+                        participantResolutionAction.userSlug ===
+                          targetUserSlug)
                     }
                     isMenuOpen={openMenuKey === messageKey}
                     isTransferPending={
-                      transferOwner.isPending &&
-                      targetUserSlug === transferOwner.variables?.userSlug
+                      (transferOwner.isPending &&
+                        targetUserSlug ===
+                          transferOwner.variables?.userSlug) ||
+                      (participantResolutionAction?.action === "transfer" &&
+                        participantResolutionAction.userSlug ===
+                          targetUserSlug)
                     }
                     message={message}
                     messageKey={messageKey}

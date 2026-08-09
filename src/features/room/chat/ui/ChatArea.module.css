@@ -15,6 +15,7 @@
   padding: 14px 16px;
   overflow-x: hidden;
   overflow-y: auto;
+  overflow-anchor: none;
   overscroll-behavior: contain;
 }
 
@@ -30,6 +31,8 @@
 .message {
   position: relative;
   display: flex;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 48px;
   align-items: flex-start;
   gap: 12px;
   min-width: 0;

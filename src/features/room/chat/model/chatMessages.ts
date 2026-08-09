@@ -4,6 +4,7 @@ import type {
   ChatMessageEventData,
 } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
+import { CHAT_MESSAGE_WINDOW_SIZE } from "../constants/chat";
 
 export function isChatMessageData(data: unknown): data is ChatMessageEventData {
   if (!data || typeof data !== "object") {
@@ -60,7 +61,7 @@ export function getChatMessageRenderKey(message: ChatMessage) {
   }`;
 }
 
-function getChatMessageIdentityKeys(message: ChatMessage) {
+export function getChatMessageIdentityKeys(message: ChatMessage) {
   const keys: string[] = [];
 
   if (message.messageKey) {
@@ -92,6 +93,73 @@ function mergeChatMessageData(
     senderProfileImageUrl:
       next.senderProfileImageUrl ?? previous.senderProfileImageUrl ?? null,
   };
+}
+
+export type ChatMessageIdentityIndex = Map<string, ChatMessage>;
+
+export function createChatMessageIdentityIndex(
+  messages: readonly ChatMessage[],
+): ChatMessageIdentityIndex {
+  const index: ChatMessageIdentityIndex = new Map();
+
+  messages.forEach((message) => {
+    getChatMessageIdentityKeys(message).forEach((key) => index.set(key, message));
+  });
+
+  return index;
+}
+
+export function hasIndexedChatMessage(
+  index: ChatMessageIdentityIndex,
+  message: ChatMessage,
+) {
+  return getChatMessageIdentityKeys(message).some((key) => index.has(key));
+}
+
+export function appendUniqueChatMessage(
+  messages: readonly ChatMessage[],
+  message: ChatMessage,
+  index: ChatMessageIdentityIndex,
+  maxMessages: number,
+) {
+  const existingMessage = getChatMessageIdentityKeys(message)
+    .map((key) => index.get(key))
+    .find((candidate): candidate is ChatMessage => Boolean(candidate));
+
+  if (existingMessage) {
+    const existingIndex = messages.indexOf(existingMessage);
+    if (existingIndex < 0) {
+      getChatMessageIdentityKeys(existingMessage).forEach((key) =>
+        index.delete(key),
+      );
+      return appendUniqueChatMessage(messages, message, index, maxMessages);
+    }
+
+    const mergedMessage = mergeChatMessageData(existingMessage, message);
+    const nextMessages = messages.slice();
+    nextMessages[existingIndex] = mergedMessage;
+    const identityAliases = new Set([
+      ...getChatMessageIdentityKeys(existingMessage),
+      ...getChatMessageIdentityKeys(mergedMessage),
+    ]);
+    identityAliases.forEach((key) => index.set(key, mergedMessage));
+    return nextMessages;
+  }
+
+  const nextMessages = [...messages, message];
+  const overflowCount = Math.max(0, nextMessages.length - maxMessages);
+  const removedMessages = nextMessages.splice(0, overflowCount);
+
+  removedMessages.forEach((removedMessage) => {
+    getChatMessageIdentityKeys(removedMessage).forEach((key) => {
+      if (index.get(key) === removedMessage) {
+        index.delete(key);
+      }
+    });
+  });
+  getChatMessageIdentityKeys(message).forEach((key) => index.set(key, message));
+
+  return nextMessages;
 }
 
 export function mergeUniqueChatMessages(messages: ChatMessage[]) {
@@ -172,6 +240,27 @@ export function shouldDisplayChatMessage(
   }
 
   return !message.senderSlug || !blockedSenderSlugs.has(message.senderSlug);
+}
+
+export function getVisibleChatMessageWindow(
+  messages: readonly ChatMessage[],
+  blockedSenderSlugs: ReadonlySet<string>,
+) {
+  const visibleMessages: ChatMessage[] = [];
+
+  for (
+    let index = messages.length - 1;
+    index >= 0 && visibleMessages.length < CHAT_MESSAGE_WINDOW_SIZE;
+    index -= 1
+  ) {
+    const message = messages[index];
+    if (shouldDisplayChatMessage(message, blockedSenderSlugs)) {
+      visibleMessages.push(message);
+    }
+  }
+
+  visibleMessages.reverse();
+  return visibleMessages;
 }
 
 export function getChatMessageManagementActions(

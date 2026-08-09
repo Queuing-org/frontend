@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
@@ -67,7 +67,11 @@ export function useRoomQueuePanel({
     isFetchingNextPage: isFetchingNextMyQueuePage,
     isLoading: isMyQueueLoading,
     isRefetching: isMyRefetching,
-  } = useMyRoomQueue(roomSlug, roomPassword, Boolean(currentUser));
+  } = useMyRoomQueue(
+    roomSlug,
+    roomPassword,
+    Boolean(currentUser) && activeTab === "mine",
+  );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
   const deleteMyQueueEntry = useDeleteMyQueueEntry();
@@ -78,14 +82,21 @@ export function useRoomQueuePanel({
       ? getQueueErrorMessage(allQueueQuery.error)
       : getQueueErrorMessage(myQueueError);
 
-  const allEntries = mergeCurrentEntryWithQueue(
-    currentEntry,
-    allQueueQuery.data.pages.flatMap((page) => page.items),
+  const allEntries = useMemo(
+    () =>
+      mergeCurrentEntryWithQueue(
+        currentEntry,
+        allQueueQuery.data.pages.flatMap((page) => page.items),
+      ),
+    [allQueueQuery.data.pages, currentEntry],
   );
   const allPendingCount =
     allQueueQuery.data.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
-  const myEntries = myQueueData?.pages.flatMap((page) => page.items) ?? [];
+  const myEntries = useMemo(
+    () => myQueueData?.pages.flatMap((page) => page.items) ?? [],
+    [myQueueData?.pages],
+  );
   const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);

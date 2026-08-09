@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
@@ -125,12 +131,14 @@ const kickReset = vi.fn();
 const transferMutate = vi.fn();
 const transferReset = vi.fn();
 const onUserBlocked = vi.fn();
+const resolveParticipantByUserSlug = vi.fn();
 
 function renderPanel(
   currentRequester: typeof requester | (typeof requester & { slug: null }) =
     requester,
   options?: {
     currentUser?: typeof currentUser | null;
+    hasUnloadedParticipants?: boolean;
     kickTarget?: { userSlug: string } | null;
     onUserBlocked?: (userSlug: string) => void;
     reportMessageKey?: string | null;
@@ -143,6 +151,7 @@ function renderPanel(
         options?.currentUser === undefined ? currentUser : options.currentUser
       }
       currentRequester={currentRequester}
+      hasUnloadedParticipants={options?.hasUnloadedParticipants}
       isCurrentUserLoading={false}
       kickTarget={
         options?.kickTarget === undefined
@@ -155,6 +164,7 @@ function renderPanel(
           ? "message-key"
           : options.reportMessageKey
       }
+      resolveParticipantByUserSlug={resolveParticipantByUserSlug}
       roomMeta={options?.roomMeta ?? roomMeta}
       roomPassword="secret"
       roomSlug="room"
@@ -170,6 +180,7 @@ describe("RoomProfilePanel", () => {
   beforeEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    resolveParticipantByUserSlug.mockResolvedValue(null);
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         nickname: "대상",
@@ -228,6 +239,42 @@ describe("RoomProfilePanel", () => {
     expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
+  });
+
+  it("공개 프로필에 칭호와 음악력이 있으면 중복 fallback 조회를 비활성화한다", () => {
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        musicPower: 42,
+        nickname: "대상",
+        profileImageUrl: null,
+        representativeBadge: {
+          badgeCode: "ROOM_CREATE_00001",
+          name: "방 팠음",
+        },
+        slug: "target-user",
+      },
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+
+    renderPanel();
+
+    expect(useMusicPower).toHaveBeenLastCalledWith(null);
+    expect(usePublicUserBadges).toHaveBeenLastCalledWith(null);
+    expect(screen.getByText("방 팠음")).toBeInTheDocument();
+    expect(screen.getByText("42")).toBeInTheDocument();
+  });
+
+  it("공개 프로필 조회가 실패하면 칭호와 음악력 fallback을 활성화한다", () => {
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: undefined,
+      isError: true,
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+
+    renderPanel();
+
+    expect(useMusicPower).toHaveBeenLastCalledWith("target-user");
+    expect(usePublicUserBadges).toHaveBeenLastCalledWith("target-user");
   });
 
   it("기존 투표 상태와 무관하게 클릭한 방향을 PUT mutation에 전달한다", async () => {
@@ -657,6 +704,59 @@ describe("RoomProfilePanel", () => {
     expect(
       screen.queryByRole("menuitem", { name: "내보내기" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("미로드 신청자는 메뉴 실행 시에만 cursor lookup 후 내보낸다", async () => {
+    const user = userEvent.setup();
+    resolveParticipantByUserSlug.mockResolvedValue({
+      nickname: "대상",
+      participantId: "participant-target",
+      participantType: "USER",
+      profileImageUrl: null,
+      userSlug: "target-user",
+    });
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+      hasUnloadedParticipants: true,
+      kickTarget: null,
+    });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    expect(screen.getByRole("menuitem", { name: "내보내기" })).toBeVisible();
+    expect(resolveParticipantByUserSlug).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("menuitem", { name: "내보내기" }));
+
+    await waitFor(() =>
+      expect(resolveParticipantByUserSlug).toHaveBeenCalledWith(
+        "target-user",
+      ),
+    );
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        password: "secret",
+        slug: "room",
+        userSlug: "target-user",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
+
+  it("미로드 신청자가 실제 참가자가 아니면 방장 위임 mutation을 막는다", async () => {
+    const user = userEvent.setup();
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+      hasUnloadedParticipants: true,
+      kickTarget: null,
+    });
+
+    await user.click(screen.getByRole("button", { name: "관리" }));
+    await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+
+    expect(
+      await screen.findByText("현재 참가 중인 회원을 찾지 못했습니다."),
+    ).toBeVisible();
+    expect(transferMutate).not.toHaveBeenCalled();
   });
 
   it("현재 사용자가 방장일 때만 대상 내보내기를 연결한다", async () => {

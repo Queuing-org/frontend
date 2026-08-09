@@ -1,17 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useRoomChats } from "@/src/features/room/hooks/useRoomChats";
 import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
+import { useRoomChats } from "@/src/features/room/hooks/useRoomChats";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
+import { CHAT_MESSAGE_WINDOW_SIZE } from "../constants/chat";
 import {
-  getChatMessageRenderKey,
+  appendUniqueChatMessage,
+  type ChatMessageIdentityIndex,
+  createChatMessageIdentityIndex,
+  getChatMessageIdentityKeys,
   getOldestMessageId,
   getRecentChatMessages,
-  isChatMessageFromUser,
+  hasIndexedChatMessage,
   isChatMessageData,
+  isChatMessageFromUser,
   mergeUniqueChatMessages,
 } from "../model/chatMessages";
 
@@ -24,6 +29,54 @@ type UseRoomChatHistoryParams = {
 
 const CHAT_HISTORY_PAGE_SIZE = 100;
 
+function selectPendingBackfillMessages({
+  currentMessageIndex,
+  currentUser,
+  expectedContents,
+  latestMessages,
+}: {
+  currentMessageIndex: ChatMessageIdentityIndex;
+  currentUser: User;
+  expectedContents: readonly string[];
+  latestMessages: readonly ChatMessage[];
+}) {
+  const remainingExpectedCounts = new Map<string, number>();
+  expectedContents.forEach((content) =>
+    remainingExpectedCounts.set(
+      content,
+      (remainingExpectedCounts.get(content) ?? 0) + 1,
+    ),
+  );
+  const seenMessages = new Map(currentMessageIndex);
+  const selectedMessages: ChatMessage[] = [];
+
+  for (let index = latestMessages.length - 1; index >= 0; index -= 1) {
+    const message = latestMessages[index];
+    const remainingExpectedCount =
+      remainingExpectedCounts.get(message.content) ?? 0;
+
+    if (
+      remainingExpectedCount <= 0 ||
+      hasIndexedChatMessage(seenMessages, message) ||
+      !isChatMessageFromUser(message, currentUser)
+    ) {
+      continue;
+    }
+
+    selectedMessages.push(message);
+    remainingExpectedCounts.set(
+      message.content,
+      remainingExpectedCount - 1,
+    );
+    getChatMessageIdentityKeys(message).forEach((key) =>
+      seenMessages.set(key, message),
+    );
+  }
+
+  selectedMessages.reverse();
+  return selectedMessages;
+}
+
 export function useRoomChatHistory({
   currentUser,
   isEnabled,
@@ -31,6 +84,10 @@ export function useRoomChatHistory({
   slug,
 }: UseRoomChatHistoryParams) {
   const initialChatHistorySlugRef = useRef<string | null>(null);
+  const chatMessagesRef = useRef<ChatMessage[]>([]);
+  const chatMessageIndexRef = useRef(createChatMessageIdentityIndex([]));
+  const historyAbortControllerRef = useRef<AbortController | null>(null);
+  const backfillAbortControllerRef = useRef<AbortController | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatHistoryCursor, setChatHistoryCursor] = useState<number | null>(
     null,
@@ -46,25 +103,66 @@ export function useRoomChatHistory({
   } = useRoomChats();
   const { mutateAsync: backfillRoomChats } = useRoomChats();
 
+  const replaceChatMessages = useCallback((messages: ChatMessage[]) => {
+    const nextMessages =
+      messages.length > CHAT_MESSAGE_WINDOW_SIZE
+        ? messages.slice(-CHAT_MESSAGE_WINDOW_SIZE)
+        : messages;
+
+    chatMessagesRef.current = nextMessages;
+    chatMessageIndexRef.current = createChatMessageIdentityIndex(nextMessages);
+    setChatMessages(nextMessages);
+    return nextMessages;
+  }, []);
+
+  const mergeChatMessages = useCallback(
+    (messages: ChatMessage[], position: "before" | "after") => {
+      const currentMessages = chatMessagesRef.current;
+      const mergedMessages = mergeUniqueChatMessages(
+        position === "before"
+          ? [...messages, ...currentMessages]
+          : [...currentMessages, ...messages],
+      );
+
+      return replaceChatMessages(mergedMessages);
+    },
+    [replaceChatMessages],
+  );
+
+  const abortRequests = useCallback(() => {
+    historyAbortControllerRef.current?.abort();
+    historyAbortControllerRef.current = null;
+    backfillAbortControllerRef.current?.abort();
+    backfillAbortControllerRef.current = null;
+  }, []);
+
   const reset = useCallback(() => {
+    abortRequests();
     initialChatHistorySlugRef.current = null;
-    setChatMessages([]);
+    replaceChatMessages([]);
     setChatHistoryCursor(null);
     setHasOlderChatMessages(false);
     setChatHistoryErrorMessage("");
     setIsInitializingChatHistory(false);
-  }, []);
+  }, [abortRequests, replaceChatMessages]);
 
-  const initializeFromMessages = useCallback((messages: ChatMessage[]) => {
-    const recentMessages = mergeUniqueChatMessages(messages);
+  const initializeFromMessages = useCallback(
+    (messages: ChatMessage[]) => {
+      const recentMessages = replaceChatMessages(
+        mergeUniqueChatMessages(messages),
+      );
 
-    setChatMessages(recentMessages);
-    setChatHistoryCursor(getOldestMessageId(recentMessages));
-    setHasOlderChatMessages(recentMessages.length > 0);
-    setChatHistoryErrorMessage("");
-    setChatScrollToLatestKey((currentKey) => currentKey + 1);
-    setIsInitializingChatHistory(false);
-  }, []);
+      setChatHistoryCursor(getOldestMessageId(recentMessages));
+      setHasOlderChatMessages(
+        recentMessages.length > 0 &&
+          recentMessages.length < CHAT_MESSAGE_WINDOW_SIZE,
+      );
+      setChatHistoryErrorMessage("");
+      setChatScrollToLatestKey((currentKey) => currentKey + 1);
+      setIsInitializingChatHistory(false);
+    },
+    [replaceChatMessages],
+  );
 
   const initializeFromJoinData = useCallback(
     (data: JoinRoomResult["data"]) => {
@@ -74,20 +172,24 @@ export function useRoomChatHistory({
   );
 
   const appendMessage = useCallback((message: ChatMessage) => {
-    setChatMessages((currentMessages) =>
-      mergeUniqueChatMessages([...currentMessages, message]),
+    const nextMessages = appendUniqueChatMessage(
+      chatMessagesRef.current,
+      message,
+      chatMessageIndexRef.current,
+      CHAT_MESSAGE_WINDOW_SIZE,
     );
+    chatMessagesRef.current = nextMessages;
+    setChatMessages(nextMessages);
   }, []);
 
   const loadInitialChatHistory = useCallback(() => {
-    if (!slug) {
+    if (!slug || chatMessagesRef.current.length > 0) {
       return;
     }
 
-    if (chatMessages.length > 0) {
-      return;
-    }
-
+    historyAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    historyAbortControllerRef.current = abortController;
     setIsInitializingChatHistory(true);
     setChatHistoryErrorMessage("");
 
@@ -95,29 +197,40 @@ export function useRoomChatHistory({
       try {
         const result = await loadRoomChats({
           password: roomPassword,
+          signal: abortController.signal,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
         });
-        const pageMessages = result.items.filter(isChatMessageData).reverse();
+        if (abortController.signal.aborted) {
+          return;
+        }
 
-        setChatMessages((currentMessages) =>
-          mergeUniqueChatMessages([...pageMessages, ...currentMessages]),
-        );
+        const pageMessages = result.items.filter(isChatMessageData).reverse();
+        const nextMessages = mergeChatMessages(pageMessages, "before");
         setChatHistoryCursor(result.nextCursor);
         setHasOlderChatMessages(
-          result.hasNext && typeof result.nextCursor === "number",
+          result.hasNext &&
+            typeof result.nextCursor === "number" &&
+            nextMessages.length < CHAT_MESSAGE_WINDOW_SIZE,
         );
         setChatScrollToLatestKey((currentKey) => currentKey + 1);
       } catch (error) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         const err = error as ApiError;
         setChatHistoryErrorMessage(
           err.message || "채팅 기록을 불러오지 못했습니다.",
         );
       } finally {
-        setIsInitializingChatHistory(false);
+        if (historyAbortControllerRef.current === abortController) {
+          historyAbortControllerRef.current = null;
+          setIsInitializingChatHistory(false);
+        }
       }
     })();
-  }, [chatMessages.length, loadRoomChats, roomPassword, slug]);
+  }, [loadRoomChats, mergeChatMessages, roomPassword, slug]);
 
   const loadOlderMessages = useCallback(() => {
     if (
@@ -135,6 +248,16 @@ export function useRoomChatHistory({
       return;
     }
 
+    const remainingCapacity =
+      CHAT_MESSAGE_WINDOW_SIZE - chatMessagesRef.current.length;
+    if (remainingCapacity <= 0) {
+      setHasOlderChatMessages(false);
+      return;
+    }
+
+    historyAbortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    historyAbortControllerRef.current = abortController;
     setChatHistoryErrorMessage("");
 
     void (async () => {
@@ -142,25 +265,37 @@ export function useRoomChatHistory({
         const result = await loadRoomChats({
           cursorId: chatHistoryCursor,
           password: roomPassword,
-          size: CHAT_HISTORY_PAGE_SIZE,
+          signal: abortController.signal,
+          size: Math.min(CHAT_HISTORY_PAGE_SIZE, remainingCapacity),
           slug,
         });
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         const olderMessages = result.items
           .filter(isChatMessageData)
           .reverse();
-
-        setChatMessages((currentMessages) =>
-          mergeUniqueChatMessages([...olderMessages, ...currentMessages]),
-        );
+        const nextMessages = mergeChatMessages(olderMessages, "before");
         setChatHistoryCursor(result.nextCursor);
         setHasOlderChatMessages(
-          result.hasNext && typeof result.nextCursor === "number",
+          result.hasNext &&
+            typeof result.nextCursor === "number" &&
+            nextMessages.length < CHAT_MESSAGE_WINDOW_SIZE,
         );
       } catch (error) {
+        if (abortController.signal.aborted) {
+          return;
+        }
+
         const err = error as ApiError;
         setChatHistoryErrorMessage(
           err.message || "이전 채팅을 불러오지 못했습니다.",
         );
+      } finally {
+        if (historyAbortControllerRef.current === abortController) {
+          historyAbortControllerRef.current = null;
+        }
       }
     })();
   }, [
@@ -170,57 +305,85 @@ export function useRoomChatHistory({
     isInitializingChatHistory,
     isLoadingOlderChatMessages,
     loadRoomChats,
+    mergeChatMessages,
     roomPassword,
     slug,
   ]);
 
-  const backfillLatestMessage = useCallback(
-    async (expectedContent: string) => {
-      if (!slug || !currentUser) {
-        return false;
+  const backfillLatestMessages = useCallback(
+    async (expectedContents: readonly string[]) => {
+      if (!slug || !currentUser || expectedContents.length === 0) {
+        return [];
       }
+
+      backfillAbortControllerRef.current?.abort();
+      const abortController = new AbortController();
+      backfillAbortControllerRef.current = abortController;
 
       try {
         const result = await backfillRoomChats({
           password: roomPassword,
+          signal: abortController.signal,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
         });
+        if (abortController.signal.aborted) {
+          return [];
+        }
+
         const latestMessages = result.items
           .filter(isChatMessageData)
           .reverse();
-        const currentMessageKeys = new Set(
-          chatMessages.map(getChatMessageRenderKey),
+        const wasEmpty = chatMessagesRef.current.length === 0;
+        const pendingBackfillMessages = selectPendingBackfillMessages({
+          currentMessageIndex: chatMessageIndexRef.current,
+          currentUser,
+          expectedContents,
+          latestMessages,
+        });
+        const foundContents = pendingBackfillMessages.map(
+          (message) => message.content,
         );
-        const foundExpectedMessage = latestMessages.some(
-          (message) =>
-            !currentMessageKeys.has(getChatMessageRenderKey(message)) &&
-            message.content === expectedContent &&
-            isChatMessageFromUser(message, currentUser),
-        );
+        let nextMessages = chatMessagesRef.current;
 
-        setChatMessages((currentMessages) =>
-          mergeUniqueChatMessages([...currentMessages, ...latestMessages]),
-        );
-
-        if (chatMessages.length === 0) {
+        if (wasEmpty) {
+          nextMessages = replaceChatMessages(
+            mergeUniqueChatMessages(latestMessages),
+          );
           setChatHistoryCursor(result.nextCursor);
           setHasOlderChatMessages(
-            result.hasNext && typeof result.nextCursor === "number",
+            result.hasNext &&
+              typeof result.nextCursor === "number" &&
+              nextMessages.length < CHAT_MESSAGE_WINDOW_SIZE,
           );
+        } else if (pendingBackfillMessages.length > 0) {
+          pendingBackfillMessages.forEach((message) => {
+            nextMessages = appendUniqueChatMessage(
+              nextMessages,
+              message,
+              chatMessageIndexRef.current,
+              CHAT_MESSAGE_WINDOW_SIZE,
+            );
+          });
+          chatMessagesRef.current = nextMessages;
+          setChatMessages(nextMessages);
         }
 
-        if (foundExpectedMessage) {
+        if (foundContents.length > 0) {
           setChatHistoryErrorMessage("");
           setChatScrollToLatestKey((currentKey) => currentKey + 1);
         }
 
-        return foundExpectedMessage;
+        return foundContents;
       } catch {
-        return false;
+        return [];
+      } finally {
+        if (backfillAbortControllerRef.current === abortController) {
+          backfillAbortControllerRef.current = null;
+        }
       }
     },
-    [backfillRoomChats, chatMessages, currentUser, roomPassword, slug],
+    [backfillRoomChats, currentUser, replaceChatMessages, roomPassword, slug],
   );
 
   useEffect(() => {
@@ -238,9 +401,11 @@ export function useRoomChatHistory({
     loadInitialChatHistory();
   }, [isEnabled, loadInitialChatHistory, roomPassword, slug]);
 
+  useEffect(() => abortRequests, [abortRequests]);
+
   return {
     appendMessage,
-    backfillLatestMessage,
+    backfillLatestMessages,
     hasOlderMessages: hasOlderChatMessages,
     historyErrorMessage: chatHistoryErrorMessage,
     initializeFromJoinData,

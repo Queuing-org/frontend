@@ -1,9 +1,15 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  type InfiniteData,
+} from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
-import { fetchRoomParticipants } from "../api/fetchRoomParticipants";
-import type { PlaylistParticipant } from "./types";
+import {
+  fetchRoomParticipantsPage,
+  getNextRoomParticipantsPageParam,
+} from "../api/fetchRoomParticipants";
+import type { RoomParticipantsPage } from "./types";
 import { playlistKeys } from "./queryKeys";
 
 export function useRoomParticipants(
@@ -11,9 +17,25 @@ export function useRoomParticipants(
   password?: string | null,
   enabled = true,
 ) {
-  return useQuery<PlaylistParticipant[], ApiError>({
-    queryKey: playlistKeys.roomParticipants(slug, password),
-    queryFn: () => fetchRoomParticipants({ slug: slug!, password }),
+  const queryKey = playlistKeys.roomParticipants(slug, password);
+
+  return useInfiniteQuery<
+    RoomParticipantsPage,
+    ApiError,
+    InfiniteData<RoomParticipantsPage>,
+    typeof queryKey,
+    string | null
+  >({
+    queryKey,
+    queryFn: ({ pageParam, signal }) =>
+      fetchRoomParticipantsPage({
+        slug: slug!,
+        password,
+        cursor: pageParam ?? undefined,
+        signal,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: getNextRoomParticipantsPageParam,
     enabled: enabled && Boolean(slug),
   });
 }
