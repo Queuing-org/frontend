@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-09-friend-add-flow](./2026-08-09-friend-add-flow/plan.md) — FRIEND 패널 친구 추가 검색 모달 흐름 개편
+
 - [2026-08-09-follow-relationship-page-size](./2026-08-09-follow-relationship-page-size/plan.md) — 팔로워 관계 조회 API 페이지 크기 계약 수정
 
 - [2026-08-09-follow-list-summary](./2026-08-09-follow-list-summary/plan.md) — 팔로우 목록 빈 상태·인원 수·탭 아이콘 정리

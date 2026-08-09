@@ -1,9 +1,10 @@
 "use client";
 
+import { useRef } from "react";
 import { useFollowModalState } from "@/src/features/follow/hooks/useFollowModalState";
+import AddFriendModal from "./add-friend/AddFriendModal";
 import FollowTabPanel from "./components/FollowTabPanel";
 import FollowTabs from "./components/FollowTabs";
-import FollowUserSearch from "./components/FollowUserSearch";
 import styles from "./FollowModal.module.css";
 
 type FollowModalProps = {
@@ -13,6 +14,12 @@ type FollowModalProps = {
 
 export default function FollowModal({ open, onClose }: FollowModalProps) {
   const modal = useFollowModalState({ onClose, open });
+  const addFriendButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeAddFriend = () => {
+    modal.closeAddFriend();
+    requestAnimationFrame(() => addFriendButtonRef.current?.focus());
+  };
 
   if (!open) {
     return null;
@@ -26,20 +33,22 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="follow-modal-title"
+        inert={modal.isAddFriendOpen || undefined}
       >
         <header className={styles.header}>
           <h2 id="follow-modal-title" className={styles.title}>
-            FOLLOW
+            FRIEND
           </h2>
-          <FollowUserSearch
-            isError={modal.isSearchError}
-            isLoading={modal.isSearchLoading}
-            query={modal.query}
-            selectedUser={modal.selectedUser}
-            users={modal.users}
-            onQueryChange={modal.updateQuery}
-            onSelectUser={modal.setSelectedUser}
-          />
+          <button
+            type="button"
+            ref={addFriendButtonRef}
+            className={styles.openAddFriendButton}
+            aria-label="친구 추가"
+            onClick={modal.openAddFriend}
+          >
+            <span aria-hidden="true">＋</span>
+            <span>친구 추가</span>
+          </button>
         </header>
         <div className={styles.content}>
           <FollowTabs
@@ -50,6 +59,9 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
           <FollowTabPanel activeTab={modal.activeTab} />
         </div>
       </section>
+      {modal.isAddFriendOpen ? (
+        <AddFriendModal onClose={closeAddFriend} />
+      ) : null}
     </div>
   );
 }
