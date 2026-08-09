@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-09-floating-widget-position-reset](./2026-08-09-floating-widget-position-reset/plan.md): publishing — 참가자 scrollbar 숨김과 floating 모달 위치 초기화
+- [2026-08-09-floating-widget-position-reset](./2026-08-09-floating-widget-position-reset/plan.md): ready — 참가자 scrollbar 숨김과 floating 모달 위치 초기화
 
 - [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): ready — 채팅 금칙어 invalid-input 하단 문구 숨김
 

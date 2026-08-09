@@ -2,7 +2,7 @@
 
 ## 상태
 
-- 단계: publishing
+- 단계: ready
 - 브랜치: `dev`
 - 전달 대상: Draft PR #36
 
@@ -47,4 +47,4 @@
 - [x] scrollbar 숨김과 초기화 UI/state 구현
 - [x] targeted test, lint, full test, build
 - [x] fresh read-only QA
-- [ ] commit, push, 원격 CI
+- [x] commit, push, 원격 CI
