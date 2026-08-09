@@ -28,7 +28,7 @@ export default function BlockedUsersList() {
   );
 
   if (users.length === 0) {
-    return <FollowListState>차단한 사용자가 없습니다.</FollowListState>;
+    return <FollowListState>차단된 사용자가 없습니다.</FollowListState>;
   }
 
   return (

@@ -12,7 +12,7 @@ type FollowModalProps = {
 };
 
 export default function FollowModal({ open, onClose }: FollowModalProps) {
-  const modal = useFollowModalState({ onClose });
+  const modal = useFollowModalState({ onClose, open });
 
   if (!open) {
     return null;

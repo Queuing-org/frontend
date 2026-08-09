@@ -23,23 +23,23 @@ export default function FollowersList() {
   }, []);
   const handleBlockClose = useCallback(() => setBlockTarget(null), []);
 
+  if (followers.length === 0) {
+    return <FollowListState>팔로워가 없습니다.</FollowListState>;
+  }
+
   return (
     <div className={styles.container}>
-      {followers.length === 0 ? (
-        <FollowListState>팔로워가 없습니다.</FollowListState>
-      ) : (
-        <ul className={styles.list}>
-          {followers.map((user) => (
-            <FollowerCard
-              key={user.slug}
-              expanded={expandedSlug === user.slug}
-              onBlock={handleBlock}
-              onToggle={handleToggle}
-              user={user}
-            />
-          ))}
-        </ul>
-      )}
+      <ul className={styles.list}>
+        {followers.map((user) => (
+          <FollowerCard
+            key={user.slug}
+            expanded={expandedSlug === user.slug}
+            onBlock={handleBlock}
+            onToggle={handleToggle}
+            user={user}
+          />
+        ))}
+      </ul>
       <BlockUserModal
         target={blockTarget}
         onBlocked={() => setExpandedSlug(null)}
