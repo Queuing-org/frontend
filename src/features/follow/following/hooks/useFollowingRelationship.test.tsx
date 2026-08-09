@@ -4,7 +4,10 @@ import type { PropsWithChildren } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { followKeys } from "@/src/features/follow/model/queryKeys";
 import { fetchAllFollowing } from "../api/fetchAllFollowing";
-import { useFollowingRelationship } from "./useFollowingRelationship";
+import {
+  FOLLOWING_RELATIONSHIP_STALE_TIME_MS,
+  useFollowingRelationship,
+} from "./useFollowingRelationship";
 
 vi.mock("../api/fetchAllFollowing", () => ({
   fetchAllFollowing: vi.fn(),
@@ -43,7 +46,7 @@ describe("useFollowingRelationship", () => {
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
-    const { result } = renderHook(
+    const { result, unmount } = renderHook(
       () => useFollowingRelationship("target"),
       { wrapper },
     );
@@ -55,5 +58,18 @@ describe("useFollowingRelationship", () => {
     expect(followKeys.followingRelationships().slice(0, 2)).not.toEqual(
       followKeys.followingsRoot(),
     );
+    expect(
+      queryClient.getQueryState(followKeys.followingRelationships())
+        ?.dataUpdatedAt,
+    ).toBeGreaterThan(0);
+    expect(FOLLOWING_RELATIONSHIP_STALE_TIME_MS).toBe(300_000);
+
+    unmount();
+    const reopened = renderHook(
+      () => useFollowingRelationship("first-page"),
+      { wrapper },
+    );
+    await waitFor(() => expect(reopened.result.current.data).toBe(true));
+    expect(fetchAllFollowing).toHaveBeenCalledOnce();
   });
 });

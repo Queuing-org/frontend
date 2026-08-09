@@ -1,5 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFollow } from "@/src/features/follow/follow/hooks/useFollow";
 import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers";
 import type { SearchUser } from "@/src/features/user/search/model/types";
@@ -35,6 +35,39 @@ describe("useAddFriendModalState", () => {
       mutate: followMutate,
       reset: followReset,
     } as unknown as ReturnType<typeof useFollow>);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("두 글자 미만은 검색하지 않고 마지막 입력만 debounce해 전달한다", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() => useAddFriendModalState());
+
+    act(() => result.current.updateQuery("감"));
+    expect(result.current.isResultsOpen).toBe(false);
+    expect(vi.mocked(useSearchUsers).mock.calls.at(-1)?.[0]).toEqual({
+      limit: 10,
+      query: "",
+    });
+
+    act(() => result.current.updateQuery("감튀"));
+    act(() => result.current.updateQuery("감튀교"));
+    expect(result.current.isSearchLoading).toBe(true);
+    expect(vi.mocked(useSearchUsers).mock.calls.at(-1)?.[0]).toEqual({
+      limit: 10,
+      query: "",
+    });
+
+    act(() => vi.advanceTimersByTime(249));
+    expect(vi.mocked(useSearchUsers).mock.calls.at(-1)?.[0].query).toBe("");
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(vi.mocked(useSearchUsers).mock.calls.at(-1)?.[0]).toEqual({
+      limit: 10,
+      query: "감튀교",
+    });
   });
 
   it("검색 결과를 선택하면 입력값에는 닉네임을 채우고 slug는 mutation에 사용한다", () => {

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   getRoomsFromPages,
   normalizeRoomsQueryParams,
@@ -13,12 +14,12 @@ import {
   getRoomImageSrc,
   ROOM_HERO_IMAGE_VARIANTS,
 } from "@/src/features/room/lib/getDefaultRoomImage";
-import { useRoomNavigator } from "@/src/shared/lib/useRoomNavigator";
-import { useLoadMoreRoomsNearEnd } from "@/src/shared/lib/useLoadMoreRoomsNearEnd";
-import { useAuthenticatedAction } from "@/src/shared/lib/useAuthenticatedAction";
+import { useRoomNavigator } from "@/src/features/room/hooks/useRoomNavigator";
+import { useLoadMoreRoomsNearEnd } from "@/src/features/room/hooks/useLoadMoreRoomsNearEnd";
+import { useAuthenticatedAction } from "@/src/features/auth/hooks/useAuthenticatedAction";
 import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
 import { SearchPageRoomList } from "@/src/features/room/search/ui/SearchPageRoomList";
-import MainLogo from "@/src/features/home/ui/MainLogo";
+import MainLogo from "@/src/shared/ui/main-logo/MainLogo";
 import styles from "./SearchScreen.module.css";
 import Image from "next/image";
 import RoomSearchInput from "@/src/features/room/search/ui/RoomSearchInput";
@@ -29,20 +30,46 @@ import {
   getSelectedHomeGenreTags,
   type HomeFilterKey,
   type HomeFilterOption,
-} from "@/src/features/home/ui/HomeControlPanelShell";
-import HomeSearchControlDock from "@/src/features/home/ui/HomeSearchControlDock";
-import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
+} from "@/src/features/room/discovery/ui/HomeControlPanelShell";
+import HomeSearchControlDock from "@/src/features/room/discovery/ui/HomeSearchControlDock";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
 import { useRandomEntryNavigation } from "@/src/features/room/hooks/useRandomEntryNavigation";
-import RoomJoinPasswordModal from "@/src/features/room/join/ui/RoomJoinPasswordModal";
-import FollowModal from "@/src/features/follow/ui/FollowModal";
-import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import { useRoomMetaQuery } from "@/src/features/room/hooks/useRoomMeta";
 import SelectedRoomOwnerBar from "@/src/features/room/list/ui/SelectedRoomOwnerBar";
 import SearchEmptyState from "@/src/features/room/search/ui/SearchEmptyState";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
+import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
+
+const RoomFormModal = dynamic(
+  () => import("@/src/features/room/create/ui/RoomFormModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="방 만들기 화면 로딩 중" />,
+  },
+);
+const RoomJoinPasswordModal = dynamic(
+  () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="방 입장 화면 로딩 중" />,
+  },
+);
+const FollowModal = dynamic(
+  () => import("@/src/features/follow/ui/FollowModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="친구 화면 로딩 중" />,
+  },
+);
+const SettingsModal = dynamic(
+  () => import("@/src/features/settings/ui/SettingsModal"),
+  {
+    ssr: false,
+    loading: () => <LazyModalFallback label="설정 화면 로딩 중" />,
+  },
+);
 
 export default function SearchScreen() {
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
@@ -123,14 +150,12 @@ export default function SearchScreen() {
           onClose={() => setIsCreateRoomModalOpen(false)}
         />
       ) : null}
-      <FollowModal
-        open={isFollowModalOpen}
-        onClose={() => setIsFollowModalOpen(false)}
-      />
-      <SettingsModal
-        open={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-      />
+      {isFollowModalOpen ? (
+        <FollowModal open onClose={() => setIsFollowModalOpen(false)} />
+      ) : null}
+      {isSettingsModalOpen ? (
+        <SettingsModal open onClose={() => setIsSettingsModalOpen(false)} />
+      ) : null}
       <AuthRequiredModal
         open={isAuthRequiredModalOpen}
         description={authRequiredDescription}
@@ -354,11 +379,13 @@ function SearchRoomsContent({
         }}
       />
 
-      <RoomJoinPasswordModal
-        room={roomEntry.passwordRoom}
-        onClose={roomEntry.closePasswordModal}
-        onJoined={roomEntry.completePasswordEntry}
-      />
+      {roomEntry.passwordRoom ? (
+        <RoomJoinPasswordModal
+          room={roomEntry.passwordRoom}
+          onClose={roomEntry.closePasswordModal}
+          onJoined={roomEntry.completePasswordEntry}
+        />
+      ) : null}
     </>
   );
 }

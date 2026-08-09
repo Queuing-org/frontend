@@ -1,0 +1,1 @@
+export const MIN_USER_SEARCH_QUERY_LENGTH = 2;

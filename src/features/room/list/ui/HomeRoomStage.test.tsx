@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { Room, RoomOwner } from "@/src/features/room/model/types";
@@ -59,5 +59,62 @@ describe("HomeRoomStage", () => {
 
     expect(screen.getByLabelText("방장 민지")).toBeInTheDocument();
     expect(screen.getByText("민지")).toBeInTheDocument();
+  });
+
+  it("방을 많이 불러와도 선택 지점 주변 카드와 global slot을 유지한다", () => {
+    const onRequestRoomEntry = vi.fn();
+    const rooms = Array.from({ length: 100 }, (_, index) => ({
+      ...room,
+      id: index + 1,
+      slug: `room-${index + 1}`,
+      title: `방 ${index + 1}`,
+    }));
+
+    const { container, rerender } = render(
+      <HomeRoomStage
+        rooms={rooms}
+        currentRoomSlug="room-51"
+        onCreateRoom={vi.fn()}
+        onRequestRoomEntry={onRequestRoomEntry}
+        onSelectRoom={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelectorAll("[data-room-slug]")).toHaveLength(7);
+    expect(container.querySelector('[data-room-slug="room-51"]')).toBeInTheDocument();
+    expect(container.querySelector('[data-room-slug="room-1"]')).not.toBeInTheDocument();
+    expect(
+      container
+        .querySelector('[data-room-slug="room-50"]')
+        ?.closest("[data-slot]"),
+    ).toHaveAttribute("data-slot", "prev");
+    expect(
+      container
+        .querySelector('[data-room-slug="room-51"]')
+        ?.closest("[data-slot]"),
+    ).toHaveAttribute("data-slot", "current");
+    expect(
+      container
+        .querySelector('[data-room-slug="room-52"]')
+        ?.closest("[data-slot]"),
+    ).toHaveAttribute("data-slot", "next");
+
+    fireEvent.click(screen.getByRole("button", { name: "방 52 방 선택" }));
+    expect(onRequestRoomEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "room-52" }),
+    );
+
+    rerender(
+      <HomeRoomStage
+        rooms={rooms}
+        currentRoomSlug="room-100"
+        onCreateRoom={vi.fn()}
+        onRequestRoomEntry={vi.fn()}
+        onSelectRoom={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelectorAll("[data-room-slug]")).toHaveLength(4);
+    expect(container.querySelector('[data-room-slug="room-100"]')).toBeInTheDocument();
   });
 });

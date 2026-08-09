@@ -46,7 +46,7 @@ export async function fetchRooms({
   participantOrder,
   size,
   tags,
-}: FetchRoomsParams = {}): Promise<RoomsResponse> {
+}: FetchRoomsParams = {}, signal?: AbortSignal): Promise<RoomsResponse> {
   const trimmedKeyword = keyword?.trim();
   const normalizedTags = normalizeRoomTagSlugs(tags);
   const normalizedCursorSeed =
@@ -78,6 +78,7 @@ export async function fetchRooms({
           : {}),
         ...(typeof size === "number" ? { size } : {}),
       },
+      signal,
     },
   );
 

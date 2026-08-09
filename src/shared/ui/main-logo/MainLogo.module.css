@@ -1,5 +1,13 @@
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("./BebasNeue-Regular.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 .logo {
-  font-family: var(--font-bebas-neue), var(--font-suit), sans-serif;
+  font-family: "Bebas Neue", var(--font-suit), sans-serif;
   display: inline-flex;
   color: #3c3c3c;
   font-size: 20px;

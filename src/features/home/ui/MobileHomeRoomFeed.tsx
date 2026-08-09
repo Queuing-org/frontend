@@ -14,7 +14,7 @@ import HomeControlPanelShell, {
   type HomeFilterOption,
   type HomeFilterState,
   type HomeGenreFilterOptionDescriptor,
-} from "./HomeControlPanelShell";
+} from "@/src/features/room/discovery/ui/HomeControlPanelShell";
 import styles from "./MobileHomeRoomFeed.module.css";
 
 type Props = {

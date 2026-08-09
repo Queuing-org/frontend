@@ -75,8 +75,6 @@ export default function LoginModal({
             width={80}
             height={80}
             draggable={false}
-            unoptimized
-            priority
             className={styles.modalLogoImage}
           />
         </div>

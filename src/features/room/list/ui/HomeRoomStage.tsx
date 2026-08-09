@@ -34,6 +34,7 @@ type Props = {
 
 const DRAG_SELECT_THRESHOLD = 50;
 const CLICK_SUPPRESS_THRESHOLD = 8;
+const STAGE_WINDOW_RADIUS = 3;
 
 function getRoomSlot(relativeIndex: number): RoomSlot {
   if (relativeIndex <= -3) return "off-left";
@@ -75,6 +76,18 @@ export default function HomeRoomStage({
   const previousRoom = selectedIndex > 0 ? rooms[selectedIndex - 1] : null;
   const nextRoom =
     selectedIndex < rooms.length - 1 ? rooms[selectedIndex + 1] : null;
+  const visibleRoomStartIndex = Math.max(
+    0,
+    selectedIndex - STAGE_WINDOW_RADIUS,
+  );
+  const visibleRoomEndIndex = Math.min(
+    rooms.length,
+    selectedIndex + STAGE_WINDOW_RADIUS + 1,
+  );
+  const visibleRooms = rooms.slice(
+    visibleRoomStartIndex,
+    visibleRoomEndIndex,
+  );
 
   useRoomWheelNavigation({
     viewportRef: railRef,
@@ -252,7 +265,8 @@ export default function HomeRoomStage({
         onPointerUp={finishDrag}
         onPointerCancel={cancelDrag}
       >
-        {rooms.map((room, index) => {
+        {visibleRooms.map((room, windowIndex) => {
+          const index = visibleRoomStartIndex + windowIndex;
           const slot = getRoomSlot(index - selectedIndex);
           const isSelected = slot === "current";
           const isNavigable = isNavigableSlot(slot);

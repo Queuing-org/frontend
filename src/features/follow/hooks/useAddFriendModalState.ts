@@ -3,16 +3,29 @@
 import { useState } from "react";
 import { useFollow } from "@/src/features/follow/follow/hooks/useFollow";
 import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers";
+import { MIN_USER_SEARCH_QUERY_LENGTH } from "@/src/features/user/search/model/searchUserQuery";
 import type { SearchUser } from "@/src/features/user/search/model/types";
+import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
 
 const SEARCH_RESULT_LIMIT = 10;
+const SEARCH_DEBOUNCE_MS = 250;
 
 export function useAddFriendModalState() {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const normalizedQuery = selectedUser ? "" : query.trim();
+  const debouncedQuery = useDebouncedValue(
+    normalizedQuery,
+    SEARCH_DEBOUNCE_MS,
+  );
+  const isSearchEligible =
+    normalizedQuery.length >= MIN_USER_SEARCH_QUERY_LENGTH;
+  const isSearchDebouncing = normalizedQuery !== debouncedQuery;
+  const activeSearchQuery =
+    isSearchEligible && !isSearchDebouncing ? debouncedQuery : "";
   const searchUsers = useSearchUsers({
-    query: selectedUser ? "" : query,
+    query: activeSearchQuery,
     limit: SEARCH_RESULT_LIMIT,
   });
   const followUser = useFollow();
@@ -60,15 +73,16 @@ export function useAddFriendModalState() {
     canSubmit: Boolean(selectedUser) && selectedUser?.relationship !== "ME",
     clearQuery,
     errorMessage: followUser.error?.message ?? null,
-    isResultsOpen: query.trim().length > 0 && !selectedUser,
-    isSearchError: searchUsers.isError,
-    isSearchLoading: searchUsers.isLoading,
+    isResultsOpen: isSearchEligible && !selectedUser,
+    isSearchError: !isSearchDebouncing && searchUsers.isError,
+    isSearchLoading:
+      isSearchEligible && (isSearchDebouncing || searchUsers.isLoading),
     isSubmitting: followUser.isPending,
     isSuccess,
     query,
     selectUser,
     submit,
     updateQuery,
-    users: searchUsers.data?.items ?? [],
+    users: isSearchDebouncing ? [] : (searchUsers.data?.items ?? []),
   };
 }
