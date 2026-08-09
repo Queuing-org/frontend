@@ -1,4 +1,5 @@
 import { ClipLoader } from "react-spinners";
+import type { CSSProperties } from "react";
 import styles from "./LoadingSpinner.module.css";
 
 type Props = {
@@ -19,6 +20,11 @@ export default function LoadingSpinner({
   return (
     <span
       className={`${styles.spinner} ${className ?? ""}`}
+      style={
+        {
+          "--loading-spinner-compact-size": `${size * 0.8}px`,
+        } as CSSProperties
+      }
       role={announce ? "status" : undefined}
       aria-label={announce ? ariaLabel : undefined}
       aria-hidden={announce ? undefined : true}

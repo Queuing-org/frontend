@@ -66,3 +66,20 @@
     bottom: calc(100% + 14px);
   }
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .dock {
+    bottom: 48px;
+  }
+
+  .floatStack {
+    bottom: calc(100% + 14.4px);
+    gap: 8px;
+  }
+
+  .errorBubble {
+    max-width: min(72vw, 256px);
+    padding: 6.4px 9.6px;
+    font-size: 10.4px;
+  }
+}

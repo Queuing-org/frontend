@@ -89,3 +89,32 @@
   height: 11px;
   object-fit: contain;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .card {
+    padding-inline: 24px;
+  }
+
+  .content {
+    gap: 0.3rem;
+  }
+
+  .title {
+    font-size: 12.8px;
+  }
+
+  .meta {
+    gap: 3.2px;
+    font-size: 9.6px;
+  }
+
+  .lockIcon {
+    width: 7.2px;
+    height: 8.8px;
+  }
+
+  .arrow {
+    width: 6.4px;
+    height: 8.8px;
+  }
+}

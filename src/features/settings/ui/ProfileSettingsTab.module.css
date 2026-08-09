@@ -380,3 +380,76 @@
     margin: -14px 0 0;
   }
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .profileCard {
+    grid-template-columns: minmax(128px, 34%) minmax(0, 1fr);
+    column-gap: 22.4px;
+    padding: 46.4px 36.8px 36.8px;
+    border-radius: 6.4px;
+  }
+
+  .profileImageColumn {
+    gap: 9.6px;
+  }
+
+  .profileImageWrap {
+    width: 169.6px;
+    height: 169.6px;
+  }
+
+  .profileImageCredit {
+    max-width: 169.6px;
+    font-size: 9.6px;
+  }
+
+  .profileForm {
+    gap: 11.2px;
+  }
+
+  .formRow {
+    grid-template-columns: 86.4px minmax(0, 1fr);
+    gap: 17.6px;
+  }
+
+  .fieldLabel,
+  .statItem dt,
+  .statItem dd {
+    font-size: 12.8px;
+  }
+
+  .textInput,
+  .selectField {
+    height: 32px;
+    border-radius: 6.4px;
+    font-size: 12px;
+  }
+
+  .textInput {
+    padding: 9.6px 12.8px;
+  }
+
+  .editableControl .textInput {
+    padding-right: 64px;
+  }
+
+  .primaryButton {
+    right: 11.2px;
+    width: 43.2px;
+    height: 22.4px;
+    font-size: 9.6px;
+  }
+
+  .successText,
+  .errorText,
+  .badgeStatusText,
+  .badgeStatusError {
+    margin: -6.4px 0 0 104px;
+    font-size: 9.6px;
+  }
+
+  .profileStats {
+    gap: 19.2px;
+    margin: 22.4px 36.8px 0;
+  }
+}

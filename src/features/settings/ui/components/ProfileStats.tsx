@@ -1,14 +1,20 @@
 "use client";
 
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
+import { formatListeningDuration } from "@/src/features/user/profile/model/formatListeningDuration";
 import styles from "../ProfileSettingsTab.module.css";
 
 type Props = {
+  listeningDurationSeconds?: number;
   musicPower?: number;
   queuingCount?: number;
 };
 
-export default function ProfileStats({ musicPower, queuingCount }: Props) {
+export default function ProfileStats({
+  listeningDurationSeconds,
+  musicPower,
+  queuingCount,
+}: Props) {
   return (
     <dl className={styles.profileStats}>
       <div className={styles.statItem}>
@@ -17,7 +23,7 @@ export default function ProfileStats({ musicPower, queuingCount }: Props) {
       </div>
       <div className={styles.statItem}>
         <dt>이용 시간</dt>
-        <dd>개발중입니다.</dd>
+        <dd>{formatListeningDuration(listeningDurationSeconds)}</dd>
       </div>
       <div className={styles.statItem}>
         <dt>음악력</dt>

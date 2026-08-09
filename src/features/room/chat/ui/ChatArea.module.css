@@ -8,6 +8,7 @@
 }
 
 .list {
+  box-sizing: border-box;
   flex: 1;
   height: 100%;
   min-height: 0;
@@ -67,48 +68,6 @@
 .menuButton:focus-visible {
   background: #f0f0f0;
   outline: none;
-}
-
-.menu {
-  position: absolute;
-  z-index: 20;
-  top: 30px;
-  right: 0;
-  display: grid;
-  width: 88px;
-  overflow: hidden;
-  border: 1px solid #dedede;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
-}
-
-.menu[data-placement="up"] {
-  top: auto;
-  bottom: 30px;
-}
-
-.menu button {
-  min-height: 38px;
-  padding: 0 14px;
-  border: 0;
-  background: #ffffff;
-  color: #3c3c3c;
-  font: inherit;
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
-  text-align: left;
-  cursor: pointer;
-}
-
-.menu button:hover,
-.menu button:focus-visible {
-  background: #f4f6f8;
-  outline: none;
-}
-
-.menu button + button {
-  border-top: 1px solid #eeeeee;
 }
 
 .avatarWrap {
@@ -191,6 +150,22 @@
   cursor: pointer;
 }
 
+.managementMessage,
+.managementError {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+}
+
+.managementMessage {
+  color: #62626f;
+}
+
+.managementError {
+  color: #d24b4b;
+}
+
 @media (max-width: 520px) {
   .list {
     padding: 12px;
@@ -226,5 +201,53 @@
 @media (hover: none) {
   .menuButton {
     opacity: 1;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .root {
+    border-radius: 6.4px;
+  }
+
+  .list {
+    padding: 11.2px 12.8px;
+  }
+
+  .messages {
+    gap: 12.8px;
+  }
+
+  .message {
+    gap: 9.6px;
+    padding-right: 22.4px;
+  }
+
+  .menuButton {
+    width: 22.4px;
+    height: 22.4px;
+  }
+
+  .avatarWrap {
+    flex-basis: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatarFallback {
+    font-size: 14.4px;
+  }
+
+  .messageText,
+  .nickname,
+  .content {
+    font-size: 16px;
+  }
+
+  .messageText {
+    margin-top: 4.8px;
+  }
+
+  .nickname {
+    margin-right: 9.6px;
   }
 }

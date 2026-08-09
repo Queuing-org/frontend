@@ -35,4 +35,22 @@ describe("fetchRooms v26.8 cursor", () => {
       },
     });
   });
+
+  it("태그를 정규화해 쉼표로 연결하고 커서 요청에도 함께 보낸다", async () => {
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: { result: { rooms: [], hasNext: false } },
+    });
+
+    await fetchRooms({
+      cursorLastId: 9,
+      tags: [" kpop ", "anime", "kpop"],
+    });
+
+    expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/rooms", {
+      params: {
+        cursorLastId: 9,
+        tags: "anime,kpop",
+      },
+    });
+  });
 });

@@ -3,6 +3,7 @@ import {
   createStompClient,
   DEFAULT_STOMP_RECONNECT_DELAY_MS,
 } from "./createStompClient";
+import { WEB_SOCKET_URL } from "@/src/shared/api/config";
 
 type SocketListener = {
   onConnect?: (frame: IFrame) => void;
@@ -38,7 +39,7 @@ client.onWebSocketError = (event) => {
 
 client.onWebSocketClose = (event) => {
   console.error("WebSocket closed:", {
-    url: process.env.NEXT_PUBLIC_WS_URL,
+    url: WEB_SOCKET_URL,
     code: event.code,
     reason: event.reason,
     wasClean: event.wasClean,

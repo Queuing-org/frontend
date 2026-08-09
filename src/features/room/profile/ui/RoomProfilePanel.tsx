@@ -1,8 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
+import { formatListeningDuration } from "@/src/features/user/profile/model/formatListeningDuration";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
@@ -18,13 +26,16 @@ import type { RoomMeta } from "@/src/features/room/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
+import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
+import RoomMemberManagementMenu, {
+  type RoomMemberManagementAction,
+} from "@/src/features/room/management/ui/RoomMemberManagementMenu";
 import type { ParticipantKickTarget } from "@/src/features/room/participants/model/participantIdentity";
 import ReportChatMessageModal, {
   type ReportChatMessageTarget,
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
 import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import type { CurrentRequesterProfile } from "../model/types";
-import RoomProfileManagementMenu from "./RoomProfileManagementMenu";
 import styles from "./RoomProfilePanel.module.css";
 
 type Props = {
@@ -85,6 +96,7 @@ export default function RoomProfilePanel({
   const [musicPowerNotice, setMusicPowerNotice] =
     useState<MusicPowerNotice | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
+  const managementMenuId = useId();
   const musicPowerNoticeTimerRef = useRef<number | null>(null);
   const musicPowerNoticeSequenceRef = useRef(0);
   const targetSlug = currentRequester?.slug ?? null;
@@ -93,6 +105,7 @@ export default function RoomProfilePanel({
   const musicPowerQuery = useMusicPower(targetSlug);
   const musicPowerVote = useCurrentTrackMusicPowerVote();
   const kickParticipant = useKickRoomParticipant();
+  const transferOwner = useTransferRoomOwner();
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
     usePublicUserBadges(targetSlug);
 
@@ -108,21 +121,30 @@ export default function RoomProfilePanel({
     !isTargetRoomOwner &&
     !isSelf &&
     Boolean(kickTarget);
+  const canTransfer = canKick && Boolean(targetSlug);
+  const managementActions: RoomMemberManagementAction[] = canManage
+    ? [
+        "report",
+        "block",
+        ...(canKick ? (["kick"] as const) : []),
+        ...(canTransfer ? (["transfer"] as const) : []),
+      ]
+    : [];
   const { data: isFollowingCurrentRequester } = useFollowingRelationship(
     canFollow ? targetSlug : null,
   );
 
-  let buttonLabel: ReactNode = "팔로우";
+  let followButtonLabel: ReactNode = "팔로우";
   if (!currentRequester) {
-    buttonLabel = "대상 없음";
+    followButtonLabel = "대상 없음";
   } else if (!currentRequester.slug) {
-    buttonLabel = "준비 중";
+    followButtonLabel = "준비 중";
   } else if (isCurrentUserLoading) {
-    buttonLabel = (
+    followButtonLabel = (
       <LoadingSpinner ariaLabel="로그인 상태 확인 중" size={16} />
     );
   } else if (!currentUser) {
-    buttonLabel = "로그인 필요";
+    followButtonLabel = "로그인 필요";
   }
 
   const representativeBadge =
@@ -136,6 +158,9 @@ export default function RoomProfilePanel({
   const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
     musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
+  const listeningDurationSeconds =
+    publicProfile?.listeningDurationSeconds ??
+    (isSelf ? currentUser?.listeningDurationSeconds : undefined);
   const isMusicPowerVoteDisabled =
     isCurrentUserLoading ||
     isSelf ||
@@ -259,6 +284,28 @@ export default function RoomProfilePanel({
     );
   };
 
+  const handleTransfer = () => {
+    if (!targetSlug || !canTransfer) {
+      return;
+    }
+
+    setManagementMessage(null);
+    transferOwner.reset();
+    transferOwner.mutate(
+      { slug: roomSlug, userSlug: targetSlug },
+      {
+        onSuccess: () => {
+          setManagementMessage(
+            `${displayNickname}님에게 방장을 위임했습니다.`,
+          );
+        },
+      },
+    );
+  };
+  const closeManagementMenu = useCallback(() => {
+    setIsManagementOpen(false);
+  }, []);
+
   return (
     <div className={styles.root}>
       {currentRequester ? (
@@ -315,7 +362,7 @@ export default function RoomProfilePanel({
                 <FollowToggleButton
                   className={styles.followButton}
                   disabled={!canFollow}
-                  disabledLabel={buttonLabel}
+                  disabledLabel={followButtonLabel}
                   followingLabel="팔로잉"
                   initialRelationship={
                     isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
@@ -331,6 +378,9 @@ export default function RoomProfilePanel({
                     className={styles.manageButton}
                     aria-haspopup="menu"
                     aria-expanded={isManagementOpen}
+                    aria-controls={
+                      isManagementOpen ? managementMenuId : undefined
+                    }
                     onClick={() => {
                       setManagementMessage(null);
                       setIsManagementOpen((current) => !current);
@@ -345,16 +395,22 @@ export default function RoomProfilePanel({
                       height={8}
                     />
                   </button>
-                  <RoomProfileManagementMenu
-                    canKick={canKick}
-                    isKickPending={kickParticipant.isPending}
-                    onBlock={handleBlock}
-                    onClose={() => setIsManagementOpen(false)}
-                    onKick={handleKick}
-                    onReport={handleReport}
-                    open={isManagementOpen}
-                    triggerRef={manageButtonRef}
-                  />
+                  {isManagementOpen ? (
+                    <RoomMemberManagementMenu
+                      actions={managementActions}
+                      isKickPending={kickParticipant.isPending}
+                      isTransferPending={transferOwner.isPending}
+                      label="프로필 관리"
+                      menuId={managementMenuId}
+                      onBlock={handleBlock}
+                      onClose={closeManagementMenu}
+                      onKick={handleKick}
+                      onReport={handleReport}
+                      onTransfer={handleTransfer}
+                      targetUserSlug={targetSlug}
+                      triggerRef={manageButtonRef}
+                    />
+                  ) : null}
                 </div>
               ) : null}
             </div>
@@ -364,9 +420,11 @@ export default function RoomProfilePanel({
               {managementMessage}
             </p>
           ) : null}
-          {kickParticipant.error ? (
+          {kickParticipant.error || transferOwner.error ? (
             <p className={styles.managementError} role="alert">
-              {kickParticipant.error.message || "참가자를 내보내지 못했습니다."}
+              {transferOwner.error?.message ||
+                kickParticipant.error?.message ||
+                "사용자 관리 요청을 처리하지 못했습니다."}
             </p>
           ) : null}
           <div className={styles.grid}>
@@ -401,23 +459,27 @@ export default function RoomProfilePanel({
             </div>
             <div className={styles.card}>
               <div className={styles.cardTitle}>이용 시간</div>
-              <div className={styles.cardValue}>개발중입니다.</div>
+              <div className={styles.cardValue}>
+                {formatListeningDuration(listeningDurationSeconds)}
+              </div>
             </div>
           </div>
           <div className={styles.musicPowerRow}>
             <div className={styles.card}>
-              <div className={styles.cardTitle}>음악력</div>
+              <div className={styles.musicPowerHeading}>
+                <div className={styles.cardTitle}>음악력</div>
+                {musicPowerNotice?.targetSlug === targetSlug ? (
+                  <p className={styles.musicPowerNotice} role="alert">
+                    {musicPowerNotice.message}
+                  </p>
+                ) : null}
+              </div>
               <div className={styles.musicPowerValue}>
                 <span>{formatOptionalStat(musicPower)}</span>
               </div>
             </div>
             {!isSelf && !isCurrentUserLoading ? (
               <>
-                {musicPowerNotice?.targetSlug === targetSlug ? (
-                  <p className={styles.musicPowerNotice} role="alert">
-                    {musicPowerNotice.message}
-                  </p>
-                ) : null}
                 <div className={styles.musicPowerActions}>
                   <button
                     type="button"

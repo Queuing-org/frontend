@@ -19,6 +19,7 @@ import {
   DEFAULT_HOME_FILTERS,
   getHomeGenreFilterOptions,
   getNextHomeFilters,
+  getSelectedHomeGenreTags,
   type HomeFilterKey,
   type HomeFilterOption,
 } from "./HomeControlPanelShell";
@@ -65,11 +66,13 @@ export default function HomeScreen() {
         createdOrder: roomListFilters.date,
         keyword: isMobileLayout ? debouncedMobileSearchQuery : undefined,
         participantOrder: roomListFilters.participants,
+        tags: getSelectedHomeGenreTags(roomListFilters.genre),
       }),
     [
       debouncedMobileSearchQuery,
       isMobileLayout,
       roomListFilters.date,
+      roomListFilters.genre,
       roomListFilters.participants,
     ],
   );
@@ -167,9 +170,15 @@ function HomeRoomsContent({
       getHomeGenreFilterOptions({
         isError: roomTagsQuery.isError,
         isLoading: roomTagsQuery.isLoading,
+        selectedGenres: activeFilters.genre,
         tags: roomTagsQuery.data,
       }),
-    [roomTagsQuery.data, roomTagsQuery.isError, roomTagsQuery.isLoading],
+    [
+      activeFilters.genre,
+      roomTagsQuery.data,
+      roomTagsQuery.isError,
+      roomTagsQuery.isLoading,
+    ],
   );
   const roomsQuery = useRoomsQuery(roomsQueryParams);
   const rooms = useMemo(() => getRoomsFromPages(roomsQuery.data), [

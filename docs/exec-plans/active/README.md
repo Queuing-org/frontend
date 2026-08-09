@@ -1,5 +1,15 @@
 # Active Execution Plans
 
+- [2026-08-09-floating-widget-position-reset](./2026-08-09-floating-widget-position-reset/plan.md): ready — 참가자 scrollbar 숨김과 floating 모달 위치 초기화
+
+- [2026-08-09-chat-invalid-input-feedback](./2026-08-09-chat-invalid-input-feedback/plan.md): ready — 채팅 금칙어 invalid-input 하단 문구 숨김
+
+- [2026-08-09-room-chat-profile-actions](./2026-08-09-room-chat-profile-actions/plan.md): ci-pending — Draft PR #36, 채팅·프로필 관리 액션과 합성 깜빡임 수정
+
+- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ci-pending — Draft PR #36, 참가자 hover `…`와 채팅 공통 dropdown 통일
+
+- [2026-08-09-filter-chip-layout-stability](./2026-08-09-filter-chip-layout-stability/plan.md): implementing — 필터 칩 선택 시 크기·줄바꿈 변동 제거
+
 - [2026-08-09-friend-add-flow](./2026-08-09-friend-add-flow/plan.md): ready — FRIEND 패널 친구 추가 검색 모달 흐름 개편
 
 - [2026-08-09-follow-relationship-page-size](./2026-08-09-follow-relationship-page-size/plan.md): ci-pending — 팔로워 관계 조회 API 페이지 크기 계약 수정

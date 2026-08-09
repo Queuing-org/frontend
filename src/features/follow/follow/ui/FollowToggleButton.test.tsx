@@ -48,4 +48,32 @@ describe("FollowToggleButton", () => {
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
+
+  it("메뉴 역할을 전달하고 mutation 성공 뒤 callback을 실행한다", async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+    const followMutate = vi.fn();
+    vi.mocked(useFollow).mockReturnValue({
+      error: null,
+      isPending: false,
+      mutate: followMutate,
+      reset: vi.fn(),
+      variables: undefined,
+    } as unknown as ReturnType<typeof useFollow>);
+    render(
+      <FollowToggleButton
+        onSuccess={onSuccess}
+        role="menuitem"
+        targetSlug="target-user"
+      />,
+    );
+
+    await user.click(screen.getByRole("menuitem", { name: "팔로우" }));
+    const options = followMutate.mock.calls[0]?.[1] as
+      | { onSuccess?: () => void }
+      | undefined;
+    options?.onSuccess?.();
+
+    expect(onSuccess).toHaveBeenCalledOnce();
+  });
 });

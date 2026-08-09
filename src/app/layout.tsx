@@ -21,7 +21,7 @@ const bebasNeue = localFont({
 });
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://local.queuing.patulus.com:3000";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://local.queuing.cc:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

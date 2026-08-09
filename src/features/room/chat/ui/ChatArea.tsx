@@ -4,17 +4,29 @@ import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import {
   useCallback,
-  useEffect,
+  useMemo,
   useRef,
   useState,
   type RefObject,
 } from "react";
-import type { ChatMessage } from "@/src/features/room/model/types";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type { ChatMessage, RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
+import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
+import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
+import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
+import {
+  getParticipantKickTarget,
+  getParticipantKickTargetKey,
+  getParticipantUserSlug,
+  isParticipantRoomOwner,
+  isSameUser,
+} from "@/src/features/room/participants/model/participantIdentity";
+import RoomMemberManagementMenu from "@/src/features/room/management/ui/RoomMemberManagementMenu";
 import { useChatScrollRestoration } from "../hooks/useChatScrollRestoration";
 import {
   getChatMessageManagementActions,
@@ -36,6 +48,8 @@ type Props = {
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
   onUserBlocked: (userSlug: string) => void;
+  participants: PlaylistParticipant[];
+  roomMeta: RoomMeta | null;
   roomPassword?: string | null;
   roomSlug: string;
   scrollToLatestKey: number;
@@ -44,16 +58,22 @@ type Props = {
 
 type ChatMessageRowProps = {
   actions: ChatMessageManagementAction[];
+  isKickPending: boolean;
   isMenuOpen: boolean;
-  menuRef: RefObject<HTMLDivElement | null>;
+  isTransferPending: boolean;
   message: ChatMessage;
   messageKey: string;
   menuPlacement: "down" | "up";
   onBlock: (message: ChatMessage) => void;
+  onCloseMenu: () => void;
+  onKick: (message: ChatMessage) => void;
   onReport: (message: ChatMessage) => void;
+  onTransfer: (message: ChatMessage) => void;
+  triggerRef: RefObject<HTMLButtonElement | null>;
   onToggleMenu: (
     messageKey: string,
     trigger: HTMLButtonElement,
+    estimatedMenuHeight: number,
   ) => void;
 };
 
@@ -63,13 +83,18 @@ function getInitial(nickname: string) {
 
 function ChatMessageRow({
   actions,
+  isKickPending,
   isMenuOpen,
-  menuRef,
+  isTransferPending,
   message,
   messageKey,
   menuPlacement,
   onBlock,
+  onCloseMenu,
+  onKick,
   onReport,
+  onTransfer,
+  triggerRef,
   onToggleMenu,
 }: ChatMessageRowProps) {
   const menuId = `chat-message-menu-${messageKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
@@ -105,38 +130,32 @@ function ChatMessageRow({
             aria-haspopup="menu"
             aria-expanded={isMenuOpen}
             aria-controls={isMenuOpen ? menuId : undefined}
-            onClick={(event) => onToggleMenu(messageKey, event.currentTarget)}
+            onClick={(event) =>
+              onToggleMenu(
+                messageKey,
+                event.currentTarget,
+                actions.length * 40 + 2,
+              )
+            }
           >
             <MoreVertical aria-hidden="true" size={18} />
           </button>
           {isMenuOpen ? (
-            <div
-              ref={menuRef}
-              id={menuId}
-              className={styles.menu}
-              role="menu"
-              aria-label={`${message.senderNickname} 메시지 관리`}
-              data-placement={menuPlacement}
-            >
-              {actions.includes("report") ? (
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onReport(message)}
-                >
-                  신고
-                </button>
-              ) : null}
-              {actions.includes("block") ? (
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onBlock(message)}
-                >
-                  차단
-                </button>
-              ) : null}
-            </div>
+            <RoomMemberManagementMenu
+              actions={actions}
+              isKickPending={isKickPending}
+              isTransferPending={isTransferPending}
+              label={`${message.senderNickname} 메시지 관리`}
+              menuId={menuId}
+              onBlock={() => onBlock(message)}
+              onClose={onCloseMenu}
+              onKick={() => onKick(message)}
+              onReport={() => onReport(message)}
+              onTransfer={() => onTransfer(message)}
+              placement={menuPlacement}
+              targetUserSlug={message.senderSlug?.trim() || null}
+              triggerRef={triggerRef}
+            />
           ) : null}
         </div>
       ) : null}
@@ -153,6 +172,8 @@ export default function ChatArea({
   messages,
   onLoadOlderMessages,
   onUserBlocked,
+  participants,
+  roomMeta,
   roomPassword,
   roomSlug,
   scrollToLatestKey,
@@ -163,8 +184,26 @@ export default function ChatArea({
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
+  const [managementMessage, setManagementMessage] = useState<string | null>(
+    null,
+  );
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const kickParticipant = useKickRoomParticipant();
+  const transferOwner = useTransferRoomOwner();
+  const participantByUserSlug = useMemo(() => {
+    const lookup = new Map<string, PlaylistParticipant>();
+    participants.forEach((participant) => {
+      if (participant.participantType !== "USER") {
+        return;
+      }
+      const userSlug = getParticipantUserSlug(participant);
+      if (userSlug) {
+        lookup.set(userSlug, participant);
+      }
+    });
+    return lookup;
+  }, [participants]);
+  const currentUserIsRoomOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const visibleMessages = messages.filter((message) =>
     shouldDisplayChatMessage(message, blockedSenderSlugs),
   );
@@ -182,55 +221,21 @@ export default function ChatArea({
     scrollToLatestKey,
   });
 
-  const closeMenu = useCallback((restoreFocus: boolean) => {
+  const closeMenu = useCallback(() => {
     setOpenMenuKey(null);
-    if (restoreFocus) {
-      queueMicrotask(() => activeTriggerRef.current?.focus());
-    }
   }, []);
 
-  useEffect(() => {
-    if (!openMenuKey) {
-      return;
-    }
-
-    menuRef.current?.querySelector<HTMLButtonElement>("[role='menuitem']")?.focus();
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-      if (
-        menuRef.current?.contains(target) ||
-        activeTriggerRef.current?.contains(target)
-      ) {
-        return;
-      }
-      closeMenu(false);
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeMenu(true);
-      }
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [closeMenu, openMenuKey]);
-
   const handleToggleMenu = useCallback(
-    (messageKey: string, trigger: HTMLButtonElement) => {
+    (
+      messageKey: string,
+      trigger: HTMLButtonElement,
+      estimatedMenuHeight: number,
+    ) => {
       activeTriggerRef.current = trigger;
       const listRect = listRef.current?.getBoundingClientRect();
       const triggerRect = trigger.getBoundingClientRect();
-      const estimatedMenuHeight = 82;
-      const spaceBelow = (listRect?.bottom ?? window.innerHeight) - triggerRect.bottom;
+      const spaceBelow =
+        (listRect?.bottom ?? window.innerHeight) - triggerRect.bottom;
       const spaceAbove = triggerRect.top - (listRect?.top ?? 0);
       setMenuPlacement(
         spaceBelow < estimatedMenuHeight && spaceAbove >= estimatedMenuHeight
@@ -243,16 +248,43 @@ export default function ChatArea({
     },
     [listRef],
   );
-  const handleBlock = useCallback((message: ChatMessage) => {
-    if (!currentUser || !message.senderSlug) {
-      return;
-    }
-    setOpenMenuKey(null);
-    setBlockTarget({
-      nickname: message.senderNickname,
-      slug: message.senderSlug,
-    });
-  }, [currentUser]);
+
+  const getModerationParticipant = useCallback(
+    (message: ChatMessage) => {
+      const senderSlug = message.senderSlug?.trim();
+      if (!currentUserIsRoomOwner || !senderSlug) {
+        return null;
+      }
+      const participant = participantByUserSlug.get(senderSlug);
+      if (
+        !participant ||
+        isSameUser(participant, currentUser) ||
+        isParticipantRoomOwner(roomMeta?.owner, participant)
+      ) {
+        return null;
+      }
+      return participant;
+    }, [
+      currentUser,
+      currentUserIsRoomOwner,
+      participantByUserSlug,
+      roomMeta?.owner,
+    ],
+  );
+  const handleBlock = useCallback(
+    (message: ChatMessage) => {
+      const senderSlug = message.senderSlug?.trim();
+      if (!currentUser || !senderSlug) {
+        return;
+      }
+      setOpenMenuKey(null);
+      setBlockTarget({
+        nickname: message.senderNickname,
+        slug: senderSlug,
+      });
+    },
+    [currentUser],
+  );
   const handleReport = useCallback(
     (message: ChatMessage) => {
       if (!currentUser || !message.messageKey) {
@@ -267,6 +299,48 @@ export default function ChatArea({
     },
     [currentUser, roomPassword, roomSlug],
   );
+  const handleKick = useCallback(
+    (message: ChatMessage) => {
+      const participant = getModerationParticipant(message);
+      const kickTarget = participant
+        ? getParticipantKickTarget(participant)
+        : null;
+      if (!kickTarget) {
+        return;
+      }
+      setManagementMessage(null);
+      kickParticipant.reset();
+      kickParticipant.mutate(
+        { ...kickTarget, password: roomPassword, slug: roomSlug },
+        {
+          onSuccess: () => {
+            setManagementMessage(
+              `${message.senderNickname}님을 내보냈습니다.`,
+            );
+          },
+        },
+      );
+    }, [getModerationParticipant, kickParticipant, roomPassword, roomSlug]);
+  const handleTransfer = useCallback(
+    (message: ChatMessage) => {
+      const participant = getModerationParticipant(message);
+      const userSlug = getParticipantUserSlug(participant);
+      if (participant?.participantType !== "USER" || !userSlug) {
+        return;
+      }
+      setManagementMessage(null);
+      transferOwner.reset();
+      transferOwner.mutate(
+        { slug: roomSlug, userSlug },
+        {
+          onSuccess: () => {
+            setManagementMessage(
+              `${message.senderNickname}님에게 방장을 위임했습니다.`,
+            );
+          },
+        },
+      );
+    }, [getModerationParticipant, roomSlug, transferOwner]);
   const restoreTriggerFocus = useCallback(() => {
     queueMicrotask(() => activeTriggerRef.current?.focus());
   }, []);
@@ -280,7 +354,7 @@ export default function ChatArea({
           aria-label="채팅 메시지 목록"
           onScroll={() => {
             handleScroll();
-            closeMenu(false);
+            closeMenu();
           }}
         >
           {isLoadingOlderMessages ? (
@@ -297,26 +371,68 @@ export default function ChatArea({
               {errorMessage}
             </button>
           ) : null}
+          {managementMessage ? (
+            <div className={styles.managementMessage} role="status">
+              {managementMessage}
+            </div>
+          ) : null}
+          {kickParticipant.error || transferOwner.error ? (
+            <div className={styles.managementError} role="alert">
+              {transferOwner.error?.message ||
+                kickParticipant.error?.message ||
+                "사용자 관리 요청을 처리하지 못했습니다."}
+            </div>
+          ) : null}
           {visibleMessages.length === 0 ? (
             <div className={styles.empty}>아직 채팅이 없습니다.</div>
           ) : (
             <ol className={styles.messages}>
               {visibleMessages.map((message) => {
                 const messageKey = getChatMessageRenderKey(message);
+                const moderationParticipant =
+                  getModerationParticipant(message);
+                const kickTarget = moderationParticipant
+                  ? getParticipantKickTarget(moderationParticipant)
+                  : null;
+                const targetUserSlug = getParticipantUserSlug(
+                  moderationParticipant,
+                );
+                const actions = getChatMessageManagementActions(
+                  message,
+                  currentUser,
+                  {
+                    canKick: Boolean(kickTarget),
+                    canTransfer: Boolean(
+                      moderationParticipant?.participantType === "USER" &&
+                        targetUserSlug,
+                    ),
+                  },
+                );
                 return (
                   <ChatMessageRow
                     key={messageKey}
-                    actions={getChatMessageManagementActions(
-                      message,
-                      currentUser,
-                    )}
+                    actions={actions}
+                    isKickPending={
+                      kickParticipant.isPending &&
+                      getParticipantKickTargetKey(kickTarget) ===
+                        getParticipantKickTargetKey(
+                          kickParticipant.variables ?? null,
+                        )
+                    }
                     isMenuOpen={openMenuKey === messageKey}
-                    menuRef={menuRef}
+                    isTransferPending={
+                      transferOwner.isPending &&
+                      targetUserSlug === transferOwner.variables?.userSlug
+                    }
                     message={message}
                     messageKey={messageKey}
                     menuPlacement={menuPlacement}
                     onBlock={handleBlock}
+                    onCloseMenu={closeMenu}
+                    onKick={handleKick}
                     onReport={handleReport}
+                    onTransfer={handleTransfer}
+                    triggerRef={activeTriggerRef}
                     onToggleMenu={handleToggleMenu}
                   />
                 );

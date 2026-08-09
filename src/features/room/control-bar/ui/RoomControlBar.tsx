@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { RefreshCw } from "lucide-react";
 import styles from "./RoomControlBar.module.css";
 
 type IconProps = {
@@ -16,6 +17,7 @@ type Props = {
   onToggleParticipants: () => void;
   onToggleProfile: () => void;
   onToggleQueue: () => void;
+  onResetWidgetPositions: () => void;
 };
 
 function ProfileIcon({ className }: IconProps) {
@@ -101,56 +103,68 @@ export default function RoomButtonControlBar({
   onToggleParticipants,
   onToggleProfile,
   onToggleQueue,
+  onResetWidgetPositions,
 }: Props) {
   return (
-    <div className={styles.outerBar}>
+    <div className={styles.controlGroup}>
+      <div className={styles.outerBar}>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="프로필"
+          aria-pressed={isProfileOpen}
+          data-selected={isProfileOpen}
+          onClick={onToggleProfile}
+        >
+          <ProfileIcon className={styles.icon} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="큐"
+          aria-pressed={isQueueOpen}
+          data-selected={isQueueOpen}
+          onClick={onToggleQueue}
+        >
+          <QueueIcon className={styles.icon} />
+        </button>
+        <Link
+          href="/"
+          replace
+          className={styles.iconButton}
+          aria-label="나가기"
+        >
+          <ExitIcon className={styles.icon} />
+        </Link>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="참가자 목록"
+          aria-pressed={isParticipantsOpen}
+          data-selected={isParticipantsOpen}
+          onClick={onToggleParticipants}
+        >
+          <HamburgerIcon className={styles.icon} />
+        </button>
+        <button
+          type="button"
+          className={styles.iconButton}
+          aria-label="채팅"
+          aria-pressed={isChatOpen}
+          data-selected={isChatOpen}
+          onClick={onToggleChat}
+        >
+          <ChatIcon className={styles.icon} />
+        </button>
+      </div>
       <button
         type="button"
-        className={styles.iconButton}
-        aria-label="프로필"
-        aria-pressed={isProfileOpen}
-        data-selected={isProfileOpen}
-        onClick={onToggleProfile}
+        className={styles.resetButton}
+        aria-label="모달 위치 초기화"
+        title="모달 위치 초기화"
+        onClick={onResetWidgetPositions}
       >
-        <ProfileIcon className={styles.icon} />
-      </button>
-      <button
-        type="button"
-        className={styles.iconButton}
-        aria-label="큐"
-        aria-pressed={isQueueOpen}
-        data-selected={isQueueOpen}
-        onClick={onToggleQueue}
-      >
-        <QueueIcon className={styles.icon} />
-      </button>
-      <Link
-        href="/"
-        replace
-        className={styles.iconButton}
-        aria-label="나가기"
-      >
-        <ExitIcon className={styles.icon} />
-      </Link>
-      <button
-        type="button"
-        className={styles.iconButton}
-        aria-label="참가자 목록"
-        aria-pressed={isParticipantsOpen}
-        data-selected={isParticipantsOpen}
-        onClick={onToggleParticipants}
-      >
-        <HamburgerIcon className={styles.icon} />
-      </button>
-      <button
-        type="button"
-        className={styles.iconButton}
-        aria-label="채팅"
-        aria-pressed={isChatOpen}
-        data-selected={isChatOpen}
-        onClick={onToggleChat}
-      >
-        <ChatIcon className={styles.icon} />
+        <RefreshCw className={styles.resetIcon} aria-hidden="true" />
       </button>
     </div>
   );

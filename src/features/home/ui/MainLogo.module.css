@@ -6,3 +6,7 @@
   letter-spacing: -0.04em;
   line-height: 1.4;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .logo { font-size: 16px; }
+}

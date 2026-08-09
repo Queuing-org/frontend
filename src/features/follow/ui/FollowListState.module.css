@@ -18,3 +18,15 @@
 .raised {
   transform: translateY(-12px);
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .state {
+    gap: 9.6px;
+    padding: 25.6px 19.2px;
+    font-size: 14.4px;
+  }
+
+  .raised {
+    transform: translateY(-9.6px);
+  }
+}

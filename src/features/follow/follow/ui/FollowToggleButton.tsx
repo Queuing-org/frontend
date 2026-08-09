@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type AriaRole, type ReactNode } from "react";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useUnfollow } from "@/src/features/follow/unfollow/hooks/useUnfollow";
 import { useFollow } from "../hooks/useFollow";
@@ -13,6 +13,8 @@ type FollowToggleButtonProps = {
   disabledLabel?: ReactNode;
   followingLabel?: string;
   initialRelationship?: FollowRelationship | null;
+  onSuccess?: () => void;
+  role?: AriaRole;
   targetSlug?: string | null;
 };
 
@@ -26,6 +28,8 @@ export default function FollowToggleButton({
   disabledLabel = "팔로우",
   followingLabel = "언팔로우",
   initialRelationship = "NONE",
+  onSuccess,
+  role,
   targetSlug,
 }: FollowToggleButtonProps) {
   const followMutation = useFollow();
@@ -80,6 +84,7 @@ export default function FollowToggleButton({
         {
           onSuccess: () => {
             setLocalFollowState({ targetSlug, isFollowing: false });
+            onSuccess?.();
           },
         },
       );
@@ -91,6 +96,7 @@ export default function FollowToggleButton({
       {
         onSuccess: () => {
           setLocalFollowState({ targetSlug, isFollowing: true });
+          onSuccess?.();
         },
       },
     );
@@ -102,6 +108,7 @@ export default function FollowToggleButton({
         type="button"
         className={[styles.button, className].filter(Boolean).join(" ")}
         data-following={isFollowing}
+        role={role}
         onClick={handleClick}
         disabled={isDisabled}
       >

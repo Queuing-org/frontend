@@ -2,6 +2,7 @@ import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { RoomsResponse } from "../model/types";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
 import { ApiResponse } from "@/src/shared/api/types";
+import { normalizeRoomTagSlugs } from "../model/roomTagFilters";
 
 export type RoomCreatedOrder = "RANDOM" | "NEW" | "OLD";
 export type RoomParticipantOrder = "RANDOM" | "HIGH" | "LOW";
@@ -10,6 +11,7 @@ export type RoomListQueryParams = {
   createdOrder: RoomCreatedOrder;
   keyword?: string;
   participantOrder: RoomParticipantOrder;
+  tags?: string[];
 };
 
 export type FetchRoomsParams = {
@@ -22,6 +24,7 @@ export type FetchRoomsParams = {
   keyword?: string;
   participantOrder?: RoomParticipantOrder;
   size?: number;
+  tags?: readonly string[];
 };
 
 function isPresentQueryValue(value: unknown): value is number | string {
@@ -42,8 +45,10 @@ export async function fetchRooms({
   keyword,
   participantOrder,
   size,
+  tags,
 }: FetchRoomsParams = {}): Promise<RoomsResponse> {
   const trimmedKeyword = keyword?.trim();
+  const normalizedTags = normalizeRoomTagSlugs(tags);
   const normalizedCursorSeed =
     typeof cursorSeed === "string" ? cursorSeed.trim() : cursorSeed;
   const normalizedCursorLastCreatedAt = cursorLastCreatedAt?.trim();
@@ -55,6 +60,9 @@ export async function fetchRooms({
         ...(trimmedKeyword ? { keyword: trimmedKeyword } : {}),
         ...(createdOrder ? { createdOrder } : {}),
         ...(participantOrder ? { participantOrder } : {}),
+        ...(normalizedTags.length > 0
+          ? { tags: normalizedTags.join(",") }
+          : {}),
         ...(isPresentQueryValue(normalizedCursorSeed)
           ? { cursorSeed: normalizedCursorSeed }
           : {}),

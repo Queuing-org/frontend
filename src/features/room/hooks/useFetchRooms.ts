@@ -13,6 +13,7 @@ import type { Room, RoomsResponse } from "../model/types";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { roomKeys } from "../model/queryKeys";
 import { ROOM_DISCOVERY_CACHE_POLICY } from "../model/roomDiscoveryCachePolicy";
+import { normalizeRoomTagSlugs } from "../model/roomTagFilters";
 
 const ROOMS_PAGE_SIZE = 30;
 const DEFAULT_ROOMS_QUERY_PARAMS: RoomListQueryParams = {
@@ -53,6 +54,7 @@ export function normalizeRoomsQueryParams(
   params: RoomsQueryParams = {},
 ): RoomListQueryParams {
   const trimmedKeyword = params.keyword?.trim();
+  const normalizedTags = normalizeRoomTagSlugs(params.tags);
 
   return {
     createdOrder:
@@ -60,6 +62,7 @@ export function normalizeRoomsQueryParams(
     participantOrder:
       params.participantOrder ?? DEFAULT_ROOMS_QUERY_PARAMS.participantOrder,
     ...(trimmedKeyword ? { keyword: trimmedKeyword } : {}),
+    ...(normalizedTags.length > 0 ? { tags: normalizedTags } : {}),
   };
 }
 

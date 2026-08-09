@@ -563,6 +563,8 @@ function RoomPlaybackJoinedContent({
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
                       onUserBlocked={handleUserBlocked}
+                      participants={participants}
+                      roomMeta={roomMeta}
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
@@ -599,7 +601,9 @@ function RoomPlaybackJoinedContent({
             {mobileTab === "participants" ? (
               <section className={styles.mobilePanel} aria-label="참가자">
                 <RoomParticipantsPanel
+                  chatMessages={chatMessages}
                   currentUser={currentUser ?? null}
+                  onUserBlocked={handleUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
                   roomPassword={roomPassword}
@@ -700,6 +704,8 @@ function RoomPlaybackJoinedContent({
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
               onUserBlocked={handleUserBlocked}
+              participants={participants}
+              roomMeta={roomMeta}
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
@@ -718,11 +724,13 @@ function RoomPlaybackJoinedContent({
               }
               onToggleProfile={() => floatingWidgets.toggleWidget("profile")}
               onToggleQueue={() => floatingWidgets.toggleWidget("queue")}
+              onResetWidgetPositions={floatingWidgets.resetWidgetPositions}
             />
           </div>
         </div>
       </div>
       <RoomFloatingWidgets
+        chatMessages={chatMessages}
         chatDisabledReason={chatDisabledReason}
         chatErrorMessage={chatSendErrorMessage}
         currentRequester={playback.currentRequester}

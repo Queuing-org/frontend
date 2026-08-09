@@ -14,6 +14,7 @@ export type UserProfile = {
   representativeBadge?: BadgeSummary | null;
   musicPower?: number;
   queuingCount?: number;
+  listeningDurationSeconds?: number;
 };
 
 export type MusicPowerVote = "UPVOTE" | "DOWNVOTE";

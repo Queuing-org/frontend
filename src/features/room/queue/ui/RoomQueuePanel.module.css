@@ -75,3 +75,26 @@
   font-weight: var(--fw-medium);
   text-align: center;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .state {
+    padding: 19.2px 12.8px;
+    font-size: 0.624rem;
+  }
+
+  .addTrackDock {
+    padding: 14.4px 12.8px 17.6px;
+  }
+
+  .refreshing,
+  .error {
+    padding: 6.4px 9.6px;
+    font-size: 0.576rem;
+  }
+
+  .loadMoreButton {
+    margin: 6.4px 12.8px 0;
+    padding: 8px 9.6px;
+    font-size: 0.6rem;
+  }
+}

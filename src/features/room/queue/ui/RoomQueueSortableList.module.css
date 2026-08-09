@@ -23,3 +23,7 @@
   list-style: none;
   overflow-x: hidden;
 }
+
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+  .fixedList { margin-top: 6.4px; }
+}
