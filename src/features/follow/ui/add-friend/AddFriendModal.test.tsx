@@ -125,6 +125,23 @@ describe("AddFriendModal", () => {
     expect(input).toBeInTheDocument();
   });
 
+  it("Tab과 Shift+Tab 포커스를 모달 내부에서 순환시킨다", async () => {
+    const user = userEvent.setup();
+    mockModalState({ canSubmit: true, isResultsOpen: false, query: "", users: [] });
+    render(<AddFriendModal onClose={vi.fn()} />);
+
+    const input = screen.getByRole("textbox", { name: "친구 닉네임 검색" });
+    const followButton = screen.getByRole("button", { name: "팔로우" });
+
+    followButton.focus();
+    await user.tab();
+    expect(input).toHaveFocus();
+
+    input.focus();
+    await user.tab({ shift: true });
+    expect(followButton).toHaveFocus();
+  });
+
   it("한글 조합 중 Enter는 submit을 발생시키지 않는다", () => {
     render(<AddFriendModal onClose={vi.fn()} />);
     const input = screen.getByRole("textbox", { name: "친구 닉네임 검색" });

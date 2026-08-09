@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { CircleX } from "lucide-react";
 import { useAddFriendModalState } from "@/src/features/follow/hooks/useAddFriendModalState";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
@@ -11,13 +11,55 @@ type AddFriendModalProps = {
   onClose: () => void;
 };
 
+const FOCUSABLE_SELECTOR = [
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  "a[href]",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
 export default function AddFriendModal({ onClose }: AddFriendModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
   const modal = useAddFriendModalState();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         onClose();
+        return;
+      }
+
+      if (event.key !== "Tab" || !dialogRef.current) {
+        return;
+      }
+
+      const focusableElements = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      ).filter((element) => !element.hidden);
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements.at(-1);
+
+      if (!firstElement || !lastElement) {
+        event.preventDefault();
+        return;
+      }
+
+      const activeElement = document.activeElement;
+      const focusIsOutside =
+        !dialogRef.current.contains(activeElement) ||
+        !focusableElements.includes(activeElement as HTMLElement);
+
+      if (event.shiftKey && (activeElement === firstElement || focusIsOutside)) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (
+        !event.shiftKey &&
+        (activeElement === lastElement || focusIsOutside)
+      ) {
+        event.preventDefault();
+        firstElement.focus();
       }
     };
 
@@ -41,6 +83,7 @@ export default function AddFriendModal({ onClose }: AddFriendModalProps) {
       role="presentation"
     >
       <section
+        ref={dialogRef}
         className={styles.modal}
         onClick={(event) => event.stopPropagation()}
         role="dialog"

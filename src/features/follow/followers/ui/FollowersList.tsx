@@ -23,28 +23,32 @@ export default function FollowersList() {
   }, []);
   const handleBlockClose = useCallback(() => setBlockTarget(null), []);
 
-  if (followers.length === 0) {
-    return <FollowListState raised>팔로워가 없습니다.</FollowListState>;
-  }
-
   return (
-    <div className={styles.container}>
-      <ul className={styles.list}>
-        {followers.map((user) => (
-          <FollowerCard
-            key={user.slug}
-            expanded={expandedSlug === user.slug}
-            onBlock={handleBlock}
-            onToggle={handleToggle}
-            user={user}
-          />
-        ))}
-      </ul>
-      <BlockUserModal
-        target={blockTarget}
-        onBlocked={() => setExpandedSlug(null)}
-        onClose={handleBlockClose}
-      />
-    </div>
+    <>
+      {followers.length === 0 ? (
+        <FollowListState raised>팔로워가 없습니다.</FollowListState>
+      ) : (
+        <div className={styles.container}>
+          <ul className={styles.list}>
+            {followers.map((user) => (
+              <FollowerCard
+                key={user.slug}
+                expanded={expandedSlug === user.slug}
+                onBlock={handleBlock}
+                onToggle={handleToggle}
+                user={user}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
+      {blockTarget ? (
+        <BlockUserModal
+          target={blockTarget}
+          onBlocked={() => setExpandedSlug(null)}
+          onClose={handleBlockClose}
+        />
+      ) : null}
+    </>
   );
 }

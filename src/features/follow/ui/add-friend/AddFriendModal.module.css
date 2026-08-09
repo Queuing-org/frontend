@@ -269,5 +269,22 @@
     min-height: 420px;
     padding: 40px 24px 32px;
   }
+}
 
+@media (max-height: 520px) {
+  .overlay {
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .modal {
+    max-height: calc(100dvh - 48px);
+    min-height: 0;
+    margin: auto 0;
+    overflow-y: auto;
+  }
+
+  .actions {
+    margin-top: 40px;
+  }
 }

@@ -9,7 +9,9 @@ import type { FollowListResponse } from "@/src/features/follow/model/types";
 export const FOLLOW_TAB_COUNT_PAGE_SIZE = 100;
 
 export function formatFollowTabCount(data: FollowListResponse): string {
-  return `${data.items.length}${data.hasNext ? "+" : ""}`;
+  return data.hasNext
+    ? `${FOLLOW_TAB_COUNT_PAGE_SIZE}+`
+    : `${data.items.length}`;
 }
 
 export function useFollowTabCounts(enabled: boolean) {

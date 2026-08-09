@@ -66,7 +66,7 @@ describe("formatFollowTabCount", () => {
     expect(
       formatFollowTabCount({
         hasNext: true,
-        items: Array.from({ length: 100 }, (_, index) => ({
+        items: Array.from({ length: 3 }, (_, index) => ({
           cursorId: index,
           nickname: `사용자 ${index}`,
           online: false,

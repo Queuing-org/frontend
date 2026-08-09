@@ -18,6 +18,10 @@ export function useAddFriendModalState() {
   const followUser = useFollow();
 
   const resetFeedback = () => {
+    if (followUser.isPending) {
+      return;
+    }
+
     setIsSuccess(false);
     followUser.reset();
   };

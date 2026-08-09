@@ -69,4 +69,22 @@ describe("useAddFriendModalState", () => {
     expect(result.current.isResultsOpen).toBe(true);
     expect(followReset).toHaveBeenCalled();
   });
+
+  it("팔로우 요청 중에는 mutation 상태를 초기화하지 않는다", () => {
+    vi.mocked(useFollow).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate: followMutate,
+      reset: followReset,
+    } as unknown as ReturnType<typeof useFollow>);
+    const { result } = renderHook(() => useAddFriendModalState());
+
+    act(() => result.current.updateQuery("감"));
+    act(() => result.current.selectUser(targetUser));
+    act(() => result.current.clearQuery());
+    act(() => result.current.submit());
+
+    expect(followReset).not.toHaveBeenCalled();
+    expect(followMutate).not.toHaveBeenCalled();
+  });
 });
