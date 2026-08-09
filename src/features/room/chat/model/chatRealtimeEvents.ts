@@ -20,6 +20,14 @@ export function isWsErrorData(data: unknown): data is WsErrorData {
   );
 }
 
+export function getVisibleChatSendErrorMessage(error: WsErrorData) {
+  if (error.code.trim().toLowerCase() === "invalid-input") {
+    return undefined;
+  }
+
+  return error.message.trim() || "채팅을 전송하지 못했습니다.";
+}
+
 export function parseChatMessageEvent(
   body: string,
   roomSlug: string,

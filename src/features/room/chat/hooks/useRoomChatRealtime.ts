@@ -11,6 +11,7 @@ import type { User } from "@/src/features/user/model/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { isChatMessageFromUser } from "../model/chatMessages";
 import {
+  getVisibleChatSendErrorMessage,
   isWsErrorData,
   parseChatMessageEvent,
 } from "../model/chatRealtimeEvents";
@@ -354,7 +355,7 @@ export function useRoomChatRealtime({
           }
 
           resolvePendingChatSend({
-            errorMessage: event.data.message || "채팅을 전송하지 못했습니다.",
+            errorMessage: getVisibleChatSendErrorMessage(event.data),
           });
         }),
       };
