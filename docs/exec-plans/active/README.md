@@ -8,7 +8,7 @@
 
 - [2026-08-09-room-chat-profile-actions](./2026-08-09-room-chat-profile-actions/plan.md): ci-pending — Draft PR #36, 채팅·프로필 관리 액션과 합성 깜빡임 수정
 
-- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ci-pending — Draft PR #36, 참가자 hover `…`와 채팅 공통 dropdown 통일
+- [2026-08-09-room-participant-actions](./2026-08-09-room-participant-actions/plan.md): ci-pending — Draft PR #37, 참가자 관리 메뉴 hover 피드백 통일
 
 - [2026-08-09-filter-chip-layout-stability](./2026-08-09-filter-chip-layout-stability/plan.md): implementing — 필터 칩 선택 시 크기·줄바꿈 변동 제거
 
