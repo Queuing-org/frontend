@@ -48,9 +48,8 @@
   height: 98dvh;
   margin: 1vh auto;
   margin: 1dvh auto;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.94);
   border-radius: 12px;
-  backdrop-filter: blur(8px);
   box-shadow: 0 24px 72px rgba(15, 23, 42, 0.22);
   box-sizing: border-box;
   padding: var(--panel-horizontal-padding);
