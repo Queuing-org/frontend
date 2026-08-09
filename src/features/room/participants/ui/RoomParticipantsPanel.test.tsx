@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
@@ -127,6 +127,10 @@ function renderPanel(messages = [
 }
 
 describe("RoomParticipantsPanel", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useKickRoomParticipant).mockReturnValue({
@@ -184,9 +188,27 @@ describe("RoomParticipantsPanel", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "회원 방장 위임" }));
+    const transferOptions = transferMutate.mock.calls.at(-1)?.[1];
     expect(transferMutate).toHaveBeenCalledWith(
       { slug: "room", userSlug: "member" },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
+      expect.objectContaining({ onError: expect.any(Function) }),
     );
+    expect(transferOptions).not.toHaveProperty("onSuccess");
+    expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
+  });
+
+  it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {
+    vi.useFakeTimers();
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "회원 방장 위임" }));
+    const transferOptions = transferMutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    act(() => transferOptions.onError(new Error("위임 실패")));
+    expect(screen.getByRole("alert")).toHaveTextContent("위임 실패");
+
+    act(() => vi.advanceTimersByTime(2_000));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

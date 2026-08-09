@@ -27,6 +27,7 @@ import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
+import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import RoomMemberManagementMenu, {
   type RoomMemberManagementAction,
 } from "@/src/features/room/management/ui/RoomMemberManagementMenu";
@@ -106,6 +107,12 @@ export default function RoomProfilePanel({
   const musicPowerVote = useCurrentTrackMusicPowerVote();
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
+  const {
+    begin: beginTransferOwnerRequest,
+    clear: clearTransferOwnerError,
+    message: transferOwnerErrorMessage,
+    show: showTransferOwnerError,
+  } = useTransientManagementError();
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
     usePublicUserBadges(targetSlug);
 
@@ -186,6 +193,10 @@ export default function RoomProfilePanel({
       }
     };
   }, []);
+
+  useEffect(() => {
+    clearTransferOwnerError();
+  }, [clearTransferOwnerError, roomSlug, targetSlug]);
 
   const showMusicPowerNotice = (message: string, noticeTargetSlug: string) => {
     if (musicPowerNoticeTimerRef.current !== null) {
@@ -289,14 +300,16 @@ export default function RoomProfilePanel({
       return;
     }
 
+    const transferSequence = beginTransferOwnerRequest();
     setManagementMessage(null);
     transferOwner.reset();
     transferOwner.mutate(
       { slug: roomSlug, userSlug: targetSlug },
       {
-        onSuccess: () => {
-          setManagementMessage(
-            `${displayNickname}님에게 방장을 위임했습니다.`,
+        onError: (error) => {
+          showTransferOwnerError(
+            transferSequence,
+            error.message || "방장을 위임하지 못했습니다.",
           );
         },
       },
@@ -420,11 +433,15 @@ export default function RoomProfilePanel({
               {managementMessage}
             </p>
           ) : null}
-          {kickParticipant.error || transferOwner.error ? (
+          {kickParticipant.error ? (
             <p className={styles.managementError} role="alert">
-              {transferOwner.error?.message ||
-                kickParticipant.error?.message ||
+              {kickParticipant.error.message ||
                 "사용자 관리 요청을 처리하지 못했습니다."}
+            </p>
+          ) : null}
+          {transferOwnerErrorMessage ? (
+            <p className={styles.managementError} role="alert">
+              {transferOwnerErrorMessage}
             </p>
           ) : null}
           <div className={styles.grid}>

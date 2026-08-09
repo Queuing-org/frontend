@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
@@ -163,6 +163,10 @@ function renderPanel(
 }
 
 describe("RoomProfilePanel", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
@@ -686,7 +690,42 @@ describe("RoomProfilePanel", () => {
     expect(transferReset).toHaveBeenCalledOnce();
     expect(transferMutate).toHaveBeenCalledWith(
       { slug: "room", userSlug: "target-user" },
-      expect.objectContaining({ onSuccess: expect.any(Function) }),
+      expect.objectContaining({ onError: expect.any(Function) }),
     );
+    expect(transferMutate.mock.calls.at(-1)?.[1]).not.toHaveProperty(
+      "onSuccess",
+    );
+    expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
+  });
+
+  it("방장 위임 실패만 2초 동안 표시하고 자동으로 제거한다", () => {
+    vi.useFakeTimers();
+    renderPanel(requester, {
+      currentUser: { ...currentUser, slug: "owner" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "관리" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: "방장 위임" }));
+
+    const mutationOptions = transferMutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    act(() => {
+      mutationOptions.onError(new Error("방장 위임 요청에 실패했습니다."));
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "방장 위임 요청에 실패했습니다.",
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(1_999);
+    });
+    expect(screen.getByRole("alert")).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
