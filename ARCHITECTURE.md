@@ -25,12 +25,15 @@ Next.js routes (`src/app`)
 - Current top-level domains include auth, badge, follow, home, onboarding, playlist, room, settings, and user.
 - A feature may import from `src/shared` and from another feature only when the dependency is explicit and does not create a cycle.
 - Shared behavior used by multiple domains should move to `src/shared`; domain behavior should not.
+- Room discovery owns room-list navigation, pagination triggers, and the shared home/search control dock under `src/features/room/discovery`. The home screen assembles those room-domain capabilities but the room domain must not depend back on `src/features/home`.
 
 ### `src/shared`
 
 - Owns cross-feature API infrastructure, generic libraries, styles, and reusable UI primitives.
 - Must not import from `src/features` or `src/app`.
 - Shared modules should remain domain-neutral unless a deliberate architecture decision documents an exception.
+- Brand-only presentation such as the main logo may live in `src/shared/ui`; authenticated actions and room navigation remain in their owning auth and room features.
+- ESLint rejects imports from `src/shared` into `src/features` or `src/app`, and rejects imports from the room feature back into the home feature.
 
 ## State Ownership
 

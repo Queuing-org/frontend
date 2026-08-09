@@ -56,7 +56,6 @@ function AuthenticatedBadgeAwardController() {
         setQueue((current) => [...current, ...unseen]);
       }
 
-      void queryClient.invalidateQueries({ queryKey: badgeKeys.catalog() });
       void queryClient.invalidateQueries({ queryKey: badgeKeys.me() });
     };
 

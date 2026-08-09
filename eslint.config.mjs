@@ -13,6 +13,42 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    files: ["src/shared/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "@/src/features/**",
+            "@/src/features",
+            "@/src/app/**",
+            "@/src/app",
+            "**/features/**",
+            "**/features",
+            "**/app/**",
+            "**/app",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/features/room/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            "@/src/features/home/**",
+            "@/src/features/home",
+            "**/home/**",
+            "**/home",
+          ],
+        },
+      ],
+    },
+  },
 ]);
 
 export default eslintConfig;

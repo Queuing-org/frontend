@@ -108,7 +108,6 @@
 }
 
 .input,
-.select,
 .numberInput {
   width: 100%;
   height: 53px;
@@ -136,13 +135,7 @@
   color: #b0b0b5;
 }
 
-.select {
-  padding: 0 50px 0 20px;
-  cursor: pointer;
-}
-
 .input:focus,
-.select:focus,
 .numberInput:focus {
   border-color: #b0b0b5;
   box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
@@ -315,12 +308,6 @@
   opacity: 0.45;
 }
 
-.twoColumn {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 26px;
-}
-
 .helperText,
 .errorText {
   margin: 0;
@@ -384,17 +371,12 @@
     padding: 64px 18px 24px;
   }
 
-  .twoColumn {
-    grid-template-columns: 1fr;
-  }
-
   .label {
     font-size: 16px;
   }
 
   .input,
   .numberInput,
-  .select,
   .submitButton {
     height: 52px;
     font-size: 16px;
@@ -424,9 +406,8 @@
   .field { gap: 8px; }
   .labelRow { gap: 9.6px; }
   .label { font-size: 12.8px; }
-  .input, .select, .numberInput { height: 42.4px; font-size: 14.4px; }
+  .input, .numberInput { height: 42.4px; font-size: 14.4px; }
   .input, .numberInput { padding: 0 16px; }
-  .select { padding: 0 40px 0 16px; }
   .passwordActionRow { gap: 9.6px 14.4px; }
   .checkboxRow { gap: 8px; }
   .checkboxBox { width: 16px; height: 16px; }
@@ -434,7 +415,6 @@
   .unlimitedButton { min-width: 68.8px; height: 42.4px; padding: 0 11.2px; font-size: 11.2px; }
   .tagGrid { gap: 8px; }
   .tagChip { min-height: 33.6px; padding: 3.2px 9.6px; font-size: 14.4px; }
-  .twoColumn { gap: 20.8px; }
   .helperText, .errorText { font-size: 11.2px; }
   .limitHint { font-size: 10.4px; }
   .submitButton { height: 54.4px; margin-top: 19.2px; font-size: 16px; }

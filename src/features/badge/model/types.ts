@@ -3,15 +3,6 @@ export type BadgeSummary = {
   name: string;
 };
 
-export type BadgeCatalogItem = BadgeSummary & {
-  description: string;
-  category: string;
-  tier: string;
-  acquisitionHint: string;
-  active: boolean;
-  acquired: boolean;
-};
-
 export type UserBadge = BadgeSummary & {
   description: string;
   category: string;
@@ -27,10 +18,6 @@ export type UserBadgeList = {
 
 export type PublicUserBadgeList = UserBadgeList & {
   userSlug?: string | null;
-};
-
-export type BadgeCatalogResponse = {
-  badges: BadgeCatalogItem[];
 };
 
 export type SetRepresentativeBadgePayload = {
