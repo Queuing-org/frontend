@@ -107,7 +107,7 @@ describe("FollowModal", () => {
     expect(closeAddFriend).toHaveBeenCalledOnce();
   });
 
-  it("카드에서 중첩 프로필을 열고 닫으면 카드로 포커스를 복원한다", async () => {
+  it("같은 카드를 다시 누르면 중첩 프로필을 닫는다", async () => {
     const user = userEvent.setup();
     render(<FollowModal open onClose={vi.fn()} />);
 
@@ -117,11 +117,10 @@ describe("FollowModal", () => {
       screen.getByRole("dialog", { name: "민지 프로필 상세" }),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "프로필 상세 닫기" }));
+    await user.click(trigger);
     expect(
       screen.queryByRole("dialog", { name: "민지 프로필 상세" }),
     ).not.toBeInTheDocument();
-    await new Promise((resolve) => requestAnimationFrame(resolve));
     expect(trigger).toHaveFocus();
   });
 });

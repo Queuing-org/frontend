@@ -26,10 +26,15 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
   };
   const selectUser = useCallback(
     (user: FollowUser, trigger: HTMLButtonElement) => {
+      if (selectedUser?.slug === user.slug) {
+        setSelectedUser(null);
+        return;
+      }
+
       selectedUserTriggerRef.current = trigger;
       setSelectedUser(user);
     },
-    [],
+    [selectedUser?.slug],
   );
   const closeSelectedUser = useCallback(() => {
     setSelectedUser(null);
@@ -48,7 +53,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="follow-modal-title"
-        inert={modal.isAddFriendOpen || selectedUser ? true : undefined}
+        inert={modal.isAddFriendOpen ? true : undefined}
       >
         <header className={styles.header}>
           <h2 id="follow-modal-title" className={styles.title}>

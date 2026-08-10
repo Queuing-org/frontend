@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import styles from "./FloatingRoomPanelShell.module.css";
+import styles from "./FloatingPanelShell.module.css";
 
 type Props = {
   children: ReactNode;
@@ -11,7 +11,7 @@ type Props = {
   width: number;
 };
 
-export default function FloatingRoomPanelShell({
+export default function FloatingPanelShell({
   children,
   compactHeader = false,
   contentClassName,

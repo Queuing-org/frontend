@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
@@ -93,8 +93,32 @@ describe("FollowProfileModal", () => {
     expect(screen.getByText("오늘도 큐잉")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByText("77")).toBeInTheDocument();
+    expect(screen.queryByText("PROFILE")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "프로필 상세 닫기" }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelectorAll("[data-drag-handle='true']")).toHaveLength(5);
+    expect(
+      screen.getByRole("dialog", { name: "공개 닉네임 프로필 상세" })
+        .firstElementChild,
+    ).toHaveStyle({ height: "304px", width: "240px" });
     expect(screen.queryByRole("button", { name: "음악력 올리기" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "음악력 내리기" })).not.toBeInTheDocument();
+  });
+
+  it("닫기 버튼 없이 Escape로 상세를 닫는다", () => {
+    const onClose = vi.fn();
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={onClose}
+        user={followUser}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(onClose).toHaveBeenCalledOnce();
   });
 
   it("관리 메뉴는 차단만 제공하고 성공하면 상세를 닫는다", async () => {
