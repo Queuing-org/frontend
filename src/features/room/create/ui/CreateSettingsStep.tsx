@@ -1,10 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import styles from "./CreateSettingsStep.module.css";
 
 export type ParticipationMode = "public" | "password";
-
-type TrackLimitMinuteOption = number;
 
 type CreateSettingsStepProps = {
   participationMode: ParticipationMode;
@@ -14,13 +13,21 @@ type CreateSettingsStepProps = {
   disabled: boolean;
   maxParticipantsError?: string | null;
   showPasswordError: boolean;
-  onClearMaxParticipants: () => void;
+  maxParticipantOptions: readonly number[];
   onMaxParticipantsChange: (value: string) => void;
   onParticipationModeChange: (mode: ParticipationMode) => void;
   onPasswordChange: (password: string) => void;
   onTrackLimitMinutesChange: (value: string) => void;
-  trackLimitMinuteOptions: readonly TrackLimitMinuteOption[];
+  trackLimitMinuteOptions: readonly number[];
 };
+
+const participationOptions: Array<{
+  label: string;
+  value: ParticipationMode;
+}> = [
+  { label: "누구나 참여", value: "public" },
+  { label: "비밀번호 입력", value: "password" },
+];
 
 export default function CreateSettingsStep({
   participationMode,
@@ -30,27 +37,97 @@ export default function CreateSettingsStep({
   disabled,
   maxParticipantsError,
   showPasswordError,
-  onClearMaxParticipants,
+  maxParticipantOptions,
   onMaxParticipantsChange,
   onParticipationModeChange,
   onPasswordChange,
   onTrackLimitMinutesChange,
   trackLimitMinuteOptions,
 }: CreateSettingsStepProps) {
+  const [isParticipationMenuOpen, setIsParticipationMenuOpen] = useState(false);
+  const participationControlRef = useRef<HTMLDivElement>(null);
+  const participationToggleRef = useRef<HTMLButtonElement>(null);
   const isPasswordMode = participationMode === "password";
+  const passwordErrorId = "create-room-password-error";
+
+  useEffect(() => {
+    if (!isParticipationMenuOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !participationControlRef.current?.contains(event.target)
+      ) {
+        setIsParticipationMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      setIsParticipationMenuOpen(false);
+      participationToggleRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isParticipationMenuOpen]);
+
+  const selectParticipationMode = (mode: ParticipationMode) => {
+    onParticipationModeChange(mode);
+    setIsParticipationMenuOpen(false);
+    participationToggleRef.current?.focus();
+  };
 
   return (
     <div className={styles.stack}>
-      <MaxParticipantsControl
-        id="create-room-max-participants"
-        label="최대 인원 수"
-        max={250}
-        value={maxParticipants}
-        errorMessage={maxParticipantsError}
-        disabled={disabled}
-        onChange={onMaxParticipantsChange}
-        onClear={onClearMaxParticipants}
-      />
+      <div className={styles.row}>
+        <label className={styles.label} htmlFor="create-room-max-participants">
+          최대 인원 수
+        </label>
+        <div className={styles.controlColumn}>
+          <select
+            id="create-room-max-participants"
+            className={styles.control}
+            value={maxParticipants}
+            onChange={(event) => onMaxParticipantsChange(event.target.value)}
+            disabled={disabled}
+            aria-invalid={Boolean(maxParticipantsError)}
+            aria-describedby={
+              maxParticipantsError
+                ? "create-room-max-participants-error"
+                : undefined
+            }
+            data-invalid={Boolean(maxParticipantsError)}
+            required
+            aria-required="true"
+          >
+            <option value="">최대 인원 선택</option>
+            {maxParticipantOptions.map((participants) => (
+              <option key={participants} value={String(participants)}>
+                {participants}명
+              </option>
+            ))}
+          </select>
+          {maxParticipantsError ? (
+            <p
+              id="create-room-max-participants-error"
+              className={styles.errorText}
+            >
+              {maxParticipantsError}
+            </p>
+          ) : null}
+        </div>
+      </div>
 
       <div className={styles.row}>
         <label className={styles.label} htmlFor="create-room-track-limit">
@@ -76,110 +153,79 @@ export default function CreateSettingsStep({
         <label className={styles.label} htmlFor="create-room-participation">
           참여 제한
         </label>
-        <div className={styles.participationColumn}>
-          <select
-            id="create-room-participation"
-            className={styles.control}
-            value={participationMode}
-            onChange={(event) =>
-              onParticipationModeChange(event.target.value as ParticipationMode)
-            }
-            disabled={disabled}
+        <div className={styles.controlColumn}>
+          <div
+            ref={participationControlRef}
+            className={styles.participationControl}
           >
-            <option value="public">누구나 참여</option>
-            <option value="password">비밀번호 입력</option>
-          </select>
-
-          {isPasswordMode ? (
-            <input
-              className={styles.passwordInput}
-              data-invalid={showPasswordError}
-              type="password"
-              value={password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-              placeholder="비밀번호"
+            {isPasswordMode ? (
+              <input
+                id="create-room-participation"
+                className={styles.passwordInput}
+                data-invalid={showPasswordError}
+                type="password"
+                value={password}
+                onChange={(event) => onPasswordChange(event.target.value)}
+                placeholder="비밀번호 입력"
+                disabled={disabled}
+                aria-invalid={showPasswordError}
+                aria-describedby={showPasswordError ? passwordErrorId : undefined}
+              />
+            ) : (
+              <input
+                id="create-room-participation"
+                className={styles.participationValue}
+                type="text"
+                value="누구나 참여"
+                readOnly
+                disabled={disabled}
+              />
+            )}
+            <button
+              ref={participationToggleRef}
+              type="button"
+              className={styles.participationToggle}
               disabled={disabled}
-              aria-invalid={showPasswordError}
-              aria-describedby={
-                showPasswordError ? "create-room-password-error" : undefined
+              aria-label="참여 제한 옵션 열기"
+              aria-expanded={isParticipationMenuOpen}
+              aria-controls="create-room-participation-options"
+              onClick={() =>
+                setIsParticipationMenuOpen((isOpen) => !isOpen)
               }
-            />
-          ) : null}
-
+            >
+              <span
+                className={styles.participationChevron}
+                data-open={isParticipationMenuOpen}
+                aria-hidden="true"
+              />
+            </button>
+            {isParticipationMenuOpen ? (
+              <div
+                id="create-room-participation-options"
+                className={styles.participationMenu}
+                role="group"
+                aria-label="참여 제한 옵션"
+              >
+                {participationOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={styles.participationOption}
+                    aria-pressed={participationMode === option.value}
+                    onClick={() => selectParticipationMode(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           {showPasswordError ? (
-            <p id="create-room-password-error" className={styles.errorText}>
+            <p id={passwordErrorId} className={styles.errorText}>
               입장할 때 입력할 비밀번호를 설정해주세요.
             </p>
           ) : null}
         </div>
-      </div>
-    </div>
-  );
-}
-
-type LimitNumberControlProps = {
-  id: string;
-  label: string;
-  max: number;
-  value: string;
-  disabled: boolean;
-  errorMessage?: string | null;
-  onChange: (value: string) => void;
-  onClear: () => void;
-};
-
-function MaxParticipantsControl({
-  id,
-  label,
-  max,
-  value,
-  disabled,
-  errorMessage,
-  onChange,
-  onClear,
-}: LimitNumberControlProps) {
-  const hintId = `${id}-hint`;
-  const errorId = `${id}-error`;
-
-  return (
-    <div className={styles.row}>
-      <label className={styles.label} htmlFor={id}>
-        {label}
-      </label>
-      <div className={styles.limitColumn}>
-        <div className={styles.limitControlGroup}>
-          <input
-            id={id}
-            className={styles.numberInput}
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={3}
-            value={value}
-            onChange={(event) => onChange(event.target.value)}
-            placeholder="제한 없음"
-            disabled={disabled}
-            aria-invalid={Boolean(errorMessage)}
-            aria-describedby={errorMessage ? errorId : hintId}
-            data-invalid={Boolean(errorMessage)}
-          />
-          <button
-            type="button"
-            className={styles.unlimitedButton}
-            disabled={disabled || value.length === 0}
-            onClick={onClear}
-          >
-            제한 없음
-          </button>
-          <span id={hintId} className={styles.limitHint}>
-            최대 {max}명
-          </span>
-        </div>
-        {errorMessage ? (
-          <p id={errorId} className={styles.errorText}>
-            {errorMessage}
-          </p>
-        ) : null}
       </div>
     </div>
   );

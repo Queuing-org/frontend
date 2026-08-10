@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -76,6 +76,13 @@ async function selectThumbnail(fileName = "cover.png") {
   await userEvent.upload(input!, file);
 
   return file;
+}
+
+async function selectRequiredMaxParticipants(
+  user: ReturnType<typeof userEvent.setup>,
+  value = "10",
+) {
+  await user.selectOptions(screen.getByLabelText("최대 인원 수"), value);
 }
 
 function uploadResult(uploadToken: string, thumbnailUrl: string) {
@@ -204,6 +211,7 @@ describe("RoomFormModal room form flows", () => {
     await user.type(screen.getByLabelText("방 제목"), "토큰 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
     await waitFor(() => {
@@ -239,6 +247,7 @@ describe("RoomFormModal room form flows", () => {
     await user.type(screen.getByLabelText("방 제목"), "선택 제거 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
     await waitFor(() => {
@@ -257,6 +266,7 @@ describe("RoomFormModal room form flows", () => {
     await user.type(screen.getByLabelText("방 제목"), "기본 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
     await waitFor(() => {
@@ -278,6 +288,7 @@ describe("RoomFormModal room form flows", () => {
     await user.type(screen.getByLabelText("방 제목"), "실패 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
     const error = await screen.findByText(
@@ -308,6 +319,7 @@ describe("RoomFormModal room form flows", () => {
     expect(screen.getByText("3/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "힙합" })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
     await waitFor(() => {
@@ -319,7 +331,124 @@ describe("RoomFormModal room form flows", () => {
     });
   });
 
-  it("방문한 단계를 다시 선택해도 모든 입력값을 유지한다", async () => {
+  it("필수 최대 인원은 정해진 옵션만 제공하고 미선택 생성을 막는다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockResolvedValue({ slug: "required-capacity-room" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "인원 필수 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+
+    const maxParticipantsSelect = screen.getByLabelText("최대 인원 수");
+    expect(maxParticipantsSelect).toHaveValue("");
+    expect(maxParticipantsSelect).toBeRequired();
+    expect(
+      within(maxParticipantsSelect).getAllByRole("option").map((option) => ({
+        text: option.textContent,
+        value: (option as HTMLOptionElement).value,
+      })),
+    ).toEqual([
+      { text: "최대 인원 선택", value: "" },
+      ...[2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(
+        (participants) => ({
+          text: `${participants}명`,
+          value: String(participants),
+        }),
+      ),
+    ]);
+    expect(within(maxParticipantsSelect).queryByText("제한 없음")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "완료" }));
+    expect(screen.getByText("최대 인원을 선택해주세요.")).toBeInTheDocument();
+    expect(createRoom).not.toHaveBeenCalled();
+
+    await selectRequiredMaxParticipants(user, "20");
+    await user.click(screen.getByRole("button", { name: "완료" }));
+    await waitFor(() => expect(createRoom).toHaveBeenCalledOnce());
+    expect(vi.mocked(createRoom).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ maxParticipants: 20 }),
+    );
+  });
+
+  it("참여 제한 메뉴는 화살표로 열고 Escape와 바깥 클릭으로 닫는다", async () => {
+    const user = userEvent.setup();
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "메뉴 테스트 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+
+    await user.click(screen.getByLabelText("참여 제한"));
+    expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
+
+    const toggle = screen.getByRole("button", { name: "참여 제한 옵션 열기" });
+    await user.click(toggle);
+    expect(screen.getByRole("group", { name: "참여 제한 옵션" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "누구나 참여", pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "비밀번호 입력", pressed: false })).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
+    expect(toggle).toHaveFocus();
+
+    await user.click(toggle);
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
+  });
+
+  it("공개 전환 중 비밀번호를 보존하고 공개 payload에서는 제외한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockResolvedValue({ slug: "public-room" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "비밀번호 보존 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
+
+    const toggle = screen.getByRole("button", { name: "참여 제한 옵션 열기" });
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.type(screen.getByLabelText("참여 제한"), "secret");
+
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "누구나 참여" }));
+    expect(screen.getByLabelText("참여 제한")).toHaveValue("누구나 참여");
+
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    expect(screen.getByLabelText("참여 제한")).toHaveValue("secret");
+
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "누구나 참여" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() => expect(createRoom).toHaveBeenCalledOnce());
+    expect(vi.mocked(createRoom).mock.calls[0]?.[0]).not.toHaveProperty("password");
+  });
+
+  it("비밀번호 모드 payload에는 보존한 비밀번호를 포함한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockResolvedValue({ slug: "password-room" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "비밀번호 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
+    await user.click(screen.getByRole("button", { name: "참여 제한 옵션 열기" }));
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.type(screen.getByLabelText("참여 제한"), "secret");
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() => expect(createRoom).toHaveBeenCalledOnce());
+    expect(vi.mocked(createRoom).mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ password: "secret" }),
+    );
+  });
+
+  it("방문한 3단계에서 2단계와 1단계를 거쳐 돌아와도 모든 입력값을 유지한다", async () => {
     const user = userEvent.setup();
     roomTags.push({ name: "록", slug: "rock" });
     renderCreateRoomModal();
@@ -328,23 +457,28 @@ describe("RoomFormModal room form flows", () => {
     await user.click(screen.getByRole("button", { name: "다음" }));
     await user.click(screen.getByRole("button", { name: "록" }));
     await user.click(screen.getByRole("button", { name: "다음" }));
-    await user.type(screen.getByLabelText("최대 인원 수"), "25");
+    await selectRequiredMaxParticipants(user, "20");
     await user.selectOptions(screen.getByLabelText("곡 당 제한 시간"), "30");
-    await user.selectOptions(screen.getByLabelText("참여 제한"), "password");
-    await user.type(screen.getByPlaceholderText("비밀번호"), "secret");
+    await user.click(screen.getByRole("button", { name: "참여 제한 옵션 열기" }));
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.type(screen.getByLabelText("참여 제한"), "secret");
 
-    await user.click(screen.getByRole("button", { name: /기본 정보/ }));
-    expect(screen.getByLabelText("방 제목")).toHaveValue("단계 보존 방");
     await user.click(screen.getByRole("button", { name: /장르 선택/ }));
     expect(screen.getByRole("button", { name: "록" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
     await user.click(screen.getByRole("button", { name: /세부 설정/ }));
-    expect(screen.getByLabelText("최대 인원 수")).toHaveValue("25");
+    expect(screen.getByLabelText("최대 인원 수")).toHaveValue("20");
     expect(screen.getByLabelText("곡 당 제한 시간")).toHaveValue("30");
-    expect(screen.getByLabelText("참여 제한")).toHaveValue("password");
-    expect(screen.getByPlaceholderText("비밀번호")).toHaveValue("secret");
+    expect(screen.getByLabelText("참여 제한")).toHaveValue("secret");
+
+    await user.click(screen.getByRole("button", { name: /기본 정보/ }));
+    expect(screen.getByLabelText("방 제목")).toHaveValue("단계 보존 방");
+    await user.click(screen.getByRole("button", { name: /세부 설정/ }));
+    expect(screen.getByLabelText("최대 인원 수")).toHaveValue("20");
+    expect(screen.getByLabelText("곡 당 제한 시간")).toHaveValue("30");
+    expect(screen.getByLabelText("참여 제한")).toHaveValue("secret");
   });
 
   it("수정 UI도 3개 카운터와 미선택 태그 비활성화를 적용한다", async () => {

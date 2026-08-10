@@ -21,7 +21,26 @@ import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
 const MAX_ROOM_TITLE_LENGTH = 18;
-const MAX_PARTICIPANTS_RANGE = { min: 1, max: 250 } as const;
+const MAX_PARTICIPANT_OPTIONS = [
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  20,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  90,
+  100,
+] as const;
 const TRACK_LIMIT_MINUTE_OPTIONS = [
   5,
   10,
@@ -56,47 +75,6 @@ const createSteps = [
   { label: "세부 설정", title: "세부 설정" },
 ] as const;
 
-function parseOptionalIntegerLimit({
-  max,
-  min,
-  unit,
-  value,
-}: {
-  max: number;
-  min: number;
-  unit: string;
-  value: string;
-}) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return {
-      error: null,
-      value: undefined,
-    };
-  }
-
-  if (!/^\d+$/.test(trimmedValue)) {
-    return {
-      error: "정수로 입력해주세요.",
-      value: undefined,
-    };
-  }
-
-  const parsedValue = Number.parseInt(trimmedValue, 10);
-  if (parsedValue < min || parsedValue > max) {
-    return {
-      error: `${min}~${max}${unit} 사이로 입력해주세요.`,
-      value: undefined,
-    };
-  }
-
-  return {
-    error: null,
-    value: parsedValue,
-  };
-}
-
 function parseOptionalTrackLimitMinutes(value: string) {
   const trimmedValue = value.trim();
 
@@ -109,10 +87,6 @@ function parseOptionalTrackLimitMinutes(value: string) {
   return TRACK_LIMIT_MINUTE_OPTIONS.some((minutes) => minutes === parsedValue)
     ? parsedValue
     : undefined;
-}
-
-function toDigitsOnly(value: string) {
-  return value.replace(/\D/g, "");
 }
 
 export default function RoomFormModal({
@@ -180,14 +154,16 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
-  const parsedMaxParticipants = parseOptionalIntegerLimit({
-    ...MAX_PARTICIPANTS_RANGE,
-    unit: "명",
-    value: maxParticipants,
-  });
+  const parsedMaxParticipants = MAX_PARTICIPANT_OPTIONS.find(
+    (option) => String(option) === maxParticipants,
+  );
   const parsedTrackLimitMinutes =
     parseOptionalTrackLimitMinutes(trackLimitMinutes);
-  const hasSettingsValidationError = Boolean(parsedMaxParticipants.error);
+  const maxParticipantsError =
+    parsedMaxParticipants === undefined
+      ? "최대 인원을 선택해주세요."
+      : null;
+  const hasSettingsValidationError = Boolean(maxParticipantsError);
   const thumbnailUploadErrorMessage = uploadTemporaryRoomThumbnailMutation.error
     ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
     : null;
@@ -223,8 +199,16 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     });
   };
 
+  const visitStep = (step: number) => {
+    const nextStep = Math.min(Math.max(step, 0), createSteps.length - 1);
+    setCurrentStep(nextStep);
+    setFurthestVisitedStep((furthestStep) =>
+      Math.max(furthestStep, nextStep),
+    );
+  };
+
   const goToPreviousStep = () => {
-    setCurrentStep((step) => Math.max(step - 1, 0));
+    visitStep(currentStep - 1);
   };
 
   const goToNextStep = () => {
@@ -232,13 +216,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    setCurrentStep((step) => {
-      const nextStep = Math.min(step + 1, createSteps.length - 1);
-      setFurthestVisitedStep((furthestStep) =>
-        Math.max(furthestStep, nextStep),
-      );
-      return nextStep;
-    });
+    visitStep(currentStep + 1);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -264,7 +242,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     setDidTryFinish(true);
 
     if (!trimmedTitle) {
-      setCurrentStep(0);
+      visitStep(0);
       return;
     }
 
@@ -278,7 +256,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
 
     if (hasSettingsValidationError) {
-      setCurrentStep(createSteps.length - 1);
+      visitStep(createSteps.length - 1);
       return;
     }
 
@@ -289,11 +267,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           : undefined;
       const result = await createRoomMutation.mutateAsync({
         title: trimmedTitle,
-        password: createdRoomPassword,
         tags: selectedTagSlugs,
-        ...(typeof parsedMaxParticipants.value === "number"
-          ? { maxParticipants: parsedMaxParticipants.value }
-          : {}),
+        maxParticipants: parsedMaxParticipants,
+        ...(createdRoomPassword ? { password: createdRoomPassword } : {}),
         ...(typeof parsedTrackLimitMinutes === "number"
           ? { trackLimitMinutes: parsedTrackLimitMinutes }
           : {}),
@@ -394,24 +370,16 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         trackLimitMinutes={trackLimitMinutes}
         disabled={isSubmitting}
         maxParticipantsError={
-          didTryFinish ? parsedMaxParticipants.error : null
+          didTryFinish ? maxParticipantsError : null
         }
         showPasswordError={didTryFinish && needsPassword}
-        onClearMaxParticipants={() => {
-          setMaxParticipants("");
-          setDidTryFinish(false);
-        }}
         onMaxParticipantsChange={(nextValue) => {
-          setMaxParticipants(toDigitsOnly(nextValue));
+          setMaxParticipants(nextValue);
           setDidTryFinish(false);
         }}
         onParticipationModeChange={(mode) => {
           setParticipationMode(mode);
           setDidTryFinish(false);
-
-          if (mode === "public") {
-            setPassword("");
-          }
         }}
         onPasswordChange={(nextPassword) => {
           setPassword(nextPassword);
@@ -422,6 +390,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           setDidTryFinish(false);
         }}
         trackLimitMinuteOptions={TRACK_LIMIT_MINUTE_OPTIONS}
+        maxParticipantOptions={MAX_PARTICIPANT_OPTIONS}
       />
     );
   };
@@ -469,7 +438,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                         !isReachable ||
                         isSubmitting
                       }
-                      onClick={() => setCurrentStep(index)}
+                      onClick={() => visitStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
                     >
                       <span className={styles.stepNumber}>{index + 1}</span>
