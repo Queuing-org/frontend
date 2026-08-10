@@ -30,8 +30,6 @@ type UseRoomChatRealtimeParams = {
 
 const CHAT_SEND_BACKFILL_DELAY_MS = 2000;
 const CHAT_SEND_CONFIRM_TIMEOUT_MS = 8000;
-const CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE =
-  "채팅 전송 확인이 지연되었습니다. 네트워크 상태를 확인해주세요.";
 
 type PendingChatSend = {
   backfillAt: number;
@@ -266,14 +264,13 @@ export function useRoomChatRealtime({
     );
     releaseOrphanedBackfillRequest();
     setIsChatSending(false);
-    setChatSendErrorMessage(CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE);
     return true;
   }, [releaseOrphanedBackfillRequest]);
 
   const runPendingCheck = useCallback(async () => {
     const pendingGeneration = pendingGenerationRef.current;
     const now = Date.now();
-    let didExpirePendingSend = expirePendingChatSends(now);
+    expirePendingChatSends(now);
     const dueBackfillSends = pendingChatSendsRef.current.filter(
       (pending) => !pending.backfillAttempted && pending.backfillAt <= now,
     );
@@ -305,16 +302,11 @@ export function useRoomChatRealtime({
     if (pendingBackfillRequestRef.current === backfillRequest) {
       pendingBackfillRequestRef.current = null;
     }
-    didExpirePendingSend =
-      expirePendingChatSends(Date.now()) || didExpirePendingSend;
+    expirePendingChatSends(Date.now());
     resolvePersistedPendingChatSends(
       foundContents,
       backfillRequest.pendingIds,
     );
-    if (didExpirePendingSend) {
-      setChatSendErrorMessage(CHAT_SEND_CONFIRM_TIMEOUT_MESSAGE);
-    }
-
     schedulePendingCheck();
   }, [
     expirePendingChatSends,

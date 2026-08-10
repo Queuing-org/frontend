@@ -154,7 +154,8 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
     expect(backfill).toHaveBeenCalledTimes(1);
-    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     unmount();
   });
@@ -189,7 +190,8 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4_000);
     });
-    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.isSending).toBe(false);
     expect(backfill).toHaveBeenCalledTimes(2);
     expect(backfill).toHaveBeenLastCalledWith(["같은 내용"]);
 
@@ -199,7 +201,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
       await Promise.resolve();
     });
     expect(backfill).toHaveBeenCalledTimes(2);
-    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(result.current.sendErrorMessage).toBe("");
     unmount();
   });
 
@@ -224,7 +226,8 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
-    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
 
     act(() => {
@@ -248,7 +251,8 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
-    expect(result.current.sendErrorMessage).toContain("전송 확인이 지연");
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     unmount();
   });

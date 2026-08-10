@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-10-room-management-ui-fixes](./2026-08-10-room-management-ui-fixes/plan.md): ready — 참가자 메뉴와 채팅 지연 피드백 정리
+
 - [2026-08-10-discovery-modal-static-import](./2026-08-10-discovery-modal-static-import/plan.md): ready — Draft PR #40, CREATE·FOLLOW·SETTING 정적 import 단순화 및 CI 통과
 
 - [2026-08-10-discovery-modal-preload](./2026-08-10-discovery-modal-preload/plan.md): merged — PR #39, CREATE·FOLLOW·SETTING 지연 모달 클릭 스피너 제거 및 CI 통과

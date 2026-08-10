@@ -284,6 +284,7 @@ export default function RoomParticipantList({
               key={participantKey}
               className={styles.virtualRow}
               data-participant-key={participantKey}
+              data-expanded={expanded || undefined}
               style={
                 {
                   "--participant-index": effectiveWindowStart + visibleIndex,

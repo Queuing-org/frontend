@@ -67,11 +67,13 @@
   );
 }
 
+.virtualRow[data-expanded="true"] {
+  z-index: 10;
+}
+
 .participantItem {
   position: relative;
   flex-shrink: 0;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 58px;
   border: 1px solid transparent;
   border-radius: 10px;
   transition:
