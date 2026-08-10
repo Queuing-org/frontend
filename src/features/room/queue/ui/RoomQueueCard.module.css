@@ -62,7 +62,7 @@
 }
 
 .equalizerBar {
-  width: 4px;
+  width: 3px;
   border-radius: 999px;
   background: #3c3c3c;
   transform-origin: bottom;
@@ -257,7 +257,7 @@
   }
 
   .equalizerBar {
-    width: 3.2px;
+    width: 2.4px;
   }
 
   .equalizerBar:nth-child(1) { height: 15.2px; }
