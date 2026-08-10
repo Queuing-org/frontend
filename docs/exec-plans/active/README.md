@@ -1,6 +1,8 @@
 # Active Execution Plans
 
-- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): ci-pending — Draft PR #43, 채팅·참가자 목록 스크롤바 스타일 통일
+- [2026-08-10-room-friend-discovery-ui](./2026-08-10-room-friend-discovery-ui/plan.md): ci-pending — Draft PR #44, 방 내부·친구 상세·탐색 모달·생성 단계·오류 피드백 통합 개선
+
+- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): merged — PR #43, 채팅·참가자 목록 스크롤바 기존 스타일 전달 완료(후속 숨김 요구는 새 run에서 처리)
 
 - [2026-08-10-chat-management-menu-layer](./2026-08-10-chat-management-menu-layer/plan.md): ci-pending — Draft PR #42, 채팅 관리 드롭다운 레이어 수정
 
