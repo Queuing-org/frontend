@@ -39,3 +39,17 @@
 - `npm run lint`: pass
 - `npm run build`: pass
 - `git diff --check`: pass
+
+## Profile Scroll Removal Follow-up
+
+- first fresh QA: fix — overflow만 숨기면 기존 49vh 모바일 모달에서 하단 입력과 완료 버튼이 잘림
+- fix: 모바일 모달을 `100dvh - 32px`로 확장하고 이미지/필드/통계를 낮은 세로 점유 레이아웃으로 재배치
+- fix: compact 카드 상하 padding을 줄여 기존 이미지와 form footer를 non-scroll 영역 안에 수용
+- final fresh QA: pass
+- form offset: normal 15px / compact 12px
+- scroll boundary: profile card와 feedback 모두 `overflow: hidden`
+- targeted settings: 2 files / 20 tests pass
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
+- residual risk: 480px 미만 극단적 세로 viewport와 연결 브라우저 부재로 실제 픽셀/휠 QA 미수행
