@@ -222,6 +222,10 @@ describe("RoomParticipantList", () => {
     await user.click(trigger);
 
     expect(screen.getByRole("menu", { name: "회원 참가자 관리" })).toBeVisible();
+    expect(trigger.closest("[data-participant-key]")).toHaveAttribute(
+      "data-expanded",
+      "true",
+    );
     expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeVisible();
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeVisible();
     expect(screen.getByRole("menuitem", { name: "차단" })).toBeVisible();
@@ -230,6 +234,9 @@ describe("RoomParticipantList", () => {
 
     await user.click(trigger);
     expect(screen.queryByRole("menu", { name: "회원 참가자 관리" })).toBeNull();
+    expect(trigger.closest("[data-participant-key]")).not.toHaveAttribute(
+      "data-expanded",
+    );
   });
 
   it("다른 카드, 바깥 클릭, Escape로 하나의 메뉴만 관리한다", async () => {
