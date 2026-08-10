@@ -3,13 +3,11 @@ import styles from "./SearchEmptyState.module.css";
 type Props = {
   query: string;
   onCreateRoom: () => void;
-  onCreateRoomIntent?: () => void;
 };
 
 export default function SearchEmptyState({
   query,
   onCreateRoom,
-  onCreateRoomIntent,
 }: Props) {
   const trimmedQuery = query.trim();
   const description = trimmedQuery
@@ -23,9 +21,6 @@ export default function SearchEmptyState({
       <button
         type="button"
         className={styles.button}
-        onFocus={onCreateRoomIntent}
-        onPointerDown={onCreateRoomIntent}
-        onPointerEnter={onCreateRoomIntent}
         onClick={onCreateRoom}
       >
         방 만들러 가기

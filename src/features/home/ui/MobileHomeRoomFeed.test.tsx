@@ -1,14 +1,13 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { DEFAULT_HOME_FILTERS } from "@/src/features/room/discovery/ui/HomeControlPanelShell";
 import MobileHomeRoomFeed from "./MobileHomeRoomFeed";
 
-describe("MobileHomeRoomFeed 모달 선로딩 intent", () => {
-  it("CREATE, FOLLOW, SETTING intent와 기존 클릭 액션을 함께 전달한다", async () => {
+describe("MobileHomeRoomFeed 빠른 메뉴", () => {
+  it("방 만들기, 팔로우, 설정 클릭 액션을 전달한다", async () => {
     const user = userEvent.setup();
     const onCreateRoom = vi.fn();
-    const onMenuItemIntent = vi.fn();
     const onOpenFollow = vi.fn();
     const onOpenSettings = vi.fn();
 
@@ -20,7 +19,6 @@ describe("MobileHomeRoomFeed 모달 선로딩 intent", () => {
         isFetchingNextPage={false}
         onCreateRoom={onCreateRoom}
         onLoadMoreRooms={vi.fn()}
-        onMenuItemIntent={onMenuItemIntent}
         onOpenFollow={onOpenFollow}
         onOpenSettings={onOpenSettings}
         onRandomEntry={vi.fn()}
@@ -32,21 +30,11 @@ describe("MobileHomeRoomFeed 모달 선로딩 intent", () => {
       />,
     );
 
-    const [createButton, emptyCreateButton] = screen.getAllByRole("button", {
+    const [createButton] = screen.getAllByRole("button", {
       name: "방 만들기",
     });
     const followButton = screen.getByRole("button", { name: "팔로우" });
     const settingsButton = screen.getByRole("button", { name: "설정" });
-
-    fireEvent.pointerEnter(createButton);
-    fireEvent.focus(followButton);
-    fireEvent.pointerDown(settingsButton);
-    fireEvent.pointerEnter(emptyCreateButton);
-
-    expect(onMenuItemIntent).toHaveBeenNthCalledWith(1, "CREATE");
-    expect(onMenuItemIntent).toHaveBeenNthCalledWith(2, "FOLLOW");
-    expect(onMenuItemIntent).toHaveBeenNthCalledWith(3, "SETTING");
-    expect(onMenuItemIntent).toHaveBeenNthCalledWith(4, "CREATE");
 
     await user.click(createButton);
     await user.click(followButton);

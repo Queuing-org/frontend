@@ -7,7 +7,7 @@ import FollowTabPanel from "./components/FollowTabPanel";
 import FollowTabs from "./components/FollowTabs";
 import styles from "./FollowModal.module.css";
 
-export type FollowModalProps = {
+type FollowModalProps = {
   open: boolean;
   onClose: () => void;
 };

@@ -30,7 +30,6 @@ import {
   getSelectedHomeGenreTags,
   type HomeFilterKey,
   type HomeFilterOption,
-  type HomeMenuItem,
 } from "@/src/features/room/discovery/ui/HomeControlPanelShell";
 import HomeSearchControlDock from "@/src/features/room/discovery/ui/HomeSearchControlDock";
 import { useRoomEntry } from "@/src/features/room/join/model/useRoomEntry";
@@ -42,13 +41,9 @@ import SelectedRoomOwnerBar from "@/src/features/room/list/ui/SelectedRoomOwnerB
 import SearchEmptyState from "@/src/features/room/search/ui/SearchEmptyState";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
-import { useIdlePreload } from "@/src/shared/lib/useIdlePreload";
-import {
-  DISCOVERY_MODAL_PRELOADERS,
-  discoveryModalResources,
-  preloadDiscoveryModalForMenuItem,
-} from "@/src/features/room/discovery/lib/discoveryModalResources";
-import { useDiscoveryModalController } from "@/src/features/room/discovery/model/useDiscoveryModalController";
+import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
+import FollowModal from "@/src/features/follow/ui/FollowModal";
+import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
@@ -57,23 +52,25 @@ const RoomJoinPasswordModal = dynamic(
     loading: () => <LazyModalFallback label="방 입장 화면 로딩 중" />,
   },
 );
-const RoomFormModal = discoveryModalResources.create.Component;
-const FollowModal = discoveryModalResources.follow.Component;
-const SettingsModal = discoveryModalResources.settings.Component;
+
+type DiscoveryModalKey = "create" | "follow" | "settings";
 
 export default function SearchScreen() {
-  useIdlePreload(DISCOVERY_MODAL_PRELOADERS);
-
   const [roomListFilters, setRoomListFilters] = useState(DEFAULT_HOME_FILTERS);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeModal, setActiveModal] = useState<DiscoveryModalKey | null>(
+    null,
+  );
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
-  const discoveryModal = useDiscoveryModalController();
   const {
     authRequiredDescription,
     closeAuthRequiredModal,
     isAuthRequiredModalOpen,
     requestAuthenticatedAction,
   } = useAuthenticatedAction("방 만들기는 로그인 후 이용할 수 있어요.");
+  const closeDiscoveryModal = () => {
+    setActiveModal(null);
+  };
 
   const selectRoomListFilter = (
     key: HomeFilterKey,
@@ -102,21 +99,21 @@ export default function SearchScreen() {
   const requestCreateRoom = () => {
     requestAuthenticatedAction({
       description: "방 만들기는 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => discoveryModal.requestModal("create"),
+      onAuthenticated: () => setActiveModal("create"),
     });
   };
 
   const requestOpenFollow = () => {
     requestAuthenticatedAction({
       description: "팔로우 기능은 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => discoveryModal.requestModal("follow"),
+      onAuthenticated: () => setActiveModal("follow"),
     });
   };
 
   const requestOpenSettings = () => {
     requestAuthenticatedAction({
       description: "설정은 로그인 후 이용할 수 있어요.",
-      onAuthenticated: () => discoveryModal.requestModal("settings"),
+      onAuthenticated: () => setActiveModal("settings"),
     });
   };
 
@@ -128,9 +125,7 @@ export default function SearchScreen() {
 
       <SearchRoomsContent
         activeFilters={roomListFilters}
-        modalLoadErrorMessage={discoveryModal.loadErrorMessage}
         onCreateRoom={requestCreateRoom}
-        onMenuItemIntent={preloadDiscoveryModalForMenuItem}
         onOpenFollow={requestOpenFollow}
         onOpenSettings={requestOpenSettings}
         onSelectFilter={selectRoomListFilter}
@@ -138,18 +133,14 @@ export default function SearchScreen() {
         roomsQueryParams={roomListQueryParams}
         searchQuery={searchQuery}
       />
-      {discoveryModal.activeModal === "create" ? (
-        <RoomFormModal
-          open
-          mode="create"
-          onClose={discoveryModal.closeModal}
-        />
+      {activeModal === "create" ? (
+        <RoomFormModal open mode="create" onClose={closeDiscoveryModal} />
       ) : null}
-      {discoveryModal.activeModal === "follow" ? (
-        <FollowModal open onClose={discoveryModal.closeModal} />
+      {activeModal === "follow" ? (
+        <FollowModal open onClose={closeDiscoveryModal} />
       ) : null}
-      {discoveryModal.activeModal === "settings" ? (
-        <SettingsModal open onClose={discoveryModal.closeModal} />
+      {activeModal === "settings" ? (
+        <SettingsModal open onClose={closeDiscoveryModal} />
       ) : null}
       <AuthRequiredModal
         open={isAuthRequiredModalOpen}
@@ -206,9 +197,7 @@ function SearchPanelHeader({
 
 type SearchRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
-  modalLoadErrorMessage: string | null;
   onCreateRoom: () => void;
-  onMenuItemIntent: (menuItem: HomeMenuItem) => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
@@ -219,9 +208,7 @@ type SearchRoomsContentProps = {
 
 function SearchRoomsContent({
   activeFilters,
-  modalLoadErrorMessage,
   onCreateRoom,
-  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onSelectFilter,
@@ -266,8 +253,6 @@ function SearchRoomsContent({
     onSelectRoom: setCurrentRoomSlug,
   });
   const randomEntry = useRandomEntryNavigation();
-  const actionErrorMessage =
-    modalLoadErrorMessage ?? randomEntry.errorMessage;
 
   useLoadMoreRoomsNearEnd({
     rooms: roomListRooms,
@@ -316,7 +301,6 @@ function SearchRoomsContent({
             <SearchEmptyState
               query={searchQuery}
               onCreateRoom={onCreateRoom}
-              onCreateRoomIntent={() => onMenuItemIntent("CREATE")}
             />
           </div>
         ) : (
@@ -375,9 +359,8 @@ function SearchRoomsContent({
         onCreateRoom={onCreateRoom}
         onOpenFollow={onOpenFollow}
         onOpenSettings={onOpenSettings}
-        onMenuItemIntent={onMenuItemIntent}
         isRandomEntryPending={randomEntry.isPending}
-        actionErrorMessage={actionErrorMessage}
+        actionErrorMessage={randomEntry.errorMessage}
         onEnterSelectedRoom={() => {
           if (selectedRoom) {
             roomEntry.requestRoomEntry(selectedRoom);
