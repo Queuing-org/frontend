@@ -46,7 +46,7 @@
 - [x] 방 사진 수정 제외 결정 (사용자가 backend 변경을 진행하지 않기로 함)
 - [x] targeted test, lint, build
 - [x] full test, fresh QA (`pass`)
-- [ ] commit, push
+- [x] commit, push, Draft PR #42
 
 ## Residual Risk
 

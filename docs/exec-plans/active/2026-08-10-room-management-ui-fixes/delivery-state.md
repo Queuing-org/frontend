@@ -1,12 +1,12 @@
 # Delivery State
 
-- status: ready
+- status: ci-pending
 - branch: `dev`
 - base: `main`
 - issue:
-- pr:
+- pr: [#42](https://github.com/Queuing-org/frontend/pull/42) (draft)
 - selected_skills: feature-delivery, orchestrator, ui-flow, api-boundary, frontend guardrails, qa-reviewer
 - local_qa: targeted 15 passed; full 323 passed; lint passed; build passed; fresh QA pass
-- ci: pending implementation
+- ci: pending
 - review_threads: not inspected
-- next_action: commit and push dev
+- next_action: GitHub Actions와 review 확인

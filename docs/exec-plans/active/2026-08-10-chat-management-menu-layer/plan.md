@@ -26,4 +26,4 @@
 
 - [x] 원인 확인과 구현
 - [x] 검증과 fresh QA (`pass`)
-- [ ] commit, push
+- [x] commit, push, Draft PR #42
