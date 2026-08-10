@@ -125,7 +125,7 @@ describe("RoomFormModal room form flows", () => {
       ).toEqual({ file });
     });
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "썸네일 업로드 실패: (409) 임시 이미지가 너무 많습니다.",
+      "썸네일 업로드 실패: 임시 이미지가 너무 많습니다.",
     );
     expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
   });
@@ -268,6 +268,24 @@ describe("RoomFormModal room form flows", () => {
     expect(uploadTemporaryRoomThumbnail).not.toHaveBeenCalled();
   });
 
+  it("방 생성 오류에서 HTTP 상태 코드를 사용자에게 노출하지 않는다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockRejectedValue(
+      new ApiError({ message: "서버가 방을 만들지 못했습니다.", status: 500 }),
+    );
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "실패 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    const error = await screen.findByText(
+      "생성 실패: 서버가 방을 만들지 못했습니다.",
+    );
+    expect(error).not.toHaveTextContent("500");
+  });
+
   it("태그를 최대 3개까지 선택하고 생성 payload에 반영한다", async () => {
     const user = userEvent.setup();
     roomTags.push(
@@ -299,6 +317,34 @@ describe("RoomFormModal room form flows", () => {
         }),
       );
     });
+  });
+
+  it("방문한 단계를 다시 선택해도 모든 입력값을 유지한다", async () => {
+    const user = userEvent.setup();
+    roomTags.push({ name: "록", slug: "rock" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "단계 보존 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "록" }));
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.type(screen.getByLabelText("최대 인원 수"), "25");
+    await user.selectOptions(screen.getByLabelText("곡 당 제한 시간"), "30");
+    await user.selectOptions(screen.getByLabelText("참여 제한"), "password");
+    await user.type(screen.getByPlaceholderText("비밀번호"), "secret");
+
+    await user.click(screen.getByRole("button", { name: /기본 정보/ }));
+    expect(screen.getByLabelText("방 제목")).toHaveValue("단계 보존 방");
+    await user.click(screen.getByRole("button", { name: /장르 선택/ }));
+    expect(screen.getByRole("button", { name: "록" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(screen.getByRole("button", { name: /세부 설정/ }));
+    expect(screen.getByLabelText("최대 인원 수")).toHaveValue("25");
+    expect(screen.getByLabelText("곡 당 제한 시간")).toHaveValue("30");
+    expect(screen.getByLabelText("참여 제한")).toHaveValue("password");
+    expect(screen.getByPlaceholderText("비밀번호")).toHaveValue("secret");
   });
 
   it("수정 UI도 3개 카운터와 미선택 태그 비활성화를 적용한다", async () => {

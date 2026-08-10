@@ -160,6 +160,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
   const [currentStep, setCurrentStep] = useState(0);
+  const [furthestVisitedStep, setFurthestVisitedStep] = useState(0);
   const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
   const [participationMode, setParticipationMode] =
@@ -188,11 +189,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     parseOptionalTrackLimitMinutes(trackLimitMinutes);
   const hasSettingsValidationError = Boolean(parsedMaxParticipants.error);
   const thumbnailUploadErrorMessage = uploadTemporaryRoomThumbnailMutation.error
-    ? [
-        "썸네일 업로드 실패:",
-        `(${uploadTemporaryRoomThumbnailMutation.error.status})`,
-        uploadTemporaryRoomThumbnailMutation.error.message,
-      ].join(" ")
+    ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
     : null;
   const hasSelectedThumbnailWithoutToken = Boolean(
     thumbnailSelection.file &&
@@ -235,7 +232,13 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    setCurrentStep((step) => Math.min(step + 1, createSteps.length - 1));
+    setCurrentStep((step) => {
+      const nextStep = Math.min(step + 1, createSteps.length - 1);
+      setFurthestVisitedStep((furthestStep) =>
+        Math.max(furthestStep, nextStep),
+      );
+      return nextStep;
+    });
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -443,8 +446,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
             <ol className={styles.stepList}>
               {createSteps.map((step, index) => {
                 const isCurrent = index === currentStep;
-                const isCompleted = index < currentStep;
-                const isReachable = index <= currentStep;
+                const isCompleted =
+                  index <= furthestVisitedStep && index !== currentStep;
+                const isReachable = index <= furthestVisitedStep;
 
                 return (
                   <li
@@ -463,8 +467,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                       className={styles.stepButton}
                       disabled={
                         !isReachable ||
-                        isSubmitting ||
-                        hasThumbnailBlockingError
+                        isSubmitting
                       }
                       onClick={() => setCurrentStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
@@ -492,8 +495,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
             {createRoomMutation.error ? (
               <p className={styles.errorText}>
-                생성 실패: ({createRoomMutation.error.status}){" "}
-                {createRoomMutation.error.message}
+                생성 실패: {createRoomMutation.error.message}
               </p>
             ) : null}
             <div className={styles.actions}>

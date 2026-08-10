@@ -112,6 +112,7 @@ export default function HomeScreen() {
       <HomeRoomsContent
         activeFilters={roomListFilters}
         hasPageModalOpen={hasPageModalOpen}
+        isDiscoveryModalOpen={Boolean(activeModal)}
         isMobileLayout={isMobileLayout}
         onCreateRoom={requestCreateRoom}
         onMobileSearchQueryChange={setMobileSearchQuery}
@@ -142,6 +143,7 @@ export default function HomeScreen() {
 type HomeRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
   hasPageModalOpen: boolean;
+  isDiscoveryModalOpen: boolean;
   isMobileLayout: boolean;
   onCreateRoom: () => void;
   onMobileSearchQueryChange: (query: string) => void;
@@ -154,6 +156,7 @@ type HomeRoomsContentProps = {
 function HomeRoomsContent({
   activeFilters,
   hasPageModalOpen,
+  isDiscoveryModalOpen,
   isMobileLayout,
   onCreateRoom,
   onMobileSearchQueryChange,
@@ -275,29 +278,32 @@ function HomeRoomsContent({
               void roomsQuery.refetch();
             }}
           />
-          <HomeSearchControlDock
-            ariaLabel="홈 하단 컨트롤"
-            selectedRoomSlug={selectedRoomSlug}
-            canGoPrevious={Boolean(previousRoom)}
-            canGoNext={Boolean(nextRoom)}
-            activeFilters={activeFilters}
-            genreOptions={genreOptions}
-            onGoPrevious={goPrevious}
-            onGoNext={goNext}
-            onRandomEntry={randomEntry.requestRandomEntry}
-            onSelectFilter={onSelectFilter}
-            onCreateRoom={onCreateRoom}
-            onOpenFollow={onOpenFollow}
-            onOpenSettings={onOpenSettings}
-            isRandomEntryPending={randomEntry.isPending}
-            actionErrorMessage={actionErrorMessage}
-            onEnterSelectedRoom={() => {
-              if (visibleCurrentRoom) {
-                roomEntry.requestRoomEntry(visibleCurrentRoom);
-              }
-            }}
-          />
         </>
+      ) : null}
+      {!isMobileLayout && (!isChromeReduced || isDiscoveryModalOpen) ? (
+        <HomeSearchControlDock
+          ariaLabel="홈 하단 컨트롤"
+          selectedRoomSlug={selectedRoomSlug}
+          canGoPrevious={Boolean(previousRoom)}
+          canGoNext={Boolean(nextRoom)}
+          activeFilters={activeFilters}
+          genreOptions={genreOptions}
+          onGoPrevious={goPrevious}
+          onGoNext={goNext}
+          onRandomEntry={randomEntry.requestRandomEntry}
+          onSelectFilter={onSelectFilter}
+          onCreateRoom={onCreateRoom}
+          onOpenFollow={onOpenFollow}
+          onOpenSettings={onOpenSettings}
+          isRandomEntryPending={randomEntry.isPending}
+          actionErrorMessage={actionErrorMessage}
+          isNavigationLocked={isDiscoveryModalOpen}
+          onEnterSelectedRoom={() => {
+            if (visibleCurrentRoom) {
+              roomEntry.requestRoomEntry(visibleCurrentRoom);
+            }
+          }}
+        />
       ) : null}
       {roomEntry.passwordRoom ? (
         <RoomJoinPasswordModal

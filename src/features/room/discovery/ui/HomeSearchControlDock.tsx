@@ -32,6 +32,7 @@ type Props = {
   onEnterSelectedRoom: () => void;
   isRandomEntryPending?: boolean;
   actionErrorMessage?: string | null;
+  isNavigationLocked?: boolean;
 };
 
 export default function HomeSearchControlDock({
@@ -51,6 +52,7 @@ export default function HomeSearchControlDock({
   onEnterSelectedRoom,
   isRandomEntryPending = false,
   actionErrorMessage = null,
+  isNavigationLocked = false,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
@@ -109,7 +111,11 @@ export default function HomeSearchControlDock({
   };
 
   return (
-    <div ref={dockRef} className={styles.dock}>
+    <div
+      ref={dockRef}
+      className={styles.dock}
+      data-modal-active={isNavigationLocked || undefined}
+    >
       {openPanel || actionErrorMessage ? (
         <div className={styles.floatStack}>
           {actionErrorMessage ? (
@@ -165,17 +171,30 @@ export default function HomeSearchControlDock({
           </button>
         }
         left={
-          <button
-            type="button"
-            onClick={onGoPrevious}
-            disabled={!canGoPrevious}
-            aria-label="이전 방 보기"
-          >
-            <Image src="/icons/left_arrow.svg" alt="" width={20} height={20} />
-          </button>
+          isNavigationLocked ? null : (
+            <button
+              type="button"
+              onClick={onGoPrevious}
+              disabled={!canGoPrevious}
+              aria-label="이전 방 보기"
+            >
+              <Image
+                src="/icons/left_arrow.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+          )
         }
         center={
-          selectedRoomSlug ? (
+          isNavigationLocked ? (
+            <button
+              type="button"
+              disabled
+              aria-label="모달 사용 중 방 입장 비활성"
+            />
+          ) : selectedRoomSlug ? (
             <button
               type="button"
               onClick={onEnterSelectedRoom}
@@ -186,14 +205,21 @@ export default function HomeSearchControlDock({
           )
         }
         right={
-          <button
-            type="button"
-            onClick={onGoNext}
-            disabled={!canGoNext}
-            aria-label="다음 방 보기"
-          >
-            <Image src="/icons/right_arrow.svg" alt="" width={20} height={20} />
-          </button>
+          isNavigationLocked ? null : (
+            <button
+              type="button"
+              onClick={onGoNext}
+              disabled={!canGoNext}
+              aria-label="다음 방 보기"
+            >
+              <Image
+                src="/icons/right_arrow.svg"
+                alt=""
+                width={20}
+                height={20}
+              />
+            </button>
+          )
         }
         bottom={
           <button

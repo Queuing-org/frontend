@@ -6,6 +6,10 @@
   z-index: 1100;
 }
 
+.dock[data-modal-active="true"] {
+  z-index: 1300;
+}
+
 .floatStack {
   position: absolute;
   left: 50%;
