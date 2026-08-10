@@ -39,6 +39,11 @@
   padding-right: 28px;
 }
 
+.message[data-menu-open="true"] {
+  z-index: 10;
+  content-visibility: visible;
+}
+
 .management {
   position: absolute;
   top: 0;

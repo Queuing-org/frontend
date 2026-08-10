@@ -222,11 +222,20 @@ describe("ChatArea 관리 메뉴", () => {
     expect(screen.queryByRole("button", { name: /식별없음 메시지.*관리 메뉴/ })).not.toBeInTheDocument();
 
     await user.click(getMenuTrigger("회원"));
+    expect(
+      getMenuTrigger("회원").closest("[data-chat-message-key]"),
+    ).toHaveAttribute("data-menu-open", "true");
     expect(screen.getByRole("menuitem", { name: "팔로우" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
     expect(screen.getByRole("menuitem", { name: "차단" })).toBeInTheDocument();
 
     await user.click(getMenuTrigger("비회원"));
+    expect(
+      getMenuTrigger("회원").closest("[data-chat-message-key]"),
+    ).not.toHaveAttribute("data-menu-open");
+    expect(
+      getMenuTrigger("비회원").closest("[data-chat-message-key]"),
+    ).toHaveAttribute("data-menu-open", "true");
     expect(screen.getAllByRole("menu")).toHaveLength(1);
     expect(screen.getByRole("menuitem", { name: "신고" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "차단" })).not.toBeInTheDocument();

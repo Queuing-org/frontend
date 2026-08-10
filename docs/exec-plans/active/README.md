@@ -1,6 +1,8 @@
 # Active Execution Plans
 
-- [2026-08-10-room-management-ui-fixes](./2026-08-10-room-management-ui-fixes/plan.md): ready — 참가자 메뉴와 채팅 지연 피드백 정리
+- [2026-08-10-chat-management-menu-layer](./2026-08-10-chat-management-menu-layer/plan.md): ci-pending — Draft PR #42, 채팅 관리 드롭다운 레이어 수정
+
+- [2026-08-10-room-management-ui-fixes](./2026-08-10-room-management-ui-fixes/plan.md): ci-pending — Draft PR #42, 참가자 메뉴와 채팅 지연 피드백 정리
 
 - [2026-08-10-discovery-modal-static-import](./2026-08-10-discovery-modal-static-import/plan.md): ready — Draft PR #40, CREATE·FOLLOW·SETTING 정적 import 단순화 및 CI 통과
 

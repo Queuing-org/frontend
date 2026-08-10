@@ -105,7 +105,11 @@ function ChatMessageRow({
   const menuId = `chat-message-menu-${messageKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
 
   return (
-    <li className={styles.message} data-chat-message-key={messageKey}>
+    <li
+      className={styles.message}
+      data-chat-message-key={messageKey}
+      data-menu-open={isMenuOpen || undefined}
+    >
       <div className={styles.avatarWrap}>
         {message.senderProfileImageUrl ? (
           <Image
