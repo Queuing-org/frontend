@@ -28,3 +28,14 @@
 - settings feedback/button shared footer and existing integrated profile-save regressions
 - zero-tag next-step block, exact inline error, error clear, FREE-first stable ordering, final-create bypass guard
 - unchanged API payload/type boundary and documented shared dependency direction
+
+## Profile Form Offset Follow-up
+
+- fresh read-only QA: pass
+- normal `.profileForm`: `translateY(-10px)`
+- compact `.profileForm`: 기존 80% 배율에 맞춘 `translateY(-8px)`
+- absolute desktop footer와 static mobile footer가 모두 form transform 좌표계에서 함께 이동함을 확인
+- targeted settings: 2 files / 20 tests pass
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass
