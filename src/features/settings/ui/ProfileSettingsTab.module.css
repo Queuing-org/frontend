@@ -118,15 +118,6 @@
   border: 0;
 }
 
-.editableControl {
-  position: relative;
-  min-width: 0;
-}
-
-.editableControl .textInput {
-  padding-right: 80px;
-}
-
 .textInput,
 .selectField {
   width: 100%;
@@ -146,6 +137,24 @@
 .textInput {
   min-width: 0;
   padding: 12px 16px;
+  outline: none;
+  transition: box-shadow 160ms ease;
+}
+
+.textInput[data-feedback="success"] {
+  border-color: #2fa65a;
+}
+
+.textInput[data-feedback="error"] {
+  border-color: #d94b4b;
+}
+
+.textInput[data-feedback="success"]:focus-visible {
+  box-shadow: 0 0 0 3px rgb(47 166 90 / 12%);
+}
+
+.textInput[data-feedback="error"]:focus-visible {
+  box-shadow: 0 0 0 3px rgb(217 75 75 / 12%);
 }
 
 .selectControl {
@@ -166,7 +175,7 @@
 }
 
 .selectField:focus-visible {
-  outline: 0px solid #5b8cff;
+  outline: 2px solid #5b8cff;
   outline-offset: 2px;
 }
 
@@ -185,18 +194,22 @@
 }
 
 .textInput:focus-visible,
-.primaryButton:focus-visible {
-  outline: 0px solid #5b8cff;
+.completeButton:focus-visible {
+  outline: 2px solid #5b8cff;
   outline-offset: 2px;
 }
 
-.primaryButton {
-  position: absolute;
-  top: 50%;
-  right: 14px;
+.formActions {
+  display: flex;
+  min-width: 0;
+  justify-content: flex-end;
+  margin-left: 130px;
+}
+
+.completeButton {
   display: inline-flex;
-  width: 54px;
-  height: 28px;
+  width: 76px;
+  height: 34px;
   align-items: center;
   justify-content: center;
   border: 0;
@@ -204,24 +217,22 @@
   background: #2f86ed;
   color: #ffffff;
   font-family: inherit;
-  font-size: 12px;
-  font-weight: var(--fw-bold);
+  font-size: 16px;
+  font-weight: var(--fw-regular);
   line-height: 1;
   cursor: pointer;
-  opacity: 1;
-  transform: translateY(-50%);
   transition:
     background-color 160ms ease,
     opacity 160ms ease;
 }
 
-.primaryButton:hover:not(:disabled) {
+.completeButton:hover:not(:disabled) {
   background: #1f72d0;
 }
 
-.primaryButton:disabled {
-  pointer-events: none;
-  opacity: 0;
+.completeButton:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .chevron {
@@ -237,29 +248,25 @@
   transform: translateY(-65%) rotate(45deg);
 }
 
-.successText,
-.errorText,
-.badgeStatusText,
-.badgeStatusError {
-  margin: -8px 0 0 130px;
+.feedbackArea {
+  display: flex;
+  height: 36px;
+  box-sizing: border-box;
+  align-items: flex-start;
+  gap: 6px;
+  margin-left: 130px;
+  overflow-y: auto;
+  color: #8d8d8d;
   font-size: 12px;
   font-weight: var(--fw-medium);
   line-height: 1.5;
 }
 
-.successText {
+.feedbackArea[data-tone="success"] {
   color: #287a3e;
 }
 
-.errorText {
-  color: #d94b4b;
-}
-
-.badgeStatusText {
-  color: #8d8d8d;
-}
-
-.badgeStatusError {
+.feedbackArea[data-tone="error"] {
   color: #d94b4b;
 }
 
@@ -373,11 +380,9 @@
     font-size: 12px;
   }
 
-  .successText,
-  .errorText,
-  .badgeStatusText,
-  .badgeStatusError {
-    margin: -14px 0 0;
+  .formActions,
+  .feedbackArea {
+    margin-left: 0;
   }
 }
 
@@ -429,22 +434,13 @@
     padding: 9.6px 12.8px;
   }
 
-  .editableControl .textInput {
-    padding-right: 64px;
+  .formActions {
+    margin-left: 104px;
   }
 
-  .primaryButton {
-    right: 11.2px;
-    width: 43.2px;
-    height: 22.4px;
-    font-size: 9.6px;
-  }
-
-  .successText,
-  .errorText,
-  .badgeStatusText,
-  .badgeStatusError {
-    margin: -6.4px 0 0 104px;
+  .feedbackArea {
+    height: 28.8px;
+    margin-left: 104px;
     font-size: 9.6px;
   }
 

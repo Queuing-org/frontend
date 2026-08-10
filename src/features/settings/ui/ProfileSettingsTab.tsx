@@ -75,20 +75,22 @@ export default function ProfileSettingsTab() {
           </p>
         </div>
         <ProfileSettingsForm
-          canUpdateNickname={form.canUpdateNickname}
-          canUpdateStatusMessage={form.canUpdateStatusMessage}
+          canUpdateProfile={form.canUpdateProfile}
           hasProfile={form.hasProfile}
           isMeError={form.isMeError}
           isMeLoading={form.isMeLoading}
           isUpdatingProfile={form.isUpdatingProfile}
           nickname={form.nickname}
+          nicknameFeedback={form.nicknameFeedback}
           statusMessage={form.statusMessage}
+          statusMessageFeedback={form.statusMessageFeedback}
           successMessage={form.successMessage}
           updateError={form.updateError}
           badgeDisabled={
             !form.me ||
             isBadgeLoading ||
             myBadgesQuery.isError ||
+            form.isUpdatingProfile ||
             setRepresentativeBadge.isPending ||
             clearRepresentativeBadge.isPending
           }
@@ -106,6 +108,8 @@ export default function ProfileSettingsTab() {
               return;
             }
 
+            form.clearProfileStatusMessage();
+
             if (!badgeCode) {
               if (representativeBadge) {
                 setRepresentativeBadge.reset();
@@ -118,9 +122,8 @@ export default function ProfileSettingsTab() {
             setRepresentativeBadge.mutate({ badgeCode });
           }}
           onNicknameChange={form.updateNicknameDraft}
-          onNicknameSubmit={form.handleNicknameSubmit}
+          onProfileSubmit={form.handleProfileSubmit}
           onStatusMessageChange={form.updateStatusMessageDraft}
-          onStatusMessageSubmit={form.handleStatusMessageSubmit}
         />
       </div>
       <ProfileStats
