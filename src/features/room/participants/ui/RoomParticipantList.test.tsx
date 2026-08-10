@@ -149,6 +149,10 @@ describe("RoomParticipantList", () => {
   it("화면 근처 회원 카드의 칭호만 query observer를 만든다", () => {
     renderList();
 
+    expect(screen.getByLabelText("참가자 목록")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
     expect(IntersectionObserverMock.observed).toHaveLength(2);
     expect(IntersectionObserverMock.options?.root).toBe(
       screen.getByLabelText("참가자 목록"),

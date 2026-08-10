@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import type { RefObject } from "react";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import ManagementMenuShell from "@/src/shared/ui/management-menu/ManagementMenuShell";
 import styles from "./RoomMemberManagementMenu.module.css";
 
 type Props = {
@@ -44,45 +45,9 @@ export default function RoomMemberManagementMenu({
   targetUserSlug,
   triggerRef,
 }: Props) {
-  const menuRef = useRef<HTMLDivElement>(null);
   const canFollow = actions.includes("follow") && Boolean(targetUserSlug);
   const { data: isFollowing, isLoading: isRelationshipLoading } =
     useFollowingRelationship(canFollow ? targetUserSlug : null);
-
-  useEffect(() => {
-    menuRef.current
-      ?.querySelector<HTMLButtonElement>("[role='menuitem']:not(:disabled)")
-      ?.focus();
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-      if (
-        menuRef.current?.contains(target) ||
-        triggerRef.current?.contains(target)
-      ) {
-        return;
-      }
-      onClose();
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") {
-        return;
-      }
-      event.preventDefault();
-      onClose();
-      triggerRef.current?.focus();
-    };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onClose, triggerRef]);
 
   const runAndClose = (action: () => void) => {
     action();
@@ -90,13 +55,12 @@ export default function RoomMemberManagementMenu({
   };
 
   return (
-    <div
-      ref={menuRef}
-      id={menuId}
-      className={styles.menu}
-      role="menu"
-      aria-label={label}
-      data-placement={placement}
+    <ManagementMenuShell
+      label={label}
+      menuId={menuId}
+      onClose={onClose}
+      placement={placement}
+      triggerRef={triggerRef}
     >
       {canFollow ? (
         <div className={styles.followAction}>
@@ -167,6 +131,6 @@ export default function RoomMemberManagementMenu({
           )}
         </button>
       ) : null}
-    </div>
+    </ManagementMenuShell>
   );
 }

@@ -506,6 +506,7 @@ export default function ChatArea({
           ref={listRef}
           className={styles.list}
           aria-label="채팅 메시지 목록"
+          tabIndex={0}
           onScroll={() => {
             handleScroll();
             closeMenu();

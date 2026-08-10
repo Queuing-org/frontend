@@ -11,6 +11,18 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.listArea::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.listArea:focus-visible {
+  outline: 2px solid rgba(66, 133, 244, 0.7);
+  outline-offset: -2px;
 }
 
 .state {
