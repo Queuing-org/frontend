@@ -1,31 +1,18 @@
 import type { FollowingUser } from "@/src/features/follow/model/types";
 import FollowPresenceCard from "../../ui/FollowPresenceCard";
-import FollowUserActions from "../../ui/FollowUserActions";
 
 type Props = {
-  expanded: boolean;
-  onBlock: (user: FollowingUser) => void;
-  onToggle: (slug: string) => void;
+  onSelect: (user: FollowingUser, trigger: HTMLButtonElement) => void;
   user: FollowingUser;
 };
 
 export default function FollowingCard({
-  expanded,
-  onBlock,
-  onToggle,
+  onSelect,
   user,
 }: Props) {
   return (
     <FollowPresenceCard
-      actions={
-        <FollowUserActions
-          initialRelationship="FOLLOWING"
-          onBlock={onBlock}
-          user={user}
-        />
-      }
-      expanded={expanded}
-      onToggle={() => onToggle(user.slug)}
+      onSelect={onSelect}
       user={user}
     />
   );

@@ -68,14 +68,12 @@ describe("FollowPresenceCard", () => {
     ).toBeInTheDocument();
   });
 
-  it("카드 본문을 누르면 액션을 열고 방 화살표는 별도 링크로 유지한다", async () => {
+  it("카드 본문을 누르면 프로필 선택을 전달하고 방 화살표는 별도 링크로 유지한다", async () => {
     const user = userEvent.setup();
-    const onToggle = vi.fn();
-    const { rerender } = render(
+    const onSelect = vi.fn();
+    render(
       <FollowPresenceCard
-        actions={<button type="button">차단</button>}
-        expanded={false}
-        onToggle={onToggle}
+        onSelect={onSelect}
         user={{
           ...baseUser,
           room: { slug: "late-night-jazz", title: "새벽 재즈" },
@@ -83,20 +81,17 @@ describe("FollowPresenceCard", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "민지 사용자 메뉴" }));
-    expect(onToggle).toHaveBeenCalledOnce();
+    const profileButton = screen.getByRole("button", {
+      name: "민지 프로필 보기",
+    });
+    await user.click(profileButton);
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "minji" }),
+      profileButton,
+    );
     expect(
       screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
     ).toBeInTheDocument();
-
-    rerender(
-      <FollowPresenceCard
-        actions={<button type="button">차단</button>}
-        expanded
-        onToggle={onToggle}
-        user={baseUser}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "차단" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "차단" })).not.toBeInTheDocument();
   });
 });

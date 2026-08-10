@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useFollowModalState } from "@/src/features/follow/hooks/useFollowModalState";
 import AddFriendModal from "./add-friend/AddFriendModal";
 import FollowTabPanel from "./components/FollowTabPanel";
 import FollowTabs from "./components/FollowTabs";
 import styles from "./FollowModal.module.css";
+import type { FollowUser } from "../model/types";
+import FollowProfileModal from "./FollowProfileModal";
 
 type FollowModalProps = {
   open: boolean;
@@ -15,11 +17,24 @@ type FollowModalProps = {
 export default function FollowModal({ open, onClose }: FollowModalProps) {
   const modal = useFollowModalState({ onClose, open });
   const addFriendButtonRef = useRef<HTMLButtonElement>(null);
+  const selectedUserTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [selectedUser, setSelectedUser] = useState<FollowUser | null>(null);
 
   const closeAddFriend = () => {
     modal.closeAddFriend();
     requestAnimationFrame(() => addFriendButtonRef.current?.focus());
   };
+  const selectUser = useCallback(
+    (user: FollowUser, trigger: HTMLButtonElement) => {
+      selectedUserTriggerRef.current = trigger;
+      setSelectedUser(user);
+    },
+    [],
+  );
+  const closeSelectedUser = useCallback(() => {
+    setSelectedUser(null);
+    requestAnimationFrame(() => selectedUserTriggerRef.current?.focus());
+  }, []);
 
   if (!open) {
     return null;
@@ -33,7 +48,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="follow-modal-title"
-        inert={modal.isAddFriendOpen || undefined}
+        inert={modal.isAddFriendOpen || selectedUser ? true : undefined}
       >
         <header className={styles.header}>
           <h2 id="follow-modal-title" className={styles.title}>
@@ -56,11 +71,21 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
             counts={modal.tabCounts}
             onChange={modal.setActiveTab}
           />
-          <FollowTabPanel activeTab={modal.activeTab} />
+          <FollowTabPanel
+            activeTab={modal.activeTab}
+            onSelectUser={selectUser}
+          />
         </div>
       </section>
       {modal.isAddFriendOpen ? (
         <AddFriendModal onClose={closeAddFriend} />
+      ) : null}
+      {selectedUser ? (
+        <FollowProfileModal
+          user={selectedUser}
+          onBlocked={() => setSelectedUser(null)}
+          onClose={closeSelectedUser}
+        />
       ) : null}
     </div>
   );
