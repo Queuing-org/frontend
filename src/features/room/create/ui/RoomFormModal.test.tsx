@@ -26,6 +26,10 @@ vi.mock("@/src/features/room/hooks/useRoomTags", () => ({
 }));
 
 function renderCreateRoomModal() {
+  if (!roomTags.some((tag) => tag.slug.toLowerCase() === "free")) {
+    roomTags.push({ name: "FREE", slug: "free" });
+  }
+
   const queryClient = new QueryClient({
     defaultOptions: {
       mutations: { retry: false },
@@ -83,6 +87,10 @@ async function selectRequiredMaxParticipants(
   value = "10",
 ) {
   await user.selectOptions(screen.getByLabelText("최대 인원 수"), value);
+}
+
+async function selectRequiredTag(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "FREE" }));
 }
 
 function uploadResult(uploadToken: string, thumbnailUrl: string) {
@@ -210,6 +218,7 @@ describe("RoomFormModal room form flows", () => {
     expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("방 제목"), "토큰 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
@@ -246,6 +255,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "선택 제거 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
@@ -265,6 +275,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "기본 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
@@ -287,6 +298,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "실패 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
@@ -295,6 +307,31 @@ describe("RoomFormModal room form flows", () => {
       "생성 실패: 서버가 방을 만들지 못했습니다.",
     );
     expect(error).not.toHaveTextContent("500");
+  });
+
+  it("태그 없이 다음을 누르면 오류를 표시하고 FREE를 고르면 진행한다", async () => {
+    const user = userEvent.setup();
+    roomTags.push({ name: "록", slug: "rock" });
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "태그 필수 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+
+    const tagButtons = screen
+      .getAllByRole("button")
+      .filter((button) => button.hasAttribute("aria-pressed"));
+    expect(tagButtons[0]).toHaveAccessibleName("FREE");
+
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "태그는 1개 이상 골라주세요",
+    );
+    expect(screen.getByRole("heading", { name: "장르 선택" })).toBeInTheDocument();
+
+    await selectRequiredTag(user);
+    expect(screen.queryByText("태그는 1개 이상 골라주세요")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    expect(screen.getByLabelText("최대 인원 수")).toBeInTheDocument();
   });
 
   it("태그를 최대 3개까지 선택하고 생성 payload에 반영한다", async () => {
@@ -311,6 +348,11 @@ describe("RoomFormModal room form flows", () => {
     await user.type(screen.getByLabelText("방 제목"), "태그 세 개 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
     expect(screen.getByText("0/3")).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole("button")
+        .filter((button) => button.hasAttribute("aria-pressed"))[0],
+    ).toHaveAccessibleName("FREE");
 
     await user.click(screen.getByRole("button", { name: "록" }));
     await user.click(screen.getByRole("button", { name: "재즈" }));
@@ -338,6 +380,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "인원 필수 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
 
     const maxParticipantsSelect = screen.getByLabelText("최대 인원 수");
@@ -377,6 +420,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "메뉴 테스트 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
 
     await user.click(screen.getByLabelText("참여 제한"));
@@ -404,6 +448,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "비밀번호 보존 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
 
@@ -435,6 +480,7 @@ describe("RoomFormModal room form flows", () => {
 
     await user.type(screen.getByLabelText("방 제목"), "비밀번호 방");
     await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "참여 제한 옵션 열기" }));

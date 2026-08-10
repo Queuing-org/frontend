@@ -55,6 +55,7 @@ const TRACK_LIMIT_MINUTE_OPTIONS = [
   240,
 ] as const;
 const EMPTY_TAG_SLUGS: string[] = [];
+const REQUIRED_TAG_ERROR_MESSAGE = "태그는 1개 이상 골라주세요";
 
 type RoomFormModalMode = "create" | "edit";
 
@@ -142,6 +143,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [maxParticipants, setMaxParticipants] = useState("");
   const [trackLimitMinutes, setTrackLimitMinutes] = useState("");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+  const [showTagSelectionError, setShowTagSelectionError] = useState(false);
   const [didTryFinish, setDidTryFinish] = useState(false);
   const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
     useState(false);
@@ -184,6 +186,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
+    setShowTagSelectionError(false);
     setSelectedTagSlugs((previousSlugs) => {
       const exists = previousSlugs.includes(slug);
 
@@ -207,6 +210,15 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     );
   };
 
+  const requestStep = (step: number) => {
+    if (currentStep === 1 && step > 1 && selectedTagSlugs.length === 0) {
+      setShowTagSelectionError(true);
+      return;
+    }
+
+    visitStep(step);
+  };
+
   const goToPreviousStep = () => {
     visitStep(currentStep - 1);
   };
@@ -216,7 +228,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    visitStep(currentStep + 1);
+    requestStep(currentStep + 1);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -243,6 +255,12 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
     if (!trimmedTitle) {
       visitStep(0);
+      return;
+    }
+
+    if (selectedTagSlugs.length === 0) {
+      setShowTagSelectionError(true);
+      visitStep(1);
       return;
     }
 
@@ -356,6 +374,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
             selectedTagSlugs={selectedTagSlugs}
             maxTags={ROOM_TAG_LIMIT}
             disabled={isSubmitting}
+            errorMessage={
+              showTagSelectionError ? REQUIRED_TAG_ERROR_MESSAGE : null
+            }
             onToggleTag={toggleTag}
           />
         </QueryBoundary>
@@ -438,7 +459,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                         !isReachable ||
                         isSubmitting
                       }
-                      onClick={() => visitStep(index)}
+                      onClick={() => requestStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
                     >
                       <span className={styles.stepNumber}>{index + 1}</span>
@@ -517,6 +538,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
 type CreateGenreStepContentProps = {
   disabled: boolean;
+  errorMessage: string | null;
   maxTags: number;
   selectedTagSlugs: string[];
   onToggleTag: (slug: string) => void;
@@ -524,6 +546,7 @@ type CreateGenreStepContentProps = {
 
 function CreateGenreStepContent({
   disabled,
+  errorMessage,
   maxTags,
   selectedTagSlugs,
   onToggleTag,
@@ -536,6 +559,7 @@ function CreateGenreStepContent({
       selectedTagSlugs={selectedTagSlugs}
       maxTags={maxTags}
       disabled={disabled}
+      errorMessage={errorMessage}
       onToggleTag={onToggleTag}
     />
   );
