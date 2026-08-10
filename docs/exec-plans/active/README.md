@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-10-discovery-modal-static-import](./2026-08-10-discovery-modal-static-import/plan.md): implementing — CREATE·FOLLOW·SETTING 정적 import 단순화
+- [2026-08-10-discovery-modal-static-import](./2026-08-10-discovery-modal-static-import/plan.md): ready — Draft PR #40, CREATE·FOLLOW·SETTING 정적 import 단순화 및 CI 통과
 
 - [2026-08-10-discovery-modal-preload](./2026-08-10-discovery-modal-preload/plan.md): merged — PR #39, CREATE·FOLLOW·SETTING 지연 모달 클릭 스피너 제거 및 CI 통과
 

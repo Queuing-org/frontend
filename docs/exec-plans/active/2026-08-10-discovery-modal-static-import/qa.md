@@ -20,6 +20,10 @@
   - pass: Next.js production build and TypeScript
 - `git diff --check`
   - pass
+- Draft PR #40 GitHub Actions `Lint, test, and build`
+  - pass
+- Draft PR #40 Vercel deployment
+  - pass
 
 ## Runtime checks
 

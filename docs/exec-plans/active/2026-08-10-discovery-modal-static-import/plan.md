@@ -37,4 +37,4 @@
 - [x] 정적 import와 local modal state 적용
 - [x] preload 전용 코드·테스트 제거
 - [x] 전체 검증과 fresh read-only QA
-- [ ] commit, push, Draft PR 및 CI 확인
+- [x] commit, push, Draft PR 및 CI 확인
