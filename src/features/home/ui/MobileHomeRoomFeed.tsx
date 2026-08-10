@@ -28,7 +28,6 @@ type Props = {
   isRandomEntryPending?: boolean;
   onCreateRoom: () => void;
   onLoadMoreRooms: () => void;
-  onMenuItemIntent: (menuItem: "CREATE" | "FOLLOW" | "SETTING") => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onRandomEntry: () => void;
@@ -119,7 +118,6 @@ export default function MobileHomeRoomFeed({
   isRandomEntryPending = false,
   onCreateRoom,
   onLoadMoreRooms,
-  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onRandomEntry,
@@ -149,9 +147,6 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.primaryAction}
-          onFocus={() => onMenuItemIntent("CREATE")}
-          onPointerDown={() => onMenuItemIntent("CREATE")}
-          onPointerEnter={() => onMenuItemIntent("CREATE")}
           onClick={onCreateRoom}
         >
           방 만들기
@@ -173,9 +168,6 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.secondaryAction}
-          onFocus={() => onMenuItemIntent("FOLLOW")}
-          onPointerDown={() => onMenuItemIntent("FOLLOW")}
-          onPointerEnter={() => onMenuItemIntent("FOLLOW")}
           onClick={onOpenFollow}
           aria-label="팔로우"
         >
@@ -184,9 +176,6 @@ export default function MobileHomeRoomFeed({
         <button
           type="button"
           className={styles.secondaryAction}
-          onFocus={() => onMenuItemIntent("SETTING")}
-          onPointerDown={() => onMenuItemIntent("SETTING")}
-          onPointerEnter={() => onMenuItemIntent("SETTING")}
           onClick={onOpenSettings}
           aria-label="설정"
         >
@@ -248,9 +237,6 @@ export default function MobileHomeRoomFeed({
             <button
               type="button"
               className={styles.emptyCreateButton}
-              onFocus={() => onMenuItemIntent("CREATE")}
-              onPointerDown={() => onMenuItemIntent("CREATE")}
-              onPointerEnter={() => onMenuItemIntent("CREATE")}
               onClick={onCreateRoom}
             >
               방 만들기

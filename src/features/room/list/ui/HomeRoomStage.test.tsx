@@ -29,14 +29,12 @@ describe("HomeRoomStage", () => {
   it("방이 없으면 생성 안내와 방 만들기 액션을 표시한다", async () => {
     const user = userEvent.setup();
     const onCreateRoom = vi.fn();
-    const onCreateRoomIntent = vi.fn();
 
     render(
       <HomeRoomStage
         rooms={[]}
         currentRoomSlug={null}
         onCreateRoom={onCreateRoom}
-        onCreateRoomIntent={onCreateRoomIntent}
         onRequestRoomEntry={vi.fn()}
         onSelectRoom={vi.fn()}
       />,
@@ -44,8 +42,6 @@ describe("HomeRoomStage", () => {
 
     expect(screen.getByText("현재 생성된 방이 없어요.")).toBeInTheDocument();
     const createButton = screen.getByRole("button", { name: "방 만들기" });
-    fireEvent.pointerEnter(createButton);
-    expect(onCreateRoomIntent).toHaveBeenCalledOnce();
     await user.click(createButton);
     expect(onCreateRoom).toHaveBeenCalledOnce();
   });

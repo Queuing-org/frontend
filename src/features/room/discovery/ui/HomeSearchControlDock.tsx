@@ -27,7 +27,6 @@ type Props = {
   onRandomEntry: () => void;
   onSelectFilter: (key: HomeFilterKey, option: HomeFilterOption) => void;
   onCreateRoom: () => void;
-  onMenuItemIntent?: (menuItem: HomeMenuItem) => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
   onEnterSelectedRoom: () => void;
@@ -47,7 +46,6 @@ export default function HomeSearchControlDock({
   onRandomEntry,
   onSelectFilter,
   onCreateRoom,
-  onMenuItemIntent,
   onOpenFollow,
   onOpenSettings,
   onEnterSelectedRoom,
@@ -125,7 +123,6 @@ export default function HomeSearchControlDock({
                 <HomeControlPanelShell
                   variant="menu"
                   isRandomEntryPending={isRandomEntryPending}
-                  onMenuItemIntent={onMenuItemIntent}
                   onSelectMenuItem={selectMenuItem}
                 />
               ) : (

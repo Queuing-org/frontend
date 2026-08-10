@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import SearchEmptyState from "./SearchEmptyState";
@@ -7,13 +7,11 @@ describe("SearchEmptyState", () => {
   it("검색어와 방 만들기 액션을 제공한다", async () => {
     const user = userEvent.setup();
     const onCreateRoom = vi.fn();
-    const onCreateRoomIntent = vi.fn();
 
     render(
       <SearchEmptyState
         query="공부 음악"
         onCreateRoom={onCreateRoom}
-        onCreateRoomIntent={onCreateRoomIntent}
       />,
     );
 
@@ -24,8 +22,6 @@ describe("SearchEmptyState", () => {
     const createButton = screen.getByRole("button", {
       name: "방 만들러 가기",
     });
-    fireEvent.pointerEnter(createButton);
-    expect(onCreateRoomIntent).toHaveBeenCalledOnce();
     await user.click(createButton);
     expect(onCreateRoom).toHaveBeenCalledOnce();
   });
