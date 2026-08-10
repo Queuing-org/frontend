@@ -82,6 +82,7 @@
   min-width: 0;
   flex-direction: column;
   gap: 14px;
+  transform: translateY(-10px);
 }
 
 .profileFormLoading {
@@ -418,6 +419,7 @@
 
   .profileForm {
     gap: 11.2px;
+    transform: translateY(-8px);
   }
 
   .formRow {
