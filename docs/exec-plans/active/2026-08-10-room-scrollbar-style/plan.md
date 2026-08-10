@@ -28,4 +28,4 @@
 
 - [x] 구현
 - [x] targeted test, lint, full test, build, fresh QA (`pass`)
-- [x] commit, push, Draft PR #42 갱신
+- [x] commit, push, Draft PR #43 생성

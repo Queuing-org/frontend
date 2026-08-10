@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): ci-pending — Draft PR #42, 채팅·참가자 목록 스크롤바 스타일 통일
+- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): ci-pending — Draft PR #43, 채팅·참가자 목록 스크롤바 스타일 통일
 
 - [2026-08-10-chat-management-menu-layer](./2026-08-10-chat-management-menu-layer/plan.md): ci-pending — Draft PR #42, 채팅 관리 드롭다운 레이어 수정
 
