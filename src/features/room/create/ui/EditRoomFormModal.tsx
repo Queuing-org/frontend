@@ -234,7 +234,7 @@ export default function EditRoomFormModal({
 
           {form.submitError ? (
             <p className={styles.errorText}>
-              수정 실패: ({form.submitError.status}) {form.submitError.message}
+              수정 실패: {form.submitError.message}
             </p>
           ) : null}
           <button

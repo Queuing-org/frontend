@@ -188,7 +188,7 @@ export default function ProfileSettingsForm({
       ) : null}
       {updateError ? (
         <p className={styles.errorText}>
-          프로필 변경 실패: ({updateError.status}) {updateError.message}
+          프로필 변경 실패: {updateError.message}
         </p>
       ) : null}
       {isMeError ? (

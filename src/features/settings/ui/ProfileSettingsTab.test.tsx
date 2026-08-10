@@ -6,6 +6,7 @@ import { useClearRepresentativeBadge } from "@/src/features/badge/hooks/useClear
 import { useSetRepresentativeBadge } from "@/src/features/badge/hooks/useSetRepresentativeBadge";
 import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsTab from "./ProfileSettingsTab";
+import { ApiError } from "@/src/shared/api/api-error";
 
 vi.mock("next/image", () => ({
   default: () => <span data-testid="profile-image" />,
@@ -168,5 +169,20 @@ describe("설정 칭호 목록", () => {
     expect(
       screen.getByRole("button", { name: "한 줄 메시지 수정" }),
     ).toBeEnabled();
+  });
+
+  it("프로필 수정 오류에서 HTTP 상태 코드를 사용자에게 노출하지 않는다", () => {
+    mockProfileForm({
+      updateError: new ApiError({
+        message: "이미 사용 중인 이름입니다.",
+        status: 409,
+      }),
+    });
+    render(<ProfileSettingsTab />);
+
+    const error = screen.getByText(
+      "프로필 변경 실패: 이미 사용 중인 이름입니다.",
+    );
+    expect(error).not.toHaveTextContent("409");
   });
 });
