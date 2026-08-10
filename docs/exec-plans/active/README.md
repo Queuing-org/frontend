@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-10-room-settings-create-followup](./2026-08-10-room-settings-create-followup/plan.md): ready — 방 시각·설정 통합 저장·방 생성 입력/단계 재진입 후속 개선, 로컬 QA·fresh review 통과 및 게시 대기
+
 - [2026-08-10-room-friend-discovery-ui](./2026-08-10-room-friend-discovery-ui/plan.md): ci-pending — Draft PR #44, 방 내부·친구 상세·탐색 모달·생성 단계·오류 피드백 통합 개선
 
 - [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): merged — PR #43, 채팅·참가자 목록 스크롤바 기존 스타일 전달 완료(후속 숨김 요구는 새 run에서 처리)
