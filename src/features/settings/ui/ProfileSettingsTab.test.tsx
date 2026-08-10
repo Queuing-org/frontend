@@ -171,6 +171,16 @@ describe("설정 칭호 목록", () => {
     expect(screen.queryByRole("button", { name: /수정/ })).not.toBeInTheDocument();
   });
 
+  it("프로필 피드백과 완료 버튼을 같은 footer 행에 둔다", () => {
+    mockProfileForm({ successMessage: "프로필이 변경되었습니다." });
+    render(<ProfileSettingsTab />);
+
+    const feedback = screen.getByRole("status");
+    const completeButton = screen.getByRole("button", { name: "완료" });
+
+    expect(feedback.parentElement).toBe(completeButton.parentElement);
+  });
+
   it("프로필 저장 중에는 칭호 변경을 막아 active mutation을 유지한다", () => {
     mockProfileForm({ isUpdatingProfile: true });
     render(<ProfileSettingsTab />);

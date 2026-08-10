@@ -76,6 +76,7 @@
 }
 
 .profileForm {
+  position: relative;
   display: flex;
   max-width: 905px;
   min-width: 0;
@@ -199,11 +200,16 @@
   outline-offset: 2px;
 }
 
-.formActions {
+.formFooter {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  left: 130px;
   display: flex;
   min-width: 0;
+  align-items: center;
+  gap: 14px;
   justify-content: flex-end;
-  margin-left: 130px;
 }
 
 .completeButton {
@@ -250,11 +256,12 @@
 
 .feedbackArea {
   display: flex;
-  height: 36px;
+  height: 34px;
+  min-width: 0;
   box-sizing: border-box;
-  align-items: flex-start;
+  flex: 1 1 auto;
+  align-items: center;
   gap: 6px;
-  margin-left: 130px;
   overflow-y: auto;
   color: #8d8d8d;
   font-size: 12px;
@@ -349,6 +356,11 @@
     gap: 10px;
   }
 
+  .formFooter {
+    position: static;
+    gap: 10px;
+  }
+
   .fieldLabel,
   .textInput,
   .selectField {
@@ -380,10 +392,6 @@
     font-size: 12px;
   }
 
-  .formActions,
-  .feedbackArea {
-    margin-left: 0;
-  }
 }
 
 @media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
@@ -434,13 +442,14 @@
     padding: 9.6px 12.8px;
   }
 
-  .formActions {
-    margin-left: 104px;
+  .formFooter {
+    top: calc(100% + 11.2px);
+    left: 104px;
+    gap: 11.2px;
   }
 
   .feedbackArea {
-    height: 28.8px;
-    margin-left: 104px;
+    height: 34px;
     font-size: 9.6px;
   }
 

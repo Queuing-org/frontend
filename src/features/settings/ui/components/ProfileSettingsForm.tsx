@@ -157,7 +157,22 @@ export default function ProfileSettingsForm({
           <span className={styles.chevron} aria-hidden="true" />
         </div>
       </div>
-      <div className={styles.formActions}>
+      <div className={styles.formFooter}>
+        <div
+          className={styles.feedbackArea}
+          data-tone={feedback?.tone}
+          role={feedback?.tone === "error" ? "alert" : "status"}
+          aria-live="polite"
+        >
+          {isBadgePending && !updateError && !successMessage && !isMeError ? (
+            <LoadingSpinner
+              announce={false}
+              ariaLabel="칭호 정보 처리 중"
+              size={14}
+            />
+          ) : null}
+          {feedback?.message ?? ""}
+        </div>
         <button
           type="submit"
           className={styles.completeButton}
@@ -170,21 +185,6 @@ export default function ProfileSettingsForm({
             "완료"
           )}
         </button>
-      </div>
-      <div
-        className={styles.feedbackArea}
-        data-tone={feedback?.tone}
-        role={feedback?.tone === "error" ? "alert" : "status"}
-        aria-live="polite"
-      >
-        {isBadgePending && !updateError && !successMessage && !isMeError ? (
-          <LoadingSpinner
-            announce={false}
-            ariaLabel="칭호 정보 처리 중"
-            size={14}
-          />
-        ) : null}
-        {feedback?.message ?? ""}
       </div>
     </form>
   );
