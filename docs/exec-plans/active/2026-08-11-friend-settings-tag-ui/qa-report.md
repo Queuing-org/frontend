@@ -1,0 +1,30 @@
+# QA Report
+
+## Result
+
+- classification: pass
+- reviewer: fresh read-only QA agent
+- blocking issues: none after filter-state fix
+- residual risk: 연결 가능한 브라우저 인스턴스가 없어 실제 포인터 드래그 및 desktop·compact 시각 QA 미수행
+
+## Review Cycle
+
+1. fresh QA에서 잠금 중 FILTER를 화면에서만 숨겨 잠금 해제 뒤 다시 나타날 수 있는 상태 누수를 발견했다.
+2. 잠금 진입 시 실제 `openPanel` 상태를 정리하고 true→false rerender 회귀 테스트를 추가했다.
+3. 최종 재검토에서 친구 상세, 탐색 잠금, 설정 정렬, 태그 검증과 아키텍처 경계를 모두 pass로 판정했다.
+
+## Automated Verification
+
+- targeted final: 5 files / 35 tests pass
+- `npm run lint`: pass
+- `npm run test`: 108 files / 346 tests pass
+- `npm run build`: pass, including Next.js TypeScript stage
+- `git diff --check`: pass
+
+## Coverage
+
+- shared floating shell, normal/compact panel size, five drag handles, PROFILE/X absence, Escape and same-card toggle close
+- locked navigation arrows visible/disabled/nonfunctional, FILTER absence and stale filter-state cleanup, MENU availability
+- settings feedback/button shared footer and existing integrated profile-save regressions
+- zero-tag next-step block, exact inline error, error clear, FREE-first stable ordering, final-create bypass guard
+- unchanged API payload/type boundary and documented shared dependency direction
