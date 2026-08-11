@@ -43,4 +43,37 @@ describe("MobileHomeRoomFeed 빠른 메뉴", () => {
     expect(onOpenFollow).toHaveBeenCalledOnce();
     expect(onOpenSettings).toHaveBeenCalledOnce();
   });
+
+  it("빈 태그 방을 FREE로 표시한다", () => {
+    render(
+      <MobileHomeRoomFeed
+        activeFilters={DEFAULT_HOME_FILTERS}
+        genreOptions={[{ label: "ALL", value: "ALL" }]}
+        hasNextPage={false}
+        isFetchingNextPage={false}
+        onCreateRoom={vi.fn()}
+        onLoadMoreRooms={vi.fn()}
+        onOpenFollow={vi.fn()}
+        onOpenSettings={vi.fn()}
+        onRandomEntry={vi.fn()}
+        onRequestRoomEntry={vi.fn()}
+        onSelectFilter={vi.fn()}
+        onSelectRoom={vi.fn()}
+        rooms={[
+          {
+            createdAt: "2026-08-11T00:00:00Z",
+            id: 1,
+            isPrivate: false,
+            slug: "free-room",
+            tags: [],
+            title: "자유로운 방",
+          },
+        ]}
+        selectedRoomSlug={null}
+      />,
+    );
+
+    expect(screen.getByText("FREE")).toBeVisible();
+    expect(screen.queryByText("태그없음")).toBeNull();
+  });
 });

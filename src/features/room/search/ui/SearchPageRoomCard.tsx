@@ -1,6 +1,7 @@
 import { memo, useCallback } from "react";
 import Image from "next/image";
 import type { Room } from "../../model/types";
+import { getDisplayRoomTags } from "../../model/getDisplayRoomTags";
 import styles from "./SearchPageRoomCard.module.css";
 
 type Props = {
@@ -15,9 +16,9 @@ function SearchPageRoomCard({
   onRequestRoomEntry,
 }: Props) {
   const { isPrivate, slug, title, tags } = room;
-  const tagsText = tags.length
-    ? tags.map((roomTag) => roomTag.name).join("/")
-    : "태그없음";
+  const tagsText = getDisplayRoomTags(tags)
+    .map((roomTag) => roomTag.name)
+    .join("/");
   const arrowSrc = isSelected
     ? "/icons/search_arrow_w.svg"
     : "/icons/search_arrow_g.svg";

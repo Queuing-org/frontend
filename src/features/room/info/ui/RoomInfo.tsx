@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import type { RoomTag } from "@/src/features/room/model/types";
+import { getDisplayRoomTags } from "@/src/features/room/model/getDisplayRoomTags";
 import styles from "./RoomInfo.module.css";
 
 export type RoomInfoDisplay = {
@@ -23,7 +24,7 @@ export default function RoomInfo({
   isRoom = false,
   trailingContent,
 }: Props) {
-  const tags = roomInfo?.tags ?? [];
+  const tags = roomInfo ? getDisplayRoomTags(roomInfo.tags) : [];
   const activeUsersCount =
     typeof roomInfo?.activeUsersCount === "number"
       ? roomInfo.activeUsersCount

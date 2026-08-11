@@ -44,6 +44,7 @@ import RoomButtonControlBar from "@/src/features/room/control-bar/ui/RoomControl
 import { useFloatingWidgetsState } from "@/src/features/room/floating/model/useFloatingWidgetsState";
 import RoomFloatingWidgets from "@/src/features/room/floating/ui/RoomFloatingWidgets";
 import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import { getDisplayRoomTags } from "@/src/features/room/model/getDisplayRoomTags";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
 import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import { getLatestReportableChatMessageKey } from "@/src/features/room/chat/model/chatMessages";
@@ -539,7 +540,7 @@ function RoomPlaybackJoinedContent({
   if (isMobileLayout) {
     const mobileRoomTitle = roomMeta.title;
     const mobileActiveUsersCount = roomMeta.activeUsersCount;
-    const mobileTags = roomMeta.tags;
+    const mobileTags = getDisplayRoomTags(roomMeta.tags);
 
     return (
       <div className={`${styles.page} ${styles.mobilePage}`}>
@@ -572,15 +573,11 @@ function RoomPlaybackJoinedContent({
                 {roomMeta.hasPassword ? (
                   <span className={styles.mobileLockChip}>비공개</span>
                 ) : null}
-                {mobileTags.length > 0 ? (
-                  mobileTags.map((tag) => (
-                    <span key={tag.slug} className={styles.mobileTagChip}>
-                      {tag.name}
-                    </span>
-                  ))
-                ) : (
-                  <span className={styles.mobileTagChip}>태그없음</span>
-                )}
+                {mobileTags.map((tag) => (
+                  <span key={tag.slug} className={styles.mobileTagChip}>
+                    {tag.name}
+                  </span>
+                ))}
               </div>
               <AddTrackAction
                 className={styles.mobileHeaderAddTrack}
