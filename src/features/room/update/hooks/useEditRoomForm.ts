@@ -2,11 +2,15 @@
 
 import { useState, type FormEvent } from "react";
 import { useUpdateRoom } from "../model/useUpdateRoom";
+import { useUpdateRoomThumbnail } from "../model/useUpdateRoomThumbnail";
 import { buildUpdateRoomPayload } from "../model/buildUpdateRoomPayload";
-import { ROOM_TAG_LIMIT } from "../../model/roomFormLimits";
-
-const MAX_ROOM_TITLE_LENGTH = 255;
-const MAX_PARTICIPANTS = 250;
+import { useUploadTemporaryRoomThumbnail } from "../../hooks/useUploadTemporaryRoomThumbnail";
+import { useRoomThumbnailSelection } from "../../hooks/useRoomThumbnailSelection";
+import {
+  ROOM_MAX_PARTICIPANT_OPTIONS,
+  ROOM_TAG_LIMIT,
+  ROOM_TITLE_MAX_LENGTH,
+} from "../../model/roomFormLimits";
 
 type UseEditRoomFormParams = {
   initialHasPassword: boolean;
@@ -21,43 +25,14 @@ function formatMaxParticipants(value: number | null) {
   return typeof value === "number" ? String(value) : "";
 }
 
-function parseMaxParticipants(value: string): {
-  error: string | null;
-  value: number | null;
-} {
+function parseMaxParticipants(value: string): number | null {
   const trimmedValue = value.trim();
 
   if (!trimmedValue) {
-    return {
-      error: null,
-      value: null,
-    };
+    return null;
   }
 
-  if (!/^\d+$/.test(trimmedValue)) {
-    return {
-      error: "숫자만 입력해주세요.",
-      value: null,
-    };
-  }
-
-  const parsedValue = Number.parseInt(trimmedValue, 10);
-
-  if (parsedValue < 1 || parsedValue > MAX_PARTICIPANTS) {
-    return {
-      error: `1~${MAX_PARTICIPANTS}명 사이로 입력해주세요.`,
-      value: null,
-    };
-  }
-
-  return {
-    error: null,
-    value: parsedValue,
-  };
-}
-
-function toDigitsOnly(value: string) {
-  return value.replace(/\D/g, "").slice(0, 3);
+  return Number.parseInt(trimmedValue, 10);
 }
 
 export function useEditRoomForm({
@@ -69,6 +44,10 @@ export function useEditRoomForm({
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
+  const updateRoomThumbnailMutation = useUpdateRoomThumbnail();
+  const uploadTemporaryRoomThumbnailMutation =
+    useUploadTemporaryRoomThumbnail();
+  const thumbnailSelection = useRoomThumbnailSelection();
   const normalizedInitialMaxParticipants =
     typeof initialMaxParticipants === "number" ? initialMaxParticipants : null;
   const [savedTitle, setSavedTitle] = useState(() => initialTitle);
@@ -89,8 +68,15 @@ export function useEditRoomForm({
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
     initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
+  const [
+    didSaveRoomInfoBeforeThumbnailError,
+    setDidSaveRoomInfoBeforeThumbnailError,
+  ] = useState(false);
 
-  const isSubmitting = updateRoomMutation.isPending;
+  const isSubmitting =
+    updateRoomMutation.isPending ||
+    updateRoomThumbnailMutation.isPending ||
+    uploadTemporaryRoomThumbnailMutation.isPending;
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
   const parsedMaxParticipants = parseMaxParticipants(maxParticipants);
@@ -99,7 +85,12 @@ export function useEditRoomForm({
   const canSubmit =
     trimmedTitle.length > 0 &&
     !isPasswordRequired &&
-    !parsedMaxParticipants.error &&
+    !thumbnailSelection.errorMessage &&
+    !uploadTemporaryRoomThumbnailMutation.error &&
+    !(
+      thumbnailSelection.file &&
+      !uploadTemporaryRoomThumbnailMutation.data?.uploadToken
+    ) &&
     !isSubmitting &&
     !!roomSlug;
 
@@ -141,15 +132,29 @@ export function useEditRoomForm({
   };
 
   const updateTitle = (value: string) => {
-    setTitle(value.slice(0, MAX_ROOM_TITLE_LENGTH));
+    setTitle(value.slice(0, ROOM_TITLE_MAX_LENGTH));
   };
 
   const updateMaxParticipants = (value: string) => {
-    setMaxParticipants(toDigitsOnly(value));
+    setMaxParticipants(value);
   };
 
-  const clearMaxParticipants = () => {
-    setMaxParticipants("");
+  const handleThumbnailChange = (files: FileList | null) => {
+    uploadTemporaryRoomThumbnailMutation.reset();
+    updateRoomThumbnailMutation.reset();
+    setDidSaveRoomInfoBeforeThumbnailError(false);
+    const selectedFile = thumbnailSelection.selectFile(files);
+
+    if (selectedFile) {
+      uploadTemporaryRoomThumbnailMutation.mutate({ file: selectedFile });
+    }
+  };
+
+  const clearThumbnailSelection = () => {
+    uploadTemporaryRoomThumbnailMutation.reset();
+    updateRoomThumbnailMutation.reset();
+    setDidSaveRoomInfoBeforeThumbnailError(false);
+    thumbnailSelection.clearSelection();
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -158,7 +163,6 @@ export function useEditRoomForm({
     if (
       !trimmedTitle ||
       isPasswordRequired ||
-      parsedMaxParticipants.error ||
       !roomSlug
     ) {
       return;
@@ -170,12 +174,14 @@ export function useEditRoomForm({
       initialTitle: savedTitle,
       isPasswordClearEnabled: initialHasPassword && isPasswordClearEnabled,
       isPasswordChangeEnabled,
-      maxParticipants: parsedMaxParticipants.value,
+      maxParticipants: parsedMaxParticipants,
       password,
       selectedTagSlugs,
       title,
     });
-    if (!payload) {
+    const thumbnailUploadToken =
+      uploadTemporaryRoomThumbnailMutation.data?.uploadToken;
+    if (!payload && !thumbnailUploadToken) {
       onClose();
       return;
     }
@@ -187,12 +193,22 @@ export function useEditRoomForm({
           payload,
         });
         setSavedTitle(trimmedTitle);
-        setSavedMaxParticipants(parsedMaxParticipants.value);
-        setMaxParticipants(formatMaxParticipants(parsedMaxParticipants.value));
+        setSavedMaxParticipants(parsedMaxParticipants);
+        setMaxParticipants(formatMaxParticipants(parsedMaxParticipants));
         setSavedTagSlugs(selectedTagSlugs.slice(0, ROOM_TAG_LIMIT));
         setIsPasswordChangeEnabled(false);
         setIsPasswordClearEnabled(false);
         setPassword("");
+      }
+
+      if (thumbnailUploadToken) {
+        setDidSaveRoomInfoBeforeThumbnailError(
+          (didSave) => didSave || Boolean(payload),
+        );
+        await updateRoomThumbnailMutation.mutateAsync({
+          slug: roomSlug,
+          thumbnailUploadToken,
+        });
       }
 
       onClose();
@@ -203,21 +219,40 @@ export function useEditRoomForm({
 
   return {
     canSubmit,
-    clearMaxParticipants,
+    clearThumbnailSelection,
     handleSubmit,
+    handleThumbnailChange,
     isPasswordClearEnabled,
     isPasswordChangeEnabled,
     isPasswordRequired,
     isSubmitting,
     maxParticipants,
-    maxParticipantsError: parsedMaxParticipants.error,
-    maxParticipantsLimit: MAX_PARTICIPANTS,
-    maxRoomTitleLength: MAX_ROOM_TITLE_LENGTH,
+    maxParticipantOptions: ROOM_MAX_PARTICIPANT_OPTIONS,
+    maxRoomTitleLength: ROOM_TITLE_MAX_LENGTH,
     maxTags: ROOM_TAG_LIMIT,
     password,
     selectedTagSlugs,
     setPassword,
-    submitError: updateRoomMutation.error,
+    submitError:
+      updateRoomMutation.error ?? updateRoomThumbnailMutation.error,
+    submitErrorPrefix:
+      updateRoomThumbnailMutation.error && didSaveRoomInfoBeforeThumbnailError
+        ? "방 정보는 저장됐지만 썸네일 교체 실패"
+        : "수정 실패",
+    thumbnailErrorMessage:
+      thumbnailSelection.errorMessage ??
+      (uploadTemporaryRoomThumbnailMutation.error
+        ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
+        : null),
+    thumbnailFileName: thumbnailSelection.fileName,
+    thumbnailPreviewUrl: thumbnailSelection.previewUrl,
+    thumbnailStatusMessage: uploadTemporaryRoomThumbnailMutation.isPending
+      ? "썸네일 업로드 중"
+      : null,
+    isThumbnailPreviewUnavailable:
+      thumbnailSelection.isPreviewUnavailable,
+    markThumbnailPreviewUnavailable:
+      thumbnailSelection.markPreviewUnavailable,
     title,
     toggleTag,
     updateMaxParticipants,

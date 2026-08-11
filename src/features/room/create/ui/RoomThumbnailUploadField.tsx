@@ -65,6 +65,7 @@ export default function RoomThumbnailUploadField({
         <button
           type="button"
           className={styles.uploadButton}
+          aria-label={actionLabel}
           data-has-image={Boolean(displayImageUrl)}
           disabled={disabled}
           onClick={() => inputRef.current?.click()}

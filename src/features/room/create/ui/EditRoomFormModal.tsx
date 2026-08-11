@@ -4,6 +4,7 @@ import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomFor
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -15,6 +16,7 @@ type EditRoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
+  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -25,6 +27,7 @@ export default function EditRoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
+  initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
   const form = useEditRoomForm({
@@ -39,6 +42,12 @@ export default function EditRoomFormModal({
   if (!open) {
     return null;
   }
+
+  const hasLegacyMaxParticipants =
+    typeof initialMaxParticipants === "number" &&
+    !(form.maxParticipantOptions as readonly number[]).includes(
+      initialMaxParticipants,
+    );
 
   return (
     <div className={styles.overlay} onClick={onClose} role="presentation">
@@ -62,6 +71,38 @@ export default function EditRoomFormModal({
           <h2 id="room-edit-modal-title" className={styles.modeBadge}>
             EDIT
           </h2>
+
+          <div className={styles.field}>
+            <span className={styles.label}>썸네일</span>
+            <RoomThumbnailUploadField
+              actionLabel="썸네일 교체"
+              currentImageUrl={initialThumbnailUrl}
+              disabled={form.isSubmitting}
+              errorMessage={form.thumbnailErrorMessage}
+              fileName={form.thumbnailFileName}
+              inputId="edit-room-thumbnail"
+              isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
+              previewUrl={form.thumbnailPreviewUrl}
+              statusMessage={
+                form.thumbnailStatusMessage ? (
+                  <LoadingSpinner
+                    announce={false}
+                    ariaLabel="썸네일 업로드 중"
+                    size={14}
+                  />
+                ) : null
+              }
+              statusAriaLabel={
+                form.thumbnailStatusMessage
+                  ? "썸네일 업로드 중"
+                  : undefined
+              }
+              variant="edit"
+              onClearSelection={form.clearThumbnailSelection}
+              onFileChange={form.handleThumbnailChange}
+              onPreviewError={form.markThumbnailPreviewUnavailable}
+            />
+          </div>
 
           <label className={styles.field}>
             <span className={styles.label}>큐 이름</span>
@@ -161,49 +202,30 @@ export default function EditRoomFormModal({
               >
                 최대 인원 수
               </label>
-              <span className={styles.limitHint}>
-                최대 {form.maxParticipantsLimit}명
-              </span>
             </div>
-            <div className={styles.limitControlGroup}>
-              <input
-                id="edit-room-max-participants"
-                className={styles.numberInput}
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={3}
-                value={form.maxParticipants}
-                onChange={(event) =>
-                  form.updateMaxParticipants(event.target.value)
-                }
-                placeholder="제한 없음"
-                disabled={form.isSubmitting}
-                aria-invalid={Boolean(form.maxParticipantsError)}
-                aria-describedby={
-                  form.maxParticipantsError
-                    ? "edit-room-max-participants-error"
-                    : undefined
-                }
-                data-invalid={Boolean(form.maxParticipantsError)}
-              />
-              <button
-                type="button"
-                className={styles.unlimitedButton}
-                onClick={form.clearMaxParticipants}
-                disabled={form.isSubmitting || form.maxParticipants.length === 0}
-              >
-                제한 없음
-              </button>
-            </div>
-            {form.maxParticipantsError ? (
-              <p
-                id="edit-room-max-participants-error"
-                className={styles.errorText}
-              >
-                {form.maxParticipantsError}
-              </p>
-            ) : null}
+            <select
+              id="edit-room-max-participants"
+              className={styles.select}
+              value={form.maxParticipants}
+              onChange={(event) =>
+                form.updateMaxParticipants(event.target.value)
+              }
+              disabled={form.isSubmitting}
+            >
+              {initialMaxParticipants == null ? (
+                <option value="">제한 없음 (현재 설정)</option>
+              ) : null}
+              {hasLegacyMaxParticipants ? (
+                <option value={String(initialMaxParticipants)}>
+                  {initialMaxParticipants}명 (현재 설정)
+                </option>
+              ) : null}
+              {form.maxParticipantOptions.map((option) => (
+                <option key={option} value={String(option)}>
+                  {option}명
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={styles.field}>
@@ -234,7 +256,7 @@ export default function EditRoomFormModal({
 
           {form.submitError ? (
             <p className={styles.errorText}>
-              수정 실패: {form.submitError.message}
+              {form.submitErrorPrefix}: {form.submitError.message}
             </p>
           ) : null}
           <button

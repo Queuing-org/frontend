@@ -5,9 +5,13 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import { useCreateRoom } from "@/src/features/room/create/model/useCreateRoom";
-import { useUploadTemporaryRoomThumbnail } from "@/src/features/room/create/model/useUploadTemporaryRoomThumbnail";
+import { useUploadTemporaryRoomThumbnail } from "@/src/features/room/hooks/useUploadTemporaryRoomThumbnail";
 import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThumbnailSelection";
-import { ROOM_TAG_LIMIT } from "@/src/features/room/model/roomFormLimits";
+import {
+  ROOM_MAX_PARTICIPANT_OPTIONS,
+  ROOM_TAG_LIMIT,
+  ROOM_TITLE_MAX_LENGTH,
+} from "@/src/features/room/model/roomFormLimits";
 import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
@@ -20,27 +24,6 @@ import CreateSettingsStep, {
 import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
-const MAX_ROOM_TITLE_LENGTH = 18;
-const MAX_PARTICIPANT_OPTIONS = [
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  8,
-  9,
-  10,
-  20,
-  30,
-  40,
-  50,
-  60,
-  70,
-  80,
-  90,
-  100,
-] as const;
 const TRACK_LIMIT_MINUTE_OPTIONS = [
   5,
   10,
@@ -67,6 +50,7 @@ type RoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
+  initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
 
@@ -98,6 +82,7 @@ export default function RoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
+  initialThumbnailUrl = null,
   onClose,
 }: RoomFormModalProps) {
   if (!open || typeof document === "undefined") {
@@ -115,6 +100,7 @@ export default function RoomFormModal({
         initialTagSlugs={initialTagSlugs}
         initialHasPassword={initialHasPassword}
         initialMaxParticipants={initialMaxParticipants}
+        initialThumbnailUrl={initialThumbnailUrl}
         onClose={onClose}
       />,
       portalRoot,
@@ -156,7 +142,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
-  const parsedMaxParticipants = MAX_PARTICIPANT_OPTIONS.find(
+  const parsedMaxParticipants = ROOM_MAX_PARTICIPANT_OPTIONS.find(
     (option) => String(option) === maxParticipants,
   );
   const parsedTrackLimitMinutes =
@@ -182,7 +168,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         !isSubmitting &&
         !hasThumbnailBlockingError &&
         !hasSelectedThumbnailWithoutToken
-      : !isSubmitting;
+      : currentStep === 1
+        ? selectedTagSlugs.length > 0 && !isSubmitting
+        : !isSubmitting;
   const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
@@ -324,7 +312,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return (
         <CreateBasicInfoStep
           title={title}
-          maxTitleLength={MAX_ROOM_TITLE_LENGTH}
+          maxTitleLength={ROOM_TITLE_MAX_LENGTH}
           disabled={createRoomMutation.isPending || isNavigatingToCreatedRoom}
           thumbnailDisabled={isSubmitting}
           thumbnailErrorMessage={
@@ -350,7 +338,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
             thumbnailSelection.isPreviewUnavailable
           }
           onTitleChange={(nextTitle) =>
-            setTitle(nextTitle.slice(0, MAX_ROOM_TITLE_LENGTH))
+            setTitle(nextTitle.slice(0, ROOM_TITLE_MAX_LENGTH))
           }
           onThumbnailChange={handleThumbnailChange}
           onThumbnailClear={handleThumbnailClear}
@@ -411,7 +399,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           setDidTryFinish(false);
         }}
         trackLimitMinuteOptions={TRACK_LIMIT_MINUTE_OPTIONS}
-        maxParticipantOptions={MAX_PARTICIPANT_OPTIONS}
+        maxParticipantOptions={ROOM_MAX_PARTICIPANT_OPTIONS}
       />
     );
   };

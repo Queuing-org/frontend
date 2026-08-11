@@ -30,3 +30,12 @@ export type UpdateRoomParams = {
 export type UpdateRoomResult = {
   success: boolean;
 };
+
+export type UpdateRoomThumbnailParams = {
+  slug: string;
+  thumbnailUploadToken: string;
+};
+
+export type UpdateRoomThumbnailResult = {
+  success: boolean;
+};

@@ -108,7 +108,7 @@
 }
 
 .input,
-.numberInput {
+.select {
   width: 100%;
   height: 53px;
   box-sizing: border-box;
@@ -126,27 +126,23 @@
 }
 
 .input,
-.numberInput {
+.select {
   padding: 0 20px;
 }
 
 .input::placeholder,
-.numberInput::placeholder {
+.select::placeholder {
   color: #b0b0b5;
 }
 
 .input:focus,
-.numberInput:focus {
+.select:focus {
   border-color: #b0b0b5;
   box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
 }
 
-.numberInput[data-invalid="true"] {
-  border-color: #ff2f2f;
-}
-
-.numberInput[data-invalid="true"]:focus {
-  box-shadow: 0 0 0 3px rgba(255, 47, 47, 0.12);
+.select {
+  appearance: auto;
 }
 
 .passwordActionRow {
@@ -376,7 +372,7 @@
   }
 
   .input,
-  .numberInput,
+  .select,
   .submitButton {
     height: 52px;
     font-size: 16px;
@@ -406,8 +402,8 @@
   .field { gap: 8px; }
   .labelRow { gap: 9.6px; }
   .label { font-size: 12.8px; }
-  .input, .numberInput { height: 42.4px; font-size: 14.4px; }
-  .input, .numberInput { padding: 0 16px; }
+  .input, .select { height: 42.4px; font-size: 14.4px; }
+  .input, .select { padding: 0 16px; }
   .passwordActionRow { gap: 9.6px 14.4px; }
   .checkboxRow { gap: 8px; }
   .checkboxBox { width: 16px; height: 16px; }
