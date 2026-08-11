@@ -540,6 +540,7 @@ function RoomPlaybackJoinedContent({
   if (isMobileLayout) {
     const mobileRoomTitle = roomMeta.title;
     const mobileActiveUsersCount = roomMeta.activeUsersCount;
+    const mobileMaxParticipants = roomMeta.maxParticipants ?? "-";
     const mobileTags = getDisplayRoomTags(roomMeta.tags);
 
     return (
@@ -568,7 +569,7 @@ function RoomPlaybackJoinedContent({
             <div className={styles.mobileMetaRow}>
               <div className={styles.mobileMetaChips}>
                 <span className={styles.mobileUsersChip}>
-                  {mobileActiveUsersCount}명
+                  {mobileActiveUsersCount}/{mobileMaxParticipants}명
                 </span>
                 {roomMeta.hasPassword ? (
                   <span className={styles.mobileLockChip}>비공개</span>

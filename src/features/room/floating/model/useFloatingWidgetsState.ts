@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { DraggableData } from "react-draggable";
 import {
   getDesktopViewportDensity,
+  type DesktopViewportDensity,
   type ViewportSize,
 } from "@/src/shared/lib/viewportDensity";
 
@@ -43,6 +44,7 @@ type WidgetConfig = {
 
 export type FloatingWidgetViewState = {
   bounds: WidgetBounds;
+  density: DesktopViewportDensity;
   height: number;
   isOpen: boolean;
   layoutKey: string;
@@ -57,6 +59,7 @@ export type FloatingWidgetsView = Record<WidgetId, FloatingWidgetViewState>;
 const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
 const MOBILE_WIDGET_QUERY = "(max-width: 760px)";
 const LAPTOP_COMPACT_SCALE = 0.8;
+const PARTICIPANTS_COMPACT_MAX_WIDTH = 1600;
 const WIDGET_IDS: readonly WidgetId[] = [
   "profile",
   "queue",
@@ -99,13 +102,30 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
   },
 };
 
+function getWidgetViewportDensity(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): DesktopViewportDensity {
+  const density = getDesktopViewportDensity(viewportSize);
+
+  if (
+    widgetId === "participants" &&
+    density === "compact" &&
+    viewportSize.width > PARTICIPANTS_COMPACT_MAX_WIDTH
+  ) {
+    return "normal";
+  }
+
+  return density;
+}
+
 export function getWidgetConfig(
   widgetId: WidgetId,
   viewportSize: ViewportSize,
 ): WidgetConfig {
   const widget = WIDGET_CONFIG[widgetId];
 
-  if (getDesktopViewportDensity(viewportSize) === "normal") {
+  if (getWidgetViewportDensity(widgetId, viewportSize) === "normal") {
     return widget;
   }
 
@@ -133,7 +153,7 @@ export function getWidgetOffsetStorageKey(
   viewportSize: ViewportSize,
 ) {
   const baseKey = WIDGET_CONFIG[widgetId].offsetStorageKey;
-  return getDesktopViewportDensity(viewportSize) === "compact"
+  return getWidgetViewportDensity(widgetId, viewportSize) === "compact"
     ? `${baseKey}:compact`
     : baseKey;
 }
@@ -293,20 +313,16 @@ function getDefaultWidgetOffsets(): WidgetOffsets {
   };
 }
 
-function clampWidgetOffsets(
-  offsets: WidgetOffsets,
-  viewportSize: ViewportSize,
-): WidgetOffsets {
-  return {
-    chat: clampWidgetOffset("chat", offsets.chat, viewportSize),
-    participants: clampWidgetOffset(
-      "participants",
-      offsets.participants,
-      viewportSize,
-    ),
-    profile: clampWidgetOffset("profile", offsets.profile, viewportSize),
-    queue: clampWidgetOffset("queue", offsets.queue, viewportSize),
-  };
+function getResizedWidgetOffset(
+  widgetId: WidgetId,
+  currentOffset: WidgetOffset,
+  currentViewportSize: ViewportSize,
+  nextViewportSize: ViewportSize,
+) {
+  return getWidgetViewportDensity(widgetId, currentViewportSize) ===
+    getWidgetViewportDensity(widgetId, nextViewportSize)
+    ? clampWidgetOffset(widgetId, currentOffset, nextViewportSize)
+    : getStoredWidgetOffset(widgetId, nextViewportSize);
 }
 
 function getInitialWidgetLayoutState(): FloatingWidgetLayoutState {
@@ -375,18 +391,37 @@ export function useFloatingWidgetsState() {
   );
   const [activeWidget, setActiveWidget] = useState<WidgetId | null>(null);
   const [resetVersion, setResetVersion] = useState(0);
-  const layoutMode = getDesktopViewportDensity(viewportSize);
 
   useEffect(() => {
     function handleResize() {
       const nextViewportSize = getViewportSize();
       setLayout((current) => {
-        const currentMode = getDesktopViewportDensity(current.viewportSize);
-        const nextMode = getDesktopViewportDensity(nextViewportSize);
-        const nextOffsets =
-          currentMode === nextMode
-            ? clampWidgetOffsets(current.offsets, nextViewportSize)
-            : getStoredWidgetOffsets(nextViewportSize);
+        const nextOffsets = {
+          chat: getResizedWidgetOffset(
+            "chat",
+            current.offsets.chat,
+            current.viewportSize,
+            nextViewportSize,
+          ),
+          participants: getResizedWidgetOffset(
+            "participants",
+            current.offsets.participants,
+            current.viewportSize,
+            nextViewportSize,
+          ),
+          profile: getResizedWidgetOffset(
+            "profile",
+            current.offsets.profile,
+            current.viewportSize,
+            nextViewportSize,
+          ),
+          queue: getResizedWidgetOffset(
+            "queue",
+            current.offsets.queue,
+            current.viewportSize,
+            nextViewportSize,
+          ),
+        };
 
         return { offsets: nextOffsets, viewportSize: nextViewportSize };
       });
@@ -488,9 +523,10 @@ export function useFloatingWidgetsState() {
   const widgets: FloatingWidgetsView = {
     chat: {
       bounds: getWidgetBounds("chat", viewportSize),
+      density: getWidgetViewportDensity("chat", viewportSize),
       height: getWidgetConfig("chat", viewportSize).height,
       isOpen: isHydrated && isChatOpen,
-      layoutKey: `${layoutMode}:${resetVersion}:${offsets.chat.x}:${offsets.chat.y}`,
+      layoutKey: `${getWidgetViewportDensity("chat", viewportSize)}:${resetVersion}:${offsets.chat.x}:${offsets.chat.y}`,
       offset: offsets.chat,
       placementStyle: getWidgetPlacementStyle("chat", viewportSize),
       width: getWidgetConfig("chat", viewportSize).width,
@@ -498,9 +534,10 @@ export function useFloatingWidgetsState() {
     },
     profile: {
       bounds: getWidgetBounds("profile", viewportSize),
+      density: getWidgetViewportDensity("profile", viewportSize),
       height: getWidgetConfig("profile", viewportSize).height,
       isOpen: isHydrated && isProfileOpen,
-      layoutKey: `${layoutMode}:${resetVersion}:${offsets.profile.x}:${offsets.profile.y}`,
+      layoutKey: `${getWidgetViewportDensity("profile", viewportSize)}:${resetVersion}:${offsets.profile.x}:${offsets.profile.y}`,
       offset: offsets.profile,
       placementStyle: getWidgetPlacementStyle("profile", viewportSize),
       width: getWidgetConfig("profile", viewportSize).width,
@@ -508,9 +545,10 @@ export function useFloatingWidgetsState() {
     },
     participants: {
       bounds: getWidgetBounds("participants", viewportSize),
+      density: getWidgetViewportDensity("participants", viewportSize),
       height: getWidgetConfig("participants", viewportSize).height,
       isOpen: isHydrated && isParticipantsOpen,
-      layoutKey: `${layoutMode}:${resetVersion}:${offsets.participants.x}:${offsets.participants.y}`,
+      layoutKey: `${getWidgetViewportDensity("participants", viewportSize)}:${resetVersion}:${offsets.participants.x}:${offsets.participants.y}`,
       offset: offsets.participants,
       placementStyle: getWidgetPlacementStyle("participants", viewportSize),
       width: getWidgetConfig("participants", viewportSize).width,
@@ -518,9 +556,10 @@ export function useFloatingWidgetsState() {
     },
     queue: {
       bounds: getWidgetBounds("queue", viewportSize),
+      density: getWidgetViewportDensity("queue", viewportSize),
       height: getWidgetConfig("queue", viewportSize).height,
       isOpen: isHydrated && isQueueOpen,
-      layoutKey: `${layoutMode}:${resetVersion}:${offsets.queue.x}:${offsets.queue.y}`,
+      layoutKey: `${getWidgetViewportDensity("queue", viewportSize)}:${resetVersion}:${offsets.queue.x}:${offsets.queue.y}`,
       offset: offsets.queue,
       placementStyle: getWidgetPlacementStyle("queue", viewportSize),
       width: getWidgetConfig("queue", viewportSize).width,

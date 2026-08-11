@@ -9,6 +9,7 @@ import styles from "./RoomInfo.module.css";
 export type RoomInfoDisplay = {
   activeUsersCount?: number | null;
   hasPassword: boolean;
+  maxParticipants?: number | null;
   tags: RoomTag[];
   title: string;
 };
@@ -28,6 +29,10 @@ export default function RoomInfo({
   const activeUsersCount =
     typeof roomInfo?.activeUsersCount === "number"
       ? roomInfo.activeUsersCount
+      : "-";
+  const maxParticipants =
+    typeof roomInfo?.maxParticipants === "number"
+      ? roomInfo.maxParticipants
       : "-";
   const title = roomInfo?.title ?? "선택된 방 없음";
   const lockContent = roomInfo?.hasPassword ? (
@@ -56,7 +61,9 @@ export default function RoomInfo({
       </div>
     );
   const usersCountContent = (
-    <div className={styles.usersCount}>{activeUsersCount} 명</div>
+    <div className={styles.usersCount}>
+      {activeUsersCount}/{maxParticipants} 명
+    </div>
   );
   const titleContent = <div className={styles.title}>{title}</div>;
   const containerClassName = [

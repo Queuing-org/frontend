@@ -270,17 +270,12 @@
   font-weight: var(--fw-medium);
 }
 
-.message,
 .error {
   flex-shrink: 0;
   margin-top: 12px;
   font-size: 0.78rem;
   font-weight: var(--fw-medium);
   line-height: 1.4;
-}
-
-.message {
-  color: #62626f;
 }
 
 .error {
@@ -301,7 +296,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
   .root {
     padding: 0 12.8px 14.4px;
   }

@@ -8,7 +8,12 @@ import type {
   MusicPowerResponse,
   UserProfile,
 } from "@/src/features/user/profile/model/types";
-import type { WsEvent } from "@/src/features/room/model/types";
+import type {
+  RoomMeta,
+  RoomOwner,
+  RoomTag,
+  WsEvent,
+} from "@/src/features/room/model/types";
 
 export type MusicPowerChangedData = {
   entryId: string;
@@ -22,6 +27,18 @@ export type TrackStartedData = {
   addedBy: PlaylistAddedBy;
   playbackStatus: PlaybackPosition;
   revision: number;
+};
+
+export type RoomOwnerChangedData = {
+  previousOwner: RoomOwner | null;
+  owner: RoomOwner | null;
+};
+
+export type RoomInfoUpdatedData = {
+  title: string;
+  hasPassword: boolean;
+  maxParticipants: number | null;
+  tags: RoomTag[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -39,6 +56,24 @@ function isPlaybackPosition(value: unknown): value is PlaybackPosition {
     typeof value.serverTimestamp === "number" &&
     typeof value.status === "string" &&
     ["PLAYING", "PAUSED", "BUFFERING", "ENDED"].includes(value.status)
+  );
+}
+
+function isRoomOwner(value: unknown): value is RoomOwner {
+  return (
+    isRecord(value) &&
+    typeof value.slug === "string" &&
+    typeof value.nickname === "string" &&
+    (value.profileImageUrl === null ||
+      typeof value.profileImageUrl === "string")
+  );
+}
+
+function isRoomTag(value: unknown): value is RoomTag {
+  return (
+    isRecord(value) &&
+    typeof value.slug === "string" &&
+    typeof value.name === "string"
   );
 }
 
@@ -71,6 +106,30 @@ export function isMusicPowerChangedData(
     typeof value.entryId === "string" &&
     typeof value.targetUserSlug === "string" &&
     typeof value.musicPower === "number"
+  );
+}
+
+export function isRoomOwnerChangedData(
+  value: unknown,
+): value is RoomOwnerChangedData {
+  return (
+    isRecord(value) &&
+    (value.previousOwner === null || isRoomOwner(value.previousOwner)) &&
+    (value.owner === null || isRoomOwner(value.owner))
+  );
+}
+
+export function isRoomInfoUpdatedData(
+  value: unknown,
+): value is RoomInfoUpdatedData {
+  return (
+    isRecord(value) &&
+    typeof value.title === "string" &&
+    typeof value.hasPassword === "boolean" &&
+    (value.maxParticipants === null ||
+      typeof value.maxParticipants === "number") &&
+    Array.isArray(value.tags) &&
+    value.tags.every(isRoomTag)
   );
 }
 
@@ -113,6 +172,20 @@ export function applyMusicPowerChange(
     ...current,
     musicPower: change.musicPower,
   };
+}
+
+export function applyRoomOwnerChange(
+  current: RoomMeta | undefined,
+  change: RoomOwnerChangedData,
+) {
+  return current ? { ...current, owner: change.owner } : current;
+}
+
+export function applyRoomInfoUpdate(
+  current: RoomMeta | undefined,
+  change: RoomInfoUpdatedData,
+) {
+  return current ? { ...current, ...change } : current;
 }
 
 export function applyMusicPowerToProfile<

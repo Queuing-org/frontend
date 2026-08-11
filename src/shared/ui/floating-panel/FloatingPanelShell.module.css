@@ -85,39 +85,39 @@
 }
 
 @media (min-width: 761px) and (max-height: 900px) {
-  .panel {
+  .panel:not([data-density="normal"]) {
     border-radius: 16px;
   }
 
-  .edgeDragHandleNorth,
-  .edgeDragHandleSouth {
+  .panel:not([data-density="normal"]) .edgeDragHandleNorth,
+  .panel:not([data-density="normal"]) .edgeDragHandleSouth {
     height: 8px;
   }
 
-  .edgeDragHandleEast,
-  .edgeDragHandleWest {
+  .panel:not([data-density="normal"]) .edgeDragHandleEast,
+  .panel:not([data-density="normal"]) .edgeDragHandleWest {
     width: 8px;
   }
 
-  .header {
+  .panel:not([data-density="normal"]) .header {
     height: 32px;
   }
 
-  .headerCompact {
+  .panel:not([data-density="normal"]) .headerCompact {
     height: 19.2px;
   }
 
-  .handle {
+  .panel:not([data-density="normal"]) .handle {
     width: 25.6px;
     height: 2.4px;
     margin-top: -12px;
   }
 
-  .headerCompact .handle {
+  .panel:not([data-density="normal"]) .headerCompact .handle {
     margin-top: -4.8px;
   }
 
-  .content {
+  .panel:not([data-density="normal"]) .content {
     padding: 16px;
   }
 }

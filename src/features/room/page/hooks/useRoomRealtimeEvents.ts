@@ -15,6 +15,7 @@ import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import type {
   PlaybackSyncData,
+  RoomMeta,
   WsErrorData,
   WsEvent,
 } from "@/src/features/room/model/types";
@@ -53,8 +54,12 @@ import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomRead
 import {
   applyMusicPowerChange,
   applyMusicPowerToProfile,
+  applyRoomInfoUpdate,
+  applyRoomOwnerChange,
   applyTrackStarted,
   isMusicPowerChangedData,
+  isRoomInfoUpdatedData,
+  isRoomOwnerChangedData,
   isTrackStartedData,
   parseRoomWsEvent,
 } from "../model/roomRealtimeEvents";
@@ -297,6 +302,33 @@ export function useRoomRealtimeEvents({
         queryClient.setQueryData<User | null>(userKeys.me(), (current) =>
           applyMusicPowerToProfile(current, change),
         );
+        return;
+      }
+
+      if (
+        event.type === "ROOM_OWNER_CHANGED" &&
+        isRoomOwnerChangedData(event.data)
+      ) {
+        const change = event.data;
+        queryClient.setQueryData<RoomMeta>(
+          roomKeys.meta(roomSlug),
+          (current) => applyRoomOwnerChange(current, change),
+        );
+        scheduleRoomInvalidation(roomSlug, ["meta"]);
+        return;
+      }
+
+      if (
+        event.type === "ROOM_INFO_UPDATED" &&
+        isRoomInfoUpdatedData(event.data)
+      ) {
+        const change = event.data;
+        queryClient.setQueryData<RoomMeta>(
+          roomKeys.meta(roomSlug),
+          (current) => applyRoomInfoUpdate(current, change),
+        );
+        scheduleRoomInvalidation(roomSlug, ["meta"]);
+        void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
         return;
       }
 

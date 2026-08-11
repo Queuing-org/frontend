@@ -7,6 +7,7 @@ type Props = {
   children: ReactNode;
   compactHeader?: boolean;
   contentClassName?: string;
+  density?: "auto" | "compact" | "normal";
   height: number;
   width: number;
 };
@@ -15,11 +16,16 @@ export default function FloatingPanelShell({
   children,
   compactHeader = false,
   contentClassName,
+  density = "auto",
   height,
   width,
 }: Props) {
   return (
-    <div className={styles.panel} style={{ width, height }}>
+    <div
+      className={styles.panel}
+      data-density={density}
+      style={{ width, height }}
+    >
       <span
         className={`${styles.edgeDragHandle} ${styles.edgeDragHandleNorth}`}
         aria-hidden="true"
