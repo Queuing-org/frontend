@@ -1,4 +1,12 @@
 .root {
+  --room-chat-blur-step-height: calc(
+    var(--room-chat-list-padding-y, 14px) +
+      var(--room-chat-avatar-size, 40px) +
+      var(--room-chat-message-padding-y, 4px) +
+      var(--room-chat-message-padding-y, 4px) +
+      var(--room-chat-message-gap, 16px)
+  );
+
   position: relative;
   display: flex;
   width: 100%;
@@ -7,6 +15,29 @@
   border-radius: 8px;
   background: transparent;
   overflow: hidden;
+}
+
+.root::before,
+.root::after {
+  position: absolute;
+  z-index: 5;
+  right: 0;
+  left: 0;
+  height: var(--room-chat-blur-step-height);
+  content: "";
+  pointer-events: none;
+}
+
+.root::before {
+  top: 0;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.root::after {
+  top: var(--room-chat-blur-step-height);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
 .list {
@@ -65,19 +96,6 @@
     var(--room-chat-message-padding-y, 4px)
     var(--room-chat-message-padding-left, 8px);
   border-radius: 8px;
-  transition:
-    filter 160ms ease,
-    opacity 160ms ease;
-}
-
-.message[data-fade-level="strong"] {
-  filter: blur(2px);
-  opacity: 0.42;
-}
-
-.message[data-fade-level="soft"] {
-  filter: blur(1px);
-  opacity: 0.72;
 }
 
 .message:hover,
@@ -89,10 +107,7 @@
 }
 
 .message[data-menu-open="true"] {
-  z-index: 10;
   content-visibility: visible;
-  filter: none;
-  opacity: 1;
 }
 
 .management {
@@ -246,6 +261,10 @@
 }
 
 @media (max-width: 520px) {
+  .root {
+    --room-chat-list-padding-y: 12px;
+  }
+
   .list {
     padding: 12px;
   }
@@ -257,6 +276,8 @@
 
 @media (max-width: 760px) {
   .root {
+    --room-chat-avatar-size: 2rem;
+
     border-radius: 0;
   }
 
@@ -280,12 +301,6 @@
 @media (hover: none) {
   .menuButton {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .message {
-    transition: none;
   }
 }
 

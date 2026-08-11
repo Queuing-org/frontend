@@ -2,7 +2,7 @@
 
 - [2026-08-12-participant-row-alignment](./2026-08-12-participant-row-alignment/plan.md): ready — 참가자 헤더와 행의 좌우 기준선 및 방장 왕관 크기 정렬, 로컬 QA·fresh review 통과
 
-- [2026-08-11-room-chat-visible-fade](./2026-08-11-room-chat-visible-fade/plan.md): ready — 현재 곡 가로 영역·참가자 여백·실제 가시 채팅 2단계 blur 개선, 로컬 QA·fresh review 통과
+- [2026-08-11-room-chat-visible-fade](./2026-08-11-room-chat-visible-fade/plan.md): ready — 스크롤 중 메시지별 blur 교체를 제거한 상단 고정 2단계 영역, 로컬 QA·fresh review 통과
 
 - [2026-08-11-profile-action-autoplay](./2026-08-11-profile-action-autoplay/plan.md): ci-pending — 방 프로필 실제 액션 높이 통일과 YouTube iframe autoplay 권한 보강을 Draft PR #44에 게시 완료
 
