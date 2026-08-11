@@ -54,7 +54,7 @@
 - [x] 구현과 targeted verification
 - [x] lint/full test/build
 - [x] fresh read-only QA
-- [ ] explicit staging, commit, push, Draft PR 갱신
+- [x] explicit staging, commit, push, Draft PR #45 게시
 
 ## Constraints
 
