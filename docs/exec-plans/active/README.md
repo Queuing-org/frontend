@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-11-room-laptop-responsive](./2026-08-11-room-laptop-responsive/plan.md): ready — 채팅 페이드 확대와 짧은 높이 데스크톱의 방 내부 80% compact 대응, 로컬 QA·fresh review 통과
+
 - [2026-08-11-friend-settings-tag-ui](./2026-08-11-friend-settings-tag-ui/plan.md): ready — 친구 상세 플로팅 패널 통일, 탐색 컨트롤 잠금, 설정 정렬, 방 생성 필수 태그 후속 개선 및 로컬 QA 완료
 
 - [2026-08-10-room-settings-create-followup](./2026-08-10-room-settings-create-followup/plan.md): ready — 방 시각·설정 통합 저장·방 생성 입력/단계 재진입 후속 개선, 로컬 QA·fresh review 통과 및 게시 대기
