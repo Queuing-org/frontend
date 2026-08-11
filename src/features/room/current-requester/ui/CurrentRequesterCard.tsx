@@ -39,7 +39,10 @@ export default function CurrentRequesterCard({
   const storyText = story?.trim() ?? "";
 
   return (
-    <div className={styles.card}>
+    <div
+      className={styles.card}
+      data-has-skip-action={Boolean(skipAction) || undefined}
+    >
       {skipAction ? (
         <div className={styles.skipButton}>{skipAction}</div>
       ) : null}

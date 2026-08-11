@@ -5,6 +5,7 @@ import { MoreVertical } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -63,6 +64,7 @@ type Props = {
 
 type ChatMessageRowProps = {
   actions: ChatMessageManagementAction[];
+  fadeLevel?: "strong" | "soft";
   listRef: RefObject<HTMLDivElement | null>;
   isKickPending: boolean;
   isMenuOpen: boolean;
@@ -89,6 +91,7 @@ function getInitial(nickname: string) {
 
 function ChatMessageRow({
   actions,
+  fadeLevel,
   listRef,
   isKickPending,
   isMenuOpen,
@@ -110,6 +113,7 @@ function ChatMessageRow({
     <li
       className={styles.message}
       data-chat-message-key={messageKey}
+      data-fade-level={fadeLevel}
       data-menu-open={isMenuOpen || undefined}
     >
       <div className={styles.avatarWrap}>
@@ -197,6 +201,10 @@ export default function ChatArea({
   wheelRegionRef: externalWheelRegionRef,
 }: Props) {
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
+  const [fadeMessageKeys, setFadeMessageKeys] = useState<{
+    soft: string | null;
+    strong: string | null;
+  }>({ soft: null, strong: null });
   const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
@@ -258,6 +266,89 @@ export default function ChatArea({
     onLoadOlderMessages,
     scrollToLatestKey,
   });
+  const fadeFrameRef = useRef<number | null>(null);
+  const updateVisibleFadeLevels = useCallback(() => {
+    const list = listRef.current;
+    if (!list) {
+      return;
+    }
+
+    const listRect = list.getBoundingClientRect();
+    const intersectingMessageKeys = Array.from(
+      list.querySelectorAll<HTMLElement>("[data-chat-message-key]"),
+    ).flatMap((element) => {
+      const messageKey = element.dataset.chatMessageKey;
+      const messageRect = element.getBoundingClientRect();
+      const isVisible =
+        messageRect.bottom > listRect.top && messageRect.top < listRect.bottom;
+
+      return messageKey && isVisible ? [messageKey] : [];
+    });
+    const strong = intersectingMessageKeys[0] ?? null;
+    const soft = intersectingMessageKeys[1] ?? null;
+
+    setFadeMessageKeys((current) =>
+      current.strong === strong && current.soft === soft
+        ? current
+        : { soft, strong },
+    );
+  }, [listRef]);
+  const scheduleVisibleFadeUpdate = useCallback(() => {
+    if (fadeFrameRef.current !== null) {
+      return;
+    }
+
+    fadeFrameRef.current = requestAnimationFrame(() => {
+      fadeFrameRef.current = null;
+      updateVisibleFadeLevels();
+    });
+  }, [updateVisibleFadeLevels]);
+
+  useLayoutEffect(() => {
+    scheduleVisibleFadeUpdate();
+  }, [
+    errorMessage,
+    isLoadingOlderMessages,
+    kickParticipant.error,
+    managementMessage,
+    participantResolutionError,
+    roomSlug,
+    scheduleVisibleFadeUpdate,
+    transferOwnerErrorMessage,
+    visibleMessageKeys,
+  ]);
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    const messagesElement = messagesRef.current;
+    if (!list) {
+      return;
+    }
+
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(scheduleVisibleFadeUpdate);
+    observer?.observe(list);
+    if (messagesElement) {
+      observer?.observe(messagesElement);
+    }
+    window.addEventListener("resize", scheduleVisibleFadeUpdate);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", scheduleVisibleFadeUpdate);
+      if (fadeFrameRef.current !== null) {
+        cancelAnimationFrame(fadeFrameRef.current);
+        fadeFrameRef.current = null;
+      }
+    };
+  }, [
+    listRef,
+    messagesRef,
+    scheduleVisibleFadeUpdate,
+    visibleMessages.length,
+  ]);
 
   useEffect(() => {
     clearTransferOwnerError();
@@ -516,6 +607,7 @@ export default function ChatArea({
           tabIndex={0}
           onScroll={() => {
             handleScroll();
+            scheduleVisibleFadeUpdate();
           }}
         >
           {isLoadingOlderMessages ? (
@@ -575,6 +667,13 @@ export default function ChatArea({
                   <ChatMessageRow
                     key={messageKey}
                     actions={actions}
+                    fadeLevel={
+                      fadeMessageKeys.strong === messageKey
+                        ? "strong"
+                        : fadeMessageKeys.soft === messageKey
+                          ? "soft"
+                          : undefined
+                    }
                     listRef={listRef}
                     isKickPending={
                       (kickParticipant.isPending &&

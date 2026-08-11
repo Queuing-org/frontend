@@ -645,10 +645,9 @@ function RoomPlaybackJoinedContent({
                     isOwner={playback.isCurrentRequesterRoomOwner}
                     requester={playback.currentRequester}
                     skipAction={
-                      <SkipTrackButton
-                        isVisible={playback.isCurrentUserRoomOwner}
-                        slug={slug}
-                      />
+                      playback.isCurrentUserRoomOwner ? (
+                        <SkipTrackButton isVisible slug={slug} />
+                      ) : undefined
                     }
                     story={playback.currentTrackStory}
                     trackTitle={playback.currentTrackTitle}
@@ -806,10 +805,9 @@ function RoomPlaybackJoinedContent({
                 isOwner={playback.isCurrentRequesterRoomOwner}
                 requester={playback.currentRequester}
                 skipAction={
-                  <SkipTrackButton
-                    isVisible={playback.isCurrentUserRoomOwner}
-                    slug={slug}
-                  />
+                  playback.isCurrentUserRoomOwner ? (
+                    <SkipTrackButton isVisible slug={slug} />
+                  ) : undefined
                 }
                 story={playback.currentTrackStory}
                 trackTitle={playback.currentTrackTitle}
