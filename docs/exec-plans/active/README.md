@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-11-profile-action-autoplay](./2026-08-11-profile-action-autoplay/plan.md): publishing — 방 프로필 실제 액션 높이 통일과 YouTube iframe autoplay 권한 보강을 Draft PR #44에 게시 중
+- [2026-08-11-profile-action-autoplay](./2026-08-11-profile-action-autoplay/plan.md): ci-pending — 방 프로필 실제 액션 높이 통일과 YouTube iframe autoplay 권한 보강을 Draft PR #44에 게시 완료
 
 - [2026-08-11-room-six-chat-rows](./2026-08-11-room-six-chat-rows/plan.md): ready — 4K부터 가로형 패드까지 방 채팅 한 줄 6개 최소 가시 높이 보장, 로컬 QA·fresh review 통과
 

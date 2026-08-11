@@ -2,7 +2,7 @@
 
 ## 상태
 
-- publishing
+- ci-pending
 - 브랜치: `dev`
 - 전달 범위: 사용자 승인에 따라 기존 Draft PR #44의 `dev` head를 갱신한다. 새 PR은 만들지 않는다.
 
@@ -50,7 +50,8 @@
 - [x] iframe permission 및 ready playback 테스트
 - [x] 프로필 최종 box model fresh read-only review — pass
 - [x] 로컬 커밋
-- [ ] 기존 Draft PR #44 push 및 CI 확인
+- [x] 기존 Draft PR #44의 `dev` head push
+- [ ] 원격 CI 확인
 
 ## 예정 커밋
 
