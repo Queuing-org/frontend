@@ -91,8 +91,9 @@ export default function FollowUserCard({
             <Image
               src="/icons/round_arrow.svg"
               alt=""
-              width={24}
-              height={12}
+              width={16}
+              height={16}
+              className={styles.roomActionIcon}
             />
           </Link>
         ) : null}
