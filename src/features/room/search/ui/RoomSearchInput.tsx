@@ -28,7 +28,7 @@ export default function RoomSearchInput({ onChange, value }: Props) {
         type="search"
         name="q"
         className={styles.input}
-        placeholder="노래 혹은 방 검색..."
+        placeholder="노래, 방 또는 방장 이름으로 검색..."
         aria-label="방 검색"
         autoComplete="off"
         value={value}

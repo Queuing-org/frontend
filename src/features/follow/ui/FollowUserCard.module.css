@@ -112,8 +112,8 @@
 .roomAction {
   display: inline-flex;
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 16px;
+  height: 16px;
   align-items: center;
   justify-content: center;
   border-radius: 999px;
@@ -177,10 +177,5 @@
 
   .nickname { font-size: 11.2px; }
   .status { font-size: 9.6px; }
-
-  .roomAction {
-    width: 32px;
-    height: 32px;
-  }
 
 }
