@@ -75,7 +75,6 @@
     var(--room-chat-message-padding-y, 4px)
     var(--room-chat-message-padding-left, 8px);
   border-radius: 8px;
-  transition: background-color 120ms ease;
 }
 
 .message:hover,
