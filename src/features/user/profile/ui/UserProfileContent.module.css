@@ -88,7 +88,7 @@
   .grid { column-gap: 1rem; row-gap: 24px; margin-top: 1.25rem; }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .hero { gap: 9.6px; }
   .avatarWrap { width: 38.4px; height: 38.4px; }
   .avatarFallback { font-size: 1.28rem; }

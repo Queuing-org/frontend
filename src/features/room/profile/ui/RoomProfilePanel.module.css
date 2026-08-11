@@ -209,7 +209,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .root {
     padding: 0 14.4px 44.8px;
   }

@@ -123,7 +123,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .card {
     gap: 9.6px;
     padding: 16px 12.8px;

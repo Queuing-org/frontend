@@ -160,7 +160,7 @@
   z-index: 3;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .container {
     --panel-horizontal-padding: 19.2px;
     --panel-content-width: 512px;

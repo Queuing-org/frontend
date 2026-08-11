@@ -13,6 +13,7 @@ import {
 
 const normalViewport = { height: 1080, width: 1920 };
 const compactViewport = { height: 864, width: 1536 };
+const wideCompactViewport = { height: 800, width: 1920 };
 const widgetIds: readonly WidgetId[] = [
   "chat",
   "participants",
@@ -52,15 +53,18 @@ function FloatingWidgetHydrationProbe() {
 }
 
 describe("floating widget laptop compact layout", () => {
-  it("노트북 viewport에서 위젯 geometry를 정확히 80%로 줄인다", () => {
-    const profile = getWidgetConfig("profile", compactViewport);
+  it.each([
+    ["1536×864", compactViewport],
+    ["1920×800", wideCompactViewport],
+  ])("%s viewport에서 위젯 geometry를 정확히 80%%로 줄인다", (_, viewport) => {
+    const profile = getWidgetConfig("profile", viewport);
     expect(profile).toMatchObject({
       height: 304,
       top: 64,
       width: 240,
     });
     expect(profile.left).toBeCloseTo(19.2);
-    const queue = getWidgetConfig("queue", compactViewport);
+    const queue = getWidgetConfig("queue", viewport);
     expect(queue).toMatchObject({
       bottom: 112,
       height: 428,
