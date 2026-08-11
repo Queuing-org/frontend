@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
   type Dispatch,
+  type CSSProperties,
   type SetStateAction,
 } from "react";
 import { useParams } from "next/navigation";
@@ -68,6 +69,7 @@ import {
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { getRoomChatLayout } from "../model/roomChatLayout";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -523,6 +525,16 @@ function RoomPlaybackJoinedContent({
   );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
+  const desktopChatLayout = getRoomChatLayout(
+    floatingWidgets.viewportSize,
+    Boolean(playback.currentRequester),
+  );
+  const desktopRoomStyle = floatingWidgets.isViewportReady
+    ? ({
+        "--room-chat-six-row-min-height": `${desktopChatLayout.chatMinHeight}px`,
+        "--room-song-stack-width": `${desktopChatLayout.songStackWidth}px`,
+      } as CSSProperties)
+    : undefined;
 
   if (isMobileLayout) {
     const mobileRoomTitle = roomMeta.title;
@@ -710,7 +722,11 @@ function RoomPlaybackJoinedContent({
   }
 
   return (
-    <div className={styles.page}>
+    <div
+      className={styles.page}
+      data-has-requester={Boolean(playback.currentRequester)}
+      style={desktopRoomStyle}
+    >
       <div className={styles.backgroundImageFrame} aria-hidden="true">
         <Image
           key={playback.backgroundImageSrc}

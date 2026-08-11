@@ -531,8 +531,10 @@ export function useFloatingWidgetsState() {
   return {
     activateWidget,
     handleWidgetStop,
+    isViewportReady: isHydrated,
     resetWidgetPositions,
     toggleWidget,
+    viewportSize,
     widgets,
   };
 }
