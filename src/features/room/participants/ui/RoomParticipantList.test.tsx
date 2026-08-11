@@ -266,7 +266,7 @@ describe("RoomParticipantList", () => {
     expect(memberTrigger).toHaveFocus();
   });
 
-  it("scroll로 window가 바뀌기 전에 열린 참가자 메뉴를 닫는다", async () => {
+  it("작은 scroll에서도 열린 참가자 메뉴를 유지한다", async () => {
     const user = userEvent.setup();
     renderList();
     const list = screen.getByLabelText("참가자 목록");
@@ -278,7 +278,34 @@ describe("RoomParticipantList", () => {
 
     fireEvent.scroll(list);
 
-    expect(screen.queryByRole("menu", { name: "회원 참가자 관리" })).toBeNull();
+    expect(screen.getByRole("menu", { name: "회원 참가자 관리" })).toBeVisible();
+  });
+
+  it("가상 window 밖으로 이동한 참가자의 메뉴는 닫는다", async () => {
+    const user = userEvent.setup();
+    const manyParticipants = Array.from(
+      { length: 250 },
+      (_, index): PlaylistParticipant => ({
+        nickname: `회원 ${index}`,
+        participantId: `participant-${index}`,
+        participantType: "USER",
+        profileImageUrl: null,
+        userSlug: `member-${index}`,
+      }),
+    );
+    renderList({ items: manyParticipants });
+    const list = screen.getByLabelText("참가자 목록");
+
+    await user.click(
+      screen.getByRole("button", { name: "회원 0 참가자 관리 메뉴" }),
+    );
+    Object.defineProperty(list, "scrollTop", {
+      configurable: true,
+      value: 100 * 68,
+    });
+    fireEvent.scroll(list);
+
+    expect(screen.queryByRole("menu", { name: "회원 0 참가자 관리" })).toBeNull();
   });
 
   it("게스트에는 식별 가능한 내보내기만 표시한다", async () => {
@@ -333,38 +360,17 @@ describe("RoomParticipantList", () => {
     expect(screen.queryByRole("button", { name: /참가자 관리 메뉴/ })).toBeNull();
   });
 
-  it("하단 공간이 부족하면 참가자 메뉴를 위로 연다", async () => {
+  it("참가자 메뉴를 overflow 경계 밖 body portal에 연다", async () => {
     const user = userEvent.setup();
     renderList();
-    const list = screen.getByLabelText("참가자 목록");
     const trigger = screen.getByRole("button", {
       name: "회원 참가자 관리 메뉴",
-    });
-    vi.spyOn(list, "getBoundingClientRect").mockReturnValue({
-      bottom: 400,
-      height: 400,
-      left: 0,
-      right: 300,
-      top: 0,
-      width: 300,
-      x: 0,
-      y: 0,
-      toJSON: () => ({}),
-    });
-    vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue({
-      bottom: 390,
-      height: 28,
-      left: 250,
-      right: 278,
-      top: 362,
-      width: 28,
-      x: 250,
-      y: 362,
-      toJSON: () => ({}),
     });
 
     await user.click(trigger);
 
-    expect(screen.getByRole("menu")).toHaveAttribute("data-placement", "up");
+    const menu = screen.getByRole("menu");
+    expect(menu).toHaveAttribute("data-positioning", "viewport");
+    expect(menu.parentElement).toBe(document.body);
   });
 });
