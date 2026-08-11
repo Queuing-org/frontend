@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import {
   useCallback,
   useEffect,
@@ -12,7 +11,7 @@ import {
   type CSSProperties,
   type SetStateAction,
 } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
@@ -35,7 +34,7 @@ import {
 } from "@/src/features/room/join/model/roomJoinErrors";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
-import RoomPasswordInput from "@/src/features/room/join/ui/roomPasswordInput";
+import RoomPasswordDialog from "@/src/features/room/join/ui/RoomPasswordDialog";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
 import CurrentRequesterCard from "@/src/features/room/current-requester/ui/CurrentRequesterCard";
 import styles from "./RoomPlaybackScreen.module.css";
@@ -70,6 +69,7 @@ import {
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import { getRoomChatLayout } from "../model/roomChatLayout";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
@@ -93,6 +93,7 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
 
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
+  const router = useRouter();
   const isMobileLayout = useMediaQuery("(max-width: 760px)");
   const slug = normalizeRoomSlug(params.slug ?? "");
   const queryClient = useQueryClient();
@@ -273,7 +274,7 @@ export default function RoomPlaybackScreen() {
         if (requiresPassword && !joinPassword) {
           setJoinStateSlug(slug);
           setRoomPassword(null);
-          setJoinErrorMessage("비밀번호 입력이 필요한 방입니다.");
+          setJoinErrorMessage("");
           setStatus("needs-password");
           return;
         }
@@ -341,13 +342,17 @@ export default function RoomPlaybackScreen() {
 
   if (currentStatus === "needs-password") {
     return (
-      <div className={styles.passwordState}>
-        <RoomPasswordInput
-          message={currentJoinErrorMessage}
+      <>
+        <div className={styles.passwordState} aria-hidden="true" />
+        <RoomPasswordDialog
+          key={slug}
+          errorMessage={currentJoinErrorMessage}
+          open
+          onClose={() => router.replace("/")}
           onSubmit={handlePasswordSubmit}
           submitting={isSubmittingPassword}
         />
-      </div>
+      </>
     );
   }
 
@@ -468,6 +473,7 @@ function RoomPlaybackJoinedContent({
   setMobileTab,
   slug,
 }: RoomPlaybackJoinedContentProps) {
+  const router = useRouter();
   const { data: roomMeta } = useRoomMeta(slug);
   const playback = useRoomPlaybackViewModel({
     currentUser,
@@ -526,6 +532,31 @@ function RoomPlaybackJoinedContent({
   );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
+  const leaveButtonRef = useRef<HTMLButtonElement>(null);
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+  const closeLeaveDialog = useCallback(() => {
+    setIsLeaveDialogOpen(false);
+    requestAnimationFrame(() => leaveButtonRef.current?.focus());
+  }, []);
+  const leaveDialog = (
+    <RoomActionConfirmDialog
+      confirmLabel="나가기"
+      description={
+        <>
+          해당 큐에서 나가시겠어요?
+          <br />
+          신청한 노래가 모두 삭제되고 복원할 수 없습니다.
+        </>
+      }
+      open={isLeaveDialogOpen}
+      title={roomMeta.title}
+      onCancel={closeLeaveDialog}
+      onConfirm={() => {
+        setIsLeaveDialogOpen(false);
+        router.replace("/");
+      }}
+    />
+  );
   const desktopChatLayout = getRoomChatLayout(
     floatingWidgets.viewportSize,
     Boolean(playback.currentRequester),
@@ -544,7 +575,12 @@ function RoomPlaybackJoinedContent({
     const mobileTags = getDisplayRoomTags(roomMeta.tags);
 
     return (
-      <div className={`${styles.page} ${styles.mobilePage}`}>
+      <div
+        className={`${styles.page} ${styles.mobilePage}`}
+        data-queuing-default-image={
+          playback.isQueuingDefaultRoomImage || undefined
+        }
+      >
         <div className={styles.mobileRoomShell}>
           <header className={styles.mobileRoomHeader}>
             <div className={styles.mobileTitleRow}>
@@ -556,14 +592,15 @@ function RoomPlaybackJoinedContent({
                     roomMeta={roomMeta}
                   />
                 ) : null}
-                <Link
-                  href="/"
-                  replace
+                <button
+                  ref={leaveButtonRef}
+                  type="button"
                   className={styles.mobileExitLink}
                   aria-label="방 나가기"
+                  onClick={() => setIsLeaveDialogOpen(true)}
                 >
                   나가기
-                </Link>
+                </button>
               </div>
             </div>
             <div className={styles.mobileMetaRow}>
@@ -715,6 +752,7 @@ function RoomPlaybackJoinedContent({
             })}
           </nav>
         </div>
+        {leaveDialog}
       </div>
     );
   }
@@ -723,6 +761,9 @@ function RoomPlaybackJoinedContent({
     <div
       className={styles.page}
       data-has-requester={Boolean(playback.currentRequester)}
+      data-queuing-default-image={
+        playback.isQueuingDefaultRoomImage || undefined
+      }
       style={desktopRoomStyle}
     >
       <div className={styles.backgroundImageFrame} aria-hidden="true">
@@ -797,10 +838,12 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.controlBarDock}>
             <RoomButtonControlBar
+              exitButtonRef={leaveButtonRef}
               isChatOpen={floatingWidgets.widgets.chat.isOpen}
               isParticipantsOpen={floatingWidgets.widgets.participants.isOpen}
               isProfileOpen={floatingWidgets.widgets.profile.isOpen}
               isQueueOpen={floatingWidgets.widgets.queue.isOpen}
+              onExit={() => setIsLeaveDialogOpen(true)}
               onToggleChat={() => floatingWidgets.toggleWidget("chat")}
               onToggleParticipants={() =>
                 floatingWidgets.toggleWidget("participants")
@@ -841,6 +884,7 @@ function RoomPlaybackJoinedContent({
         onActivateWidget={floatingWidgets.activateWidget}
         onWidgetStop={floatingWidgets.handleWidgetStop}
       />
+      {leaveDialog}
     </div>
   );
 }

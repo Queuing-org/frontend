@@ -1,9 +1,13 @@
 "use client";
 
+import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
+import { useDeleteRoom } from "@/src/features/room/update/model/useDeleteRoom";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 import styles from "./EditRoomFormModal.module.css";
 
@@ -30,6 +34,10 @@ export default function EditRoomFormModal({
   initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
+  const router = useRouter();
+  const deleteRoomMutation = useDeleteRoom();
+  const deleteButtonRef = useRef<HTMLButtonElement>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const form = useEditRoomForm({
     initialHasPassword,
     initialMaxParticipants,
@@ -49,28 +57,73 @@ export default function EditRoomFormModal({
       initialMaxParticipants,
     );
 
+  const closeDeleteDialog = () => {
+    if (deleteRoomMutation.isPending) {
+      return;
+    }
+
+    setIsDeleteDialogOpen(false);
+    deleteRoomMutation.reset();
+    requestAnimationFrame(() => deleteButtonRef.current?.focus());
+  };
+
+  const handleDeleteRoom = async () => {
+    if (!roomSlug || deleteRoomMutation.isPending) {
+      return;
+    }
+
+    try {
+      await deleteRoomMutation.mutateAsync({ slug: roomSlug });
+      onClose();
+      router.replace("/");
+    } catch {
+      // The confirmation dialog keeps the API error visible for retry.
+    }
+  };
+
   return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
+    <>
       <div
-        className={styles.modal}
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="room-edit-modal-title"
+        className={styles.overlay}
+        onClick={deleteRoomMutation.isPending ? undefined : onClose}
+        role="presentation"
       >
+        <div
+          className={styles.modal}
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="room-edit-modal-title"
+          inert={isDeleteDialogOpen ? true : undefined}
+        >
         <button
           type="button"
           className={styles.closeButton}
           onClick={onClose}
+          disabled={deleteRoomMutation.isPending}
           aria-label="모달 닫기"
         >
           <span className={styles.closeIcon} aria-hidden="true" />
         </button>
 
         <form className={styles.form} onSubmit={form.handleSubmit}>
-          <h2 id="room-edit-modal-title" className={styles.modeBadge}>
-            EDIT
-          </h2>
+          <div className={styles.formHeader}>
+            <h2 id="room-edit-modal-title" className={styles.modeBadge}>
+              EDIT
+            </h2>
+            <button
+              ref={deleteButtonRef}
+              type="button"
+              className={styles.deleteRoomButton}
+              disabled={!roomSlug || form.isSubmitting}
+              onClick={() => {
+                deleteRoomMutation.reset();
+                setIsDeleteDialogOpen(true);
+              }}
+            >
+              큐 삭제
+            </button>
+          </div>
 
           <div className={styles.field}>
             <span className={styles.label}>썸네일</span>
@@ -274,9 +327,30 @@ export default function EditRoomFormModal({
               "큐 수정하기"
             )}
           </button>
-        </form>
+          </form>
+        </div>
       </div>
-    </div>
+      <RoomActionConfirmDialog
+        confirmLabel="큐 삭제하기"
+        description={
+          <>
+            해당 큐를 삭제하시겠어요?
+            <br />
+            전체 트랙이 삭제되고 기록을 복원할 수 없으며,
+            <br />
+            다른 사용자들도 모두 내보내기 처리됩니다.
+          </>
+        }
+        errorMessage={deleteRoomMutation.error?.message}
+        isPending={deleteRoomMutation.isPending}
+        open={isDeleteDialogOpen}
+        title={initialTitle}
+        onCancel={closeDeleteDialog}
+        onConfirm={() => {
+          void handleDeleteRoom();
+        }}
+      />
+    </>
   );
 }
 

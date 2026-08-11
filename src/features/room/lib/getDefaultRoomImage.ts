@@ -7,6 +7,12 @@ export function getDefaultRoomImage() {
   return DEFAULT_ROOM_IMAGE;
 }
 
+export function isQueuingDefaultRoomImage(
+  imageSrc: string | null | undefined,
+) {
+  return normalizeImageUrl(imageSrc) === DEFAULT_ROOM_IMAGE;
+}
+
 export const ROOM_CARD_IMAGE_VARIANTS = [
   "thumb256",
   "thumb384",

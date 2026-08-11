@@ -48,6 +48,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
   return (
     <div
       className={styles.overlay}
+      data-add-friend-open={modal.isAddFriendOpen || undefined}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           modal.closeModal();

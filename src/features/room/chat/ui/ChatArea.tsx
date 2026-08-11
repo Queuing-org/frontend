@@ -128,52 +128,52 @@ function ChatMessageRow({
           </div>
         )}
       </div>
-      <p className={styles.messageText}>
+      <div className={styles.messageText}>
         <span className={styles.senderLine}>
           <span className={styles.nickname}>{message.senderNickname}</span>
-          {actions.length > 0 ? (
-            <span className={styles.management}>
-              <button
-                type="button"
-                className={styles.menuButton}
-                aria-label={`${message.senderNickname} 메시지(${message.content.slice(0, 12)}) 관리 메뉴`}
-                aria-haspopup="menu"
-                aria-expanded={isMenuOpen}
-                aria-controls={isMenuOpen ? menuId : undefined}
-                onClick={(event) =>
-                  onToggleMenu(
-                    messageKey,
-                    event.currentTarget,
-                    actions.length * 40 + 2,
-                  )
-                }
-              >
-                <MoreVertical aria-hidden="true" size={18} />
-              </button>
-              {isMenuOpen ? (
-                <RoomMemberManagementMenu
-                  actions={actions}
-                  anchorBoundaryRef={listRef}
-                  isKickPending={isKickPending}
-                  isTransferPending={isTransferPending}
-                  label={`${message.senderNickname} 메시지 관리`}
-                  menuId={menuId}
-                  onBlock={() => onBlock(message)}
-                  onClose={onCloseMenu}
-                  onKick={() => onKick(message)}
-                  onReport={() => onReport(message)}
-                  onTransfer={() => onTransfer(message)}
-                  placement={menuPlacement}
-                  positioning="viewport"
-                  targetUserSlug={message.senderSlug?.trim() || null}
-                  triggerRef={triggerRef}
-                />
-              ) : null}
-            </span>
-          ) : null}
         </span>
         <span className={styles.content}>{message.content}</span>
-      </p>
+      </div>
+      {actions.length > 0 ? (
+        <span className={styles.management}>
+          <button
+            type="button"
+            className={styles.menuButton}
+            aria-label={`${message.senderNickname} 메시지(${message.content.slice(0, 12)}) 관리 메뉴`}
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            aria-controls={isMenuOpen ? menuId : undefined}
+            onClick={(event) =>
+              onToggleMenu(
+                messageKey,
+                event.currentTarget,
+                actions.length * 40 + 2,
+              )
+            }
+          >
+            <MoreVertical aria-hidden="true" size={18} />
+          </button>
+          {isMenuOpen ? (
+            <RoomMemberManagementMenu
+              actions={actions}
+              anchorBoundaryRef={listRef}
+              isKickPending={isKickPending}
+              isTransferPending={isTransferPending}
+              label={`${message.senderNickname} 메시지 관리`}
+              menuId={menuId}
+              onBlock={() => onBlock(message)}
+              onClose={onCloseMenu}
+              onKick={() => onKick(message)}
+              onReport={() => onReport(message)}
+              onTransfer={() => onTransfer(message)}
+              placement={menuPlacement}
+              positioning="viewport"
+              targetUserSlug={message.senderSlug?.trim() || null}
+              triggerRef={triggerRef}
+            />
+          ) : null}
+        </span>
+      ) : null}
     </li>
   );
 }

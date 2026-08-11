@@ -5,6 +5,7 @@
 import { useRef, type ChangeEvent, type ReactNode } from "react";
 import { Camera, X } from "lucide-react";
 import { ROOM_THUMBNAIL_ACCEPT } from "@/src/features/room/hooks/useRoomThumbnailSelection";
+import { getDefaultRoomImage } from "@/src/features/room/lib/getDefaultRoomImage";
 import styles from "./RoomThumbnailUploadField.module.css";
 
 type RoomThumbnailUploadFieldProps = {
@@ -44,6 +45,7 @@ export default function RoomThumbnailUploadField({
   const displayImageUrl = previewUrl ?? currentImageUrl ?? null;
   const hasSelectedFile = Boolean(fileName);
   const canShowPreview = Boolean(displayImageUrl) && !isPreviewUnavailable;
+  const showsDefaultOption = variant === "create";
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     onFileChange(event.target.files);
@@ -67,6 +69,10 @@ export default function RoomThumbnailUploadField({
           className={styles.uploadButton}
           aria-label={actionLabel}
           data-has-image={Boolean(displayImageUrl)}
+          data-selected={
+            showsDefaultOption && hasSelectedFile ? true : undefined
+          }
+          aria-pressed={showsDefaultOption ? hasSelectedFile : undefined}
           disabled={disabled}
           onClick={() => inputRef.current?.click()}
         >
@@ -86,6 +92,23 @@ export default function RoomThumbnailUploadField({
             </span>
           )}
         </button>
+        {showsDefaultOption ? (
+          <button
+            type="button"
+            className={styles.defaultButton}
+            aria-label="큐잉 기본 이미지 사용"
+            aria-pressed={!hasSelectedFile}
+            data-selected={!hasSelectedFile || undefined}
+            disabled={disabled}
+            onClick={onClearSelection}
+          >
+            <img
+              src={getDefaultRoomImage()}
+              alt=""
+              className={styles.previewImage}
+            />
+          </button>
+        ) : null}
         {hasSelectedFile ? (
           <button
             type="button"

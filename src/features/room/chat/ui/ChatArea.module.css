@@ -82,7 +82,13 @@
   min-width: 0;
   margin: 0 var(--room-chat-message-margin-x, -8px);
   padding: var(--room-chat-message-padding-y, 4px)
-    var(--room-chat-message-padding-left, 8px)
+    max(
+      var(--room-chat-message-padding-right, 36px),
+      calc(
+        var(--room-chat-menu-size, 28px) +
+          var(--room-chat-message-padding-left, 8px)
+      )
+    )
     var(--room-chat-message-padding-y, 4px)
     var(--room-chat-message-padding-left, 8px);
   border-radius: 8px;
@@ -90,7 +96,10 @@
 
 .message:hover,
 .message:focus-within {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(
+    --room-chat-message-hover-background,
+    rgba(255, 255, 255, 0.6)
+  );
 }
 
 .message[data-menu-open="true"] {
@@ -99,6 +108,12 @@
 }
 
 .management {
+  position: absolute;
+  top: calc(
+    var(--room-chat-message-padding-y, 4px) +
+      var(--room-chat-text-margin-top, 6px)
+  );
+  right: var(--room-chat-message-padding-left, 8px);
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;

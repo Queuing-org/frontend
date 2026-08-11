@@ -39,3 +39,11 @@ export type UpdateRoomThumbnailParams = {
 export type UpdateRoomThumbnailResult = {
   success: boolean;
 };
+
+export type DeleteRoomParams = {
+  slug: string;
+};
+
+export type DeleteRoomResult = {
+  success: boolean;
+};

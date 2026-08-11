@@ -27,13 +27,19 @@
   --room-requester-track-max-width: 410px;
   --room-requester-story-max-width: 600px;
   --room-song-stack-width: 100%;
+  --room-chat-message-hover-background: rgba(255, 255, 255, 0.6);
 
   position: relative;
   overflow: hidden;
-  background-color: #d9d9d9;
+  background-color: #ffffff;
   height: 100vh;
   height: 100dvh;
   display: flow-root;
+}
+
+.page[data-queuing-default-image="true"] {
+  --room-chat-message-hover-background: #f7f7f9;
+  background-color: #d9d9d9;
 }
 
 .backgroundImageFrame {
@@ -112,15 +118,9 @@
 }
 
 .passwordState {
-  width: min(100%, 28rem);
   min-height: 100vh;
   min-height: 100dvh;
-  margin: 0 auto;
-  padding: 1rem;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #ffffff;
 }
 
 .statusState {
@@ -565,9 +565,11 @@
   background: #ffffff;
   color: #8d8d8d;
   font-size: 0.875rem;
+  font-family: inherit;
   font-weight: var(--fw-regular);
   line-height: 1;
   text-decoration: none;
+  cursor: pointer;
 }
 
 .mobileMetaRow {
