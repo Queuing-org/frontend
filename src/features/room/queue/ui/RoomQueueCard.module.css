@@ -123,6 +123,10 @@
   min-width: 0;
 }
 
+.titleContent {
+  gap: 4px;
+}
+
 .detailRow {
   display: flex;
   align-items: center;

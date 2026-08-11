@@ -82,7 +82,7 @@
   min-width: 0;
   margin: 0 var(--room-chat-message-margin-x, -8px);
   padding: var(--room-chat-message-padding-y, 4px)
-    var(--room-chat-message-padding-right, 36px)
+    var(--room-chat-message-padding-left, 8px)
     var(--room-chat-message-padding-y, 4px)
     var(--room-chat-message-padding-left, 8px);
   border-radius: 8px;
@@ -99,9 +99,10 @@
 }
 
 .management {
-  position: absolute;
-  top: 0;
-  right: 0;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  vertical-align: middle;
 }
 
 .menuButton {
@@ -170,12 +171,25 @@
   white-space: pre-wrap;
 }
 
-.nickname {
+.senderLine {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
   margin-right: var(--room-chat-nickname-margin-right, 12px);
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+.nickname {
+  min-width: 0;
+  overflow: hidden;
   color: #8d8d8d;
   font-size: var(--room-chat-font-size, 20px);
   font-weight: 600;
   line-height: inherit;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .content {

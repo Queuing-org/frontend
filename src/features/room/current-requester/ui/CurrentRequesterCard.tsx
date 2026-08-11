@@ -59,25 +59,40 @@ export default function CurrentRequesterCard({
       )}
       <div className={styles.meta}>
         <div className={styles.titleRow}>
-          <span className={styles.name}>{requester.nickname}</span>
-          {isOwner ? (
-            <Image
-              src="/icons/onwer_black.svg"
-              alt="방장"
-              width={16}
-              height={14}
-              className={styles.ownerIcon}
-            />
-          ) : null}
           {trackTitle ? (
-            <>
+            <OverflowMarquee
+              activation="auto"
+              className={styles.trackTitle}
+              contentClassName={styles.trackTitleContent}
+              text={`${requester.nickname} - ${trackTitle}`}
+            >
+              <span className={styles.name}>{requester.nickname}</span>
+              {isOwner ? (
+                <Image
+                  src="/icons/onwer_black.svg"
+                  alt="방장"
+                  width={16}
+                  height={14}
+                  className={styles.ownerIcon}
+                />
+              ) : null}
               <span className={styles.separator}>-</span>
-              <OverflowMarquee
-                className={styles.trackTitle}
-                text={trackTitle}
-              />
+              <span>{trackTitle}</span>
+            </OverflowMarquee>
+          ) : (
+            <>
+              <span className={styles.name}>{requester.nickname}</span>
+              {isOwner ? (
+                <Image
+                  src="/icons/onwer_black.svg"
+                  alt="방장"
+                  width={16}
+                  height={14}
+                  className={styles.ownerIcon}
+                />
+              ) : null}
             </>
-          ) : null}
+          )}
         </div>
         <div
           className={styles.descriptionRow}

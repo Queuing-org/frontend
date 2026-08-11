@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentPropsWithoutRef, PointerEvent } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useState } from "react";
 import Image from "next/image";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import OverflowMarquee from "@/src/features/room/ui/OverflowMarquee";
@@ -34,6 +34,14 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
     ...safeDragActivatorProps
   } = dragActivatorProps ?? {};
   const story = entry.story?.trim() ?? "";
+  const trackThumbnailUrl = entry.track.thumbnailUrl ?? "/Thumbnail.png";
+  const [failedThumbnailUrl, setFailedThumbnailUrl] = useState<string | null>(
+    null,
+  );
+  const thumbnailSrc =
+    failedThumbnailUrl === trackThumbnailUrl
+      ? "/Thumbnail.png"
+      : trackThumbnailUrl;
 
   const handleDeletePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     event.stopPropagation();
@@ -48,17 +56,19 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
         .join(" ")}
       data-active={entry.status.isActive}
       data-has-delete={hasDeleteButton}
+      data-marquee-group
       {...props}
     >
       <div className={styles.thumbnailWrap}>
         <Image
-          src={entry.track.thumbnailUrl ?? "/Thumbnail.png"}
+          src={thumbnailSrc}
           alt={`${entry.track.title} thumbnail`}
           fill
           sizes="72px"
           unoptimized
           draggable={false}
           className={styles.thumbnail}
+          onError={() => setFailedThumbnailUrl(trackThumbnailUrl)}
         />
         {entry.status.isActive ? (
           <div
@@ -74,12 +84,16 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
       </div>
       <div className={styles.meta}>
         <div className={styles.titleRow}>
-          <span className={styles.titleOwner}>{entry.addedBy.nickname}</span>
-          <span className={styles.titleSeparator}>-</span>
           <OverflowMarquee
+            activation="group-hover"
             className={styles.title}
-            text={entry.track.title}
-          />
+            contentClassName={styles.titleContent}
+            text={`${entry.addedBy.nickname} - ${entry.track.title}`}
+          >
+            <span className={styles.titleOwner}>{entry.addedBy.nickname}</span>
+            <span className={styles.titleSeparator}>-</span>
+            <span>{entry.track.title}</span>
+          </OverflowMarquee>
         </div>
         <div className={styles.detailRow} data-has-story={Boolean(story)}>
           {story ? (

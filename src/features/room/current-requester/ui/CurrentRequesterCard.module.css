@@ -84,6 +84,10 @@
   max-width: min(var(--room-requester-track-max-width, 410px), 34vw);
 }
 
+.trackTitleContent {
+  gap: 6px;
+}
+
 .story {
   max-width: min(var(--room-requester-story-max-width, 600px), 36vw);
 }

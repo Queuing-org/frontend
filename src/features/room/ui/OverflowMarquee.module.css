@@ -12,12 +12,21 @@
   gap: 32px;
 }
 
-.viewport[data-overflowing="true"]:hover .track,
-.viewport[data-overflowing="true"]:focus .track {
+.viewport[data-overflowing="true"][data-activation="auto"] .track,
+:global([data-marquee-group]:hover)
+  .viewport[data-overflowing="true"][data-activation="group-hover"]
+  .track,
+:global([data-marquee-group]:focus-within)
+  .viewport[data-overflowing="true"][data-activation="group-hover"]
+  .track,
+.viewport[data-overflowing="true"][data-activation="hover"]:hover .track,
+.viewport[data-overflowing="true"][data-activation="hover"]:focus .track {
   animation: marquee-scroll var(--marquee-duration) linear infinite;
 }
 
 .copy {
+  display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
 }
 
@@ -50,8 +59,15 @@
     animation: none;
   }
 
-  .viewport[data-overflowing="true"]:hover .track,
-  .viewport[data-overflowing="true"]:focus .track {
+  .viewport[data-overflowing="true"][data-activation="auto"] .track,
+  :global([data-marquee-group]:hover)
+    .viewport[data-overflowing="true"][data-activation="group-hover"]
+    .track,
+  :global([data-marquee-group]:focus-within)
+    .viewport[data-overflowing="true"][data-activation="group-hover"]
+    .track,
+  .viewport[data-overflowing="true"][data-activation="hover"]:hover .track,
+  .viewport[data-overflowing="true"][data-activation="hover"]:focus .track {
     animation: none;
   }
 }

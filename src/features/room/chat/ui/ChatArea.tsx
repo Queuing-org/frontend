@@ -63,6 +63,7 @@ type Props = {
 
 type ChatMessageRowProps = {
   actions: ChatMessageManagementAction[];
+  listRef: RefObject<HTMLDivElement | null>;
   isKickPending: boolean;
   isMenuOpen: boolean;
   isTransferPending: boolean;
@@ -88,6 +89,7 @@ function getInitial(nickname: string) {
 
 function ChatMessageRow({
   actions,
+  listRef,
   isKickPending,
   isMenuOpen,
   isTransferPending,
@@ -127,47 +129,51 @@ function ChatMessageRow({
         )}
       </div>
       <p className={styles.messageText}>
-        <span className={styles.nickname}>{message.senderNickname}</span>
+        <span className={styles.senderLine}>
+          <span className={styles.nickname}>{message.senderNickname}</span>
+          {actions.length > 0 ? (
+            <span className={styles.management}>
+              <button
+                type="button"
+                className={styles.menuButton}
+                aria-label={`${message.senderNickname} 메시지(${message.content.slice(0, 12)}) 관리 메뉴`}
+                aria-haspopup="menu"
+                aria-expanded={isMenuOpen}
+                aria-controls={isMenuOpen ? menuId : undefined}
+                onClick={(event) =>
+                  onToggleMenu(
+                    messageKey,
+                    event.currentTarget,
+                    actions.length * 40 + 2,
+                  )
+                }
+              >
+                <MoreVertical aria-hidden="true" size={18} />
+              </button>
+              {isMenuOpen ? (
+                <RoomMemberManagementMenu
+                  actions={actions}
+                  anchorBoundaryRef={listRef}
+                  isKickPending={isKickPending}
+                  isTransferPending={isTransferPending}
+                  label={`${message.senderNickname} 메시지 관리`}
+                  menuId={menuId}
+                  onBlock={() => onBlock(message)}
+                  onClose={onCloseMenu}
+                  onKick={() => onKick(message)}
+                  onReport={() => onReport(message)}
+                  onTransfer={() => onTransfer(message)}
+                  placement={menuPlacement}
+                  positioning="viewport"
+                  targetUserSlug={message.senderSlug?.trim() || null}
+                  triggerRef={triggerRef}
+                />
+              ) : null}
+            </span>
+          ) : null}
+        </span>
         <span className={styles.content}>{message.content}</span>
       </p>
-      {actions.length > 0 ? (
-        <div className={styles.management}>
-          <button
-            type="button"
-            className={styles.menuButton}
-            aria-label={`${message.senderNickname} 메시지(${message.content.slice(0, 12)}) 관리 메뉴`}
-            aria-haspopup="menu"
-            aria-expanded={isMenuOpen}
-            aria-controls={isMenuOpen ? menuId : undefined}
-            onClick={(event) =>
-              onToggleMenu(
-                messageKey,
-                event.currentTarget,
-                actions.length * 40 + 2,
-              )
-            }
-          >
-            <MoreVertical aria-hidden="true" size={18} />
-          </button>
-          {isMenuOpen ? (
-            <RoomMemberManagementMenu
-              actions={actions}
-              isKickPending={isKickPending}
-              isTransferPending={isTransferPending}
-              label={`${message.senderNickname} 메시지 관리`}
-              menuId={menuId}
-              onBlock={() => onBlock(message)}
-              onClose={onCloseMenu}
-              onKick={() => onKick(message)}
-              onReport={() => onReport(message)}
-              onTransfer={() => onTransfer(message)}
-              placement={menuPlacement}
-              targetUserSlug={message.senderSlug?.trim() || null}
-              triggerRef={triggerRef}
-            />
-          ) : null}
-        </div>
-      ) : null}
     </li>
   );
 }
@@ -241,6 +247,7 @@ export default function ChatArea({
   const {
     handleScroll,
     listRef,
+    messagesRef,
     requestOlderMessages,
     wheelRegionRef,
   } = useChatScrollRestoration({
@@ -509,7 +516,6 @@ export default function ChatArea({
           tabIndex={0}
           onScroll={() => {
             handleScroll();
-            closeMenu();
           }}
         >
           {isLoadingOlderMessages ? (
@@ -550,7 +556,7 @@ export default function ChatArea({
           {visibleMessages.length === 0 ? (
             <div className={styles.empty}>아직 채팅이 없습니다.</div>
           ) : (
-            <ol className={styles.messages}>
+            <ol ref={messagesRef} className={styles.messages}>
               {visibleMessages.map((message) => {
                 const messageKey = getChatMessageRenderKey(message);
                 const targetUserSlug = getModerationUserSlug(message);
@@ -569,6 +575,7 @@ export default function ChatArea({
                   <ChatMessageRow
                     key={messageKey}
                     actions={actions}
+                    listRef={listRef}
                     isKickPending={
                       (kickParticipant.isPending &&
                         getParticipantKickTargetKey(kickTarget) ===
