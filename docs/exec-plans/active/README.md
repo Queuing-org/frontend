@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-11-room-six-chat-rows](./2026-08-11-room-six-chat-rows/plan.md): ready — 4K부터 가로형 패드까지 방 채팅 한 줄 6개 최소 가시 높이 보장, 로컬 QA·fresh review 통과
+
 - [2026-08-11-room-laptop-responsive](./2026-08-11-room-laptop-responsive/plan.md): ready — 채팅 페이드 확대와 짧은 높이 데스크톱의 방 내부 80% compact 대응, 로컬 QA·fresh review 통과
 
 - [2026-08-11-friend-settings-tag-ui](./2026-08-11-friend-settings-tag-ui/plan.md): ready — 친구 상세 플로팅 패널 통일, 탐색 컨트롤 잠금, 설정 정렬, 방 생성 필수 태그 후속 개선 및 로컬 QA 완료
