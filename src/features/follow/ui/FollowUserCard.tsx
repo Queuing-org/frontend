@@ -2,14 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useId, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import styles from "./FollowUserCard.module.css";
 
 type Props = {
-  actions?: ReactNode;
-  expanded?: boolean;
   nickname: string;
-  onToggle?: () => void;
+  onSelect?: (trigger: HTMLButtonElement) => void;
   presence?: {
     inRoom: boolean;
     online: boolean;
@@ -24,16 +22,13 @@ type Props = {
 };
 
 export default function FollowUserCard({
-  actions,
-  expanded = false,
   nickname,
-  onToggle,
+  onSelect,
   presence,
   profileImageUrl,
   roomLink,
   trailingAction,
 }: Props) {
-  const actionsId = useId();
   const profileImageSrc = profileImageUrl || "/Basic_Profile.png";
   const profile = (
     <>
@@ -71,16 +66,15 @@ export default function FollowUserCard({
   );
 
   return (
-    <li className={styles.card} data-expanded={expanded}>
+    <li className={styles.card}>
       <div className={styles.summary}>
-        {onToggle ? (
+        {onSelect ? (
           <button
             type="button"
             className={styles.profileButton}
-            aria-controls={actions ? actionsId : undefined}
-            aria-expanded={actions ? expanded : undefined}
-            aria-label={`${nickname} 사용자 메뉴`}
-            onClick={onToggle}
+            aria-haspopup="dialog"
+            aria-label={`${nickname} 프로필 보기`}
+            onClick={(event) => onSelect(event.currentTarget)}
           >
             {profile}
           </button>
@@ -106,12 +100,6 @@ export default function FollowUserCard({
           <div className={styles.trailingAction}>{trailingAction}</div>
         ) : null}
       </div>
-
-      {actions && expanded ? (
-        <div id={actionsId} className={styles.actions}>
-          {actions}
-        </div>
-      ) : null}
     </li>
   );
 }

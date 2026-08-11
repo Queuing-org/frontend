@@ -230,6 +230,7 @@ export default function RoomParticipantList({
       ref={listRef}
       className={styles.list}
       aria-label="참가자 목록"
+      tabIndex={0}
       onScroll={handleListScroll}
     >
       <div

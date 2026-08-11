@@ -9,12 +9,11 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { formatOptionalStat } from "@/src/shared/lib/formatOptionalStat";
-import { formatListeningDuration } from "@/src/features/user/profile/model/formatListeningDuration";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
+import UserProfileContent from "@/src/features/user/profile/ui/UserProfileContent";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import BlockUserModal, {
   type BlockUserTarget,
@@ -438,196 +437,119 @@ export default function RoomProfilePanel({
     <div className={styles.root}>
       {currentRequester ? (
         <>
-          <div className={styles.hero}>
-            <div className={styles.avatarWrap}>
-              {displayAvatarUrl ? (
-                <Image
-                  src={displayAvatarUrl}
-                  alt={`${displayNickname} avatar`}
-                  fill
-                  sizes="56px"
-                  unoptimized
-                  className={styles.avatar}
-                />
-              ) : (
-                <div className={styles.avatarFallback} aria-hidden="true">
-                  {displayNickname.slice(0, 1)}
-                </div>
-              )}
-            </div>
-            <div className={styles.nameBlock}>
-              <div className={styles.nameRow}>
-                <div className={styles.name}>{displayNickname}</div>
-                {isTargetRoomOwner ? (
-                  <Image
-                    src="/icons/onwer_black.svg"
-                    alt="방장"
-                    width={11}
-                    height={11}
-                    className={styles.ownerIcon}
-                  />
-                ) : null}
-              </div>
-              <div className={styles.activity}>현재 큐잉 중...</div>
-            </div>
-          </div>
-          {isSelf ? (
-            <div
-              className={styles.selfTrackStatus}
-              aria-label="내 신청곡 재생 상태"
-            >
-              <span className={styles.selfTrackStatusDot} aria-hidden="true" />
-              <span>내 노래가 나오고 있어요!</span>
-            </div>
-          ) : shouldShowFollowAction ? (
-            <div
-              className={styles.actionRow}
-              data-single-action={!canManage || undefined}
-              role="group"
-              aria-label="프로필 액션"
-            >
-              <div className={styles.followAction}>
-                <FollowToggleButton
-                  className={styles.followButton}
-                  disabled={!canFollow}
-                  disabledLabel={followButtonLabel}
-                  followingLabel="팔로잉"
-                  initialRelationship={
-                    isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
-                  }
-                  targetSlug={targetSlug}
-                />
-              </div>
-              {canManage ? (
-                <div className={styles.manageAction}>
-                  <button
-                    ref={manageButtonRef}
-                    type="button"
-                    className={styles.manageButton}
-                    aria-haspopup="menu"
-                    aria-expanded={isManagementOpen}
-                    aria-controls={
-                      isManagementOpen ? managementMenuId : undefined
-                    }
-                    onClick={() => {
-                      setManagementMessage(null);
-                      setParticipantResolutionError(null);
-                      setIsManagementOpen((current) => !current);
-                    }}
-                  >
-                    <span>관리</span>
-                    <Image
-                      src="/icons/manage-down.svg"
-                      alt=""
-                      aria-hidden="true"
-                      width={8}
-                      height={8}
-                    />
-                  </button>
-                  {isManagementOpen ? (
-                    <RoomMemberManagementMenu
-                      actions={managementActions}
-                      isKickPending={
-                        kickParticipant.isPending ||
-                        (participantResolutionAction?.action === "kick" &&
-                          participantResolutionAction.targetSlug ===
-                            targetSlug)
+          <UserProfileContent
+            actions={
+              !isSelf && shouldShowFollowAction ? (
+                <div
+                  className={styles.actionRow}
+                  data-single-action={!canManage || undefined}
+                  role="group"
+                  aria-label="프로필 액션"
+                >
+                  <div className={styles.followAction}>
+                    <FollowToggleButton
+                      className={styles.followButton}
+                      disabled={!canFollow}
+                      disabledLabel={followButtonLabel}
+                      followingLabel="팔로잉"
+                      initialRelationship={
+                        isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
                       }
-                      isTransferPending={
-                        transferOwner.isPending ||
-                        (participantResolutionAction?.action === "transfer" &&
-                          participantResolutionAction.targetSlug ===
-                            targetSlug)
-                      }
-                      label="프로필 관리"
-                      menuId={managementMenuId}
-                      onBlock={handleBlock}
-                      onClose={closeManagementMenu}
-                      onKick={handleKick}
-                      onReport={handleReport}
-                      onTransfer={handleTransfer}
-                      targetUserSlug={targetSlug}
-                      triggerRef={manageButtonRef}
+                      targetSlug={targetSlug}
                     />
+                  </div>
+                  {canManage ? (
+                    <div className={styles.manageAction}>
+                      <button
+                        ref={manageButtonRef}
+                        type="button"
+                        className={styles.manageButton}
+                        aria-haspopup="menu"
+                        aria-expanded={isManagementOpen}
+                        aria-controls={
+                          isManagementOpen ? managementMenuId : undefined
+                        }
+                        onClick={() => {
+                          setManagementMessage(null);
+                          setParticipantResolutionError(null);
+                          setIsManagementOpen((current) => !current);
+                        }}
+                      >
+                        <span>관리</span>
+                        <Image
+                          src="/icons/manage-down.svg"
+                          alt=""
+                          aria-hidden="true"
+                          width={8}
+                          height={8}
+                        />
+                      </button>
+                      {isManagementOpen ? (
+                        <RoomMemberManagementMenu
+                          actions={managementActions}
+                          isKickPending={
+                            kickParticipant.isPending ||
+                            (participantResolutionAction?.action === "kick" &&
+                              participantResolutionAction.targetSlug ===
+                                targetSlug)
+                          }
+                          isTransferPending={
+                            transferOwner.isPending ||
+                            (participantResolutionAction?.action ===
+                              "transfer" &&
+                              participantResolutionAction.targetSlug ===
+                                targetSlug)
+                          }
+                          label="프로필 관리"
+                          menuId={managementMenuId}
+                          onBlock={handleBlock}
+                          onClose={closeManagementMenu}
+                          onKick={handleKick}
+                          onReport={handleReport}
+                          onTransfer={handleTransfer}
+                          targetUserSlug={targetSlug}
+                          triggerRef={manageButtonRef}
+                        />
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
-              ) : null}
-            </div>
-          ) : null}
-          {managementMessage ? (
-            <p className={styles.managementMessage} role="status">
-              {managementMessage}
-            </p>
-          ) : null}
-          {kickParticipant.error ? (
-            <p className={styles.managementError} role="alert">
-              {kickParticipant.error.message ||
-                "사용자 관리 요청을 처리하지 못했습니다."}
-            </p>
-          ) : null}
-          {participantResolutionError?.targetSlug === targetSlug ? (
-            <p className={styles.managementError} role="alert">
-              {participantResolutionError.message}
-            </p>
-          ) : null}
-          {transferOwnerErrorMessage ? (
-            <p className={styles.managementError} role="alert">
-              {transferOwnerErrorMessage}
-            </p>
-          ) : null}
-          <div className={styles.grid}>
-            <div className={styles.card}>
-              <div className={styles.cardTitle}>칭호</div>
-              <div className={styles.cardValue}>
-                {targetSlug ? (
-                  isBadgeLoading ? (
-                    <LoadingSpinner ariaLabel="칭호 로딩 중" size={18} />
-                  ) : (
-                    badgeValue
-                  )
-                ) : (
-                  "-"
-                )}
-              </div>
-            </div>
-            <div className={styles.card}>
-              <div className={styles.cardTitle}>한 줄 소개</div>
-              <div
-                className={`${styles.cardValue} ${styles.statusCardValue}`}
-                title={statusMessage || undefined}
-              >
-                {statusMessage || "-"}
-              </div>
-            </div>
-            <div className={styles.card}>
-              <div className={styles.cardTitle}>큐잉 횟수</div>
-              <div className={styles.cardValue}>
-                {formatOptionalStat(publicProfile?.queuingCount)}
-              </div>
-            </div>
-            <div className={styles.card}>
-              <div className={styles.cardTitle}>이용 시간</div>
-              <div className={styles.cardValue}>
-                {formatListeningDuration(listeningDurationSeconds)}
-              </div>
-            </div>
-          </div>
-          <div className={styles.musicPowerRow}>
-            <div className={styles.card}>
-              <div className={styles.musicPowerHeading}>
-                <div className={styles.cardTitle}>음악력</div>
-                {musicPowerNotice?.targetSlug === targetSlug ? (
-                  <p className={styles.musicPowerNotice} role="alert">
-                    {musicPowerNotice.message}
+              ) : null
+            }
+            activityLabel="현재 큐잉 중..."
+            avatarUrl={displayAvatarUrl}
+            badgeLabel={targetSlug ? badgeValue : "-"}
+            feedback={
+              <>
+                {managementMessage ? (
+                  <p className={styles.managementMessage} role="status">
+                    {managementMessage}
                   </p>
                 ) : null}
-              </div>
-              <div className={styles.musicPowerValue}>
-                <span>{formatOptionalStat(musicPower)}</span>
-              </div>
-            </div>
-            {!isSelf && !isCurrentUserLoading ? (
-              <>
+                {kickParticipant.error ? (
+                  <p className={styles.managementError} role="alert">
+                    {kickParticipant.error.message ||
+                      "사용자 관리 요청을 처리하지 못했습니다."}
+                  </p>
+                ) : null}
+                {participantResolutionError?.targetSlug === targetSlug ? (
+                  <p className={styles.managementError} role="alert">
+                    {participantResolutionError.message}
+                  </p>
+                ) : null}
+                {transferOwnerErrorMessage ? (
+                  <p className={styles.managementError} role="alert">
+                    {transferOwnerErrorMessage}
+                  </p>
+                ) : null}
+              </>
+            }
+            isBadgeLoading={Boolean(targetSlug) && isBadgeLoading}
+            isOwner={isTargetRoomOwner}
+            listeningDurationSeconds={listeningDurationSeconds}
+            musicPower={musicPower}
+            musicPowerActions={
+              !isSelf && !isCurrentUserLoading ? (
                 <div className={styles.musicPowerActions}>
                   <button
                     type="button"
@@ -674,9 +596,33 @@ export default function RoomProfilePanel({
                     />
                   </button>
                 </div>
-              </>
-            ) : null}
-          </div>
+              ) : null
+            }
+            musicPowerNotice={
+              musicPowerNotice?.targetSlug === targetSlug ? (
+                <p className={styles.musicPowerNotice} role="alert">
+                  {musicPowerNotice.message}
+                </p>
+              ) : null
+            }
+            nickname={displayNickname}
+            primaryStatus={
+              isSelf ? (
+                <div
+                  className={styles.selfTrackStatus}
+                  aria-label="내 신청곡 재생 상태"
+                >
+                  <span
+                    className={styles.selfTrackStatusDot}
+                    aria-hidden="true"
+                  />
+                  <span>내 노래가 나오고 있어요!</span>
+                </div>
+              ) : null
+            }
+            queuingCount={publicProfile?.queuingCount}
+            statusMessage={statusMessage}
+          />
           <BlockUserModal
             onBlocked={(target) => {
               setManagementMessage(`${target.nickname}님을 차단했습니다.`);

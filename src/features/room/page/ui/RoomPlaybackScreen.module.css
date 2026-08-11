@@ -1,4 +1,33 @@
 .page {
+  --room-chat-fade-height: 104px;
+  --room-chat-list-padding-y: 14px;
+  --room-chat-list-padding-x: 16px;
+  --room-chat-message-gap: 16px;
+  --room-chat-message-content-gap: 12px;
+  --room-chat-message-margin-x: -8px;
+  --room-chat-message-padding-y: 4px;
+  --room-chat-message-padding-right: 36px;
+  --room-chat-message-padding-left: 8px;
+  --room-chat-menu-size: 28px;
+  --room-chat-avatar-size: 40px;
+  --room-chat-avatar-font-size: 18px;
+  --room-chat-font-size: 20px;
+  --room-chat-text-margin-top: 6px;
+  --room-chat-nickname-margin-right: 12px;
+  --room-chat-six-row-min-height: 396px;
+  --room-requester-gap: 12px;
+  --room-requester-padding-y: 20px;
+  --room-requester-padding-x: 16px;
+  --room-requester-skip-top: 10px;
+  --room-requester-skip-right: 14px;
+  --room-requester-avatar-size: 44px;
+  --room-requester-title-font-size: 16px;
+  --room-requester-description-gap: 8px;
+  --room-requester-description-font-size: 14px;
+  --room-requester-track-max-width: 410px;
+  --room-requester-story-max-width: 600px;
+  --room-song-stack-width: 100%;
+
   position: relative;
   overflow: hidden;
   background-color: #d9d9d9;
@@ -76,6 +105,8 @@
 .songInfoStack {
   display: flex;
   flex-direction: column;
+  width: min(100%, var(--room-song-stack-width));
+  align-self: center;
   gap: 0;
   flex-shrink: 0;
 }
@@ -138,7 +169,7 @@
 .chatSection {
   display: flex;
   flex: 1;
-  min-height: 0;
+  min-height: var(--room-chat-six-row-min-height);
   margin-right: -16px;
   margin-left: -16px;
   overflow: hidden;
@@ -160,7 +191,146 @@
   z-index: 3;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
+  .page {
+    --room-chat-fade-height: 83.2px;
+    --room-chat-list-padding-y: clamp(
+      8.96px,
+      calc(0.746667dvh + 4.48px),
+      11.2px
+    );
+    --room-chat-list-padding-x: clamp(
+      10.24px,
+      calc(0.853333dvh + 5.12px),
+      12.8px
+    );
+    --room-chat-message-gap: clamp(
+      10.24px,
+      calc(0.853333dvh + 5.12px),
+      12.8px
+    );
+    --room-chat-message-content-gap: clamp(
+      7.68px,
+      calc(0.64dvh + 3.84px),
+      9.6px
+    );
+    --room-chat-message-margin-x: calc(-0.426667dvh - 2.56px);
+    --room-chat-message-padding-y: clamp(
+      2.56px,
+      calc(0.213333dvh + 1.28px),
+      3.2px
+    );
+    --room-chat-message-padding-right: clamp(
+      23.04px,
+      calc(1.92dvh + 11.52px),
+      28.8px
+    );
+    --room-chat-message-padding-left: clamp(
+      5.12px,
+      calc(0.426667dvh + 2.56px),
+      6.4px
+    );
+    --room-chat-menu-size: 22.4px;
+    --room-chat-avatar-size: clamp(
+      25.6px,
+      calc(2.133333dvh + 12.8px),
+      32px
+    );
+    --room-chat-avatar-font-size: clamp(
+      11.52px,
+      calc(0.96dvh + 5.76px),
+      14.4px
+    );
+    --room-chat-font-size: clamp(
+      12.8px,
+      calc(1.066667dvh + 6.4px),
+      16px
+    );
+    --room-chat-text-margin-top: clamp(
+      3.84px,
+      calc(0.32dvh + 1.92px),
+      4.8px
+    );
+    --room-chat-nickname-margin-right: clamp(
+      7.68px,
+      calc(0.64dvh + 3.84px),
+      9.6px
+    );
+    --room-chat-six-row-min-height: clamp(
+      253.44px,
+      calc(21.12dvh + 126.72px),
+      316.8px
+    );
+    --room-requester-gap: clamp(
+      7.68px,
+      calc(0.64dvh + 3.84px),
+      9.6px
+    );
+    --room-requester-padding-y: clamp(
+      12.8px,
+      calc(1.066667dvh + 6.4px),
+      16px
+    );
+    --room-requester-padding-x: clamp(
+      10.24px,
+      calc(0.853333dvh + 5.12px),
+      12.8px
+    );
+    --room-requester-skip-top: clamp(
+      6.4px,
+      calc(0.533333dvh + 3.2px),
+      8px
+    );
+    --room-requester-skip-right: clamp(
+      8.96px,
+      calc(0.746667dvh + 4.48px),
+      11.2px
+    );
+    --room-requester-avatar-size: clamp(
+      28.16px,
+      calc(2.346667dvh + 14.08px),
+      35.2px
+    );
+    --room-requester-title-font-size: clamp(
+      10.24px,
+      calc(0.853333dvh + 5.12px),
+      12.8px
+    );
+    --room-requester-description-gap: clamp(
+      5.12px,
+      calc(0.426667dvh + 2.56px),
+      6.4px
+    );
+    --room-requester-description-font-size: clamp(
+      8.96px,
+      calc(0.746667dvh + 4.48px),
+      11.2px
+    );
+    --room-requester-track-max-width: clamp(
+      262.4px,
+      calc(21.866667dvh + 131.2px),
+      328px
+    );
+    --room-requester-story-max-width: clamp(
+      384px,
+      calc(32dvh + 192px),
+      480px
+    );
+    --room-song-stack-width: clamp(
+      160px,
+      calc(128.7111dvh - 611.5556px),
+      512px
+    );
+  }
+
+  .page[data-has-requester="false"] {
+    --room-song-stack-width: clamp(
+      240px,
+      calc(136.6756dvh - 563.7689px),
+      512px
+    );
+  }
+
   .container {
     --panel-horizontal-padding: 19.2px;
     --panel-content-width: 512px;
@@ -184,6 +354,155 @@
   .chatSection {
     margin-right: -12.8px;
     margin-left: -12.8px;
+  }
+}
+
+@media (min-width: 761px) and (min-height: 901px) and (max-height: 1100px) {
+  .page {
+    --room-chat-fade-height: clamp(
+      83.2px,
+      calc(10.4dvh - 10.4px),
+      104px
+    );
+    --room-chat-list-padding-y: clamp(
+      11.2px,
+      calc(1.4dvh - 1.4px),
+      14px
+    );
+    --room-chat-list-padding-x: clamp(
+      12.8px,
+      calc(1.6dvh - 1.6px),
+      16px
+    );
+    --room-chat-message-gap: clamp(
+      12.8px,
+      calc(1.6dvh - 1.6px),
+      16px
+    );
+    --room-chat-message-content-gap: clamp(
+      9.6px,
+      calc(1.2dvh - 1.2px),
+      12px
+    );
+    --room-chat-message-margin-x: calc(-0.8dvh + 0.8px);
+    --room-chat-message-padding-y: clamp(
+      3.2px,
+      calc(0.4dvh - 0.4px),
+      4px
+    );
+    --room-chat-message-padding-right: clamp(
+      28.8px,
+      calc(3.6dvh - 3.6px),
+      36px
+    );
+    --room-chat-message-padding-left: clamp(
+      6.4px,
+      calc(0.8dvh - 0.8px),
+      8px
+    );
+    --room-chat-menu-size: clamp(
+      22.4px,
+      calc(2.8dvh - 2.8px),
+      28px
+    );
+    --room-chat-avatar-size: clamp(
+      32px,
+      calc(4dvh - 4px),
+      40px
+    );
+    --room-chat-avatar-font-size: clamp(
+      14.4px,
+      calc(1.8dvh - 1.8px),
+      18px
+    );
+    --room-chat-font-size: clamp(
+      16px,
+      calc(2dvh - 2px),
+      20px
+    );
+    --room-chat-text-margin-top: clamp(
+      4.8px,
+      calc(0.6dvh - 0.6px),
+      6px
+    );
+    --room-chat-nickname-margin-right: clamp(
+      9.6px,
+      calc(1.2dvh - 1.2px),
+      12px
+    );
+    --room-chat-six-row-min-height: clamp(
+      316.8px,
+      calc(39.6dvh - 39.6px),
+      396px
+    );
+    --room-requester-gap: clamp(
+      9.6px,
+      calc(1.2dvh - 1.2px),
+      12px
+    );
+    --room-requester-padding-y: clamp(
+      16px,
+      calc(2dvh - 2px),
+      20px
+    );
+    --room-requester-padding-x: clamp(
+      12.8px,
+      calc(1.6dvh - 1.6px),
+      16px
+    );
+    --room-requester-skip-top: clamp(
+      8px,
+      calc(1dvh - 1px),
+      10px
+    );
+    --room-requester-skip-right: clamp(
+      11.2px,
+      calc(1.4dvh - 1.4px),
+      14px
+    );
+    --room-requester-avatar-size: clamp(
+      35.2px,
+      calc(4.4dvh - 4.4px),
+      44px
+    );
+    --room-requester-title-font-size: clamp(
+      12.8px,
+      calc(1.6dvh - 1.6px),
+      16px
+    );
+    --room-requester-description-gap: clamp(
+      6.4px,
+      calc(0.8dvh - 0.8px),
+      8px
+    );
+    --room-requester-description-font-size: clamp(
+      11.2px,
+      calc(1.4dvh - 1.4px),
+      14px
+    );
+    --room-requester-track-max-width: clamp(
+      328px,
+      calc(41dvh - 41px),
+      410px
+    );
+    --room-requester-story-max-width: clamp(
+      480px,
+      calc(60dvh - 60px),
+      600px
+    );
+    --room-song-stack-width: clamp(
+      160px,
+      calc(88.8889dvh - 337.7778px),
+      640px
+    );
+  }
+
+  .page[data-has-requester="false"] {
+    --room-song-stack-width: clamp(
+      240px,
+      calc(103.8222dvh - 352.7111px),
+      640px
+    );
   }
 }
 

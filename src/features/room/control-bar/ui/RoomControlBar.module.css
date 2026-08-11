@@ -86,7 +86,7 @@
   -webkit-mask: url("/icons/hambuger.svg") center / contain no-repeat;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .outerBar {
     width: 297.6px;
     height: 60.8px;

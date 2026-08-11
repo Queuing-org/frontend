@@ -62,7 +62,7 @@
 }
 
 .equalizerBar {
-  width: 4px;
+  width: 3px;
   border-radius: 999px;
   background: #3c3c3c;
   transform-origin: bottom;
@@ -240,7 +240,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 761px) and (max-height: 900px) {
   .item {
     grid-template-columns: 36.8px minmax(0, 1fr);
     gap: 9.6px;
@@ -257,7 +257,7 @@
   }
 
   .equalizerBar {
-    width: 3.2px;
+    width: 2.4px;
   }
 
   .equalizerBar:nth-child(1) { height: 15.2px; }

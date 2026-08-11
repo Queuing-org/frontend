@@ -1,8 +1,9 @@
 import { act, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
 import {
+  PROFILE_FIELD_FEEDBACK_DURATION_MS,
   STATUS_MESSAGE_MAX_LENGTH,
   useProfileSettingsForm,
 } from "./useProfileSettingsForm";
@@ -17,7 +18,26 @@ vi.mock("@/src/features/user/profile/hooks/useUpdateMe", () => ({
 const mutate = vi.fn();
 const reset = vi.fn();
 
-describe("프로필 상태 메시지 폼", () => {
+function submit(result: ReturnType<typeof renderProfileForm>["result"]) {
+  act(() =>
+    result.current.handleProfileSubmit({
+      preventDefault: vi.fn(),
+    } as unknown as React.FormEvent<HTMLFormElement>),
+  );
+}
+
+function renderProfileForm() {
+  return renderHook(() => useProfileSettingsForm());
+}
+
+function getMutationOptions() {
+  return mutate.mock.lastCall?.[1] as {
+    onError: () => void;
+    onSuccess: () => void;
+  };
+}
+
+describe("프로필 통합 저장 폼", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useMe).mockReturnValue({
@@ -38,15 +58,28 @@ describe("프로필 상태 메시지 폼", () => {
     } as unknown as ReturnType<typeof useUpdateMe>);
   });
 
-  it("빈 문자열은 삭제 의도로 payload에 포함한다", () => {
-    const { result } = renderHook(() => useProfileSettingsForm());
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("닉네임만 변경하면 nickname만 한 요청으로 보낸다", () => {
+    const { result } = renderProfileForm();
+
+    act(() => result.current.updateNicknameDraft(" 새 닉네임 "));
+    submit(result);
+
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(mutate).toHaveBeenCalledWith(
+      { nickname: "새 닉네임" },
+      expect.any(Object),
+    );
+  });
+
+  it("메시지만 변경하면 현재 nickname과 빈 statusMessage도 보낸다", () => {
+    const { result } = renderProfileForm();
 
     act(() => result.current.updateStatusMessageDraft(""));
-    act(() =>
-      result.current.handleStatusMessageSubmit({
-        preventDefault: vi.fn(),
-      } as unknown as React.FormEvent<HTMLFormElement>),
-    );
+    submit(result);
 
     expect(mutate).toHaveBeenCalledWith(
       { nickname: "민지", statusMessage: "" },
@@ -54,59 +87,37 @@ describe("프로필 상태 메시지 폼", () => {
     );
   });
 
-  it("상태 메시지를 건드리지 않으면 null이나 statusMessage를 보내지 않는다", () => {
-    const { result } = renderHook(() => useProfileSettingsForm());
+  it("닉네임과 메시지를 함께 변경하면 두 값을 단일 요청으로 보낸다", () => {
+    const { result } = renderProfileForm();
 
     act(() => result.current.updateNicknameDraft("새 닉네임"));
-    act(() =>
-      result.current.handleNicknameSubmit({
-        preventDefault: vi.fn(),
-      } as unknown as React.FormEvent<HTMLFormElement>),
-    );
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    submit(result);
 
+    expect(mutate).toHaveBeenCalledOnce();
     expect(mutate).toHaveBeenCalledWith(
-      { nickname: "새 닉네임" },
+      { nickname: "새 닉네임", statusMessage: "새 메시지" },
       expect.any(Object),
     );
   });
 
-  it("닉네임과 한 줄 메시지의 수정 가능 상태를 독립적으로 계산한다", () => {
-    const { result } = renderHook(() => useProfileSettingsForm());
+  it("변경이 있고 변경된 닉네임이 유효할 때만 통합 저장을 활성화한다", () => {
+    const { result } = renderProfileForm();
 
-    expect(result.current.canUpdateNickname).toBe(false);
-    expect(result.current.canUpdateStatusMessage).toBe(false);
+    expect(result.current.canUpdateProfile).toBe(false);
 
     act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    expect(result.current.canUpdateProfile).toBe(true);
 
-    expect(result.current.canUpdateNickname).toBe(false);
-    expect(result.current.canUpdateStatusMessage).toBe(true);
-  });
+    act(() => result.current.updateNicknameDraft("한"));
+    expect(result.current.canUpdateProfile).toBe(false);
 
-  it("한 줄 메시지 저장은 미저장 닉네임 draft를 전송하거나 초기화하지 않는다", () => {
-    const { result } = renderHook(() => useProfileSettingsForm());
-
-    act(() => result.current.updateNicknameDraft("미저장 닉네임"));
-    act(() => result.current.updateStatusMessageDraft("새 메시지"));
-    act(() =>
-      result.current.handleStatusMessageSubmit({
-        preventDefault: vi.fn(),
-      } as unknown as React.FormEvent<HTMLFormElement>),
-    );
-
-    expect(mutate).toHaveBeenCalledWith(
-      { nickname: "민지", statusMessage: "새 메시지" },
-      expect.any(Object),
-    );
-
-    const options = mutate.mock.calls[0][1] as { onSuccess: () => void };
-    act(() => options.onSuccess());
-
-    expect(result.current.nickname).toBe("미저장 닉네임");
-    expect(result.current.statusMessage).toBe("기존 메시지");
+    act(() => result.current.updateNicknameDraft("한글"));
+    expect(result.current.canUpdateProfile).toBe(true);
   });
 
   it("줄바꿈을 제거하고 255자로 제한한다", () => {
-    const { result } = renderHook(() => useProfileSettingsForm());
+    const { result } = renderProfileForm();
 
     act(() =>
       result.current.updateStatusMessageDraft(
@@ -118,5 +129,73 @@ describe("프로필 상태 메시지 폼", () => {
       STATUS_MESSAGE_MAX_LENGTH,
     );
     expect(result.current.statusMessage).not.toContain("\n");
+  });
+
+  it("성공한 요청에 포함된 필드만 정확히 2초간 초록 상태로 표시한다", () => {
+    vi.useFakeTimers();
+    const { result } = renderProfileForm();
+
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    submit(result);
+    act(() => getMutationOptions().onSuccess());
+
+    expect(result.current.nicknameFeedback).toBeNull();
+    expect(result.current.statusMessageFeedback).toBe("success");
+
+    act(() => vi.advanceTimersByTime(PROFILE_FIELD_FEEDBACK_DURATION_MS - 1));
+    expect(result.current.statusMessageFeedback).toBe("success");
+
+    act(() => vi.advanceTimersByTime(1));
+    expect(result.current.statusMessageFeedback).toBeNull();
+  });
+
+  it("함께 저장한 요청이 실패하면 두 필드를 2초간 빨갛게 표시한다", () => {
+    vi.useFakeTimers();
+    const { result } = renderProfileForm();
+
+    act(() => result.current.updateNicknameDraft("새 닉네임"));
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    submit(result);
+    act(() => getMutationOptions().onError());
+
+    expect(result.current.nicknameFeedback).toBe("error");
+    expect(result.current.statusMessageFeedback).toBe("error");
+
+    act(() => vi.advanceTimersByTime(PROFILE_FIELD_FEEDBACK_DURATION_MS));
+    expect(result.current.nicknameFeedback).toBeNull();
+    expect(result.current.statusMessageFeedback).toBeNull();
+  });
+
+  it("재입력과 재요청은 이전 필드 피드백 타이머를 정리한다", () => {
+    vi.useFakeTimers();
+    const { result } = renderProfileForm();
+
+    act(() => result.current.updateNicknameDraft("새 닉네임"));
+    submit(result);
+    act(() => getMutationOptions().onError());
+    expect(result.current.nicknameFeedback).toBe("error");
+
+    submit(result);
+    expect(result.current.nicknameFeedback).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+
+    act(() => getMutationOptions().onError());
+    expect(result.current.nicknameFeedback).toBe("error");
+    act(() => result.current.updateNicknameDraft("다른 닉네임"));
+    expect(result.current.nicknameFeedback).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("언마운트 시 진행 중인 필드 피드백 타이머를 정리한다", () => {
+    vi.useFakeTimers();
+    const { result, unmount } = renderProfileForm();
+
+    act(() => result.current.updateNicknameDraft("새 닉네임"));
+    submit(result);
+    act(() => getMutationOptions().onSuccess());
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

@@ -136,7 +136,7 @@
 
   .modal {
     width: calc(100vw - 32px);
-    height: min(49vh, calc(100vh - 32px));
+    height: calc(100dvh - 32px);
   }
 
   .header {

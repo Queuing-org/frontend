@@ -218,6 +218,10 @@ describe("ChatArea 관리 메뉴", () => {
     const user = userEvent.setup();
     renderChat();
 
+    expect(screen.getByLabelText("채팅 메시지 목록")).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
     expect(screen.queryByRole("button", { name: /나 메시지.*관리 메뉴/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /식별없음 메시지.*관리 메뉴/ })).not.toBeInTheDocument();
 

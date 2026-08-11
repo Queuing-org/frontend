@@ -32,6 +32,7 @@ type Props = {
   onEnterSelectedRoom: () => void;
   isRandomEntryPending?: boolean;
   actionErrorMessage?: string | null;
+  isNavigationLocked?: boolean;
 };
 
 export default function HomeSearchControlDock({
@@ -51,16 +52,33 @@ export default function HomeSearchControlDock({
   onEnterSelectedRoom,
   isRandomEntryPending = false,
   actionErrorMessage = null,
+  isNavigationLocked = false,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
   const [openPanel, setOpenPanel] = useState<PanelKey | null>(null);
+  const visiblePanel =
+    isNavigationLocked && openPanel === "filter" ? null : openPanel;
 
   const togglePanel = (panel: PanelKey) => {
     setOpenPanel((currentPanel) => (currentPanel === panel ? null : panel));
   };
 
   useEffect(() => {
-    if (!openPanel) {
+    if (!isNavigationLocked || openPanel !== "filter") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setOpenPanel((currentPanel) =>
+        currentPanel === "filter" ? null : currentPanel,
+      );
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isNavigationLocked, openPanel]);
+
+  useEffect(() => {
+    if (!visiblePanel) {
       return;
     }
 
@@ -83,7 +101,7 @@ export default function HomeSearchControlDock({
     return () => {
       document.removeEventListener("pointerdown", closePanelOnOutsideClick);
     };
-  }, [openPanel]);
+  }, [visiblePanel]);
 
   const selectMenuItem = (menuItem: HomeMenuItem) => {
     setOpenPanel(null);
@@ -109,17 +127,21 @@ export default function HomeSearchControlDock({
   };
 
   return (
-    <div ref={dockRef} className={styles.dock}>
-      {openPanel || actionErrorMessage ? (
+    <div
+      ref={dockRef}
+      className={styles.dock}
+      data-modal-active={isNavigationLocked || undefined}
+    >
+      {visiblePanel || actionErrorMessage ? (
         <div className={styles.floatStack}>
           {actionErrorMessage ? (
             <div className={styles.errorBubble} role="alert">
               {actionErrorMessage}
             </div>
           ) : null}
-          {openPanel ? (
+          {visiblePanel ? (
             <div className={styles.panelAnchor}>
-              {openPanel === "menu" ? (
+              {visiblePanel === "menu" ? (
                 <HomeControlPanelShell
                   variant="menu"
                   isRandomEntryPending={isRandomEntryPending}
@@ -168,14 +190,25 @@ export default function HomeSearchControlDock({
           <button
             type="button"
             onClick={onGoPrevious}
-            disabled={!canGoPrevious}
+            disabled={isNavigationLocked || !canGoPrevious}
             aria-label="이전 방 보기"
           >
-            <Image src="/icons/left_arrow.svg" alt="" width={20} height={20} />
+            <Image
+              src="/icons/left_arrow.svg"
+              alt=""
+              width={20}
+              height={20}
+            />
           </button>
         }
         center={
-          selectedRoomSlug ? (
+          isNavigationLocked ? (
+            <button
+              type="button"
+              disabled
+              aria-label="모달 사용 중 방 입장 비활성"
+            />
+          ) : selectedRoomSlug ? (
             <button
               type="button"
               onClick={onEnterSelectedRoom}
@@ -189,36 +222,43 @@ export default function HomeSearchControlDock({
           <button
             type="button"
             onClick={onGoNext}
-            disabled={!canGoNext}
+            disabled={isNavigationLocked || !canGoNext}
             aria-label="다음 방 보기"
           >
-            <Image src="/icons/right_arrow.svg" alt="" width={20} height={20} />
+            <Image
+              src="/icons/right_arrow.svg"
+              alt=""
+              width={20}
+              height={20}
+            />
           </button>
         }
         bottom={
-          <button
-            type="button"
-            className={styles.controlToggle}
-            onClick={() => togglePanel("filter")}
-            aria-label={
-              openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
-            }
-            aria-controls={HOME_CONTROL_PANEL_IDS.filter}
-            aria-expanded={openPanel === "filter"}
-            data-active={openPanel === "filter"}
-          >
-            {openPanel === "filter" ? (
-              <Image
-                className={styles.toggleIcon}
-                src="/icons/exit.svg"
-                alt=""
-                width={20}
-                height={17}
-              />
-            ) : (
-              "FILTER"
-            )}
-          </button>
+          isNavigationLocked ? null : (
+            <button
+              type="button"
+              className={styles.controlToggle}
+              onClick={() => togglePanel("filter")}
+              aria-label={
+                openPanel === "filter" ? "필터 패널 닫기" : "필터 패널 열기"
+              }
+              aria-controls={HOME_CONTROL_PANEL_IDS.filter}
+              aria-expanded={openPanel === "filter"}
+              data-active={openPanel === "filter"}
+            >
+              {openPanel === "filter" ? (
+                <Image
+                  className={styles.toggleIcon}
+                  src="/icons/exit.svg"
+                  alt=""
+                  width={20}
+                  height={17}
+                />
+              ) : (
+                "FILTER"
+              )}
+            </button>
+          )
         }
       />
     </div>

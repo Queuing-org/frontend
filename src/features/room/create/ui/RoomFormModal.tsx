@@ -21,7 +21,26 @@ import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
 const MAX_ROOM_TITLE_LENGTH = 18;
-const MAX_PARTICIPANTS_RANGE = { min: 1, max: 250 } as const;
+const MAX_PARTICIPANT_OPTIONS = [
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  20,
+  30,
+  40,
+  50,
+  60,
+  70,
+  80,
+  90,
+  100,
+] as const;
 const TRACK_LIMIT_MINUTE_OPTIONS = [
   5,
   10,
@@ -36,6 +55,7 @@ const TRACK_LIMIT_MINUTE_OPTIONS = [
   240,
 ] as const;
 const EMPTY_TAG_SLUGS: string[] = [];
+const REQUIRED_TAG_ERROR_MESSAGE = "태그는 1개 이상 골라주세요";
 
 type RoomFormModalMode = "create" | "edit";
 
@@ -56,47 +76,6 @@ const createSteps = [
   { label: "세부 설정", title: "세부 설정" },
 ] as const;
 
-function parseOptionalIntegerLimit({
-  max,
-  min,
-  unit,
-  value,
-}: {
-  max: number;
-  min: number;
-  unit: string;
-  value: string;
-}) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return {
-      error: null,
-      value: undefined,
-    };
-  }
-
-  if (!/^\d+$/.test(trimmedValue)) {
-    return {
-      error: "정수로 입력해주세요.",
-      value: undefined,
-    };
-  }
-
-  const parsedValue = Number.parseInt(trimmedValue, 10);
-  if (parsedValue < min || parsedValue > max) {
-    return {
-      error: `${min}~${max}${unit} 사이로 입력해주세요.`,
-      value: undefined,
-    };
-  }
-
-  return {
-    error: null,
-    value: parsedValue,
-  };
-}
-
 function parseOptionalTrackLimitMinutes(value: string) {
   const trimmedValue = value.trim();
 
@@ -109,10 +88,6 @@ function parseOptionalTrackLimitMinutes(value: string) {
   return TRACK_LIMIT_MINUTE_OPTIONS.some((minutes) => minutes === parsedValue)
     ? parsedValue
     : undefined;
-}
-
-function toDigitsOnly(value: string) {
-  return value.replace(/\D/g, "");
 }
 
 export default function RoomFormModal({
@@ -160,6 +135,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
   const [currentStep, setCurrentStep] = useState(0);
+  const [furthestVisitedStep, setFurthestVisitedStep] = useState(0);
   const [title, setTitle] = useState("");
   const [password, setPassword] = useState("");
   const [participationMode, setParticipationMode] =
@@ -167,6 +143,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [maxParticipants, setMaxParticipants] = useState("");
   const [trackLimitMinutes, setTrackLimitMinutes] = useState("");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
+  const [showTagSelectionError, setShowTagSelectionError] = useState(false);
   const [didTryFinish, setDidTryFinish] = useState(false);
   const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
     useState(false);
@@ -179,20 +156,18 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
-  const parsedMaxParticipants = parseOptionalIntegerLimit({
-    ...MAX_PARTICIPANTS_RANGE,
-    unit: "명",
-    value: maxParticipants,
-  });
+  const parsedMaxParticipants = MAX_PARTICIPANT_OPTIONS.find(
+    (option) => String(option) === maxParticipants,
+  );
   const parsedTrackLimitMinutes =
     parseOptionalTrackLimitMinutes(trackLimitMinutes);
-  const hasSettingsValidationError = Boolean(parsedMaxParticipants.error);
+  const maxParticipantsError =
+    parsedMaxParticipants === undefined
+      ? "최대 인원을 선택해주세요."
+      : null;
+  const hasSettingsValidationError = Boolean(maxParticipantsError);
   const thumbnailUploadErrorMessage = uploadTemporaryRoomThumbnailMutation.error
-    ? [
-        "썸네일 업로드 실패:",
-        `(${uploadTemporaryRoomThumbnailMutation.error.status})`,
-        uploadTemporaryRoomThumbnailMutation.error.message,
-      ].join(" ")
+    ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
     : null;
   const hasSelectedThumbnailWithoutToken = Boolean(
     thumbnailSelection.file &&
@@ -211,6 +186,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
+    setShowTagSelectionError(false);
     setSelectedTagSlugs((previousSlugs) => {
       const exists = previousSlugs.includes(slug);
 
@@ -226,8 +202,25 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     });
   };
 
+  const visitStep = (step: number) => {
+    const nextStep = Math.min(Math.max(step, 0), createSteps.length - 1);
+    setCurrentStep(nextStep);
+    setFurthestVisitedStep((furthestStep) =>
+      Math.max(furthestStep, nextStep),
+    );
+  };
+
+  const requestStep = (step: number) => {
+    if (currentStep === 1 && step > 1 && selectedTagSlugs.length === 0) {
+      setShowTagSelectionError(true);
+      return;
+    }
+
+    visitStep(step);
+  };
+
   const goToPreviousStep = () => {
-    setCurrentStep((step) => Math.max(step - 1, 0));
+    visitStep(currentStep - 1);
   };
 
   const goToNextStep = () => {
@@ -235,7 +228,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return;
     }
 
-    setCurrentStep((step) => Math.min(step + 1, createSteps.length - 1));
+    requestStep(currentStep + 1);
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -261,7 +254,13 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     setDidTryFinish(true);
 
     if (!trimmedTitle) {
-      setCurrentStep(0);
+      visitStep(0);
+      return;
+    }
+
+    if (selectedTagSlugs.length === 0) {
+      setShowTagSelectionError(true);
+      visitStep(1);
       return;
     }
 
@@ -275,7 +274,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
 
     if (hasSettingsValidationError) {
-      setCurrentStep(createSteps.length - 1);
+      visitStep(createSteps.length - 1);
       return;
     }
 
@@ -286,11 +285,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           : undefined;
       const result = await createRoomMutation.mutateAsync({
         title: trimmedTitle,
-        password: createdRoomPassword,
         tags: selectedTagSlugs,
-        ...(typeof parsedMaxParticipants.value === "number"
-          ? { maxParticipants: parsedMaxParticipants.value }
-          : {}),
+        maxParticipants: parsedMaxParticipants,
+        ...(createdRoomPassword ? { password: createdRoomPassword } : {}),
         ...(typeof parsedTrackLimitMinutes === "number"
           ? { trackLimitMinutes: parsedTrackLimitMinutes }
           : {}),
@@ -377,6 +374,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
             selectedTagSlugs={selectedTagSlugs}
             maxTags={ROOM_TAG_LIMIT}
             disabled={isSubmitting}
+            errorMessage={
+              showTagSelectionError ? REQUIRED_TAG_ERROR_MESSAGE : null
+            }
             onToggleTag={toggleTag}
           />
         </QueryBoundary>
@@ -391,24 +391,16 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         trackLimitMinutes={trackLimitMinutes}
         disabled={isSubmitting}
         maxParticipantsError={
-          didTryFinish ? parsedMaxParticipants.error : null
+          didTryFinish ? maxParticipantsError : null
         }
         showPasswordError={didTryFinish && needsPassword}
-        onClearMaxParticipants={() => {
-          setMaxParticipants("");
-          setDidTryFinish(false);
-        }}
         onMaxParticipantsChange={(nextValue) => {
-          setMaxParticipants(toDigitsOnly(nextValue));
+          setMaxParticipants(nextValue);
           setDidTryFinish(false);
         }}
         onParticipationModeChange={(mode) => {
           setParticipationMode(mode);
           setDidTryFinish(false);
-
-          if (mode === "public") {
-            setPassword("");
-          }
         }}
         onPasswordChange={(nextPassword) => {
           setPassword(nextPassword);
@@ -419,6 +411,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           setDidTryFinish(false);
         }}
         trackLimitMinuteOptions={TRACK_LIMIT_MINUTE_OPTIONS}
+        maxParticipantOptions={MAX_PARTICIPANT_OPTIONS}
       />
     );
   };
@@ -443,8 +436,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
             <ol className={styles.stepList}>
               {createSteps.map((step, index) => {
                 const isCurrent = index === currentStep;
-                const isCompleted = index < currentStep;
-                const isReachable = index <= currentStep;
+                const isCompleted =
+                  index <= furthestVisitedStep && index !== currentStep;
+                const isReachable = index <= furthestVisitedStep;
 
                 return (
                   <li
@@ -463,10 +457,9 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                       className={styles.stepButton}
                       disabled={
                         !isReachable ||
-                        isSubmitting ||
-                        hasThumbnailBlockingError
+                        isSubmitting
                       }
-                      onClick={() => setCurrentStep(index)}
+                      onClick={() => requestStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
                     >
                       <span className={styles.stepNumber}>{index + 1}</span>
@@ -492,8 +485,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
             {createRoomMutation.error ? (
               <p className={styles.errorText}>
-                생성 실패: ({createRoomMutation.error.status}){" "}
-                {createRoomMutation.error.message}
+                생성 실패: {createRoomMutation.error.message}
               </p>
             ) : null}
             <div className={styles.actions}>
@@ -546,6 +538,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
 type CreateGenreStepContentProps = {
   disabled: boolean;
+  errorMessage: string | null;
   maxTags: number;
   selectedTagSlugs: string[];
   onToggleTag: (slug: string) => void;
@@ -553,6 +546,7 @@ type CreateGenreStepContentProps = {
 
 function CreateGenreStepContent({
   disabled,
+  errorMessage,
   maxTags,
   selectedTagSlugs,
   onToggleTag,
@@ -565,6 +559,7 @@ function CreateGenreStepContent({
       selectedTagSlugs={selectedTagSlugs}
       maxTags={maxTags}
       disabled={disabled}
+      errorMessage={errorMessage}
       onToggleTag={onToggleTag}
     />
   );

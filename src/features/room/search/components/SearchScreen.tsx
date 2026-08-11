@@ -125,6 +125,7 @@ export default function SearchScreen() {
 
       <SearchRoomsContent
         activeFilters={roomListFilters}
+        isDiscoveryModalOpen={Boolean(activeModal)}
         onCreateRoom={requestCreateRoom}
         onOpenFollow={requestOpenFollow}
         onOpenSettings={requestOpenSettings}
@@ -197,6 +198,7 @@ function SearchPanelHeader({
 
 type SearchRoomsContentProps = {
   activeFilters: typeof DEFAULT_HOME_FILTERS;
+  isDiscoveryModalOpen: boolean;
   onCreateRoom: () => void;
   onOpenFollow: () => void;
   onOpenSettings: () => void;
@@ -208,6 +210,7 @@ type SearchRoomsContentProps = {
 
 function SearchRoomsContent({
   activeFilters,
+  isDiscoveryModalOpen,
   onCreateRoom,
   onOpenFollow,
   onOpenSettings,
@@ -361,6 +364,7 @@ function SearchRoomsContent({
         onOpenSettings={onOpenSettings}
         isRandomEntryPending={randomEntry.isPending}
         actionErrorMessage={randomEntry.errorMessage}
+        isNavigationLocked={isDiscoveryModalOpen}
         onEnterSelectedRoom={() => {
           if (selectedRoom) {
             roomEntry.requestRoomEntry(selectedRoom);

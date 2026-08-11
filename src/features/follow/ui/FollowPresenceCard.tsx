@@ -1,20 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
 import type { FollowUser } from "../model/types";
 import FollowUserCard from "./FollowUserCard";
 
 type Props = {
-  actions?: ReactNode;
-  expanded?: boolean;
-  onToggle?: () => void;
+  onSelect?: (user: FollowUser, trigger: HTMLButtonElement) => void;
   user: FollowUser;
 };
 
 export default function FollowPresenceCard({
-  actions,
-  expanded,
-  onToggle,
+  onSelect,
   user,
 }: Props) {
   const visibleRoom = user.online ? user.room : null;
@@ -26,10 +21,10 @@ export default function FollowPresenceCard({
 
   return (
     <FollowUserCard
-      actions={actions}
-      expanded={expanded}
       nickname={user.nickname}
-      onToggle={onToggle}
+      onSelect={
+        onSelect ? (trigger) => onSelect(user, trigger) : undefined
+      }
       presence={{
         inRoom: Boolean(visibleRoom),
         online: user.online,

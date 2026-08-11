@@ -20,7 +20,7 @@ import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParti
 import { getParticipantKickTargetForUser } from "@/src/features/room/participants/model/participantIdentity";
 import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
 import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
-import FloatingRoomPanelShell from "./FloatingRoomPanelShell";
+import FloatingPanelShell from "@/src/shared/ui/floating-panel/FloatingPanelShell";
 import styles from "./RoomFloatingWidgets.module.css";
 
 type Props = {
@@ -107,7 +107,7 @@ export default function RoomFloatingWidgets({
             onStop={(_, data) => onWidgetStop("profile", data)}
           >
             <div ref={profileWidgetRef} className={styles.widgetFrame}>
-              <FloatingRoomPanelShell
+              <FloatingPanelShell
                 contentClassName={styles.profilePanelContent}
                 height={widgets.profile.height}
                 width={widgets.profile.width}
@@ -128,7 +128,7 @@ export default function RoomFloatingWidgets({
                     resolveParticipantByUserSlug
                   }
                 />
-              </FloatingRoomPanelShell>
+              </FloatingPanelShell>
             </div>
           </Draggable>
         </div>
@@ -151,7 +151,7 @@ export default function RoomFloatingWidgets({
             onStop={(_, data) => onWidgetStop("participants", data)}
           >
             <div ref={participantsWidgetRef} className={styles.widgetFrame}>
-              <FloatingRoomPanelShell
+              <FloatingPanelShell
                 contentClassName={styles.participantsPanelContent}
                 height={widgets.participants.height}
                 width={widgets.participants.width}
@@ -169,7 +169,7 @@ export default function RoomFloatingWidgets({
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
                 />
-              </FloatingRoomPanelShell>
+              </FloatingPanelShell>
             </div>
           </Draggable>
         </div>
@@ -192,7 +192,7 @@ export default function RoomFloatingWidgets({
             onStop={(_, data) => onWidgetStop("queue", data)}
           >
             <div ref={queueWidgetRef} className={styles.widgetFrame}>
-              <FloatingRoomPanelShell
+              <FloatingPanelShell
                 contentClassName={styles.queuePanelContent}
                 height={widgets.queue.height}
                 width={widgets.queue.width}
@@ -205,7 +205,7 @@ export default function RoomFloatingWidgets({
                   roomPassword={roomPassword}
                   roomSlug={roomSlug}
                 />
-              </FloatingRoomPanelShell>
+              </FloatingPanelShell>
             </div>
           </Draggable>
         </div>
@@ -228,7 +228,7 @@ export default function RoomFloatingWidgets({
             onStop={(_, data) => onWidgetStop("chat", data)}
           >
             <div ref={chatWidgetRef} className={styles.widgetFrame}>
-              <FloatingRoomPanelShell
+              <FloatingPanelShell
                 compactHeader
                 contentClassName={styles.chatPanelContent}
                 height={widgets.chat.height}
@@ -242,7 +242,7 @@ export default function RoomFloatingWidgets({
                   onSendMessage={onSendChatMessage}
                   showLoginAction={Boolean(onChatLoginClick)}
                 />
-              </FloatingRoomPanelShell>
+              </FloatingPanelShell>
             </div>
           </Draggable>
         </div>

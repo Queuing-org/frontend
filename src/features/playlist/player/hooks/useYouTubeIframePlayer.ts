@@ -7,6 +7,7 @@ type YouTubePlayerInstance = {
   cueVideoById: (options: { videoId: string; startSeconds?: number }) => void;
   destroy: () => void;
   getCurrentTime: () => number;
+  getIframe: () => HTMLIFrameElement;
   loadVideoById: (options: { videoId: string; startSeconds?: number }) => void;
   pauseVideo: () => void;
   playVideo: () => void;
@@ -45,6 +46,32 @@ const YOUTUBE_PLAYER_STATES = {
   PAUSED: 2,
   BUFFERING: 3,
 } as const;
+
+export function getYouTubeIframeAllowWithAutoplay(currentAllow: string) {
+  const permissions = currentAllow
+    .split(";")
+    .map((permission) => permission.trim())
+    .filter(Boolean);
+  const hasAutoplayPermission = permissions.some(
+    (permission) => permission.split(/\s+/)[0]?.toLowerCase() === "autoplay",
+  );
+
+  return hasAutoplayPermission
+    ? permissions.join("; ")
+    : [...permissions, "autoplay"].join("; ");
+}
+
+function ensureYouTubeIframeAutoplayPermission(
+  player: YouTubePlayerInstance,
+) {
+  const iframe = player.getIframe();
+  const currentAllow = iframe.getAttribute("allow") ?? "";
+  const nextAllow = getYouTubeIframeAllowWithAutoplay(currentAllow);
+
+  if (currentAllow !== nextAllow) {
+    iframe.setAttribute("allow", nextAllow);
+  }
+}
 
 let youtubeIframeApiPromise: Promise<YouTubeNamespace> | null = null;
 
@@ -292,11 +319,12 @@ export function useYouTubeIframePlayer({
             origin: window.location.origin,
           },
           events: {
-            onReady: () => {
+            onReady: (event) => {
               if (isCancelled) {
                 return;
               }
 
+              ensureYouTubeIframeAutoplayPermission(event.target);
               isReadyRef.current = true;
               onPlayerReadyRef.current?.();
               applyDesiredPlayback();

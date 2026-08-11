@@ -5,8 +5,7 @@
   transition: background-color 160ms ease;
 }
 
-.card:hover,
-.card[data-expanded="true"] {
+.card:hover {
   background: #f8f8fa;
 }
 
@@ -139,23 +138,12 @@
   flex: 0 0 auto;
 }
 
-.actions {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 0 24px 14px 78px;
-}
-
 @media (max-width: 760px) {
   .summary {
     padding-right: 16px;
     padding-left: 16px;
   }
 
-  .actions {
-    padding-right: 16px;
-    padding-left: 70px;
-  }
 }
 
 @media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
@@ -189,8 +177,4 @@
     height: 32px;
   }
 
-  .actions {
-    gap: 6.4px;
-    padding: 0 19.2px 11.2px 62.4px;
-  }
 }

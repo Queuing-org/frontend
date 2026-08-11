@@ -26,6 +26,7 @@ Next.js routes (`src/app`)
 - A feature may import from `src/shared` and from another feature only when the dependency is explicit and does not create a cycle.
 - Shared behavior used by multiple domains should move to `src/shared`; domain behavior should not.
 - Room discovery owns room-list navigation, pagination triggers, and the shared home/search control dock under `src/features/room/discovery`. The home screen assembles those room-domain capabilities but the room domain must not depend back on `src/features/home`.
+- Public user-profile presentation is owned by `src/features/user/profile/ui/UserProfileContent`. Room and follow surfaces compose their own actions around that body instead of importing each other's profile panels.
 
 ### `src/shared`
 
@@ -33,6 +34,8 @@ Next.js routes (`src/app`)
 - Must not import from `src/features` or `src/app`.
 - Shared modules should remain domain-neutral unless a deliberate architecture decision documents an exception.
 - Brand-only presentation such as the main logo may live in `src/shared/ui`; authenticated actions and room navigation remain in their owning auth and room features.
+- Domain-neutral management-menu focus, outside-click, Escape, placement, and visual shell behavior lives in `src/shared/ui/management-menu`; room and follow features provide only their allowed actions.
+- Domain-neutral floating-panel chrome and drag handles live in `src/shared/ui/floating-panel`; room and follow features own placement state and panel-specific content.
 - ESLint rejects imports from `src/shared` into `src/features` or `src/app`, and rejects imports from the room feature back into the home feature.
 
 ## State Ownership
@@ -41,6 +44,7 @@ Next.js routes (`src/app`)
 - STOMP subscriptions deliver real-time events; handlers must reconcile those events with query cache and screen state deliberately.
 - App-wide follow presence and room membership use separate STOMP clients because their authentication, ownership, and reconnect lifecycles are independent. A terminal room event such as `user.session-replaced` must not stop the follow presence transport.
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
+- `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
 
 ## High-Risk Boundaries

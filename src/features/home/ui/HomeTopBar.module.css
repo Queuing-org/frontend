@@ -3,6 +3,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
   align-items: center;
+  grid-auto-rows: minmax(30px, auto);
   width: 100%;
   padding: 20px 24px;
 }
@@ -156,6 +157,7 @@
 @media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
   .topBar {
     padding: 16px 19.2px;
+    grid-auto-rows: minmax(24px, auto);
   }
 
   .leftGroup {

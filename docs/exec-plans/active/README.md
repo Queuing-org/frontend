@@ -1,6 +1,18 @@
 # Active Execution Plans
 
-- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): ci-pending — Draft PR #43, 채팅·참가자 목록 스크롤바 스타일 통일
+- [2026-08-11-profile-action-autoplay](./2026-08-11-profile-action-autoplay/plan.md): ci-pending — 방 프로필 실제 액션 높이 통일과 YouTube iframe autoplay 권한 보강을 Draft PR #44에 게시 완료
+
+- [2026-08-11-room-six-chat-rows](./2026-08-11-room-six-chat-rows/plan.md): ready — 4K부터 가로형 패드까지 방 채팅 한 줄 6개 최소 가시 높이 보장, 로컬 QA·fresh review 통과
+
+- [2026-08-11-room-laptop-responsive](./2026-08-11-room-laptop-responsive/plan.md): ready — 채팅 페이드 확대와 짧은 높이 데스크톱의 방 내부 80% compact 대응, 로컬 QA·fresh review 통과
+
+- [2026-08-11-friend-settings-tag-ui](./2026-08-11-friend-settings-tag-ui/plan.md): ready — 친구 상세 플로팅 패널 통일, 탐색 컨트롤 잠금, 설정 정렬, 방 생성 필수 태그 후속 개선 및 로컬 QA 완료
+
+- [2026-08-10-room-settings-create-followup](./2026-08-10-room-settings-create-followup/plan.md): ready — 방 시각·설정 통합 저장·방 생성 입력/단계 재진입 후속 개선, 로컬 QA·fresh review 통과 및 게시 대기
+
+- [2026-08-10-room-friend-discovery-ui](./2026-08-10-room-friend-discovery-ui/plan.md): ci-pending — Draft PR #44, 방 내부·친구 상세·탐색 모달·생성 단계·오류 피드백 통합 개선
+
+- [2026-08-10-room-scrollbar-style](./2026-08-10-room-scrollbar-style/plan.md): merged — PR #43, 채팅·참가자 목록 스크롤바 기존 스타일 전달 완료(후속 숨김 요구는 새 run에서 처리)
 
 - [2026-08-10-chat-management-menu-layer](./2026-08-10-chat-management-menu-layer/plan.md): ci-pending — Draft PR #42, 채팅 관리 드롭다운 레이어 수정
 

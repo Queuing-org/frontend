@@ -89,7 +89,12 @@ export default function RoomQueuePanelView({
         myCount={myPendingCount}
         onChange={onChangeTab}
       />
-      <div className={styles.listArea} data-queue-scroll-container>
+      <div
+        className={styles.listArea}
+        data-queue-scroll-container
+        aria-label="재생목록"
+        tabIndex={0}
+      >
         <RoomQueueListSection
           activeTab={activeTab}
           allEntries={allEntries}
