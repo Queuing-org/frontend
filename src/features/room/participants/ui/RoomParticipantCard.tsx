@@ -88,8 +88,8 @@ export default function RoomParticipantCard({
               <Image
                 src="/icons/onwer_black.svg"
                 alt="방장"
-                width={18}
-                height={18}
+                width={16}
+                height={14}
                 className={styles.ownerIcon}
               />
             ) : null}
