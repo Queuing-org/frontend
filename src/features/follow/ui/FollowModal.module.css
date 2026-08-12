@@ -8,6 +8,10 @@
   padding: 24px 24px 154px;
 }
 
+.overlay[data-add-friend-open="true"] {
+  z-index: 1400;
+}
+
 .modal {
   --panel-horizontal-padding: 16px;
   --panel-content-width: 1060px;

@@ -14,6 +14,9 @@ export function useAddFriendModalState() {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(
+    null,
+  );
   const normalizedQuery = selectedUser ? "" : query.trim();
   const debouncedQuery = useDebouncedValue(
     normalizedQuery,
@@ -36,6 +39,7 @@ export function useAddFriendModalState() {
     }
 
     setIsSuccess(false);
+    setLocalErrorMessage(null);
     followUser.reset();
   };
 
@@ -63,6 +67,14 @@ export function useAddFriendModalState() {
     }
 
     resetFeedback();
+    if (
+      selectedUser.relationship === "FOLLOWING" ||
+      selectedUser.relationship === "FRIEND"
+    ) {
+      setLocalErrorMessage("이미 팔로우 중인 친구예요!");
+      return;
+    }
+
     followUser.mutate(
       { targetSlug: selectedUser.slug },
       { onSuccess: () => setIsSuccess(true) },
@@ -72,7 +84,7 @@ export function useAddFriendModalState() {
   return {
     canSubmit: Boolean(selectedUser) && selectedUser?.relationship !== "ME",
     clearQuery,
-    errorMessage: followUser.error?.message ?? null,
+    errorMessage: localErrorMessage ?? followUser.error?.message ?? null,
     isResultsOpen: isSearchEligible && !selectedUser,
     isSearchError: !isSearchDebouncing && searchUsers.isError,
     isSearchLoading:

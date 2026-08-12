@@ -34,7 +34,8 @@ Next.js routes (`src/app`)
 - Must not import from `src/features` or `src/app`.
 - Shared modules should remain domain-neutral unless a deliberate architecture decision documents an exception.
 - Brand-only presentation such as the main logo may live in `src/shared/ui`; authenticated actions and room navigation remain in their owning auth and room features.
-- Domain-neutral management-menu focus, outside-click, Escape, placement, and visual shell behavior lives in `src/shared/ui/management-menu`; room and follow features provide only their allowed actions.
+- Domain-neutral management-menu focus, outside-click, Escape, placement, visual shell behavior, and opt-in viewport portal positioning live in `src/shared/ui/management-menu`; room and follow features provide only their allowed actions.
+- Room thumbnail file validation, temporary upload selection, and the shared temporary-upload mutation live in `src/features/room/hooks`; create and update flows own only their submit orchestration.
 - Domain-neutral floating-panel chrome and drag handles live in `src/shared/ui/floating-panel`; room and follow features own placement state and panel-specific content.
 - ESLint rejects imports from `src/shared` into `src/features` or `src/app`, and rejects imports from the room feature back into the home feature.
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { MoreVertical } from "lucide-react";
-import { useId, useRef, useState, type RefObject } from "react";
+import { useId, useRef, type RefObject } from "react";
 import type { BadgeSummary } from "@/src/features/badge/model/types";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import RoomMemberManagementMenu, {
@@ -52,23 +52,9 @@ export default function RoomParticipantCard({
 }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const actionsId = useId();
-  const [menuPlacement, setMenuPlacement] = useState<"down" | "up">("down");
   const hasActions = actions.length > 0;
 
   const handleToggle = () => {
-    const triggerRect = triggerRef.current?.getBoundingClientRect();
-    const listRect = listRef.current?.getBoundingClientRect();
-    if (triggerRect) {
-      const estimatedMenuHeight = actions.length * 40 + 2;
-      const spaceBelow =
-        (listRect?.bottom ?? window.innerHeight) - triggerRect.bottom;
-      const spaceAbove = triggerRect.top - (listRect?.top ?? 0);
-      setMenuPlacement(
-        spaceBelow < estimatedMenuHeight && spaceAbove >= estimatedMenuHeight
-          ? "up"
-          : "down",
-      );
-    }
     onToggle(participantKey);
   };
 
@@ -102,8 +88,8 @@ export default function RoomParticipantCard({
               <Image
                 src="/icons/onwer_black.svg"
                 alt="방장"
-                width={18}
-                height={18}
+                width={16}
+                height={14}
                 className={styles.ownerIcon}
               />
             ) : null}
@@ -143,7 +129,8 @@ export default function RoomParticipantCard({
               }}
               onReport={() => onReportParticipant(participant)}
               onTransfer={() => onTransferOwner(participant)}
-              placement={menuPlacement}
+              positioning="viewport"
+              anchorBoundaryRef={listRef}
               targetUserSlug={userSlug}
               triggerRef={triggerRef}
             />

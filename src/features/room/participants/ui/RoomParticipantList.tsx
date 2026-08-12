@@ -160,7 +160,6 @@ export default function RoomParticipantList({
   const effectiveWindowStart = Math.min(windowStart, maxWindowStart);
   const handleListScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
-      setExpandedParticipantKey(null);
       const configuredRowHeight = Number.parseFloat(
         window
           .getComputedStyle(event.currentTarget)
@@ -175,9 +174,27 @@ export default function RoomParticipantList({
         Math.floor(event.currentTarget.scrollTop / rowHeight) -
           PARTICIPANT_WINDOW_OVERSCAN,
       );
-      setWindowStart(Math.min(nextWindowStart, maxWindowStart));
+      const boundedWindowStart = Math.min(nextWindowStart, maxWindowStart);
+      setWindowStart(boundedWindowStart);
+      setExpandedParticipantKey((currentKey) => {
+        if (!currentKey) {
+          return null;
+        }
+
+        return participants
+          .slice(
+            boundedWindowStart,
+            boundedWindowStart + PARTICIPANT_CARD_DOM_LIMIT,
+          )
+          .some(
+            (participant) =>
+              getParticipantIdentityKey(participant) === currentKey,
+          )
+          ? currentKey
+          : null;
+      });
     },
-    [maxWindowStart],
+    [maxWindowStart, participants],
   );
 
   const visibleParticipants = useMemo(

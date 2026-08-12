@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Settings, Shuffle, UsersRound } from "lucide-react";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import type { Room } from "@/src/features/room/model/types";
+import { getDisplayRoomTags } from "@/src/features/room/model/getDisplayRoomTags";
 import {
   getRoomImageSrc,
   ROOM_CARD_IMAGE_VARIANTS,
@@ -54,7 +55,7 @@ function MobileHomeRoomCard({
   onSelectRoom,
   room,
 }: MobileHomeRoomCardProps) {
-  const tags = room.tags.slice(0, 3);
+  const tags = getDisplayRoomTags(room.tags).slice(0, 3);
 
   function enterRoom() {
     onSelectRoom(room.slug);
@@ -90,15 +91,11 @@ function MobileHomeRoomCard({
                 className={styles.lockIcon}
               />
             ) : null}
-            {tags.length > 0 ? (
-              tags.map((tag) => (
-                <span key={tag.slug} className={styles.tag}>
-                  {tag.name}
-                </span>
-              ))
-            ) : (
-              <span className={styles.tag}>태그없음</span>
-            )}
+            {tags.map((tag) => (
+              <span key={tag.slug} className={styles.tag}>
+                {tag.name}
+              </span>
+            ))}
           </span>
         </span>
         <span className={styles.enterText}>입장</span>

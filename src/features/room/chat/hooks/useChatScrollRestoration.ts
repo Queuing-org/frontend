@@ -150,6 +150,7 @@ export function useChatScrollRestoration({
   scrollToLatestKey,
 }: UseChatScrollRestorationParams) {
   const listRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLOListElement>(null);
   const wheelRegionRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottomRef = useRef(true);
   const restoreScrollRef = useRef<{
@@ -238,6 +239,45 @@ export function useChatScrollRestoration({
   }, [scrollToLatestKey]);
 
   useLayoutEffect(() => {
+    const list = listRef.current;
+    const messages = messagesRef.current;
+    if (!list || !messages) {
+      return;
+    }
+
+    let frameId: number | null = null;
+    const alignLatestMessage = () => {
+      if (!shouldStickToBottomRef.current) {
+        return;
+      }
+
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        if (shouldStickToBottomRef.current) {
+          list.scrollTop = list.scrollHeight;
+        }
+      });
+    };
+
+    alignLatestMessage();
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(alignLatestMessage);
+    resizeObserver?.observe(messages);
+
+    return () => {
+      resizeObserver?.disconnect();
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [messageKeys]);
+
+  useLayoutEffect(() => {
     const handleWheel = (event: WheelEvent) => {
       if (event.ctrlKey) {
         return;
@@ -302,6 +342,7 @@ export function useChatScrollRestoration({
   return {
     handleScroll,
     listRef,
+    messagesRef,
     requestOlderMessages,
     wheelRegionRef,
   };

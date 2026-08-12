@@ -44,6 +44,7 @@ export default function HomeTopBar({
     ? {
         activeUsersCount: currentRoomMeta?.activeUsersCount ?? null,
         hasPassword: currentRoomMeta?.hasPassword ?? currentRoom.isPrivate,
+        maxParticipants: currentRoomMeta?.maxParticipants ?? null,
         tags: currentRoomMeta?.tags ?? currentRoom.tags,
         title: currentRoomMeta?.title ?? currentRoom.title,
       }

@@ -153,6 +153,7 @@ export default function RoomFloatingWidgets({
             <div ref={participantsWidgetRef} className={styles.widgetFrame}>
               <FloatingPanelShell
                 contentClassName={styles.participantsPanelContent}
+                density={widgets.participants.density}
                 height={widgets.participants.height}
                 width={widgets.participants.width}
               >

@@ -50,3 +50,20 @@ it("성공 응답에 필수 메타데이터가 없으면 계약 오류로 처리
     }),
   );
 });
+
+it("선택 메타데이터가 생략돼도 핵심 token과 URL이 있으면 허용한다", async () => {
+  const file = new File(["thumbnail"], "cover.png", { type: "image/png" });
+  vi.mocked(axiosInstance.post).mockResolvedValue({
+    data: {
+      result: {
+        uploadToken: "rtu_minimal",
+        thumbnailUrl: "https://example.com/minimal.png",
+      },
+    },
+  });
+
+  await expect(uploadTemporaryRoomThumbnail({ file })).resolves.toEqual({
+    uploadToken: "rtu_minimal",
+    thumbnailUrl: "https://example.com/minimal.png",
+  });
+});

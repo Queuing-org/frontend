@@ -19,6 +19,8 @@ type Props = {
   onReport: () => void;
   onTransfer: () => void;
   placement?: "down" | "up";
+  positioning?: "inline" | "viewport";
+  anchorBoundaryRef?: RefObject<HTMLElement | null>;
   targetUserSlug: string | null;
   triggerRef: RefObject<HTMLButtonElement | null>;
 };
@@ -42,6 +44,8 @@ export default function RoomMemberManagementMenu({
   onReport,
   onTransfer,
   placement = "down",
+  positioning = "inline",
+  anchorBoundaryRef,
   targetUserSlug,
   triggerRef,
 }: Props) {
@@ -60,6 +64,8 @@ export default function RoomMemberManagementMenu({
       menuId={menuId}
       onClose={onClose}
       placement={placement}
+      positioning={positioning}
+      anchorBoundaryRef={anchorBoundaryRef}
       triggerRef={triggerRef}
     >
       {canFollow ? (

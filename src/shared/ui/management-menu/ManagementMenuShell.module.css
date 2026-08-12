@@ -17,6 +17,22 @@
   bottom: 30px;
 }
 
+.menu[data-positioning="viewport"] {
+  position: fixed;
+  z-index: 1150;
+  top: auto;
+  right: auto;
+  bottom: auto;
+  max-height: calc(100dvh - 16px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.menu[data-positioning="viewport"][data-placement="up"] {
+  top: auto;
+  bottom: auto;
+}
+
 .menu [role="menuitem"] {
   display: flex;
   width: 100%;
@@ -63,6 +79,12 @@
   .menu[data-placement="up"] {
     top: auto;
     bottom: 24px;
+  }
+
+  .menu[data-positioning="viewport"],
+  .menu[data-positioning="viewport"][data-placement="up"] {
+    top: auto;
+    bottom: auto;
   }
 
   .menu [role="menuitem"] {

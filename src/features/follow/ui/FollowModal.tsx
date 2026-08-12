@@ -46,7 +46,16 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={modal.closeModal} role="presentation">
+    <div
+      className={styles.overlay}
+      data-add-friend-open={modal.isAddFriendOpen || undefined}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          modal.closeModal();
+        }
+      }}
+      role="presentation"
+    >
       <section
         className={styles.modal}
         onClick={(event) => event.stopPropagation()}

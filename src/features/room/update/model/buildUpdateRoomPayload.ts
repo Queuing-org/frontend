@@ -3,12 +3,14 @@ import type { UpdateRoomPayload } from "@/src/features/room/api/types";
 type BuildUpdateRoomPayloadParams = {
   initialMaxParticipants: number | null;
   initialTagSlugs: string[];
+  initialTrackLimitMinutes: number | null;
   initialTitle: string;
   isPasswordClearEnabled: boolean;
   isPasswordChangeEnabled: boolean;
   maxParticipants: number | null;
   password: string;
   selectedTagSlugs: string[];
+  trackLimitMinutes: number | null;
   title: string;
 };
 
@@ -25,12 +27,14 @@ function haveSameItems(left: string[], right: string[]) {
 export function buildUpdateRoomPayload({
   initialMaxParticipants,
   initialTagSlugs,
+  initialTrackLimitMinutes,
   initialTitle,
   isPasswordClearEnabled,
   isPasswordChangeEnabled,
   maxParticipants,
   password,
   selectedTagSlugs,
+  trackLimitMinutes,
   title,
 }: BuildUpdateRoomPayloadParams): UpdateRoomPayload | null {
   const trimmedTitle = title.trim();
@@ -49,6 +53,10 @@ export function buildUpdateRoomPayload({
 
   if (maxParticipants !== initialMaxParticipants) {
     changedFields.maxParticipants = maxParticipants;
+  }
+
+  if (trackLimitMinutes !== initialTrackLimitMinutes) {
+    changedFields.trackLimitMinutes = trackLimitMinutes;
   }
 
   const hasChangedFields = Object.keys(changedFields).length > 0;

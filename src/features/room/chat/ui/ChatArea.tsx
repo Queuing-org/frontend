@@ -63,6 +63,7 @@ type Props = {
 
 type ChatMessageRowProps = {
   actions: ChatMessageManagementAction[];
+  listRef: RefObject<HTMLDivElement | null>;
   isKickPending: boolean;
   isMenuOpen: boolean;
   isTransferPending: boolean;
@@ -88,6 +89,7 @@ function getInitial(nickname: string) {
 
 function ChatMessageRow({
   actions,
+  listRef,
   isKickPending,
   isMenuOpen,
   isTransferPending,
@@ -126,12 +128,14 @@ function ChatMessageRow({
           </div>
         )}
       </div>
-      <p className={styles.messageText}>
-        <span className={styles.nickname}>{message.senderNickname}</span>
+      <div className={styles.messageText}>
+        <span className={styles.senderLine}>
+          <span className={styles.nickname}>{message.senderNickname}</span>
+        </span>
         <span className={styles.content}>{message.content}</span>
-      </p>
+      </div>
       {actions.length > 0 ? (
-        <div className={styles.management}>
+        <span className={styles.management}>
           <button
             type="button"
             className={styles.menuButton}
@@ -152,6 +156,7 @@ function ChatMessageRow({
           {isMenuOpen ? (
             <RoomMemberManagementMenu
               actions={actions}
+              anchorBoundaryRef={listRef}
               isKickPending={isKickPending}
               isTransferPending={isTransferPending}
               label={`${message.senderNickname} 메시지 관리`}
@@ -162,11 +167,12 @@ function ChatMessageRow({
               onReport={() => onReport(message)}
               onTransfer={() => onTransfer(message)}
               placement={menuPlacement}
+              positioning="viewport"
               targetUserSlug={message.senderSlug?.trim() || null}
               triggerRef={triggerRef}
             />
           ) : null}
-        </div>
+        </span>
       ) : null}
     </li>
   );
@@ -241,6 +247,7 @@ export default function ChatArea({
   const {
     handleScroll,
     listRef,
+    messagesRef,
     requestOlderMessages,
     wheelRegionRef,
   } = useChatScrollRestoration({
@@ -507,10 +514,7 @@ export default function ChatArea({
           className={styles.list}
           aria-label="채팅 메시지 목록"
           tabIndex={0}
-          onScroll={() => {
-            handleScroll();
-            closeMenu();
-          }}
+          onScroll={handleScroll}
         >
           {isLoadingOlderMessages ? (
             <div className={styles.state}>
@@ -550,7 +554,7 @@ export default function ChatArea({
           {visibleMessages.length === 0 ? (
             <div className={styles.empty}>아직 채팅이 없습니다.</div>
           ) : (
-            <ol className={styles.messages}>
+            <ol ref={messagesRef} className={styles.messages}>
               {visibleMessages.map((message) => {
                 const messageKey = getChatMessageRenderKey(message);
                 const targetUserSlug = getModerationUserSlug(message);
@@ -569,6 +573,7 @@ export default function ChatArea({
                   <ChatMessageRow
                     key={messageKey}
                     actions={actions}
+                    listRef={listRef}
                     isKickPending={
                       (kickParticipant.isPending &&
                         getParticipantKickTargetKey(kickTarget) ===

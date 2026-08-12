@@ -23,7 +23,8 @@
   border: 0;
 }
 
-.uploadButton {
+.uploadButton,
+.defaultButton {
   position: relative;
   display: inline-flex;
   flex: 0 0 auto;
@@ -42,11 +43,22 @@
     opacity 160ms ease;
 }
 
-.root[data-variant="create"] .uploadButton {
+.defaultButton {
+  padding: 0;
+}
+
+.root[data-variant="create"] .uploadButton,
+.root[data-variant="create"] .defaultButton {
   width: 124px;
   height: 124px;
   border: 1px solid #d9d9d9;
   border-radius: 8px;
+}
+
+.root[data-variant="create"] .uploadButton[data-selected="true"],
+.root[data-variant="create"] .defaultButton[data-selected="true"] {
+  border: 2px solid #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.12);
 }
 
 .root[data-variant="edit"] {
@@ -54,14 +66,24 @@
 }
 
 .root[data-variant="edit"] .uploadButton {
-  width: 152px;
+  width: 148px;
   aspect-ratio: 1;
-  border: 2px dashed #d9d9d9;
+  border: 1.5px dashed #d9d9d9;
   border-radius: 8px;
 }
 
+.root[data-variant="edit"] .uploadButton[data-has-image="true"] {
+  border-color: #d9d9d9;
+}
+
+.root[data-variant="edit"] .controlRow {
+  position: relative;
+}
+
 .uploadButton:hover:not(:disabled),
-.uploadButton:focus-visible:not(:disabled) {
+.uploadButton:focus-visible:not(:disabled),
+.defaultButton:hover:not(:disabled),
+.defaultButton:focus-visible:not(:disabled) {
   border-color: #b0b0b5;
   color: #3c3c3c;
   box-shadow: 0 10px 30px rgba(176, 176, 181, 0.24);
@@ -73,12 +95,22 @@
   box-shadow: 0 8px 24px rgba(176, 176, 181, 0.18);
 }
 
-.uploadButton:disabled {
+.root[data-variant="create"] .uploadButton[data-selected="true"]:hover:not(:disabled),
+.root[data-variant="create"] .uploadButton[data-selected="true"]:focus-visible:not(:disabled),
+.root[data-variant="create"] .defaultButton[data-selected="true"]:hover:not(:disabled),
+.root[data-variant="create"] .defaultButton[data-selected="true"]:focus-visible:not(:disabled) {
+  border-color: #4285f4;
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.12);
+}
+
+.uploadButton:disabled,
+.defaultButton:disabled {
   cursor: default;
   opacity: 0.55;
 }
 
-.uploadButton:focus-visible {
+.uploadButton:focus-visible,
+.defaultButton:focus-visible {
   outline: 2px solid #4285f4;
   outline-offset: 3px;
 }
@@ -156,6 +188,14 @@
     opacity 160ms ease;
 }
 
+.root[data-variant="edit"] .clearButton {
+  position: absolute;
+  z-index: 2;
+  top: -9px;
+  right: -9px;
+  box-shadow: 0 4px 12px rgba(60, 60, 60, 0.12);
+}
+
 .clearButton:hover:not(:disabled),
 .clearButton:focus-visible:not(:disabled) {
   border-color: #3c3c3c;
@@ -195,7 +235,8 @@
   .root { gap: 6.4px; }
   .controlRow { gap: 6.4px; }
   .root[data-variant="create"] .uploadButton { width: 99.2px; height: 99.2px; }
-  .root[data-variant="edit"] .uploadButton { width: 121.6px; }
+  .root[data-variant="create"] .defaultButton { width: 99.2px; height: 99.2px; }
+  .root[data-variant="edit"] .uploadButton { width: 118.4px; }
   .placeholder { gap: 8px; padding: 9.6px; }
   .cameraIcon { width: 27.2px; height: 27.2px; }
   .root[data-variant="edit"] .cameraIcon { width: 32px; height: 32px; }
@@ -204,4 +245,10 @@
   .clearButton { width: 22.4px; height: 22.4px; }
   .clearIcon { width: 12.8px; height: 12.8px; }
   .feedback { max-width: 176px; font-size: 10.4px; }
+}
+
+@media (max-width: 720px) {
+  .root[data-variant="edit"] .uploadButton {
+    width: 124px;
+  }
 }

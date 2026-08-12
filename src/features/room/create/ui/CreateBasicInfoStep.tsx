@@ -40,7 +40,27 @@ export default function CreateBasicInfoStep({
   return (
     <div className={styles.stack}>
       <div className={styles.row}>
-        <span className={styles.label}>썸네일</span>
+        <div className={styles.labelGroup}>
+          <span className={styles.label}>썸네일</span>
+          <span className={styles.tooltipAnchor}>
+            <button
+              type="button"
+              className={styles.infoButton}
+              aria-label="썸네일 기본 동작 안내"
+              aria-describedby="create-room-thumbnail-help"
+            >
+              !
+            </button>
+            <span
+              id="create-room-thumbnail-help"
+              className={styles.tooltip}
+              role="tooltip"
+            >
+              사진을 업로드하지 않으면 현재 재생중인 노래의 썸네일이
+              자동으로 나갑니다
+            </span>
+          </span>
+        </div>
         <RoomThumbnailUploadField
           actionLabel="UPLOAD"
           disabled={thumbnailDisabled}

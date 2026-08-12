@@ -1,5 +1,11 @@
 # Active Execution Plans
 
+- [2026-08-12-edit-room-figma](./2026-08-12-edit-room-figma/plan.md): ready — 방 수정 modal 664px 후속 배치, 곡당 제한 시간 수정, 최초 join 인원·채팅 빈 상태 보정 및 로컬 QA 통과
+
+- [2026-08-12-participant-row-alignment](./2026-08-12-participant-row-alignment/plan.md): ready — 참가자 헤더와 행의 좌우 기준선 및 방장 왕관 크기 정렬, 로컬 QA·fresh review 통과
+
+- [2026-08-11-room-chat-visible-fade](./2026-08-11-room-chat-visible-fade/plan.md): ready — 스크롤 중 메시지별 blur 교체를 제거한 상단 고정 2단계 영역, 로컬 QA·fresh review 통과
+
 - [2026-08-11-profile-action-autoplay](./2026-08-11-profile-action-autoplay/plan.md): ci-pending — 방 프로필 실제 액션 높이 통일과 YouTube iframe autoplay 권한 보강을 Draft PR #44에 게시 완료
 
 - [2026-08-11-room-six-chat-rows](./2026-08-11-room-six-chat-rows/plan.md): ready — 4K부터 가로형 패드까지 방 채팅 한 줄 6개 최소 가시 높이 보장, 로컬 QA·fresh review 통과

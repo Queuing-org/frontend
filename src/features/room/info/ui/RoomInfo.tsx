@@ -3,11 +3,13 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import type { RoomTag } from "@/src/features/room/model/types";
+import { getDisplayRoomTags } from "@/src/features/room/model/getDisplayRoomTags";
 import styles from "./RoomInfo.module.css";
 
 export type RoomInfoDisplay = {
   activeUsersCount?: number | null;
   hasPassword: boolean;
+  maxParticipants?: number | null;
   tags: RoomTag[];
   title: string;
 };
@@ -23,10 +25,14 @@ export default function RoomInfo({
   isRoom = false,
   trailingContent,
 }: Props) {
-  const tags = roomInfo?.tags ?? [];
+  const tags = roomInfo ? getDisplayRoomTags(roomInfo.tags) : [];
   const activeUsersCount =
     typeof roomInfo?.activeUsersCount === "number"
       ? roomInfo.activeUsersCount
+      : "-";
+  const maxParticipants =
+    typeof roomInfo?.maxParticipants === "number"
+      ? roomInfo.maxParticipants
       : "-";
   const title = roomInfo?.title ?? "선택된 방 없음";
   const lockContent = roomInfo?.hasPassword ? (
@@ -55,7 +61,9 @@ export default function RoomInfo({
       </div>
     );
   const usersCountContent = (
-    <div className={styles.usersCount}>{activeUsersCount} 명</div>
+    <div className={styles.usersCount}>
+      {activeUsersCount}/{maxParticipants} 명
+    </div>
   );
   const titleContent = <div className={styles.title}>{title}</div>;
   const containerClassName = [

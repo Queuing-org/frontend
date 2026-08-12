@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 import styles from "./OverflowMarquee.module.css";
 
@@ -40,7 +41,10 @@ function observeMarqueeResize(element: Element, callback: () => void) {
 }
 
 type Props = {
+  activation?: "auto" | "group-hover" | "hover";
+  children?: ReactNode;
   className?: string;
+  contentClassName?: string;
   text: string;
 };
 
@@ -72,7 +76,13 @@ export function getMarqueeMetrics(
   };
 }
 
-export default function OverflowMarquee({ className, text }: Props) {
+export default function OverflowMarquee({
+  activation = "hover",
+  children,
+  className,
+  contentClassName,
+  text,
+}: Props) {
   const viewportRef = useRef<HTMLSpanElement>(null);
   const copyRef = useRef<HTMLSpanElement>(null);
   const [metrics, setMetrics] = useState<MarqueeMetrics>(() =>
@@ -111,17 +121,26 @@ export default function OverflowMarquee({ className, text }: Props) {
     <span
       ref={viewportRef}
       className={[styles.viewport, className].filter(Boolean).join(" ")}
+      data-activation={activation}
       data-overflowing={metrics.overflowing}
       tabIndex={metrics.overflowing ? 0 : undefined}
       title={metrics.overflowing ? text : undefined}
     >
       <span className={styles.track} style={marqueeStyle}>
-        <span ref={copyRef} className={styles.copy}>
-          {text}
+        <span
+          ref={copyRef}
+          className={[styles.copy, contentClassName].filter(Boolean).join(" ")}
+        >
+          {children ?? text}
         </span>
         {metrics.overflowing ? (
-          <span className={styles.copy} aria-hidden="true">
-            {text}
+          <span
+            className={[styles.copy, contentClassName]
+              .filter(Boolean)
+              .join(" ")}
+            aria-hidden="true"
+          >
+            {children ?? text}
           </span>
         ) : null}
       </span>

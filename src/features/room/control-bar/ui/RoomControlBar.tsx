@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { RefreshCw } from "lucide-react";
+import type { RefObject } from "react";
 import styles from "./RoomControlBar.module.css";
 
 type IconProps = {
@@ -13,6 +13,8 @@ type Props = {
   isParticipantsOpen: boolean;
   isProfileOpen: boolean;
   isQueueOpen: boolean;
+  exitButtonRef?: RefObject<HTMLButtonElement | null>;
+  onExit: () => void;
   onToggleChat: () => void;
   onToggleParticipants: () => void;
   onToggleProfile: () => void;
@@ -99,6 +101,8 @@ export default function RoomButtonControlBar({
   isParticipantsOpen,
   isProfileOpen,
   isQueueOpen,
+  exitButtonRef,
+  onExit,
   onToggleChat,
   onToggleParticipants,
   onToggleProfile,
@@ -128,14 +132,15 @@ export default function RoomButtonControlBar({
         >
           <QueueIcon className={styles.icon} />
         </button>
-        <Link
-          href="/"
-          replace
+        <button
+          ref={exitButtonRef}
+          type="button"
           className={styles.iconButton}
           aria-label="나가기"
+          onClick={onExit}
         >
           <ExitIcon className={styles.icon} />
-        </Link>
+        </button>
         <button
           type="button"
           className={styles.iconButton}

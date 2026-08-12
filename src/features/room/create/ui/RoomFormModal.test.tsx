@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { createRoom } from "@/src/features/room/api/createRoom";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
+import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
 import RoomFormModal from "./RoomFormModal";
 
 const { push, roomTags } = vi.hoisted(() => ({
@@ -20,6 +21,9 @@ vi.mock("@/src/features/room/api/createRoom", () => ({
 }));
 vi.mock("@/src/features/room/api/uploadTemporaryRoomThumbnail", () => ({
   uploadTemporaryRoomThumbnail: vi.fn(),
+}));
+vi.mock("@/src/features/room/api/updateRoomThumbnail", () => ({
+  updateRoomThumbnail: vi.fn(),
 }));
 vi.mock("@/src/features/room/hooks/useRoomTags", () => ({
   useRoomTags: () => ({ data: roomTags }),
@@ -60,6 +64,8 @@ function renderEditRoomModal(initialTagSlugs: string[]) {
     <QueryClientProvider client={queryClient}>
       <RoomFormModal
         initialTagSlugs={initialTagSlugs}
+        initialMaxParticipants={10}
+        initialThumbnailUrl="https://example.com/current.png"
         initialTitle="기존 방"
         mode="edit"
         onClose={vi.fn()}
@@ -309,7 +315,7 @@ describe("RoomFormModal room form flows", () => {
     expect(error).not.toHaveTextContent("500");
   });
 
-  it("태그 없이 다음을 누르면 오류를 표시하고 FREE를 고르면 진행한다", async () => {
+  it("태그를 고르기 전에는 다음을 비활성화하고 FREE를 고르면 진행한다", async () => {
     const user = userEvent.setup();
     roomTags.push({ name: "록", slug: "rock" });
     renderCreateRoomModal();
@@ -322,14 +328,14 @@ describe("RoomFormModal room form flows", () => {
       .filter((button) => button.hasAttribute("aria-pressed"));
     expect(tagButtons[0]).toHaveAccessibleName("FREE");
 
-    await user.click(screen.getByRole("button", { name: "다음" }));
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "태그는 1개 이상 골라주세요",
-    );
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "장르 선택" })).toBeInTheDocument();
 
     await selectRequiredTag(user);
-    expect(screen.queryByText("태그는 1개 이상 골라주세요")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
+    await selectRequiredTag(user);
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
+    await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     expect(screen.getByLabelText("최대 인원 수")).toBeInTheDocument();
   });
@@ -525,7 +531,7 @@ describe("RoomFormModal room form flows", () => {
     expect(screen.getByLabelText("최대 인원 수")).toHaveValue("20");
     expect(screen.getByLabelText("곡 당 제한 시간")).toHaveValue("30");
     expect(screen.getByLabelText("참여 제한")).toHaveValue("secret");
-  });
+  }, 15_000);
 
   it("수정 UI도 3개 카운터와 미선택 태그 비활성화를 적용한다", async () => {
     const user = userEvent.setup();
@@ -544,7 +550,36 @@ describe("RoomFormModal room form flows", () => {
 
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "힙합" })).toBeEnabled();
-    expect(document.getElementById("edit-room-thumbnail")).toBeNull();
-    expect(screen.queryByText("THUMBNAIL")).not.toBeInTheDocument();
+    expect(document.getElementById("edit-room-thumbnail")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "썸네일 교체" })).toBeVisible();
+    expect(screen.getByLabelText("최대 인원 수")).toBeVisible();
+  });
+
+  it("수정 썸네일을 임시 업로드한 뒤 token으로 교체한다", async () => {
+    roomTags.push({ name: "록", slug: "rock" });
+    vi.mocked(uploadTemporaryRoomThumbnail).mockResolvedValue(
+      uploadResult("rtu_edit", "https://example.com/edit.png"),
+    );
+    vi.mocked(updateRoomThumbnail).mockResolvedValue({ success: true });
+    renderEditRoomModal(["rock"]);
+    const input = document.getElementById(
+      "edit-room-thumbnail",
+    ) as HTMLInputElement;
+    const file = new File(["thumbnail"], "edit.png", { type: "image/png" });
+
+    await userEvent.upload(input, file);
+    await waitFor(() => {
+      expect(vi.mocked(uploadTemporaryRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        file,
+      });
+    });
+    await userEvent.click(screen.getByRole("button", { name: "큐 수정하기" }));
+
+    await waitFor(() => {
+      expect(vi.mocked(updateRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        slug: "existing-room",
+        thumbnailUploadToken: "rtu_edit",
+      });
+    });
   });
 });

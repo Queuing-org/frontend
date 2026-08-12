@@ -53,9 +53,6 @@ export default function RoomParticipantsPanel({
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
-  const [managementMessage, setManagementMessage] = useState<string | null>(
-    null,
-  );
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
   const {
@@ -65,7 +62,9 @@ export default function RoomParticipantsPanel({
     show: showTransferOwnerError,
   } = useTransientManagementError();
   const owner = roomMeta?.owner ?? null;
-  const participantCount = roomMeta?.activeUsersCount;
+  const participantCount = roomMeta
+    ? Math.max(roomMeta.activeUsersCount, participants.length)
+    : participants.length || undefined;
   const canModerateParticipants = isRoomOwner(owner, currentUser);
 
   useEffect(() => {
@@ -82,9 +81,7 @@ export default function RoomParticipantsPanel({
       chatMessages,
       userSlug,
     );
-    setManagementMessage(null);
     if (!messageKey) {
-      setManagementMessage("신고할 수 있는 채팅 메시지가 없습니다.");
       return;
     }
     setReportTarget({ messageKey, password: roomPassword, slug: roomSlug });
@@ -96,7 +93,6 @@ export default function RoomParticipantsPanel({
     if (participant.participantType !== "USER" || !userSlug) {
       return;
     }
-    setManagementMessage(null);
     setBlockTarget({ nickname: participant.nickname, slug: userSlug });
   };
 
@@ -106,7 +102,6 @@ export default function RoomParticipantsPanel({
       return;
     }
     const transferSequence = beginTransferOwnerRequest();
-    setManagementMessage(null);
     transferOwner.reset();
     transferOwner.mutate(
       { slug: roomSlug, userSlug },
@@ -138,7 +133,6 @@ export default function RoomParticipantsPanel({
           onBlockParticipant={handleBlockParticipant}
           onKickParticipant={(target) => {
             clearTransferOwnerError();
-            setManagementMessage(null);
             kickParticipant.reset();
             kickParticipant.mutate({
               ...target,
@@ -180,9 +174,6 @@ export default function RoomParticipantsPanel({
           ) : null}
         </div>
       ) : null}
-      {managementMessage ? (
-        <div className={styles.message}>{managementMessage}</div>
-      ) : null}
       {kickParticipant.isError ? (
         <div className={styles.error} role="alert">
           {kickParticipant.error?.message ||
@@ -196,7 +187,6 @@ export default function RoomParticipantsPanel({
       ) : null}
       <BlockUserModal
         onBlocked={(target) => {
-          setManagementMessage(`${target.nickname}님을 차단했습니다.`);
           onUserBlocked(target.slug);
         }}
         onClose={() => setBlockTarget(null)}

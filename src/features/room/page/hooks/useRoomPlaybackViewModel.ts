@@ -2,6 +2,7 @@
 
 import {
   getRoomImageSrc,
+  isQueuingDefaultRoomImage,
   ROOM_HERO_IMAGE_VARIANTS,
 } from "@/src/features/room/lib/getDefaultRoomImage";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
@@ -125,6 +126,8 @@ export function useRoomPlaybackViewModel({
     currentVideoId: getCurrentVideoId(roomPlayback, playbackStatus),
     isCurrentRequesterRoomOwner: isRoomOwner(roomMeta?.owner, currentRequester),
     isCurrentUserRoomOwner: isRoomOwner(roomMeta?.owner, currentUser),
+    isQueuingDefaultRoomImage:
+      isQueuingDefaultRoomImage(backgroundImageSrc),
     playbackStatus,
   };
 }

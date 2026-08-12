@@ -11,12 +11,12 @@ export type UploadTemporaryRoomThumbnailParams = {
 export type UploadTemporaryRoomThumbnailResult = {
   uploadToken: string;
   thumbnailUrl: string;
-  thumbnailUrls: ThumbnailUrls | null;
-  contentType: string;
-  sizeBytes: number;
-  width: number;
-  height: number;
-  expiresAt: string;
+  thumbnailUrls?: ThumbnailUrls | null;
+  contentType?: string;
+  sizeBytes?: number;
+  width?: number;
+  height?: number;
+  expiresAt?: string;
 };
 
 type UploadTemporaryRoomThumbnailResponse =
@@ -49,13 +49,17 @@ function isUploadResult(
     typeof candidate.uploadToken === "string" &&
     Boolean(candidate.uploadToken) &&
     typeof candidate.thumbnailUrl === "string" &&
-    (candidate.thumbnailUrls === null ||
+    (candidate.thumbnailUrls === undefined ||
+      candidate.thumbnailUrls === null ||
       isThumbnailUrls(candidate.thumbnailUrls)) &&
-    typeof candidate.contentType === "string" &&
-    typeof candidate.sizeBytes === "number" &&
-    typeof candidate.width === "number" &&
-    typeof candidate.height === "number" &&
-    typeof candidate.expiresAt === "string"
+    (candidate.contentType === undefined ||
+      typeof candidate.contentType === "string") &&
+    (candidate.sizeBytes === undefined ||
+      typeof candidate.sizeBytes === "number") &&
+    (candidate.width === undefined || typeof candidate.width === "number") &&
+    (candidate.height === undefined || typeof candidate.height === "number") &&
+    (candidate.expiresAt === undefined ||
+      typeof candidate.expiresAt === "string")
   );
 }
 
