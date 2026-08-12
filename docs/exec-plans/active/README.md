@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-12-edit-room-figma](./2026-08-12-edit-room-figma/plan.md): ready — 피그마 기반 방 수정 modal과 생성형 참여 제한 control, 로컬 QA·fresh review 통과
+
 - [2026-08-12-participant-row-alignment](./2026-08-12-participant-row-alignment/plan.md): ready — 참가자 헤더와 행의 좌우 기준선 및 방장 왕관 크기 정렬, 로컬 QA·fresh review 통과
 
 - [2026-08-11-room-chat-visible-fade](./2026-08-11-room-chat-visible-fade/plan.md): ready — 스크롤 중 메시지별 blur 교체를 제거한 상단 고정 2단계 영역, 로컬 QA·fresh review 통과

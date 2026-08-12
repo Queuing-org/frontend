@@ -66,10 +66,19 @@
 }
 
 .root[data-variant="edit"] .uploadButton {
-  width: 152px;
+  width: 148px;
   aspect-ratio: 1;
-  border: 2px dashed #d9d9d9;
+  border: 1px dashed #d9d9d9;
   border-radius: 8px;
+}
+
+.root[data-variant="edit"] .uploadButton[data-has-image="true"] {
+  border-style: solid;
+  border-color: transparent;
+}
+
+.root[data-variant="edit"] .controlRow {
+  position: relative;
 }
 
 .uploadButton:hover:not(:disabled),
@@ -180,6 +189,14 @@
     opacity 160ms ease;
 }
 
+.root[data-variant="edit"] .clearButton {
+  position: absolute;
+  z-index: 2;
+  top: -9px;
+  right: -9px;
+  box-shadow: 0 4px 12px rgba(60, 60, 60, 0.12);
+}
+
 .clearButton:hover:not(:disabled),
 .clearButton:focus-visible:not(:disabled) {
   border-color: #3c3c3c;
@@ -220,7 +237,7 @@
   .controlRow { gap: 6.4px; }
   .root[data-variant="create"] .uploadButton { width: 99.2px; height: 99.2px; }
   .root[data-variant="create"] .defaultButton { width: 99.2px; height: 99.2px; }
-  .root[data-variant="edit"] .uploadButton { width: 121.6px; }
+  .root[data-variant="edit"] .uploadButton { width: 118.4px; }
   .placeholder { gap: 8px; padding: 9.6px; }
   .cameraIcon { width: 27.2px; height: 27.2px; }
   .root[data-variant="edit"] .cameraIcon { width: 32px; height: 32px; }
@@ -229,4 +246,10 @@
   .clearButton { width: 22.4px; height: 22.4px; }
   .clearIcon { width: 12.8px; height: 12.8px; }
   .feedback { max-width: 176px; font-size: 10.4px; }
+}
+
+@media (max-width: 720px) {
+  .root[data-variant="edit"] .uploadButton {
+    width: 124px;
+  }
 }

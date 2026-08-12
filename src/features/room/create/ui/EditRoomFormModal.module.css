@@ -6,52 +6,58 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.48);
+  background: rgba(255, 255, 255, 0.86);
 }
 
 .modal {
   position: relative;
-  width: min(664px, 100%);
-  max-height: calc(100dvh - 24px);
-  overflow-x: hidden;
-  overflow-y: auto;
+  width: min(816px, 100%);
+  height: min(1236px, calc(100dvh - 48px));
+  min-height: min(720px, calc(100dvh - 48px));
+  overflow: hidden;
   box-sizing: border-box;
-  border: 0.5px solid #d9d9d9;
-  border-radius: 20px;
+  border: 1px solid #b0b0b5;
+  border-radius: 16px;
   background: #ffffff;
   color: #3c3c3c;
-  box-shadow: 0 12px 60px rgba(176, 176, 181, 0.4);
+  box-shadow: 0 18px 70px rgba(60, 60, 60, 0.18);
 }
 
 .closeButton {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  z-index: 3;
+  top: 30px;
+  right: 28px;
   display: inline-flex;
+  width: 34px;
+  height: 34px;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
-  color: #3c3c3c;
+  color: #8d8d8d;
   cursor: pointer;
   transition:
     background-color 160ms ease,
     color 160ms ease;
 }
 
-.closeButton:hover,
-.closeButton:focus-visible {
+.closeButton:hover:not(:disabled),
+.closeButton:focus-visible:not(:disabled) {
   background: #f7f7f9;
-  color: #3c3c3c;
+  color: #242424;
 }
 
 .closeButton:focus-visible {
-  outline: 2px solid #5b8cff;
+  outline: 2px solid #4285f4;
   outline-offset: 2px;
+}
+
+.closeButton:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .closeIcon {
@@ -65,38 +71,50 @@
 
 .form {
   display: flex;
+  height: 100%;
+  min-height: 0;
   flex-direction: column;
-  gap: 24px;
-  padding: 64px 30px 36px;
-}
-
-.modeBadge {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  justify-content: center;
-  height: 26px;
-  padding: 0 12px;
-  margin: 0;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #3c3c3c;
-  font-size: 14px;
-  font-weight: var(--fw-bold);
-  line-height: 1.4;
 }
 
 .formHeader {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
+  min-height: 144px;
   gap: 16px;
+  padding: 84px 76px 16px 28px;
+  box-sizing: border-box;
+}
+
+.modeBadge {
+  display: inline-flex;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  margin: 0;
+  border: 1px solid #d9d9d9;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font-size: 16px;
+  font-weight: var(--fw-regular);
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(60, 60, 60, 0.08);
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .deleteRoomButton {
-  padding: 4px 8px;
+  min-height: 34px;
+  padding: 6px 12px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
   color: #ff0000;
   font-family: inherit;
@@ -104,6 +122,9 @@
   font-weight: var(--fw-semibold);
   line-height: 1.4;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    opacity 160ms ease;
 }
 
 .deleteRoomButton:hover:not(:disabled),
@@ -121,11 +142,46 @@
   opacity: 0.45;
 }
 
+.formBody {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 34px;
+  padding: 18px 28px 36px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #d9d9d9 transparent;
+}
+
+.thumbnailSection {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 166px;
+  padding: 8px 0 4px;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .field {
   display: flex;
+  min-width: 0;
   flex-direction: column;
   gap: 10px;
-  min-width: 0;
 }
 
 .labelRow {
@@ -135,165 +191,94 @@
   gap: 12px;
 }
 
-.label {
-  color: #8d8d8d;
-  font-size: 16px;
-  font-weight: var(--fw-regular);
+.label,
+.settingLabel {
+  color: #3c3c3c;
+  font-size: 18px;
+  font-weight: var(--fw-medium);
   line-height: 1.4;
 }
 
-.input,
-.select {
+.titleControl {
+  position: relative;
+  display: block;
+  min-width: 0;
+}
+
+.titleInput,
+.select,
+.participationInput {
   width: 100%;
-  height: 53px;
+  height: 56px;
   box-sizing: border-box;
-  border: 1px solid #d8d8d8;
-  border-radius: 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
   background: #ffffff;
   color: #3c3c3c;
   font-family: inherit;
-  font-size: 18px;
-  font-weight: var(--fw-medium);
+  font-size: 17px;
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
   outline: none;
   transition:
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    background-color 160ms ease;
 }
 
-.input,
-.select {
-  padding: 0 20px;
+.titleInput {
+  padding: 0 54px 0 20px;
+  border-color: transparent;
+  background: #f7f7f9;
 }
 
-.input::placeholder,
-.select::placeholder {
+.titleInput::placeholder,
+.participationInput::placeholder {
   color: #b0b0b5;
 }
 
-.input:focus,
-.select:focus {
+.titleInput:focus,
+.select:focus,
+.participationInput:focus {
   border-color: #b0b0b5;
   box-shadow: 0 0 0 3px rgba(176, 176, 181, 0.18);
 }
 
-.select {
-  appearance: auto;
-}
-
-.passwordActionRow {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 18px;
-  align-items: center;
-}
-
-.checkboxRow {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  gap: 10px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.checkboxBox {
-  position: relative;
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  box-sizing: border-box;
-  border: 1px solid #b0b0b5;
-  border-radius: 4px;
-  background: #ffffff;
-}
-
-.checkboxBox::after {
-  content: "";
+.titleClearButton {
   position: absolute;
-  top: 3px;
-  left: 6px;
-  width: 5px;
-  height: 9px;
-  border-right: 2px solid #ffffff;
-  border-bottom: 2px solid #ffffff;
-  opacity: 0;
-  transform: rotate(45deg);
-}
-
-.checkboxBox[data-checked="true"] {
-  border-color: #3c3c3c;
-  background: #3c3c3c;
-}
-
-.checkboxBox[data-checked="true"]::after {
-  opacity: 1;
-}
-
-.checkboxRow:focus-visible {
-  outline: none;
-}
-
-.checkboxRow:focus-visible .checkboxBox {
-  outline: 2px solid #5b8cff;
-  outline-offset: 2px;
-}
-
-.checkboxRow:disabled {
-  cursor: default;
-}
-
-.checkboxRow:disabled .checkboxBox,
-.checkboxRow:disabled .label {
-  opacity: 0.5;
-}
-
-.limitControlGroup {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-
-.unlimitedButton {
+  top: 50%;
+  right: 14px;
   display: inline-flex;
-  min-width: 86px;
-  height: 53px;
+  width: 30px;
+  height: 30px;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #3c3c3c;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: var(--fw-semibold);
-  line-height: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #b0b0b5;
   cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    color 160ms ease,
-    opacity 160ms ease;
+  transform: translateY(-50%);
 }
 
-.unlimitedButton:hover:not(:disabled) {
-  border-color: #b0b0b5;
-  color: #1f1f21;
+.titleClearButton:hover:not(:disabled),
+.titleClearButton:focus-visible:not(:disabled) {
+  color: #8d8d8d;
 }
 
-.unlimitedButton:disabled {
+.titleClearButton:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 1px;
+}
+
+.titleClearButton:disabled,
+.titleInput:disabled,
+.select:disabled,
+.participationInput:disabled,
+.participationToggle:disabled {
   cursor: default;
-  opacity: 0.5;
-}
-
-.unlimitedButton:focus-visible {
-  outline: 2px solid #5b8cff;
-  outline-offset: 2px;
+  opacity: 0.55;
 }
 
 .tagGrid {
@@ -304,45 +289,193 @@
 
 .tagChip {
   display: inline-flex;
+  min-height: 40px;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border: 1px solid #d9d9d9;
   border-radius: 999px;
   background: #ffffff;
-  color: #8d8d8d;
+  color: #b0b0b5;
   font-family: inherit;
-  font-size: 18px;
-  font-weight: var(--fw-medium);
-  line-height: 1.4;
+  font-size: 17px;
+  font-weight: var(--fw-regular);
+  line-height: 1.2;
   cursor: pointer;
   transition:
-    background-color 160ms ease,
     border-color 160ms ease,
-    color 160ms ease;
+    color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
 }
 
-.tagChip:hover:not(:disabled) {
-  border-color: #3c3c3c;
+.tagChip:hover:not(:disabled),
+.tagChip:focus-visible:not(:disabled) {
+  border-color: #8d8d8d;
   color: #3c3c3c;
+}
+
+.tagChip:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
 }
 
 .tagChip[data-selected="true"] {
   border-color: #3c3c3c;
-  background: #f7f7f9;
-  color: #3c3c3c;
+  background: #ffffff;
+  color: #242424;
 }
 
 .tagChip:disabled {
   cursor: default;
-  opacity: 0.45;
+  opacity: 0.38;
+}
+
+.tagChip[data-selected="true"]:disabled {
+  opacity: 1;
+}
+
+.settingsStack {
+  display: flex;
+  max-width: 100%;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 4px;
+}
+
+.settingRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 148px minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.settingLabel {
+  display: inline-flex;
+  min-height: 56px;
+  align-items: center;
+}
+
+.select {
+  appearance: none;
+  padding: 0 52px 0 18px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #b0b0b5 50%),
+    linear-gradient(135deg, #b0b0b5 50%, transparent 50%);
+  background-position:
+    calc(100% - 25px) 50%,
+    calc(100% - 17px) 50%;
+  background-repeat: no-repeat;
+  background-size:
+    8px 8px,
+    8px 8px;
+  cursor: pointer;
+}
+
+.participationColumn {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participationControl {
+  position: relative;
+  min-width: 0;
+}
+
+.participationInput {
+  padding: 0 58px 0 18px;
+}
+
+.participationToggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0 10px 10px 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.participationToggle:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: -3px;
+}
+
+.participationChevron {
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #b0b0b5;
+  border-bottom: 2px solid #b0b0b5;
+  transform: translateY(-25%) rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.participationChevron[data-open="true"] {
+  transform: translateY(25%) rotate(225deg);
+}
+
+.participationMenu {
+  position: absolute;
+  z-index: 20;
+  right: 0;
+  bottom: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  padding: 6px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(60, 60, 60, 0.14);
+  flex-direction: column;
+  gap: 2px;
+}
+
+.participationOption {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #3c3c3c;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: var(--fw-regular);
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+
+.participationOption:hover,
+.participationOption:focus-visible,
+.participationOption[aria-pressed="true"] {
+  background: #f2f3f6;
+  outline: none;
+}
+
+.participationInput[data-invalid="true"] {
+  border-color: #ff2f2f;
+}
+
+.participationInput[data-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(255, 47, 47, 0.12);
 }
 
 .helperText,
-.errorText {
+.errorText,
+.submitError {
   margin: 0;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: var(--fw-medium);
   line-height: 1.4;
 }
 
@@ -350,105 +483,304 @@
   color: #8d8d8d;
 }
 
-.limitHint {
+.errorText,
+.submitError {
   color: #ff2f2f;
-  font-size: 13px;
-  font-weight: var(--fw-medium);
-  line-height: 1.2;
-  white-space: nowrap;
 }
 
-.errorText {
-  color: #d94b4b;
+.submitError {
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: #fff4f4;
+}
+
+.formFooter {
+  flex: 0 0 auto;
+  padding: 18px 28px 28px;
+  background: #ffffff;
+  box-sizing: border-box;
 }
 
 .submitButton {
+  display: inline-flex;
   width: 100%;
   height: 68px;
-  border: 1px solid #d9d9d9;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #242424;
   border-radius: 4px;
-  background: #ffffff;
-  color: #3c3c3c;
+  background: #242424;
+  color: #ffffff;
   font-family: inherit;
-  font-size: 20px;
-  font-weight: var(--fw-regular);
+  font-size: 18px;
+  font-weight: var(--fw-semibold);
+  line-height: 1;
   cursor: pointer;
-  margin-top: 24px;
   transition:
     background-color 160ms ease,
-    color 160ms ease;
+    border-color 160ms ease,
+    opacity 160ms ease;
 }
 
 .submitButton:hover:not(:disabled),
 .submitButton:focus-visible:not(:disabled) {
-  border-color: #3c3c3c;
-  background: #f7f7f9;
+  border-color: #000000;
+  background: #000000;
+}
+
+.submitButton:focus-visible {
+  outline: 2px solid #4285f4;
+  outline-offset: 3px;
 }
 
 .submitButton:disabled {
-  border-color: #e9ebee;
-  background: #f7f7f9;
-  color: #8d8d8d;
+  border-color: #d9d9d9;
+  background: #d9d9d9;
+  color: #ffffff;
   cursor: default;
 }
 
 @media (max-width: 720px) {
   .overlay {
+    align-items: stretch;
     padding: 12px;
   }
 
-  .form {
-    gap: 20px;
-    padding: 64px 18px 24px;
+  .modal {
+    width: 100%;
+    height: calc(100dvh - 24px);
+    min-height: 0;
+    border-radius: 14px;
   }
 
-  .label {
+  .closeButton {
+    top: 18px;
+    right: 16px;
+  }
+
+  .formHeader {
+    min-height: 70px;
+    padding: 18px 58px 12px 18px;
+  }
+
+  .modeBadge {
+    height: 32px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .deleteRoomButton {
+    font-size: 13px;
+  }
+
+  .formBody {
+    gap: 26px;
+    padding: 12px 18px 24px;
+  }
+
+  .thumbnailSection {
+    min-height: 140px;
+  }
+
+  .label,
+  .settingLabel {
     font-size: 16px;
   }
 
-  .input,
+  .titleInput,
   .select,
-  .submitButton {
+  .participationInput {
     height: 52px;
     font-size: 16px;
-  }
-
-  .unlimitedButton {
-    height: 52px;
   }
 
   .tagChip {
-    min-height: 34px;
-    font-size: 16px;
+    min-height: 36px;
+    padding: 5px 12px;
+    font-size: 15px;
+  }
+
+  .settingRow {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .settingLabel {
+    min-height: auto;
+  }
+
+  .participationToggle {
+    width: 52px;
+    height: 52px;
+  }
+
+  .formFooter {
+    padding: 14px 18px 18px;
   }
 
   .submitButton {
-    margin-top: 24px;
+    height: 56px;
+    font-size: 16px;
   }
 }
 
 @media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
-  .overlay { padding: 19.2px; }
-  .modal { width: min(531.2px, 100%); border-radius: 16px; }
-  .closeButton { top: 16px; right: 16px; width: 25.6px; height: 25.6px; }
-  .closeIcon { width: 16px; height: 13.6px; }
-  .form { gap: 19.2px; padding: 51.2px 24px 28.8px; }
-  .modeBadge { height: 20.8px; padding: 0 9.6px; font-size: 11.2px; }
-  .formHeader { gap: 12.8px; }
-  .deleteRoomButton { padding: 3.2px 6.4px; font-size: 11.2px; }
-  .field { gap: 8px; }
-  .labelRow { gap: 9.6px; }
-  .label { font-size: 12.8px; }
-  .input, .select { height: 42.4px; font-size: 14.4px; }
-  .input, .select { padding: 0 16px; }
-  .passwordActionRow { gap: 9.6px 14.4px; }
-  .checkboxRow { gap: 8px; }
-  .checkboxBox { width: 16px; height: 16px; }
-  .limitControlGroup { gap: 6.4px; }
-  .unlimitedButton { min-width: 68.8px; height: 42.4px; padding: 0 11.2px; font-size: 11.2px; }
-  .tagGrid { gap: 8px; }
-  .tagChip { min-height: 33.6px; padding: 3.2px 9.6px; font-size: 14.4px; }
-  .helperText, .errorText { font-size: 11.2px; }
-  .limitHint { font-size: 10.4px; }
-  .submitButton { height: 54.4px; margin-top: 19.2px; font-size: 16px; }
+  .overlay {
+    padding: 19.2px;
+  }
+
+  .modal {
+    width: min(652.8px, 100%);
+    height: min(988.8px, calc(100dvh - 38.4px));
+    min-height: min(576px, calc(100dvh - 38.4px));
+    border-radius: 12.8px;
+  }
+
+  .closeButton {
+    top: 24px;
+    right: 22.4px;
+    width: 27.2px;
+    height: 27.2px;
+    border-radius: 6.4px;
+  }
+
+  .closeIcon {
+    width: 16px;
+    height: 13.6px;
+  }
+
+  .formHeader {
+    min-height: 115.2px;
+    gap: 12.8px;
+    padding: 67.2px 60.8px 12.8px 22.4px;
+  }
+
+  .modeBadge {
+    height: 28.8px;
+    padding: 0 12.8px;
+    font-size: 12.8px;
+  }
+
+  .headerActions {
+    gap: 6.4px;
+  }
+
+  .deleteRoomButton {
+    min-height: 27.2px;
+    padding: 4.8px 9.6px;
+    border-radius: 6.4px;
+    font-size: 11.2px;
+  }
+
+  .formBody {
+    gap: 27.2px;
+    padding: 14.4px 22.4px 28.8px;
+  }
+
+  .thumbnailSection {
+    min-height: 132.8px;
+    padding: 6.4px 0 3.2px;
+  }
+
+  .field {
+    gap: 8px;
+  }
+
+  .labelRow {
+    gap: 9.6px;
+  }
+
+  .label,
+  .settingLabel {
+    font-size: 14.4px;
+  }
+
+  .titleInput,
+  .select,
+  .participationInput {
+    height: 44.8px;
+    border-radius: 8px;
+    font-size: 13.6px;
+  }
+
+  .titleInput {
+    padding: 0 43.2px 0 16px;
+  }
+
+  .titleClearButton {
+    right: 11.2px;
+    width: 24px;
+    height: 24px;
+  }
+
+  .tagGrid {
+    gap: 8px;
+  }
+
+  .tagChip {
+    min-height: 32px;
+    padding: 4px 11.2px;
+    font-size: 13.6px;
+  }
+
+  .settingsStack {
+    gap: 16px;
+    padding-top: 3.2px;
+  }
+
+  .settingRow {
+    grid-template-columns: 118.4px minmax(0, 1fr);
+    gap: 19.2px;
+  }
+
+  .settingLabel {
+    min-height: 44.8px;
+  }
+
+  .select {
+    padding: 0 41.6px 0 14.4px;
+  }
+
+  .participationColumn {
+    gap: 6.4px;
+  }
+
+  .participationInput {
+    padding: 0 46.4px 0 14.4px;
+  }
+
+  .participationToggle {
+    width: 44.8px;
+    height: 44.8px;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .participationMenu {
+    bottom: calc(100% + 4.8px);
+    padding: 4.8px;
+    border-radius: 8px;
+    gap: 1.6px;
+  }
+
+  .participationOption {
+    min-height: 32px;
+    padding: 6.4px 9.6px;
+    border-radius: 5.6px;
+    font-size: 12.8px;
+  }
+
+  .helperText,
+  .errorText,
+  .submitError {
+    font-size: 10.4px;
+  }
+
+  .formFooter {
+    padding: 14.4px 22.4px 22.4px;
+  }
+
+  .submitButton {
+    height: 54.4px;
+    font-size: 14.4px;
+  }
 }

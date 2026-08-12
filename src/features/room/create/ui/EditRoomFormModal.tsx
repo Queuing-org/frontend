@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { XCircle } from "lucide-react";
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
 import { useDeleteRoom } from "@/src/features/room/update/model/useDeleteRoom";
 import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
@@ -12,6 +13,7 @@ import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
+type EditParticipationMode = "public" | "password";
 
 type EditRoomFormModalProps = {
   open: boolean;
@@ -56,6 +58,34 @@ export default function EditRoomFormModal({
     !(form.maxParticipantOptions as readonly number[]).includes(
       initialMaxParticipants,
     );
+  const participationMode: EditParticipationMode =
+    form.isPasswordClearEnabled
+      ? "public"
+      : initialHasPassword || form.isPasswordChangeEnabled
+        ? "password"
+        : "public";
+
+  const updateParticipationMode = (mode: EditParticipationMode) => {
+    if (mode === participationMode) {
+      return;
+    }
+
+    if (mode === "public") {
+      form.updatePasswordChangeEnabled(false);
+      form.updatePasswordClearEnabled(initialHasPassword);
+      return;
+    }
+
+    form.updatePasswordClearEnabled(false);
+    form.updatePasswordChangeEnabled(!initialHasPassword);
+  };
+
+  const updateParticipationPassword = (value: string) => {
+    if (!form.isPasswordChangeEnabled) {
+      form.updatePasswordChangeEnabled(true);
+    }
+    form.setPassword(value);
+  };
 
   const closeDeleteDialog = () => {
     if (deleteRoomMutation.isPending) {
@@ -96,237 +126,221 @@ export default function EditRoomFormModal({
           aria-labelledby="room-edit-modal-title"
           inert={isDeleteDialogOpen ? true : undefined}
         >
-        <button
-          type="button"
-          className={styles.closeButton}
-          onClick={onClose}
-          disabled={deleteRoomMutation.isPending}
-          aria-label="모달 닫기"
-        >
-          <span className={styles.closeIcon} aria-hidden="true" />
-        </button>
+          <button
+            type="button"
+            className={styles.closeButton}
+            onClick={onClose}
+            disabled={deleteRoomMutation.isPending}
+            aria-label="모달 닫기"
+          >
+            <span className={styles.closeIcon} aria-hidden="true" />
+          </button>
 
-        <form className={styles.form} onSubmit={form.handleSubmit}>
-          <div className={styles.formHeader}>
+          <form className={styles.form} onSubmit={form.handleSubmit}>
+            <header className={styles.formHeader}>
             <h2 id="room-edit-modal-title" className={styles.modeBadge}>
               EDIT
             </h2>
-            <button
-              ref={deleteButtonRef}
-              type="button"
-              className={styles.deleteRoomButton}
-              disabled={!roomSlug || form.isSubmitting}
-              onClick={() => {
-                deleteRoomMutation.reset();
-                setIsDeleteDialogOpen(true);
-              }}
-            >
-              큐 삭제
-            </button>
-          </div>
-
-          <div className={styles.field}>
-            <span className={styles.label}>썸네일</span>
-            <RoomThumbnailUploadField
-              actionLabel="썸네일 교체"
-              currentImageUrl={initialThumbnailUrl}
-              disabled={form.isSubmitting}
-              errorMessage={form.thumbnailErrorMessage}
-              fileName={form.thumbnailFileName}
-              inputId="edit-room-thumbnail"
-              isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
-              previewUrl={form.thumbnailPreviewUrl}
-              statusMessage={
-                form.thumbnailStatusMessage ? (
-                  <LoadingSpinner
-                    announce={false}
-                    ariaLabel="썸네일 업로드 중"
-                    size={14}
-                  />
-                ) : null
-              }
-              statusAriaLabel={
-                form.thumbnailStatusMessage
-                  ? "썸네일 업로드 중"
-                  : undefined
-              }
-              variant="edit"
-              onClearSelection={form.clearThumbnailSelection}
-              onFileChange={form.handleThumbnailChange}
-              onPreviewError={form.markThumbnailPreviewUnavailable}
-            />
-          </div>
-
-          <label className={styles.field}>
-            <span className={styles.label}>큐 이름</span>
-            <input
-              className={styles.input}
-              value={form.title}
-              onChange={(event) => form.updateTitle(event.target.value)}
-              maxLength={form.maxRoomTitleLength}
-              placeholder="작업 효율 200% 높여주는 노래"
-              disabled={form.isSubmitting}
-            />
-          </label>
-
-          <div className={styles.field}>
-            <div className={styles.passwordActionRow}>
+            <div className={styles.headerActions}>
               <button
+                ref={deleteButtonRef}
                 type="button"
-                className={styles.checkboxRow}
-                role="checkbox"
-                aria-checked={form.isPasswordChangeEnabled}
-                onClick={() =>
-                  form.updatePasswordChangeEnabled(
-                    !form.isPasswordChangeEnabled,
-                  )
-                }
-                disabled={form.isSubmitting || form.isPasswordClearEnabled}
+                className={styles.deleteRoomButton}
+                disabled={!roomSlug || form.isSubmitting}
+                onClick={() => {
+                  deleteRoomMutation.reset();
+                  setIsDeleteDialogOpen(true);
+                }}
               >
-                <span
-                  className={styles.checkboxBox}
-                  data-checked={form.isPasswordChangeEnabled}
-                  aria-hidden="true"
-                />
-                <span className={styles.label}>
-                  {initialHasPassword ? "새 비밀번호로 변경" : "비밀번호 설정"}
-                </span>
+                큐 삭제
               </button>
+            </div>
+            </header>
 
-              {initialHasPassword ? (
-                <button
-                  type="button"
-                  className={styles.checkboxRow}
-                  role="checkbox"
-                  aria-checked={form.isPasswordClearEnabled}
-                  onClick={() =>
-                    form.updatePasswordClearEnabled(
-                      !form.isPasswordClearEnabled,
-                    )
+            <div className={styles.formBody}>
+            <section className={styles.thumbnailSection}>
+              <span className={styles.visuallyHidden}>썸네일</span>
+              <RoomThumbnailUploadField
+                actionLabel="썸네일 교체"
+                currentImageUrl={initialThumbnailUrl}
+                disabled={form.isSubmitting}
+                errorMessage={form.thumbnailErrorMessage}
+                fileName={form.thumbnailFileName}
+                inputId="edit-room-thumbnail"
+                isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
+                previewUrl={form.thumbnailPreviewUrl}
+                statusMessage={
+                  form.thumbnailStatusMessage ? (
+                    <LoadingSpinner
+                      announce={false}
+                      ariaLabel="썸네일 업로드 중"
+                      size={14}
+                    />
+                  ) : null
+                }
+                statusAriaLabel={
+                  form.thumbnailStatusMessage
+                    ? "썸네일 업로드 중"
+                    : undefined
+                }
+                variant="edit"
+                onClearSelection={form.clearThumbnailSelection}
+                onFileChange={form.handleThumbnailChange}
+                onPreviewError={form.markThumbnailPreviewUnavailable}
+              />
+            </section>
+
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="edit-room-title">
+                큐 이름
+              </label>
+              <span className={styles.titleControl}>
+                <input
+                  id="edit-room-title"
+                  className={styles.titleInput}
+                  value={form.title}
+                  onChange={(event) => form.updateTitle(event.target.value)}
+                  maxLength={form.maxRoomTitleLength}
+                  placeholder="작업 효율 200% 높여주는 노래"
+                  disabled={form.isSubmitting}
+                />
+                {form.title ? (
+                  <button
+                    type="button"
+                    className={styles.titleClearButton}
+                    aria-label="큐 이름 지우기"
+                    disabled={form.isSubmitting}
+                    onClick={() => form.updateTitle("")}
+                  >
+                    <XCircle aria-hidden="true" size={20} />
+                  </button>
+                ) : null}
+              </span>
+            </div>
+
+            <section
+              className={styles.field}
+              aria-labelledby="edit-room-tags-label"
+            >
+              <div className={styles.labelRow}>
+                <span id="edit-room-tags-label" className={styles.label}>
+                  큐 장르
+                </span>
+                <span className={styles.helperText}>
+                  {form.selectedTagSlugs.length}/{form.maxTags}
+                </span>
+              </div>
+              <QueryBoundary
+                fallback={
+                  <div className={styles.helperText}>
+                    <LoadingSpinner ariaLabel="장르 로딩 중" size={18} />
+                  </div>
+                }
+                errorTitle="장르를 불러오지 못했어요."
+                errorDescription="다시 시도해 주세요."
+              >
+                <EditRoomTagsField
+                  disabled={form.isSubmitting}
+                  maxTags={form.maxTags}
+                  selectedTagSlugs={form.selectedTagSlugs}
+                  onToggleTag={form.toggleTag}
+                />
+              </QueryBoundary>
+            </section>
+
+            <div className={styles.settingsStack}>
+              <div className={styles.settingRow}>
+                <label
+                  className={styles.settingLabel}
+                  htmlFor="edit-room-max-participants"
+                >
+                  최대 인원 수
+                </label>
+                <select
+                  id="edit-room-max-participants"
+                  className={styles.select}
+                  value={form.maxParticipants}
+                  onChange={(event) =>
+                    form.updateMaxParticipants(event.target.value)
                   }
                   disabled={form.isSubmitting}
                 >
-                  <span
-                    className={styles.checkboxBox}
-                    data-checked={form.isPasswordClearEnabled}
-                    aria-hidden="true"
-                  />
-                  <span className={styles.label}>비밀번호 해제</span>
-                </button>
-              ) : null}
+                  {initialMaxParticipants == null ? (
+                    <option value="">제한 없음 (현재 설정)</option>
+                  ) : null}
+                  {hasLegacyMaxParticipants ? (
+                    <option value={String(initialMaxParticipants)}>
+                      {initialMaxParticipants}명 (현재 설정)
+                    </option>
+                  ) : null}
+                  {form.maxParticipantOptions.map((option) => (
+                    <option key={option} value={String(option)}>
+                      {option}명
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.settingRow}>
+                <label
+                  className={styles.settingLabel}
+                  htmlFor="edit-room-participation"
+                >
+                  참여 제한
+                </label>
+                <EditParticipationControl
+                  disabled={form.isSubmitting}
+                  errorMessage={
+                    form.isPasswordRequired
+                      ? "새 비밀번호를 입력해주세요."
+                      : null
+                  }
+                  helperText={
+                    participationMode === "public"
+                      ? initialHasPassword
+                        ? "저장하면 비밀번호 없이 입장할 수 있습니다."
+                        : null
+                      : initialHasPassword && !form.isPasswordChangeEnabled
+                        ? "입력하지 않으면 기존 비밀번호가 유지됩니다."
+                        : null
+                  }
+                  mode={participationMode}
+                  password={form.password}
+                  passwordPlaceholder={
+                    initialHasPassword
+                      ? "새 비밀번호 입력 (비워두면 기존 비밀번호 유지)"
+                      : "비밀번호 입력"
+                  }
+                  onModeChange={updateParticipationMode}
+                  onPasswordChange={updateParticipationPassword}
+                />
+              </div>
             </div>
 
-            {form.isPasswordChangeEnabled ? (
-              <input
-                className={styles.input}
-                type="password"
-                value={form.password}
-                onChange={(event) => form.setPassword(event.target.value)}
-                maxLength={255}
-                placeholder={
-                  initialHasPassword
-                    ? "새 비밀번호를 입력하세요"
-                    : "비밀번호를 입력하세요"
-                }
-                disabled={form.isSubmitting}
-              />
+            {form.submitError ? (
+              <p className={styles.submitError}>
+                {form.submitErrorPrefix}: {form.submitError.message}
+              </p>
             ) : null}
-            {form.isPasswordClearEnabled ? (
-              <span className={styles.helperText}>
-                저장하면 비밀번호 없이 입장할 수 있습니다.
-              </span>
-            ) : initialHasPassword ? (
-              <span className={styles.helperText}>
-                변경하지 않으면 기존 비밀번호가 유지됩니다.
-              </span>
-            ) : null}
-            {form.isPasswordRequired ? (
-              <span className={styles.errorText}>
-                새 비밀번호를 입력해주세요.
-              </span>
-            ) : null}
-          </div>
+            </div>
 
-          <div className={styles.field}>
-            <div className={styles.labelRow}>
-              <label
-                className={styles.label}
-                htmlFor="edit-room-max-participants"
+            <footer className={styles.formFooter}>
+              <button
+                type="submit"
+                className={styles.submitButton}
+                disabled={!form.canSubmit}
               >
-                최대 인원 수
-              </label>
-            </div>
-            <select
-              id="edit-room-max-participants"
-              className={styles.select}
-              value={form.maxParticipants}
-              onChange={(event) =>
-                form.updateMaxParticipants(event.target.value)
-              }
-              disabled={form.isSubmitting}
-            >
-              {initialMaxParticipants == null ? (
-                <option value="">제한 없음 (현재 설정)</option>
-              ) : null}
-              {hasLegacyMaxParticipants ? (
-                <option value={String(initialMaxParticipants)}>
-                  {initialMaxParticipants}명 (현재 설정)
-                </option>
-              ) : null}
-              {form.maxParticipantOptions.map((option) => (
-                <option key={option} value={String(option)}>
-                  {option}명
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.labelRow}>
-              <span className={styles.label}>큐 장르</span>
-              <span className={styles.helperText}>
-                {form.selectedTagSlugs.length}/{form.maxTags}
-              </span>
-            </div>
-
-            <QueryBoundary
-              fallback={
-                <div className={styles.helperText}>
-                  <LoadingSpinner ariaLabel="장르 로딩 중" size={18} />
-                </div>
-              }
-              errorTitle="장르를 불러오지 못했어요."
-              errorDescription="다시 시도해 주세요."
-            >
-              <EditRoomTagsField
-                disabled={form.isSubmitting}
-                maxTags={form.maxTags}
-                selectedTagSlugs={form.selectedTagSlugs}
-                onToggleTag={form.toggleTag}
-              />
-            </QueryBoundary>
-          </div>
-
-          {form.submitError ? (
-            <p className={styles.errorText}>
-              {form.submitErrorPrefix}: {form.submitError.message}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={!form.canSubmit}
-          >
-            {form.isSubmitting ? (
-              <LoadingSpinner
-                ariaLabel="큐 수정 중"
-                color="#ffffff"
-                size={16}
-              />
-            ) : (
-              "큐 수정하기"
-            )}
-          </button>
+                {form.isSubmitting ? (
+                  <LoadingSpinner
+                    ariaLabel="큐 수정 중"
+                    color="#ffffff"
+                    size={16}
+                  />
+                ) : (
+                  "편집 완료"
+                )}
+              </button>
+            </footer>
           </form>
         </div>
       </div>
@@ -351,6 +365,157 @@ export default function EditRoomFormModal({
         }}
       />
     </>
+  );
+}
+
+type EditParticipationControlProps = {
+  disabled: boolean;
+  errorMessage: string | null;
+  helperText: string | null;
+  mode: EditParticipationMode;
+  password: string;
+  passwordPlaceholder: string;
+  onModeChange: (mode: EditParticipationMode) => void;
+  onPasswordChange: (value: string) => void;
+};
+
+function EditParticipationControl({
+  disabled,
+  errorMessage,
+  helperText,
+  mode,
+  password,
+  passwordPlaceholder,
+  onModeChange,
+  onPasswordChange,
+}: EditParticipationControlProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const controlRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const isPasswordMode = mode === "password";
+  const errorId = "edit-room-participation-error";
+  const helperId = "edit-room-participation-helper";
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !controlRef.current?.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      event.preventDefault();
+      setIsOpen(false);
+      toggleRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  const selectMode = (nextMode: EditParticipationMode) => {
+    onModeChange(nextMode);
+    setIsOpen(false);
+    toggleRef.current?.focus();
+  };
+
+  return (
+    <div className={styles.participationColumn}>
+      <div ref={controlRef} className={styles.participationControl}>
+        {isPasswordMode ? (
+          <input
+            id="edit-room-participation"
+            className={styles.participationInput}
+            data-invalid={Boolean(errorMessage)}
+            type="password"
+            value={password}
+            maxLength={255}
+            placeholder={passwordPlaceholder}
+            disabled={disabled}
+            aria-invalid={Boolean(errorMessage)}
+            aria-describedby={
+              errorMessage ? errorId : helperText ? helperId : undefined
+            }
+            onChange={(event) => onPasswordChange(event.target.value)}
+          />
+        ) : (
+          <input
+            id="edit-room-participation"
+            className={styles.participationInput}
+            type="text"
+            value="누구나 참여"
+            readOnly
+            disabled={disabled}
+            aria-describedby={helperText ? helperId : undefined}
+          />
+        )}
+        <button
+          ref={toggleRef}
+          type="button"
+          className={styles.participationToggle}
+          disabled={disabled}
+          aria-label="참여 제한 옵션 열기"
+          aria-expanded={isOpen}
+          aria-controls="edit-room-participation-options"
+          onClick={() => setIsOpen((current) => !current)}
+        >
+          <span
+            className={styles.participationChevron}
+            data-open={isOpen}
+            aria-hidden="true"
+          />
+        </button>
+        {isOpen ? (
+          <div
+            id="edit-room-participation-options"
+            className={styles.participationMenu}
+            role="group"
+            aria-label="참여 제한 옵션"
+          >
+            <button
+              type="button"
+              className={styles.participationOption}
+              aria-pressed={mode === "public"}
+              onClick={() => selectMode("public")}
+            >
+              누구나 참여
+            </button>
+            <button
+              type="button"
+              className={styles.participationOption}
+              aria-pressed={mode === "password"}
+              onClick={() => selectMode("password")}
+            >
+              비밀번호 입력
+            </button>
+          </div>
+        ) : null}
+      </div>
+      {errorMessage ? (
+        <p id={errorId} className={styles.errorText}>
+          {errorMessage}
+        </p>
+      ) : helperText ? (
+        <p id={helperId} className={styles.helperText}>
+          {helperText}
+        </p>
+      ) : null}
+    </div>
   );
 }
 
