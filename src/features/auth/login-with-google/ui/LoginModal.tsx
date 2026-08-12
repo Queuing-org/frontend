@@ -89,7 +89,7 @@ export default function LoginModal({
         <div className={styles.separator} aria-hidden="true" />
         <p className={styles.policyText}>
           가입 시
-          <span className={styles.policyHighlight}> 개인정보 보호정책</span>에
+          <span className={styles.policyHighlight}> 개인정보처리방침</span>에
           <br></br>
           동의하는 것으로 간주합니다.
         </p>

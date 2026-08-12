@@ -9,7 +9,8 @@ import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
 import styles from "./AccountSettingsTab.module.css";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
-const PRIVACY_POLICY_URL = "https://queuing.cc/privacy";
+const PRIVACY_POLICY_URL =
+  "https://acoustic-windscreen-091.notion.site/357c990b89728032a9fdcdcb97a9a915";
 
 type AccountSettingsTabProps = {
   onLoggedOut: () => void;
@@ -125,9 +126,11 @@ export default function AccountSettingsTab({
         >
           {isWithdrawing ? (
             <LoadingSpinner ariaLabel="회원 탈퇴 중" size={16} />
-          ) : isConfirmingWithdraw
-              ? "탈퇴 확인"
-              : "회원탈퇴"}
+          ) : isConfirmingWithdraw ? (
+            "탈퇴 확인"
+          ) : (
+            "회원탈퇴"
+          )}
         </button>
         {isConfirmingWithdraw && !isWithdrawing ? (
           <button
@@ -141,9 +144,7 @@ export default function AccountSettingsTab({
       </div>
 
       {isConfirmingWithdraw ? (
-        <p className={styles.confirmText}>
-          탈퇴하려면 한 번 더 눌러주세요.
-        </p>
+        <p className={styles.confirmText}>탈퇴하려면 한 번 더 눌러주세요.</p>
       ) : null}
 
       {logoutError ? (
