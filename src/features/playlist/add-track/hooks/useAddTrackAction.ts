@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { publishAddTrack } from "@/src/features/playlist/api/websocket/publishAddTrack";
+import { fetchRoomQueuePage } from "@/src/features/playlist/api/fetchRoomQueue";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
+import type {
+  RoomQueuePage,
+  RoomQueuePageParam,
+} from "@/src/features/playlist/model/types";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import { subscribeUserRoomEvents } from "@/src/features/room/api/websocket/subscribeUserRoomEvents";
 import type { WsErrorData, WsEvent } from "@/src/features/room/model/types";
@@ -24,6 +29,11 @@ type PendingAddTrack = {
   timeoutId: ReturnType<typeof setTimeout>;
   videoId: string;
 };
+
+type MyRoomQueueData = InfiniteData<
+  RoomQueuePage,
+  RoomQueuePageParam | null
+>;
 
 function parseWsEvent(body: string): WsEvent | null {
   try {
@@ -106,6 +116,39 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
     setFormIsSubmitting(false);
   }, [cleanupResultSubscriptions, setFormIsSubmitting]);
 
+  const refreshInactiveMyQueueState = useCallback(
+    (roomSlug: string) => {
+      const queryKey = playlistKeys.roomQueue(
+        roomSlug,
+        roomPassword,
+        true,
+      );
+      const myQueueQuery = queryClient
+        .getQueryCache()
+        .find({ queryKey, exact: true });
+
+      if (myQueueQuery?.isActive()) {
+        return;
+      }
+
+      void fetchRoomQueuePage({
+        slug: roomSlug,
+        password: roomPassword,
+        mine: true,
+      })
+        .then((page) => {
+          queryClient.setQueryData<MyRoomQueueData>(queryKey, {
+            pages: [page],
+            pageParams: [null],
+          });
+        })
+        .catch(() => {
+          // The regular invalidation remains as a fallback for the next tab visit.
+        });
+    },
+    [queryClient, roomPassword],
+  );
+
   const refreshQueueState = useCallback(
     (roomSlug: string) => {
       scheduleQueryInvalidation({
@@ -116,8 +159,9 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
         ],
         scopeKey: getRoomReadInvalidationScope(roomSlug),
       });
+      refreshInactiveMyQueueState(roomSlug);
     },
-    [queryClient],
+    [queryClient, refreshInactiveMyQueueState],
   );
 
   const closeModal = () => {
