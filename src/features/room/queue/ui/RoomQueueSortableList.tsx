@@ -43,7 +43,7 @@ type Props = {
   isMovePending?: boolean;
   moveMode: "owner" | "self";
   onDelete?: (entryId: string) => void;
-  onMove?: (payload: MovePayload) => void;
+  onMove?: (payload: MovePayload) => Promise<void>;
 };
 
 type PendingOrder = {
@@ -54,6 +54,7 @@ type PendingOrder = {
 type SortableQueueCardProps = {
   disabled: boolean;
   entry: PlaylistEntry;
+  isDragSessionActive: boolean;
   isDeletePending: boolean;
   onDelete?: (entryId: string) => void;
   showDeleteButton: boolean;
@@ -62,6 +63,7 @@ type SortableQueueCardProps = {
 function SortableQueueCard({
   disabled,
   entry,
+  isDragSessionActive,
   isDeletePending,
   onDelete,
   showDeleteButton,
@@ -88,10 +90,14 @@ function SortableQueueCard({
       }}
       entry={entry}
       data-queue-virtual-item="true"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
+      style={
+        isDragSessionActive
+          ? {
+              transform: CSS.Transform.toString(transform),
+              transition,
+            }
+          : undefined
+      }
       data-drag-disabled={disabled}
       data-dragging={isDragging}
       isDeletePending={isDeletePending}
@@ -202,6 +208,7 @@ function SortableQueueListWindow({
             key={entry.entryId}
             disabled={isMovePending || entries.length < 2}
             entry={entry}
+            isDragSessionActive={isDragging}
             isDeletePending={isDeletePending}
             onDelete={onDelete}
             showDeleteButton={canDeleteEntry?.(entry) ?? true}
@@ -330,11 +337,20 @@ export default function RoomQueueSortableList({
       sourceEntryIdsKey: pendingEntryIdsKey,
     });
 
-    onMove?.({
+    if (!onMove) {
+      setPendingOrder(null);
+      return;
+    }
+
+    const moveCompletion = onMove({
       beforeEntryId,
       movedEntryId: activeEntryId,
       orderedPendingEntryIds: reorderedEntries.map((entry) => entry.entryId),
     });
+    void moveCompletion.then(
+      () => setPendingOrder(null),
+      () => setPendingOrder(null),
+    );
   }
 
   if (entries.length === 0) {
@@ -376,7 +392,7 @@ export default function RoomQueueSortableList({
           />
           {typeof document !== "undefined"
             ? createPortal(
-                <DragOverlay>
+                <DragOverlay dropAnimation={null}>
                   {activeEntry ? (
                     <RoomQueueCard entry={activeEntry} data-drag-overlay="true" />
                   ) : null}
