@@ -7,6 +7,17 @@ import EditRoomFormModal from "./EditRoomFormModal";
 vi.mock("@/src/features/room/update/hooks/useEditRoomForm", () => ({
   useEditRoomForm: vi.fn(),
 }));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ replace: vi.fn() }),
+}));
+vi.mock("@/src/features/room/update/model/useDeleteRoom", () => ({
+  useDeleteRoom: () => ({
+    error: null,
+    isPending: false,
+    mutateAsync: vi.fn(),
+    reset: vi.fn(),
+  }),
+}));
 vi.mock("@/src/features/room/hooks/useRoomTags", () => ({
   useRoomTags: () => ({ data: [] }),
 }));
@@ -40,11 +51,14 @@ describe("EditRoomFormModal feedback", () => {
       thumbnailPreviewUrl: null,
       thumbnailStatusMessage: null,
       title: "기존 방",
+      trackLimitMinutes: "",
+      trackLimitMinuteOptions: [5, 10, 15] as const,
       toggleTag: vi.fn(),
       markThumbnailPreviewUnavailable: vi.fn(),
       updateMaxParticipants: vi.fn(),
       updatePasswordChangeEnabled: vi.fn(),
       updatePasswordClearEnabled: vi.fn(),
+      updateTrackLimitMinutes: vi.fn(),
       updateTitle: vi.fn(),
     });
 

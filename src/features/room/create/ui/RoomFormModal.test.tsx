@@ -573,7 +573,7 @@ describe("RoomFormModal room form flows", () => {
         file,
       });
     });
-    await userEvent.click(screen.getByRole("button", { name: "큐 수정하기" }));
+    await userEvent.click(screen.getByRole("button", { name: "편집 완료" }));
 
     await waitFor(() => {
       expect(vi.mocked(updateRoomThumbnail).mock.calls[0]?.[0]).toEqual({

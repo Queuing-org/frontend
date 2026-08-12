@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
   const refetchParticipants = vi.fn();
   const ensureRoomSubscription = vi.fn();
   const leaveRoomSession = vi.fn();
+  const replace = vi.fn();
   const roomChat = {
     cleanupSubscriptions: vi.fn(),
     initializeFromJoinData: vi.fn(),
@@ -23,6 +24,7 @@ const mocks = vi.hoisted(() => {
   return {
     ensureRoomSubscription,
     leaveRoomSession,
+    replace,
     refetchParticipants,
     refetchRoomPlayback,
     roomChat,
@@ -31,6 +33,7 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("next/navigation", () => ({
   useParams: () => ({ slug: "room" }),
+  useRouter: () => ({ replace: mocks.replace }),
 }));
 vi.mock("@/src/shared/lib/useMediaQuery", () => ({
   useMediaQuery: () => false,
@@ -81,16 +84,19 @@ describe("RoomPlaybackScreen join reads", () => {
     localStorage.clear();
   });
 
-  it("pre-join meta를 query cache에 저장하고 joined 전환 시 warm read를 수동 refetch하지 않는다", async () => {
-    const roomMeta = {
+  it("pre-join meta를 저장하고 joined 전환 시 최신 인원 meta를 재조회한다", async () => {
+    const preJoinRoomMeta = {
       slug: "room",
       title: "방",
       isPublic: true,
       hasPassword: false,
-      activeUsersCount: 1,
+      activeUsersCount: 0,
       tags: [],
     };
-    vi.mocked(fetchRoomMeta).mockResolvedValue(roomMeta);
+    const joinedRoomMeta = { ...preJoinRoomMeta, activeUsersCount: 1 };
+    vi.mocked(fetchRoomMeta)
+      .mockResolvedValueOnce(preJoinRoomMeta)
+      .mockResolvedValueOnce(joinedRoomMeta);
     vi.mocked(joinRoom).mockResolvedValue({
       roomSlug: "room",
       timestamp: 1,
@@ -111,12 +117,20 @@ describe("RoomPlaybackScreen join reads", () => {
       expect(useRoomPlayback).toHaveBeenCalledWith("room", null, true),
     );
     expect(useRoomParticipants).toHaveBeenCalledWith("room", null, true);
-    expect(fetchRoomMeta).toHaveBeenCalledTimes(1);
-    expect(fetchRoomMeta).toHaveBeenCalledWith(
+    await waitFor(() => expect(fetchRoomMeta).toHaveBeenCalledTimes(2));
+    expect(fetchRoomMeta).toHaveBeenNthCalledWith(
+      1,
       "room",
       expect.any(AbortSignal),
     );
-    expect(queryClient.getQueryData(roomKeys.meta("room"))).toEqual(roomMeta);
+    expect(fetchRoomMeta).toHaveBeenNthCalledWith(
+      2,
+      "room",
+      expect.any(AbortSignal),
+    );
+    expect(queryClient.getQueryData(roomKeys.meta("room"))).toEqual(
+      joinedRoomMeta,
+    );
     expect(mocks.refetchRoomPlayback).not.toHaveBeenCalled();
     expect(mocks.refetchParticipants).not.toHaveBeenCalled();
 
@@ -163,6 +177,7 @@ describe("RoomPlaybackScreen join reads", () => {
     await act(async () => resolveRoomMeta(roomMeta));
 
     await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchRoomMeta).toHaveBeenCalledTimes(2));
     expect(sharedQuerySignal?.aborted).toBe(false);
 
     unmount();
