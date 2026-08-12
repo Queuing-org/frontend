@@ -10,6 +10,7 @@ import { useRoomThumbnailSelection } from "@/src/features/room/hooks/useRoomThum
 import {
   ROOM_MAX_PARTICIPANT_OPTIONS,
   ROOM_TAG_LIMIT,
+  ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
   ROOM_TITLE_MAX_LENGTH,
 } from "@/src/features/room/model/roomFormLimits";
 import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
@@ -24,19 +25,6 @@ import CreateSettingsStep, {
 import EditRoomFormModal from "./EditRoomFormModal";
 import styles from "./RoomFormModal.module.css";
 
-const TRACK_LIMIT_MINUTE_OPTIONS = [
-  5,
-  10,
-  15,
-  20,
-  25,
-  30,
-  60,
-  90,
-  120,
-  180,
-  240,
-] as const;
 const EMPTY_TAG_SLUGS: string[] = [];
 const REQUIRED_TAG_ERROR_MESSAGE = "태그는 1개 이상 골라주세요";
 
@@ -50,6 +38,7 @@ type RoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
+  initialTrackLimitMinutes?: number | null;
   initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
@@ -69,7 +58,9 @@ function parseOptionalTrackLimitMinutes(value: string) {
 
   const parsedValue = Number.parseInt(trimmedValue, 10);
 
-  return TRACK_LIMIT_MINUTE_OPTIONS.some((minutes) => minutes === parsedValue)
+  return ROOM_TRACK_LIMIT_MINUTE_OPTIONS.some(
+    (minutes) => minutes === parsedValue,
+  )
     ? parsedValue
     : undefined;
 }
@@ -82,6 +73,7 @@ export default function RoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
+  initialTrackLimitMinutes = null,
   initialThumbnailUrl = null,
   onClose,
 }: RoomFormModalProps) {
@@ -100,6 +92,7 @@ export default function RoomFormModal({
         initialTagSlugs={initialTagSlugs}
         initialHasPassword={initialHasPassword}
         initialMaxParticipants={initialMaxParticipants}
+        initialTrackLimitMinutes={initialTrackLimitMinutes}
         initialThumbnailUrl={initialThumbnailUrl}
         onClose={onClose}
       />,
@@ -398,7 +391,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           setTrackLimitMinutes(nextValue);
           setDidTryFinish(false);
         }}
-        trackLimitMinuteOptions={TRACK_LIMIT_MINUTE_OPTIONS}
+        trackLimitMinuteOptions={ROOM_TRACK_LIMIT_MINUTE_OPTIONS}
         maxParticipantOptions={ROOM_MAX_PARTICIPANT_OPTIONS}
       />
     );

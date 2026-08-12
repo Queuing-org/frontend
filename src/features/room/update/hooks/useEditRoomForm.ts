@@ -9,6 +9,7 @@ import { useRoomThumbnailSelection } from "../../hooks/useRoomThumbnailSelection
 import {
   ROOM_MAX_PARTICIPANT_OPTIONS,
   ROOM_TAG_LIMIT,
+  ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
   ROOM_TITLE_MAX_LENGTH,
 } from "../../model/roomFormLimits";
 
@@ -16,6 +17,7 @@ type UseEditRoomFormParams = {
   initialHasPassword: boolean;
   initialMaxParticipants: number | null;
   initialTagSlugs: string[];
+  initialTrackLimitMinutes: number | null;
   initialTitle: string;
   onClose: () => void;
   roomSlug?: string;
@@ -35,10 +37,25 @@ function parseMaxParticipants(value: string): number | null {
   return Number.parseInt(trimmedValue, 10);
 }
 
+function formatTrackLimitMinutes(value: number | null) {
+  return typeof value === "number" ? String(value) : "";
+}
+
+function parseTrackLimitMinutes(value: string): number | null {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  return Number.parseInt(trimmedValue, 10);
+}
+
 export function useEditRoomForm({
   initialHasPassword,
   initialMaxParticipants,
   initialTagSlugs,
+  initialTrackLimitMinutes,
   initialTitle,
   onClose,
   roomSlug,
@@ -50,6 +67,10 @@ export function useEditRoomForm({
   const thumbnailSelection = useRoomThumbnailSelection();
   const normalizedInitialMaxParticipants =
     typeof initialMaxParticipants === "number" ? initialMaxParticipants : null;
+  const normalizedInitialTrackLimitMinutes =
+    typeof initialTrackLimitMinutes === "number"
+      ? initialTrackLimitMinutes
+      : null;
   const [savedTitle, setSavedTitle] = useState(() => initialTitle);
   const [savedMaxParticipants, setSavedMaxParticipants] = useState<
     number | null
@@ -57,9 +78,15 @@ export function useEditRoomForm({
   const [savedTagSlugs, setSavedTagSlugs] = useState<string[]>(() =>
     initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
+  const [savedTrackLimitMinutes, setSavedTrackLimitMinutes] = useState<
+    number | null
+  >(() => normalizedInitialTrackLimitMinutes);
   const [title, setTitle] = useState(() => initialTitle);
   const [maxParticipants, setMaxParticipants] = useState(() =>
     formatMaxParticipants(normalizedInitialMaxParticipants),
+  );
+  const [trackLimitMinutes, setTrackLimitMinutes] = useState(() =>
+    formatTrackLimitMinutes(normalizedInitialTrackLimitMinutes),
   );
   const [password, setPassword] = useState("");
   const [isPasswordClearEnabled, setIsPasswordClearEnabled] = useState(false);
@@ -80,6 +107,7 @@ export function useEditRoomForm({
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
   const parsedMaxParticipants = parseMaxParticipants(maxParticipants);
+  const parsedTrackLimitMinutes = parseTrackLimitMinutes(trackLimitMinutes);
   const isPasswordRequired =
     isPasswordChangeEnabled && trimmedPassword.length === 0;
   const canSubmit =
@@ -139,6 +167,10 @@ export function useEditRoomForm({
     setMaxParticipants(value);
   };
 
+  const updateTrackLimitMinutes = (value: string) => {
+    setTrackLimitMinutes(value);
+  };
+
   const handleThumbnailChange = (files: FileList | null) => {
     uploadTemporaryRoomThumbnailMutation.reset();
     updateRoomThumbnailMutation.reset();
@@ -171,12 +203,14 @@ export function useEditRoomForm({
     const payload = buildUpdateRoomPayload({
       initialMaxParticipants: savedMaxParticipants,
       initialTagSlugs: savedTagSlugs,
+      initialTrackLimitMinutes: savedTrackLimitMinutes,
       initialTitle: savedTitle,
       isPasswordClearEnabled: initialHasPassword && isPasswordClearEnabled,
       isPasswordChangeEnabled,
       maxParticipants: parsedMaxParticipants,
       password,
       selectedTagSlugs,
+      trackLimitMinutes: parsedTrackLimitMinutes,
       title,
     });
     const thumbnailUploadToken =
@@ -196,6 +230,10 @@ export function useEditRoomForm({
         setSavedMaxParticipants(parsedMaxParticipants);
         setMaxParticipants(formatMaxParticipants(parsedMaxParticipants));
         setSavedTagSlugs(selectedTagSlugs.slice(0, ROOM_TAG_LIMIT));
+        setSavedTrackLimitMinutes(parsedTrackLimitMinutes);
+        setTrackLimitMinutes(
+          formatTrackLimitMinutes(parsedTrackLimitMinutes),
+        );
         setIsPasswordChangeEnabled(false);
         setIsPasswordClearEnabled(false);
         setPassword("");
@@ -254,10 +292,13 @@ export function useEditRoomForm({
     markThumbnailPreviewUnavailable:
       thumbnailSelection.markPreviewUnavailable,
     title,
+    trackLimitMinutes,
+    trackLimitMinuteOptions: ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
     toggleTag,
     updateMaxParticipants,
     updatePasswordClearEnabled,
     updatePasswordChangeEnabled,
+    updateTrackLimitMinutes,
     updateTitle,
   };
 }

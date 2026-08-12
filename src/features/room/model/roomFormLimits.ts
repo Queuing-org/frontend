@@ -22,3 +22,17 @@ export const ROOM_MAX_PARTICIPANT_OPTIONS = [
   90,
   100,
 ] as const;
+
+export const ROOM_TRACK_LIMIT_MINUTE_OPTIONS = [
+  5,
+  10,
+  15,
+  20,
+  25,
+  30,
+  60,
+  90,
+  120,
+  180,
+  240,
+] as const;

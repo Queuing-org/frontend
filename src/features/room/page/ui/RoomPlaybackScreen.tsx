@@ -200,6 +200,23 @@ export default function RoomPlaybackScreen() {
       slug,
     });
 
+  const refreshRoomMetaAfterJoin = useCallback(
+    (joinedRoomSlug: string) => {
+      const queryKey = roomMetaQueryOptions(joinedRoomSlug).queryKey;
+
+      queryClient.setQueryData<RoomMeta>(queryKey, (current) =>
+        current
+          ? {
+              ...current,
+              activeUsersCount: Math.max(current.activeUsersCount, 1),
+            }
+          : current,
+      );
+      void queryClient.refetchQueries({ queryKey, type: "all" });
+    },
+    [queryClient],
+  );
+
   async function handlePasswordSubmit(password: string) {
     if (!slug) return;
 
@@ -223,6 +240,7 @@ export default function RoomPlaybackScreen() {
       setJoinStateSlug(slug);
       setRoomPassword(password);
       ensureRoomSubscription(slug, password);
+      refreshRoomMetaAfterJoin(slug);
       setStatus("joined");
       setJoinErrorMessage("");
     } catch (error) {
@@ -288,6 +306,7 @@ export default function RoomPlaybackScreen() {
 
         initializeChatStateFromJoinData(joinResult.data);
         ensureRoomSubscription(slug, joinPassword);
+        refreshRoomMetaAfterJoin(slug);
         setJoinStateSlug(slug);
         setRoomPassword(joinPassword);
         setStatus("joined");
@@ -336,6 +355,7 @@ export default function RoomPlaybackScreen() {
     initializeChatStateFromJoinData,
     leaveRoomSession,
     queryClient,
+    refreshRoomMetaAfterJoin,
     resetChatState,
     slug,
   ]);

@@ -11,7 +11,7 @@
 
 .modal {
   position: relative;
-  width: min(816px, 100%);
+  width: min(664px, 100%);
   height: min(1236px, calc(100dvh - 48px));
   min-height: min(720px, calc(100dvh - 48px));
   overflow: hidden;
@@ -111,12 +111,12 @@
 }
 
 .deleteRoomButton {
-  min-height: 34px;
-  padding: 6px 12px;
-  border: 0;
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid #ff0000;
   border-radius: 8px;
-  background: transparent;
-  color: #ff0000;
+  background: #ff0000;
+  color: #ffffff;
   font-family: inherit;
   font-size: 14px;
   font-weight: var(--fw-semibold);
@@ -129,7 +129,8 @@
 
 .deleteRoomButton:hover:not(:disabled),
 .deleteRoomButton:focus-visible:not(:disabled) {
-  background: #fff1f1;
+  border-color: #d90000;
+  background: #d90000;
 }
 
 .deleteRoomButton:focus-visible {
@@ -194,7 +195,7 @@
 .label,
 .settingLabel {
   color: #3c3c3c;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: var(--fw-medium);
   line-height: 1.4;
 }
@@ -341,6 +342,21 @@
   flex-direction: column;
   gap: 20px;
   padding-top: 4px;
+}
+
+.inlineSettingsRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.compactSettingField {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
 }
 
 .settingRow {
@@ -605,6 +621,16 @@
     gap: 8px;
   }
 
+  .inlineSettingsRow {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .compactSettingField {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
   .settingLabel {
     min-height: auto;
   }
@@ -726,6 +752,14 @@
   .settingsStack {
     gap: 16px;
     padding-top: 3.2px;
+  }
+
+  .inlineSettingsRow {
+    gap: 16px;
+  }
+
+  .compactSettingField {
+    gap: 9.6px;
   }
 
   .settingRow {

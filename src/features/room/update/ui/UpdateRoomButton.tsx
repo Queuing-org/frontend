@@ -42,6 +42,7 @@ export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
           initialTagSlugs={initialTagSlugs}
           initialHasPassword={roomMeta.hasPassword}
           initialMaxParticipants={roomMeta.maxParticipants ?? null}
+          initialTrackLimitMinutes={roomMeta.trackLimitMinutes ?? null}
           initialThumbnailUrl={getRoomImageSrc({
             thumbnailUrl: roomMeta.thumbnailUrl,
             thumbnailUrls: roomMeta.thumbnailUrls,

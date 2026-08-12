@@ -1,24 +1,29 @@
-# QA Report
+# Follow-up QA Report
 
 ## Result
 
-- status: pass
-- 816px 세로 panel, bordered EDIT pill, 중앙 thumbnail, filled title, genre chips, label-control settings, dark footer button을 피그마 구조에 맞췄다.
-- 본문만 scroll되고 header/footer는 고정되어 짧은 viewport에서도 완료 버튼이 유지된다.
-- 참여 제한 menu는 마지막 control 위로 열려 footer나 viewport 아래에 잘리지 않는다.
-- 기존 password 유지 시 field를 보내지 않고, 새 값은 문자열, 공개 전환은 null로 보내는 기존 payload 의미를 보존한다.
-- 같은 참여 제한 option을 다시 선택해도 작성 중인 password를 지우지 않는다.
-- thumbnail upload, delete confirm/error, QueryBoundary, submit error와 focus 복원 흐름을 유지한다.
-- overlay에는 YouTube iframe 합성 리스크가 있는 backdrop-filter를 사용하지 않았다.
-- API/hook/cache와 테스트 파일은 변경하지 않았다.
+- Classification: pass
+- Scope: 채팅 empty 정렬, 최초 join 인원, 방 수정 modal 설정·스타일
+
+## Boundary Review
+
+- 채팅 empty element가 scroll list의 남은 높이를 차지해 세로 중앙에 배치되며 기존 2단계 blur 수치는 변경하지 않는다.
+- join 성공 시 stale room meta의 `activeUsersCount`를 최소 1로 즉시 보정하고 서버 meta를 재조회한다.
+- 참가자 panel은 room meta와 실제 로드된 참가자 수 중 큰 값을 사용해 첫 입장 0명 표시를 방어한다.
+- edit form은 room meta의 `trackLimitMinutes`를 초기값으로 받고 변경된 경우에만 PATCH payload에 넣는다.
+- update mutation의 기존 room meta/list invalidation을 그대로 사용한다.
+- 비밀번호 유지·변경·해제, thumbnail upload, delete confirm 경계는 기존 흐름을 보존한다.
+- modal 기본 폭 664px, 두 제한 필드 동일 행, 참여 제한 다음 행, 16px medium label, 1.5px dashed thumbnail border, filled red delete button을 확인했다.
 
 ## Verification
 
 - `git diff --check`: pass
 - `npm run lint`: pass
 - `npm run build`: pass
-- fresh read-only QA: pass after one bounded fix cycle
+- changed test/spec files: none
+- tests: 사용자 요청에 따라 작성·수정·실행하지 않음
 
 ## Residual Risk
 
-- 연결 가능한 browser instance가 없어 실제 로그인 방에서의 픽셀 단위 시각 QA는 수행하지 못했다. 제공된 원본 이미지와 DOM/CSS 수치를 기준으로 정적 검토했다.
+- 공개 production OpenAPI endpoint가 노출되지 않아 PATCH의 `trackLimitMinutes` 필드는 현재 room meta/create 계약과 최신 제품 요구를 기준으로 연결했다.
+- 실제 signed-in room owner 상태의 modal과 최초 room join은 사용자 육안 확인이 필요하다.

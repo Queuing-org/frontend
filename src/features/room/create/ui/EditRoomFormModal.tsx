@@ -22,6 +22,7 @@ type EditRoomFormModalProps = {
   initialTagSlugs?: string[];
   initialHasPassword?: boolean;
   initialMaxParticipants?: number | null;
+  initialTrackLimitMinutes?: number | null;
   initialThumbnailUrl?: string | null;
   onClose: () => void;
 };
@@ -33,6 +34,7 @@ export default function EditRoomFormModal({
   initialTagSlugs = EMPTY_TAG_SLUGS,
   initialHasPassword = false,
   initialMaxParticipants = null,
+  initialTrackLimitMinutes = null,
   initialThumbnailUrl = null,
   onClose,
 }: EditRoomFormModalProps) {
@@ -44,6 +46,7 @@ export default function EditRoomFormModal({
     initialHasPassword,
     initialMaxParticipants,
     initialTagSlugs,
+    initialTrackLimitMinutes,
     initialTitle,
     onClose,
     roomSlug,
@@ -57,6 +60,11 @@ export default function EditRoomFormModal({
     typeof initialMaxParticipants === "number" &&
     !(form.maxParticipantOptions as readonly number[]).includes(
       initialMaxParticipants,
+    );
+  const hasLegacyTrackLimitMinutes =
+    typeof initialTrackLimitMinutes === "number" &&
+    !(form.trackLimitMinuteOptions as readonly number[]).includes(
+      initialTrackLimitMinutes,
     );
   const participationMode: EditParticipationMode =
     form.isPasswordClearEnabled
@@ -249,36 +257,68 @@ export default function EditRoomFormModal({
             </section>
 
             <div className={styles.settingsStack}>
-              <div className={styles.settingRow}>
-                <label
-                  className={styles.settingLabel}
-                  htmlFor="edit-room-max-participants"
-                >
-                  최대 인원 수
-                </label>
-                <select
-                  id="edit-room-max-participants"
-                  className={styles.select}
-                  value={form.maxParticipants}
-                  onChange={(event) =>
-                    form.updateMaxParticipants(event.target.value)
-                  }
-                  disabled={form.isSubmitting}
-                >
-                  {initialMaxParticipants == null ? (
-                    <option value="">제한 없음 (현재 설정)</option>
-                  ) : null}
-                  {hasLegacyMaxParticipants ? (
-                    <option value={String(initialMaxParticipants)}>
-                      {initialMaxParticipants}명 (현재 설정)
-                    </option>
-                  ) : null}
-                  {form.maxParticipantOptions.map((option) => (
-                    <option key={option} value={String(option)}>
-                      {option}명
-                    </option>
-                  ))}
-                </select>
+              <div className={styles.inlineSettingsRow}>
+                <div className={styles.compactSettingField}>
+                  <label
+                    className={styles.settingLabel}
+                    htmlFor="edit-room-track-limit"
+                  >
+                    곡 당 제한 시간
+                  </label>
+                  <select
+                    id="edit-room-track-limit"
+                    className={styles.select}
+                    value={form.trackLimitMinutes}
+                    onChange={(event) =>
+                      form.updateTrackLimitMinutes(event.target.value)
+                    }
+                    disabled={form.isSubmitting}
+                  >
+                    <option value="">제한 없음</option>
+                    {hasLegacyTrackLimitMinutes ? (
+                      <option value={String(initialTrackLimitMinutes)}>
+                        {initialTrackLimitMinutes}분 (현재 설정)
+                      </option>
+                    ) : null}
+                    {form.trackLimitMinuteOptions.map((option) => (
+                      <option key={option} value={String(option)}>
+                        {option}분
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.compactSettingField}>
+                  <label
+                    className={styles.settingLabel}
+                    htmlFor="edit-room-max-participants"
+                  >
+                    최대 인원 수
+                  </label>
+                  <select
+                    id="edit-room-max-participants"
+                    className={styles.select}
+                    value={form.maxParticipants}
+                    onChange={(event) =>
+                      form.updateMaxParticipants(event.target.value)
+                    }
+                    disabled={form.isSubmitting}
+                  >
+                    {initialMaxParticipants == null ? (
+                      <option value="">제한 없음 (현재 설정)</option>
+                    ) : null}
+                    {hasLegacyMaxParticipants ? (
+                      <option value={String(initialMaxParticipants)}>
+                        {initialMaxParticipants}명 (현재 설정)
+                      </option>
+                    ) : null}
+                    {form.maxParticipantOptions.map((option) => (
+                      <option key={option} value={String(option)}>
+                        {option}명
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className={styles.settingRow}>

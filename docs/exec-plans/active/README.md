@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-12-edit-room-figma](./2026-08-12-edit-room-figma/plan.md): ready — 피그마 기반 방 수정 modal과 생성형 참여 제한 control, 로컬 QA·fresh review 통과
+- [2026-08-12-edit-room-figma](./2026-08-12-edit-room-figma/plan.md): ready — 방 수정 modal 664px 후속 배치, 곡당 제한 시간 수정, 최초 join 인원·채팅 빈 상태 보정 및 로컬 QA 통과
 
 - [2026-08-12-participant-row-alignment](./2026-08-12-participant-row-alignment/plan.md): ready — 참가자 헤더와 행의 좌우 기준선 및 방장 왕관 크기 정렬, 로컬 QA·fresh review 통과
 

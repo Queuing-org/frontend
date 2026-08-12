@@ -62,7 +62,9 @@ export default function RoomParticipantsPanel({
     show: showTransferOwnerError,
   } = useTransientManagementError();
   const owner = roomMeta?.owner ?? null;
-  const participantCount = roomMeta?.activeUsersCount;
+  const participantCount = roomMeta
+    ? Math.max(roomMeta.activeUsersCount, participants.length)
+    : participants.length || undefined;
   const canModerateParticipants = isRoomOwner(owner, currentUser);
 
   useEffect(() => {

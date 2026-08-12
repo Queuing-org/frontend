@@ -20,6 +20,7 @@ export type UpdateRoomPayload = {
   password?: string | null;
   tags?: string[];
   maxParticipants?: number | null;
+  trackLimitMinutes?: number | null;
 };
 
 export type UpdateRoomParams = {
