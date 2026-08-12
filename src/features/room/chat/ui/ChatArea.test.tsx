@@ -337,7 +337,7 @@ describe("ChatArea 관리 메뉴", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("Escape, 바깥 클릭, 스크롤로 메뉴를 닫고 Escape는 포커스를 복원한다", async () => {
+  it("Escape와 바깥 클릭으로 닫고 스크롤 중에는 메뉴를 유지한다", async () => {
     const user = userEvent.setup();
     renderChat();
     const trigger = getMenuTrigger("회원");
@@ -353,7 +353,7 @@ describe("ChatArea 관리 메뉴", () => {
 
     await user.click(trigger);
     fireEvent.scroll(screen.getByLabelText("채팅 메시지 목록"));
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
   });
 
   it("신고·차단 메뉴를 모달에 연결하고 닫은 뒤 트리거 포커스를 복원한다", async () => {

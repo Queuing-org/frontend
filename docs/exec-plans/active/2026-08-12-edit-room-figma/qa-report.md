@@ -27,3 +27,18 @@
 
 - 공개 production OpenAPI endpoint가 노출되지 않아 PATCH의 `trackLimitMinutes` 필드는 현재 room meta/create 계약과 최신 제품 요구를 기준으로 연결했다.
 - 실제 signed-in room owner 상태의 modal과 최초 room join은 사용자 육안 확인이 필요하다.
+
+## CI Remediation QA
+
+- Classification: pass
+- Production source changes: none
+- Updated tests preserve the newest contracts:
+  - chat management menu remains open while its portal position follows scroll
+  - participant panel does not emit management feedback when no reportable chat exists
+  - edit modal uses the current `편집 완료` accessible name and isolates router/delete dependencies
+  - room join optimistically corrects the participant count and refetches room meta
+- Targeted affected suite: 5 files / 34 tests pass
+- Full suite: 114 files / 389 tests pass
+- `npm run lint`: pass
+- `npm run build`: pass
+- `git diff --check`: pass

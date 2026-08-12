@@ -180,16 +180,17 @@ describe("RoomParticipantsPanel", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
-  it("신고할 채팅이 없으면 요청 target 대신 안내를 표시한다", async () => {
+  it("신고할 채팅이 없으면 panel 안내 없이 요청을 무시한다", async () => {
     const user = userEvent.setup();
     renderPanel([]);
 
     await user.click(screen.getByRole("button", { name: "회원 신고" }));
 
     expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByRole("alert")).toBeNull();
     expect(
-      screen.getByText("신고할 수 있는 채팅 메시지가 없습니다."),
-    ).toBeVisible();
+      screen.queryByText("신고할 수 있는 채팅 메시지가 없습니다."),
+    ).toBeNull();
   });
 
   it("차단, 내보내기, 방장 위임을 기존 계약에 맞춰 연결한다", async () => {
