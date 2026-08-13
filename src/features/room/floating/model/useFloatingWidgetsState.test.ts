@@ -8,6 +8,7 @@ import {
   getWidgetBounds,
   getWidgetConfig,
   getWidgetOffsetStorageKey,
+  getWidgetPlacementStyle,
   type WidgetId,
   useFloatingWidgetsState,
 } from "./useFloatingWidgetsState";
@@ -55,25 +56,54 @@ function FloatingWidgetHydrationProbe() {
 
 describe("floating widget laptop compact layout", () => {
   it.each([
-    [normalViewport, { x: 786, y: -62 }],
-    [compactViewport, { x: 629, y: -50 }],
-    [wideCompactViewport, { x: 816, y: -25 }],
+    [normalViewport, { right: 24, top: 672.5 }],
+    [compactViewport, { right: 19.2, top: 538 }],
+    [wideCompactViewport, { right: 24, top: 499.2 }],
   ])(
-    "%o viewport에서 채팅을 참가자 아래·신청곡 패널 중앙 높이에 배치한다",
-    (viewport, expectedOffset) => {
-      expect(getDefaultWidgetOffset("chat", viewport)).toEqual(expectedOffset);
+    "%o viewport에서 채팅 DOM을 참가자 아래·신청곡 패널 중앙 높이에 배치한다",
+    (viewport, expectedPlacement) => {
+      expect(getWidgetPlacementStyle("chat", viewport)).toEqual(
+        expectedPlacement,
+      );
+      expect(getDefaultWidgetOffset("chat", viewport)).toEqual({ x: 0, y: 0 });
     },
   );
 
-  it("저장된 채팅 위치는 새 기본 위치보다 우선한다", () => {
+  it("새 기준으로 저장된 채팅 drag offset은 기본 위치보다 우선한다", () => {
     window.localStorage.setItem(
-      "chatWidgetOffset",
+      getWidgetOffsetStorageKey("chat", normalViewport),
       JSON.stringify({ x: 32, y: 48 }),
     );
 
     const { result } = renderHook(() => useFloatingWidgetsState());
 
     expect(result.current.widgets.chat.offset).toEqual({ x: 32, y: 48 });
+  });
+
+  it("기존 중앙 anchor 기준 채팅 offset을 화면상 위치가 유지되도록 변환한다", () => {
+    window.localStorage.setItem(
+      "chatWidgetOffset",
+      JSON.stringify({ x: 32, y: 48 }),
+    );
+
+    const { result } = renderHook(() => useFloatingWidgetsState());
+    const migratedOffset = result.current.widgets.chat.offset;
+    const placement = getWidgetPlacementStyle("chat", normalViewport);
+
+    expect(migratedOffset).toEqual({ x: -754, y: 111 });
+    expect(
+      normalViewport.width -
+        (placement.right as number) -
+        getWidgetConfig("chat", normalViewport).width +
+        migratedOffset.x,
+    ).toBe(842);
+    expect((placement.top as number) + migratedOffset.y).toBeCloseTo(783.5);
+    expect(window.localStorage.getItem("chatWidgetOffset")).toBeNull();
+    expect(
+      window.localStorage.getItem(
+        getWidgetOffsetStorageKey("chat", normalViewport),
+      ),
+    ).toBe(JSON.stringify(migratedOffset));
   });
 
   it("같은 density에서 viewport가 바뀌면 저장값 없는 채팅 기본 위치를 다시 계산한다", () => {
@@ -147,10 +177,10 @@ describe("floating widget laptop compact layout", () => {
 
   it("normal과 compact offset 저장소를 분리한다", () => {
     expect(getWidgetOffsetStorageKey("chat", normalViewport)).toBe(
-      "chatWidgetOffset",
+      "chatWidgetOffset:v2",
     );
     expect(getWidgetOffsetStorageKey("chat", compactViewport)).toBe(
-      "chatWidgetOffset:compact",
+      "chatWidgetOffset:v2:compact",
     );
   });
 
@@ -226,7 +256,7 @@ describe("floating widget laptop compact layout", () => {
     expect(
       Object.values(result.current.widgets).map((widget) => widget.offset),
     ).toEqual([
-      getDefaultWidgetOffset("chat", normalViewport),
+      { x: 0, y: 0 },
       { x: 0, y: 0 },
       { x: 0, y: 0 },
       { x: 0, y: 0 },

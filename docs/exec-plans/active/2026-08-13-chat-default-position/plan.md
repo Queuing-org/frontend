@@ -48,3 +48,10 @@
 - [x] targeted test, lint, full test, build
 - [x] fresh read-only QA
 - [x] commit, push, Draft PR #48 갱신
+
+## 후속 수정
+
+- 사용자 DevTools 확인으로 최초 구현이 중앙 하단 DOM anchor를 유지하고 큰 drag transform으로 새 위치를 표현한 것을 확인했다.
+- 채팅 DOM base placement를 직접 `right`/`top` 새 위치로 옮기고 기본 drag offset을 `{ x: 0, y: 0 }`으로 정리했다.
+- 기존 `chatWidgetOffset` 저장값은 `chatWidgetOffset:v2`로 한 번 변환해 화면상 위치를 유지한다.
+- 후속 targeted test, full test, lint, build와 fresh read-only QA를 다시 수행한다.

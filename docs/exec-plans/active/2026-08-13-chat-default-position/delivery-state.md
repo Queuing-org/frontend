@@ -10,11 +10,13 @@
   - `frontend-architecture-guardrails`
   - `queuing-qa-reviewer`
 - local_verification:
-  - `npm run test -- --run src/features/room/floating/model/useFloatingWidgetsState.test.ts` — 1 file / 15 tests passed
+  - `npm run test -- --run src/features/room/floating/model/useFloatingWidgetsState.test.ts` — 1 file / 16 tests passed
   - `npm run lint` — passed
-  - `npm run test` — 118 files / 405 tests passed
+  - `npm run test -- --run src/features/room/queue/ui/RoomQueueVirtualization.test.tsx` — 1 file / 4 tests passed
+  - `npm run test` — 118 files / 406 tests passed
   - `npm run build` — passed
   - `git diff --check` — passed
-- fresh_qa: pass
+- verification_note: 최초 full test와 build 병렬 실행 중 queue virtualization timeout 1건 발생, 해당 targeted와 full suite를 순차 재실행해 통과
+- fresh_qa: pass — 실제 `right`/`top` DOM anchor, `{0,0}` 기본 offset, legacy 좌표 migration 확인
 - residual_risk: 연결 가능한 브라우저가 없어 실제 화면에서 drag 후 새 위치를 눈으로 확인하지 못함
-- next_action: Draft PR #48 원격 CI 확인
+- next_action: 후속 커밋·push 후 Draft PR #48 원격 CI 확인

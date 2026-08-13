@@ -17,13 +17,26 @@
 
 ## 검증 명령
 
-- `npm run test -- --run src/features/room/floating/model/useFloatingWidgetsState.test.ts` — 1 file / 15 tests passed
+- `npm run test -- --run src/features/room/floating/model/useFloatingWidgetsState.test.ts` — 1 file / 16 tests passed
 - `npm run lint` — passed
-- `npm run test` — 118 files / 405 tests passed
+- `npm run test -- --run src/features/room/queue/ui/RoomQueueVirtualization.test.tsx` — 1 file / 4 tests passed
+- `npm run test` — 118 files / 406 tests passed
 - `npm run build` — passed
 - `git diff --check` — passed
+
+최초 full test와 build 병렬 실행 중 queue virtualization timeout 1건이 발생했다. 같은 파일 targeted 4개와 full suite를 순차 재실행해 모두 통과했다.
+
+## DevTools 후속 확인
+
+- 최초 구현은 화면상 위치만 맞고 DOM base style은 `left: 50%; bottom: 140px`로 남아 있었다.
+- 후속 수정에서 채팅 placement style을 새 기본 위치의 `right`/`top`으로 직접 변경했다.
+- 기본 drag offset은 `{ x: 0, y: 0 }`이며 transform은 사용자가 실제 드래그한 이동량만 담당한다.
+- 기존 중앙 anchor 기준 localStorage 좌표는 v2 key로 변환해 기존 화면상 위치를 유지한다.
+
+후속 fresh read-only QA에서 실제 outer DOM의 normal/compact/wide-short `right`/`top`, `{ x: 0, y: 0 }` 기본 offset, 새 base 기준 bounds, legacy 좌표 migration, 모바일·다른 위젯 불변을 확인했고 blocking finding 없이 `pass` 판정을 받았다.
 
 ## 잔여 위험
 
 - 연결 가능한 브라우저 인스턴스가 없어 실제 화면에서 최초 배치와 drag를 시각 확인하지 못했다.
 - invalid storage, custom offset의 same-density resize, mobile offset은 기존 분기를 유지하지만 전용 회귀 테스트는 없다.
+- compact legacy migration은 normal과 동일 공식이며 수기 좌표로 최대 0.2px 반올림 오차만 확인했지만 독립 자동 테스트는 없다.
