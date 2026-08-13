@@ -1,4 +1,4 @@
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import type { ImgHTMLAttributes, ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
@@ -11,24 +11,38 @@ vi.mock("next/image", () => ({
   ),
 }));
 
+let activeSortableId: string | null = null;
+
 vi.mock("@dnd-kit/core", () => ({
   closestCenter: vi.fn(),
   DndContext: ({
     children,
     onDragEnd,
+    onDragStart,
   }: {
     children: ReactNode;
     onDragEnd: (event: {
       active: { id: string };
       over: { id: string };
     }) => void;
+    onDragStart: (event: { active: { id: string } }) => void;
   }) => (
     <>
       <button
         type="button"
-        onClick={() =>
+        onClick={() => {
+          activeSortableId = "a";
+          onDragStart({ active: { id: "a" } });
+        }}
+      >
+        drag start
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          activeSortableId = null;
           onDragEnd({ active: { id: "a" }, over: { id: "b" } })
-        }
+        }}
       >
         drag end
       </button>
@@ -51,19 +65,28 @@ vi.mock("@dnd-kit/sortable", () => ({
   },
   SortableContext: ({ children }: { children: ReactNode }) => children,
   sortableKeyboardCoordinates: vi.fn(),
-  useSortable: vi.fn(() => ({
+  useSortable: vi.fn(({ id }: { id: string }) => ({
     attributes: {},
-    isDragging: false,
+    isDragging: activeSortableId === id,
     listeners: {},
     setNodeRef: vi.fn(),
-    transform: null,
-    transition: undefined,
+    transform:
+      activeSortableId === null
+        ? null
+        : { scaleX: 1, scaleY: 1, x: 0, y: 80 },
+    transition: activeSortableId === null ? undefined : "transform 200ms ease",
   })),
   verticalListSortingStrategy: {},
 }));
 
 vi.mock("@dnd-kit/utilities", () => ({
-  CSS: { Transform: { toString: vi.fn(() => undefined) } },
+  CSS: {
+    Transform: {
+      toString: vi.fn((transform) =>
+        transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+      ),
+    },
+  },
 }));
 
 const entry = (entryId: string): PlaylistEntry => ({
@@ -109,7 +132,12 @@ describe("RoomQueueSortableList optimistic order", () => {
       />,
     );
 
-    fireEvent.click(container.querySelector("button")!);
+    fireEvent.click(screen.getByRole("button", { name: "drag start" }));
+    expect(screen.getByLabelText("a 순서 변경").closest("li")).toHaveStyle({
+      transform: "translate3d(0px, 80px, 0)",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "drag end" }));
     expect(getRowOrder(container)).toEqual(["b", "a"]);
 
     rerender(
@@ -129,5 +157,10 @@ describe("RoomQueueSortableList optimistic order", () => {
     });
 
     expect(getRowOrder(container)).toEqual(["a", "b"]);
+    expect(container.querySelectorAll("li")).toHaveLength(2);
+    container.querySelectorAll("li").forEach((row) => {
+      expect(row.style.transform).toBe("");
+      expect(row).toHaveAttribute("data-dragging", "false");
+    });
   });
 });

@@ -55,7 +55,7 @@ const entry = (entryId: string): PlaylistEntry => ({
 });
 
 describe("RoomQueueSortableList drag overlay", () => {
-  it("연속 드래그 뒤 원본 행을 숨길 수 있는 drop animation을 사용하지 않는다", () => {
+  it("원본 행의 opacity를 변경하는 drag overlay 경로를 렌더하지 않는다", () => {
     render(
       <RoomQueueSortableList
         emptyMessage="비었음"
@@ -64,9 +64,6 @@ describe("RoomQueueSortableList drag overlay", () => {
       />,
     );
 
-    expect(screen.getByTestId("queue-drag-overlay")).toHaveAttribute(
-      "data-drop-animation",
-      "disabled",
-    );
+    expect(screen.queryByTestId("queue-drag-overlay")).not.toBeInTheDocument();
   });
 });
