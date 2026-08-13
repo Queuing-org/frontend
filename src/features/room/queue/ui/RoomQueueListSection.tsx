@@ -29,8 +29,8 @@ type RoomQueueListSectionProps = {
   myEntries: PlaylistEntry[];
   onDeleteMyEntry: (entryId: string) => void;
   onDeleteRoomEntry: (entryId: string) => void;
-  onMoveMyEntry: (payload: MovePayload) => void;
-  onMoveRoomEntry: (payload: MovePayload) => void;
+  onMoveMyEntry: (payload: MovePayload) => Promise<void>;
+  onMoveRoomEntry: (payload: MovePayload) => Promise<void>;
 };
 
 export default function RoomQueueListSection({
@@ -53,6 +53,7 @@ export default function RoomQueueListSection({
   onMoveMyEntry,
   onMoveRoomEntry,
 }: RoomQueueListSectionProps) {
+  const isAnyMovePending = isMoveMyPending || isMoveRoomPending;
   const emptyContent = isEmptyLoading ? (
     <LoadingSpinner ariaLabel="내 신청곡 로딩 중" />
   ) : (
@@ -66,7 +67,7 @@ export default function RoomQueueListSection({
         emptyMessage={emptyContent}
         entries={myEntries}
         isDeletePending={isDeleteMyPending}
-        isMovePending={isMoveMyPending}
+        isMovePending={isAnyMovePending}
         hasUnloadedEntries={hasNextMyQueuePage}
         moveMode="self"
         onDelete={onDeleteMyEntry}
@@ -82,7 +83,7 @@ export default function RoomQueueListSection({
         emptyMessage={emptyMessage}
         entries={allEntries}
         isDeletePending={isDeleteRoomPending}
-        isMovePending={isMoveRoomPending}
+        isMovePending={isAnyMovePending}
         hasUnloadedEntries={hasNextAllQueuePage}
         moveMode="owner"
         onDelete={onDeleteRoomEntry}

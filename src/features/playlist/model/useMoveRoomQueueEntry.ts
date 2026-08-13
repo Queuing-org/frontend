@@ -53,12 +53,15 @@ export function useMoveRoomQueueEntry() {
         queryClient.setQueryData(queryKey, previousData);
       });
 
-      queryClient.invalidateQueries({
-        queryKey: playlistKeys.roomQueuePrefix(variables.slug),
+      return scheduleQueryInvalidation({
+        queryClient,
+        queryKeys: [],
+        resetQueryKeys: [playlistKeys.roomQueuePrefix(variables.slug)],
+        scopeKey: getRoomReadInvalidationScope(variables.slug),
       });
     },
     onSuccess: (_result, variables) => {
-      scheduleQueryInvalidation({
+      return scheduleQueryInvalidation({
         queryClient,
         queryKeys: [
           playlistKeys.roomPlaybackPrefix(variables.slug),

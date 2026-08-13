@@ -4,9 +4,11 @@ import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clampWidgetOffset,
+  getDefaultWidgetOffset,
   getWidgetBounds,
   getWidgetConfig,
   getWidgetOffsetStorageKey,
+  getWidgetPlacementStyle,
   type WidgetId,
   useFloatingWidgetsState,
 } from "./useFloatingWidgetsState";
@@ -54,6 +56,97 @@ function FloatingWidgetHydrationProbe() {
 
 describe("floating widget laptop compact layout", () => {
   it.each([
+    [normalViewport, { right: 24, top: 672.5 }],
+    [compactViewport, { right: 19.2, top: 538 }],
+    [wideCompactViewport, { right: 24, top: 499.2 }],
+  ])(
+    "%o viewport에서 채팅 DOM을 참가자 아래·신청곡 패널 중앙 높이에 배치한다",
+    (viewport, expectedPlacement) => {
+      expect(getWidgetPlacementStyle("chat", viewport)).toEqual(
+        expectedPlacement,
+      );
+      expect(getDefaultWidgetOffset("chat", viewport)).toEqual({ x: 0, y: 0 });
+    },
+  );
+
+  it("새 기준으로 저장된 채팅 drag offset은 기본 위치보다 우선한다", () => {
+    window.localStorage.setItem(
+      getWidgetOffsetStorageKey("chat", normalViewport),
+      JSON.stringify({ x: 32, y: 48 }),
+    );
+
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(result.current.widgets.chat.offset).toEqual({ x: 32, y: 48 });
+  });
+
+  it("기존 중앙 anchor 기준 채팅 offset을 화면상 위치가 유지되도록 변환한다", () => {
+    window.localStorage.setItem(
+      "chatWidgetOffset",
+      JSON.stringify({ x: 32, y: 48 }),
+    );
+
+    const { result } = renderHook(() => useFloatingWidgetsState());
+    const migratedOffset = result.current.widgets.chat.offset;
+    const placement = getWidgetPlacementStyle("chat", normalViewport);
+
+    expect(migratedOffset).toEqual({ x: -754, y: 111 });
+    expect(
+      normalViewport.width -
+        (placement.right as number) -
+        getWidgetConfig("chat", normalViewport).width +
+        migratedOffset.x,
+    ).toBe(842);
+    expect((placement.top as number) + migratedOffset.y).toBeCloseTo(783.5);
+    expect(window.localStorage.getItem("chatWidgetOffset")).toBeNull();
+    expect(
+      window.localStorage.getItem(
+        getWidgetOffsetStorageKey("chat", normalViewport),
+      ),
+    ).toBe(JSON.stringify(migratedOffset));
+  });
+
+  it("같은 density에서 viewport가 바뀌면 저장값 없는 채팅 기본 위치를 다시 계산한다", () => {
+    const resizedNormalViewport = { height: 1000, width: 1680 };
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", normalViewport),
+    );
+
+    act(() => {
+      setViewport(resizedNormalViewport.width, resizedNormalViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", resizedNormalViewport),
+    );
+  });
+
+  it("density 전환 시 각 viewport의 채팅 기본 위치를 복원한다", () => {
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    act(() => {
+      setViewport(compactViewport.width, compactViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", compactViewport),
+    );
+
+    act(() => {
+      setViewport(normalViewport.width, normalViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", normalViewport),
+    );
+  });
+
+  it.each([
     ["1536×864", compactViewport],
     ["1920×800", wideCompactViewport],
   ])("%s viewport에서 위젯 geometry를 정확히 80%%로 줄인다", (_, viewport) => {
@@ -84,10 +177,10 @@ describe("floating widget laptop compact layout", () => {
 
   it("normal과 compact offset 저장소를 분리한다", () => {
     expect(getWidgetOffsetStorageKey("chat", normalViewport)).toBe(
-      "chatWidgetOffset",
+      "chatWidgetOffset:v2",
     );
     expect(getWidgetOffsetStorageKey("chat", compactViewport)).toBe(
-      "chatWidgetOffset:compact",
+      "chatWidgetOffset:v2:compact",
     );
   });
 

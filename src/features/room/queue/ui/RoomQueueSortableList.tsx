@@ -4,7 +4,6 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   closestCenter,
   DndContext,
-  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -25,7 +24,6 @@ import { isPendingQueueEntry } from "../model/roomQueue";
 import RoomQueueCard from "./RoomQueueCard";
 import listStyles from "./RoomQueueList.module.css";
 import styles from "./RoomQueueSortableList.module.css";
-import { createPortal } from "react-dom";
 import { useQueueRenderWindow } from "./useQueueRenderWindow";
 
 type MovePayload = {
@@ -43,7 +41,7 @@ type Props = {
   isMovePending?: boolean;
   moveMode: "owner" | "self";
   onDelete?: (entryId: string) => void;
-  onMove?: (payload: MovePayload) => void;
+  onMove?: (payload: MovePayload) => Promise<void>;
 };
 
 type PendingOrder = {
@@ -54,14 +52,18 @@ type PendingOrder = {
 type SortableQueueCardProps = {
   disabled: boolean;
   entry: PlaylistEntry;
+  isDragSessionActive: boolean;
   isDeletePending: boolean;
   onDelete?: (entryId: string) => void;
   showDeleteButton: boolean;
 };
 
+const disableLayoutAnimation = () => false;
+
 function SortableQueueCard({
   disabled,
   entry,
+  isDragSessionActive,
   isDeletePending,
   onDelete,
   showDeleteButton,
@@ -74,6 +76,7 @@ function SortableQueueCard({
     transform,
     transition,
   } = useSortable({
+    animateLayoutChanges: disableLayoutAnimation,
     disabled,
     id: entry.entryId,
   });
@@ -88,10 +91,14 @@ function SortableQueueCard({
       }}
       entry={entry}
       data-queue-virtual-item="true"
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
+      style={
+        isDragSessionActive
+          ? {
+              transform: CSS.Transform.toString(transform),
+              transition,
+            }
+          : undefined
+      }
       data-drag-disabled={disabled}
       data-dragging={isDragging}
       isDeletePending={isDeletePending}
@@ -202,6 +209,7 @@ function SortableQueueListWindow({
             key={entry.entryId}
             disabled={isMovePending || entries.length < 2}
             entry={entry}
+            isDragSessionActive={isDragging}
             isDeletePending={isDeletePending}
             onDelete={onDelete}
             showDeleteButton={canDeleteEntry?.(entry) ?? true}
@@ -274,13 +282,6 @@ export default function RoomQueueSortableList({
       return entry ? [entry] : [];
     });
   }, [pendingEntriesFromProps, pendingEntryIdsKey, pendingOrder]);
-  const activeEntry = useMemo(
-    () =>
-      activeEntryId
-        ? pendingEntries.find((entry) => entry.entryId === activeEntryId) ?? null
-        : null,
-    [activeEntryId, pendingEntries],
-  );
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -330,11 +331,20 @@ export default function RoomQueueSortableList({
       sourceEntryIdsKey: pendingEntryIdsKey,
     });
 
-    onMove?.({
+    if (!onMove) {
+      setPendingOrder(null);
+      return;
+    }
+
+    const moveCompletion = onMove({
       beforeEntryId,
       movedEntryId: activeEntryId,
       orderedPendingEntryIds: reorderedEntries.map((entry) => entry.entryId),
     });
+    void moveCompletion.then(
+      () => setPendingOrder(null),
+      () => setPendingOrder(null),
+    );
   }
 
   if (entries.length === 0) {
@@ -374,16 +384,6 @@ export default function RoomQueueSortableList({
             isMovePending={isMovePending}
             onDelete={onDelete}
           />
-          {typeof document !== "undefined"
-            ? createPortal(
-                <DragOverlay>
-                  {activeEntry ? (
-                    <RoomQueueCard entry={activeEntry} data-drag-overlay="true" />
-                  ) : null}
-                </DragOverlay>,
-                document.body,
-              )
-            : null}
         </DndContext>
       ) : null}
       {fixedEntries.length > 0 ? (

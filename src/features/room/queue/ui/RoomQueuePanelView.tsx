@@ -42,8 +42,8 @@ type RoomQueuePanelViewProps = {
   onChangeTab: (tab: QueueTab) => void;
   onDeleteMyEntry: (entryId: string) => void;
   onDeleteRoomEntry: (entryId: string) => void;
-  onMoveMyEntry: (payload: MovePayload) => void;
-  onMoveRoomEntry: (payload: MovePayload) => void;
+  onMoveMyEntry: (payload: MovePayload) => Promise<void>;
+  onMoveRoomEntry: (payload: MovePayload) => Promise<void>;
   onLoadMoreAllQueue: () => void;
   onLoadMoreMyQueue: () => void;
 };

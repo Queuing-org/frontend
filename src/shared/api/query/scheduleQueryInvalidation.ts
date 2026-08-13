@@ -3,11 +3,14 @@ import type { QueryClient, QueryKey } from "@tanstack/react-query";
 export const QUERY_INVALIDATION_COALESCE_MS = 75;
 
 type PendingInvalidation = {
+  cancelled: boolean;
+  completion: Promise<void>;
   queries: Map<
     string,
-    { mode: "invalidate" | "reset"; queryKey: QueryKey }
+    { mode: "invalidate" | "reset"; queryKey: QueryKey; revision: number }
   >;
-  timeoutId: ReturnType<typeof setTimeout>;
+  resolveCompletion: () => void;
+  timeoutId: ReturnType<typeof setTimeout> | null;
 };
 
 const pendingByClient = new WeakMap<
@@ -61,49 +64,94 @@ export function scheduleQueryInvalidation({
   if (existing) {
     queryKeys.forEach((queryKey) => {
       const keyId = getQueryKeyId(queryKey);
-      if (existing.queries.get(keyId)?.mode !== "reset") {
-        existing.queries.set(keyId, { mode: "invalidate", queryKey });
-      }
+      const current = existing.queries.get(keyId);
+      existing.queries.set(keyId, {
+        mode: current?.mode === "reset" ? "reset" : "invalidate",
+        queryKey,
+        revision: (current?.revision ?? 0) + 1,
+      });
     });
-    resetQueryKeys.forEach((queryKey) =>
-      existing.queries.set(getQueryKeyId(queryKey), {
+    resetQueryKeys.forEach((queryKey) => {
+      const keyId = getQueryKeyId(queryKey);
+      const current = existing.queries.get(keyId);
+      existing.queries.set(keyId, {
         mode: "reset",
         queryKey,
-      }),
-    );
-    return;
+        revision: (current?.revision ?? 0) + 1,
+      });
+    });
+    return existing.completion;
   }
 
   const pendingQueries = new Map<
     string,
-    { mode: "invalidate" | "reset"; queryKey: QueryKey }
+    { mode: "invalidate" | "reset"; queryKey: QueryKey; revision: number }
   >(
     queryKeys.map((queryKey) => [
       getQueryKeyId(queryKey),
-      { mode: "invalidate" as const, queryKey },
+      { mode: "invalidate" as const, queryKey, revision: 0 },
     ]),
   );
   resetQueryKeys.forEach((queryKey) =>
     pendingQueries.set(getQueryKeyId(queryKey), {
       mode: "reset",
       queryKey,
+      revision: 0,
     }),
   );
-  const timeoutId = setTimeout(() => {
-    pendingScopes.delete(scopeKey);
-    if (pendingScopes.size === 0) {
-      pendingByClient.delete(queryClient);
-    }
+  let resolveCompletion = () => {};
+  const completion = new Promise<void>((resolve) => {
+    resolveCompletion = resolve;
+  });
+  const pending: PendingInvalidation = {
+    cancelled: false,
+    completion,
+    queries: pendingQueries,
+    resolveCompletion,
+    timeoutId: null,
+  };
 
-    pendingQueries.forEach(({ mode, queryKey }) => {
-      void refreshQuery(queryClient, queryKey, mode);
-    });
+  const cleanup = () => {
+    if (pendingScopes.get(scopeKey) === pending) {
+      pendingScopes.delete(scopeKey);
+      if (pendingScopes.size === 0) {
+        pendingByClient.delete(queryClient);
+      }
+    }
+    pending.resolveCompletion();
+  };
+
+  pending.timeoutId = setTimeout(() => {
+    void (async () => {
+      const processedRevisions = new Map<string, number>();
+
+      while (!pending.cancelled) {
+        const nextQueries = [...pending.queries.entries()].filter(
+          ([queryId, { revision }]) =>
+            processedRevisions.get(queryId) !== revision,
+        );
+
+        if (nextQueries.length === 0) {
+          break;
+        }
+
+        nextQueries.forEach(([queryId, { revision }]) => {
+          processedRevisions.set(queryId, revision);
+        });
+        await Promise.allSettled(
+          nextQueries.map(([, { mode, queryKey }]) =>
+            refreshQuery(queryClient, queryKey, mode),
+          ),
+        );
+      }
+
+      cleanup();
+    })();
   }, QUERY_INVALIDATION_COALESCE_MS);
 
-  pendingScopes.set(scopeKey, {
-    queries: pendingQueries,
-    timeoutId,
-  });
+  pendingScopes.set(scopeKey, pending);
+
+  return completion;
 }
 
 export function cancelScheduledQueryInvalidation(
@@ -116,9 +164,13 @@ export function cancelScheduledQueryInvalidation(
     return;
   }
 
-  clearTimeout(pending.timeoutId);
+  if (pending.timeoutId !== null) {
+    clearTimeout(pending.timeoutId);
+  }
+  pending.cancelled = true;
   pendingScopes.delete(scopeKey);
   if (pendingScopes.size === 0) {
     pendingByClient.delete(queryClient);
   }
+  pending.resolveCompletion();
 }

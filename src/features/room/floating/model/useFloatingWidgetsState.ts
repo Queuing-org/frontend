@@ -59,6 +59,10 @@ export type FloatingWidgetsView = Record<WidgetId, FloatingWidgetViewState>;
 const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
 const MOBILE_WIDGET_QUERY = "(max-width: 760px)";
 const LAPTOP_COMPACT_SCALE = 0.8;
+const CHAT_PARTICIPANTS_GAP = 24;
+const CHAT_OFFSET_STORAGE_KEY = "chatWidgetOffset:v2";
+const LEGACY_CHAT_BOTTOM = 140;
+const LEGACY_CHAT_OFFSET_STORAGE_KEY = "chatWidgetOffset";
 const PARTICIPANTS_COMPACT_MAX_WIDTH = 1600;
 const WIDGET_IDS: readonly WidgetId[] = [
   "profile",
@@ -69,10 +73,8 @@ const WIDGET_IDS: readonly WidgetId[] = [
 
 const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
   chat: {
-    bottom: 140,
-    centeredX: true,
     height: 205,
-    offsetStorageKey: "chatWidgetOffset",
+    offsetStorageKey: CHAT_OFFSET_STORAGE_KEY,
     openStorageKey: "isChatOpen",
     width: 300,
   },
@@ -193,7 +195,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function getWidgetBasePosition(
+function getAnchoredWidgetBasePosition(
   widgetId: WidgetId,
   viewportSize: ViewportSize,
 ): WidgetOffset {
@@ -209,6 +211,69 @@ function getWidgetBasePosition(
       : viewportSize.height - widget.height - (widget.bottom ?? 0);
 
   return { x, y };
+}
+
+function getLegacyChatBasePosition(viewportSize: ViewportSize): WidgetOffset {
+  const chat = getWidgetConfig("chat", viewportSize);
+  const scale =
+    getWidgetViewportDensity("chat", viewportSize) === "compact"
+      ? LAPTOP_COMPACT_SCALE
+      : 1;
+
+  return {
+    x: (viewportSize.width - chat.width) / 2,
+    y:
+      viewportSize.height -
+      chat.height -
+      LEGACY_CHAT_BOTTOM * scale,
+  };
+}
+
+function getWidgetBasePosition(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): WidgetOffset {
+  if (widgetId !== "chat") {
+    return getAnchoredWidgetBasePosition(widgetId, viewportSize);
+  }
+
+  const chat = getWidgetConfig("chat", viewportSize);
+  const participantsPosition = getAnchoredWidgetBasePosition(
+    "participants",
+    viewportSize,
+  );
+  const participants = getWidgetConfig("participants", viewportSize);
+  const queuePosition = getAnchoredWidgetBasePosition("queue", viewportSize);
+  const queue = getWidgetConfig("queue", viewportSize);
+  const chatDensity = getWidgetViewportDensity("chat", viewportSize);
+  const participantsGap =
+    CHAT_PARTICIPANTS_GAP *
+    (chatDensity === "compact" ? LAPTOP_COMPACT_SCALE : 1);
+  const maxHiddenWidth = chat.width * MAX_WIDGET_OUT_OF_VIEW_RATIO;
+  const maxHiddenHeight = chat.height * MAX_WIDGET_OUT_OF_VIEW_RATIO;
+
+  return {
+    x: clamp(
+      participantsPosition.x + participants.width - chat.width,
+      -maxHiddenWidth,
+      viewportSize.width - (chat.width - maxHiddenWidth),
+    ),
+    y: clamp(
+      Math.max(
+        queuePosition.y + queue.height / 2,
+        participantsPosition.y + participants.height + participantsGap,
+      ),
+      -maxHiddenHeight,
+      viewportSize.height - (chat.height - maxHiddenHeight),
+    ),
+  };
+}
+
+export function getDefaultWidgetOffset(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): WidgetOffset {
+  return clampWidgetOffset(widgetId, { x: 0, y: 0 }, viewportSize);
 }
 
 export function getWidgetBounds(
@@ -262,17 +327,72 @@ function getStoredWidgetOffset(
   const storageKey = getWidgetOffsetStorageKey(widgetId, viewportSize);
   const savedValue = window.localStorage.getItem(storageKey);
   if (!savedValue) {
-    return { x: 0, y: 0 };
+    if (widgetId === "chat") {
+      const legacyStorageKey =
+        getWidgetViewportDensity("chat", viewportSize) === "compact"
+          ? `${LEGACY_CHAT_OFFSET_STORAGE_KEY}:compact`
+          : LEGACY_CHAT_OFFSET_STORAGE_KEY;
+      const legacySavedValue = window.localStorage.getItem(legacyStorageKey);
+      if (legacySavedValue) {
+        try {
+          const legacyOffset = JSON.parse(
+            legacySavedValue,
+          ) as Partial<WidgetOffset>;
+          if (
+            typeof legacyOffset.x === "number" &&
+            Number.isFinite(legacyOffset.x) &&
+            typeof legacyOffset.y === "number" &&
+            Number.isFinite(legacyOffset.y)
+          ) {
+            const legacyBasePosition =
+              getLegacyChatBasePosition(viewportSize);
+            const currentBasePosition = getWidgetBasePosition(
+              "chat",
+              viewportSize,
+            );
+            const migratedOffset = clampWidgetOffset(
+              "chat",
+              {
+                x:
+                  legacyBasePosition.x +
+                  legacyOffset.x -
+                  currentBasePosition.x,
+                y:
+                  legacyBasePosition.y +
+                  legacyOffset.y -
+                  currentBasePosition.y,
+              },
+              viewportSize,
+            );
+
+            window.localStorage.setItem(
+              storageKey,
+              JSON.stringify(migratedOffset),
+            );
+            window.localStorage.removeItem(legacyStorageKey);
+            return migratedOffset;
+          }
+        } catch {
+          // 손상된 legacy 좌표는 새 기본 위치로 복구한다.
+        }
+
+        window.localStorage.removeItem(legacyStorageKey);
+      }
+    }
+
+    return getDefaultWidgetOffset(widgetId, viewportSize);
   }
 
   try {
     const parsedValue = JSON.parse(savedValue) as Partial<WidgetOffset>;
     if (
       typeof parsedValue.x !== "number" ||
-      typeof parsedValue.y !== "number"
+      !Number.isFinite(parsedValue.x) ||
+      typeof parsedValue.y !== "number" ||
+      !Number.isFinite(parsedValue.y)
     ) {
       window.localStorage.removeItem(storageKey);
-      return { x: 0, y: 0 };
+      return getDefaultWidgetOffset(widgetId, viewportSize);
     }
 
     const clampedOffset = clampWidgetOffset(
@@ -291,7 +411,7 @@ function getStoredWidgetOffset(
     return clampedOffset;
   } catch {
     window.localStorage.removeItem(storageKey);
-    return { x: 0, y: 0 };
+    return getDefaultWidgetOffset(widgetId, viewportSize);
   }
 }
 
@@ -304,12 +424,12 @@ function getStoredWidgetOffsets(viewportSize: ViewportSize): WidgetOffsets {
   };
 }
 
-function getDefaultWidgetOffsets(): WidgetOffsets {
+function getDefaultWidgetOffsets(viewportSize: ViewportSize): WidgetOffsets {
   return {
-    chat: { x: 0, y: 0 },
-    participants: { x: 0, y: 0 },
-    profile: { x: 0, y: 0 },
-    queue: { x: 0, y: 0 },
+    chat: getDefaultWidgetOffset("chat", viewportSize),
+    participants: getDefaultWidgetOffset("participants", viewportSize),
+    profile: getDefaultWidgetOffset("profile", viewportSize),
+    queue: getDefaultWidgetOffset("queue", viewportSize),
   };
 }
 
@@ -319,10 +439,25 @@ function getResizedWidgetOffset(
   currentViewportSize: ViewportSize,
   nextViewportSize: ViewportSize,
 ) {
-  return getWidgetViewportDensity(widgetId, currentViewportSize) ===
+  if (
+    getWidgetViewportDensity(widgetId, currentViewportSize) !==
     getWidgetViewportDensity(widgetId, nextViewportSize)
-    ? clampWidgetOffset(widgetId, currentOffset, nextViewportSize)
-    : getStoredWidgetOffset(widgetId, nextViewportSize);
+  ) {
+    return getStoredWidgetOffset(widgetId, nextViewportSize);
+  }
+
+  const currentDefaultOffset = getDefaultWidgetOffset(
+    widgetId,
+    currentViewportSize,
+  );
+  if (
+    currentOffset.x === currentDefaultOffset.x &&
+    currentOffset.y === currentDefaultOffset.y
+  ) {
+    return getDefaultWidgetOffset(widgetId, nextViewportSize);
+  }
+
+  return clampWidgetOffset(widgetId, currentOffset, nextViewportSize);
 }
 
 function getInitialWidgetLayoutState(): FloatingWidgetLayoutState {
@@ -337,11 +472,21 @@ function subscribeToHydration() {
   return () => undefined;
 }
 
-function getWidgetPlacementStyle(
+export function getWidgetPlacementStyle(
   widgetId: WidgetId,
   viewportSize: ViewportSize,
 ): CSSProperties {
   const widget = getWidgetConfig(widgetId, viewportSize);
+
+  if (widgetId === "chat") {
+    const basePosition = getWidgetBasePosition(widgetId, viewportSize);
+    return {
+      right: Math.round(
+        (viewportSize.width - basePosition.x - widget.width) * 10,
+      ) / 10,
+      top: basePosition.y,
+    };
+  }
 
   if (typeof widget.top === "number") {
     return typeof widget.right === "number"
@@ -507,7 +652,7 @@ export function useFloatingWidgetsState() {
   function resetWidgetPositions() {
     setLayout((current) => ({
       ...current,
-      offsets: getDefaultWidgetOffsets(),
+      offsets: getDefaultWidgetOffsets(current.viewportSize),
     }));
     setResetVersion((current) => current + 1);
 
@@ -516,6 +661,13 @@ export function useFloatingWidgetsState() {
         window.localStorage.removeItem(
           getWidgetOffsetStorageKey(widgetId, viewportSize),
         );
+        if (widgetId === "chat") {
+          window.localStorage.removeItem(
+            getWidgetViewportDensity("chat", viewportSize) === "compact"
+              ? `${LEGACY_CHAT_OFFSET_STORAGE_KEY}:compact`
+              : LEGACY_CHAT_OFFSET_STORAGE_KEY,
+          );
+        }
       });
     }
   }

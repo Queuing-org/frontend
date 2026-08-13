@@ -150,31 +150,30 @@ export function useRoomQueuePanel({
     );
   };
 
-  const handleMoveRoomEntry = ({
+  const handleMoveRoomEntry = async ({
     beforeEntryId,
     movedEntryId,
     orderedPendingEntryIds,
   }: MovePayload) => {
     setMoveErrorMessage("");
-    moveRoomQueueEntry.mutate(
-      {
+    try {
+      await moveRoomQueueEntry.mutateAsync({
         beforeEntryId,
         movedEntryId,
         orderedPendingEntryIds,
         password: roomPassword,
         slug: roomSlug,
-      },
-      {
-        onError: (moveError) => {
-          setMoveErrorMessage(
-            moveError.message || "큐 순서를 변경하지 못했습니다.",
-          );
-        },
-      },
-    );
+      });
+    } catch (moveError) {
+      setMoveErrorMessage(
+        moveError instanceof Error && moveError.message
+          ? moveError.message
+          : "큐 순서를 변경하지 못했습니다.",
+      );
+    }
   };
 
-  const handleMoveMyEntry = ({
+  const handleMoveMyEntry = async ({
     beforeEntryId,
     movedEntryId,
     orderedPendingEntryIds,
@@ -193,8 +192,8 @@ export function useRoomQueuePanel({
       return;
     }
 
-    moveMyQueueEntry.mutate(
-      {
+    try {
+      await moveMyQueueEntry.mutateAsync({
         beforeEntryId,
         movedEntryId,
         orderedPendingEntryIds: orderedPendingEntryIds.filter((entryId) =>
@@ -202,15 +201,14 @@ export function useRoomQueuePanel({
         ),
         password: roomPassword,
         slug: roomSlug,
-      },
-      {
-        onError: (moveError) => {
-          setMoveErrorMessage(
-            moveError.message || "큐 순서를 변경하지 못했습니다.",
-          );
-        },
-      },
-    );
+      });
+    } catch (moveError) {
+      setMoveErrorMessage(
+        moveError instanceof Error && moveError.message
+          ? moveError.message
+          : "큐 순서를 변경하지 못했습니다.",
+      );
+    }
   };
 
   return {
