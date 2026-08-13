@@ -63,6 +63,7 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Auth transition QA verifies that badge SSE activation does not remount app children and that follow presence remains alive when the room client is stopped by `user.session-replaced`.
 - Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
 - Queue pagination tests prove first-page-only entry, cursor/revision pairing, `totalPendingCount`, conflict reset, and locked personal-order payload exclusion.
+- Drag-and-drop regressions require a repeated real or faithful pointer cycle that checks the original row count, computed visibility, and cleared inline transform/animation after every drop; a mocked overlay prop or callback-only test is insufficient evidence.
 - Account-specific failures require same-account and same-backend-state comparisons before assigning a frontend root cause.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.

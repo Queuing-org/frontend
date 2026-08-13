@@ -2,7 +2,7 @@
 
 ## 상태
 
-- auth-blocked
+- publishing
 - 브랜치: `dev`
 
 ## 요청
@@ -32,6 +32,7 @@
 - `queuing-api-boundary`: move payload, optimistic cache, invalidation 검증
 - `frontend-architecture-guardrails`: query 상태와 transient drag 상태 소유권 유지
 - `queuing-qa-reviewer`: 연속 mutation과 두 탭 회귀 검토
+- `queuing-incident-curator`: 실제 녹화로 확인된 DnD 원본 노드 가시성 재발 교훈 기록
 
 ## 진행
 
@@ -39,9 +40,13 @@
 - [x] 원인 수정 및 전체/내 신청곡 연속 이동 고정
 - [x] targeted, lint, full test, build
 - [x] fresh read-only QA
-- [ ] 커밋, push, Draft PR
+- [x] 실제 녹화 프레임 기준 잔존 원본 카드 가시성 수정
+- [x] 추가 targeted, lint, full test, build, fresh QA
+- [ ] 추가 커밋, GitHub 재인증 후 push, Draft PR
 
 ## 예정 커밋
 
 1. `fix(queue): 연속 순서 변경 일관성 보장`
 2. `docs(delivery): 큐 순서 변경 검증 기록`
+3. `fix(queue): 드래그 원본 카드 가시성 보장`
+4. `docs(incident): 큐 드래그 가시성 재발 기록`
