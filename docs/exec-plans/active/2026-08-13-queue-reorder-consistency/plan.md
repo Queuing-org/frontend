@@ -2,7 +2,7 @@
 
 ## 상태
 
-- publishing
+- ci-pending
 - 브랜치: `dev`
 
 ## 요청
@@ -42,7 +42,7 @@
 - [x] fresh read-only QA
 - [x] 실제 녹화 프레임 기준 잔존 원본 카드 가시성 수정
 - [x] 추가 targeted, lint, full test, build, fresh QA
-- [ ] 추가 커밋, GitHub 재인증 후 push, Draft PR
+- [x] 추가 커밋, GitHub 재인증 후 push, Draft PR #48
 
 ## 예정 커밋
 
