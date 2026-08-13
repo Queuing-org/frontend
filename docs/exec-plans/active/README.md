@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-13-chat-default-position](./2026-08-13-chat-default-position/plan.md): ci-pending — 채팅 플로팅 패널을 참가자 아래·신청곡 패널 중앙 높이 기준으로 초기 배치하고 Draft PR #48 갱신
+
 - [2026-08-13-queue-reorder-consistency](./2026-08-13-queue-reorder-consistency/plan.md): ci-pending — Draft PR #48, 연속 드래그 순서·원본 카드 가시성 수정과 반복 PointerSensor 회귀 검증
 
 - [2026-08-12-edit-room-figma](./2026-08-12-edit-room-figma/plan.md): ready — 방 수정 modal 664px 후속 배치, 곡당 제한 시간 수정, 최초 join 인원·채팅 빈 상태 보정 및 로컬 QA 통과
