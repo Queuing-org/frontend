@@ -4,6 +4,7 @@ import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clampWidgetOffset,
+  getDefaultWidgetOffset,
   getWidgetBounds,
   getWidgetConfig,
   getWidgetOffsetStorageKey,
@@ -53,6 +54,68 @@ function FloatingWidgetHydrationProbe() {
 }
 
 describe("floating widget laptop compact layout", () => {
+  it.each([
+    [normalViewport, { x: 786, y: -62 }],
+    [compactViewport, { x: 629, y: -50 }],
+    [wideCompactViewport, { x: 816, y: -25 }],
+  ])(
+    "%o viewport에서 채팅을 참가자 아래·신청곡 패널 중앙 높이에 배치한다",
+    (viewport, expectedOffset) => {
+      expect(getDefaultWidgetOffset("chat", viewport)).toEqual(expectedOffset);
+    },
+  );
+
+  it("저장된 채팅 위치는 새 기본 위치보다 우선한다", () => {
+    window.localStorage.setItem(
+      "chatWidgetOffset",
+      JSON.stringify({ x: 32, y: 48 }),
+    );
+
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(result.current.widgets.chat.offset).toEqual({ x: 32, y: 48 });
+  });
+
+  it("같은 density에서 viewport가 바뀌면 저장값 없는 채팅 기본 위치를 다시 계산한다", () => {
+    const resizedNormalViewport = { height: 1000, width: 1680 };
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", normalViewport),
+    );
+
+    act(() => {
+      setViewport(resizedNormalViewport.width, resizedNormalViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", resizedNormalViewport),
+    );
+  });
+
+  it("density 전환 시 각 viewport의 채팅 기본 위치를 복원한다", () => {
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    act(() => {
+      setViewport(compactViewport.width, compactViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", compactViewport),
+    );
+
+    act(() => {
+      setViewport(normalViewport.width, normalViewport.height);
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    expect(result.current.widgets.chat.offset).toEqual(
+      getDefaultWidgetOffset("chat", normalViewport),
+    );
+  });
+
   it.each([
     ["1536×864", compactViewport],
     ["1920×800", wideCompactViewport],
@@ -163,7 +226,7 @@ describe("floating widget laptop compact layout", () => {
     expect(
       Object.values(result.current.widgets).map((widget) => widget.offset),
     ).toEqual([
-      { x: 0, y: 0 },
+      getDefaultWidgetOffset("chat", normalViewport),
       { x: 0, y: 0 },
       { x: 0, y: 0 },
       { x: 0, y: 0 },

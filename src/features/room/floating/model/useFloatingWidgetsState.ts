@@ -59,6 +59,7 @@ export type FloatingWidgetsView = Record<WidgetId, FloatingWidgetViewState>;
 const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
 const MOBILE_WIDGET_QUERY = "(max-width: 760px)";
 const LAPTOP_COMPACT_SCALE = 0.8;
+const CHAT_PARTICIPANTS_GAP = 24;
 const PARTICIPANTS_COMPACT_MAX_WIDTH = 1600;
 const WIDGET_IDS: readonly WidgetId[] = [
   "profile",
@@ -211,6 +212,45 @@ function getWidgetBasePosition(
   return { x, y };
 }
 
+export function getDefaultWidgetOffset(
+  widgetId: WidgetId,
+  viewportSize: ViewportSize,
+): WidgetOffset {
+  if (widgetId !== "chat") {
+    return { x: 0, y: 0 };
+  }
+
+  const chat = getWidgetConfig("chat", viewportSize);
+  const chatBasePosition = getWidgetBasePosition("chat", viewportSize);
+  const participantsPosition = getWidgetBasePosition(
+    "participants",
+    viewportSize,
+  );
+  const participants = getWidgetConfig("participants", viewportSize);
+  const queuePosition = getWidgetBasePosition("queue", viewportSize);
+  const queue = getWidgetConfig("queue", viewportSize);
+  const chatDensity = getWidgetViewportDensity("chat", viewportSize);
+  const participantsGap =
+    CHAT_PARTICIPANTS_GAP *
+    (chatDensity === "compact" ? LAPTOP_COMPACT_SCALE : 1);
+  const targetPosition = {
+    x: participantsPosition.x + participants.width - chat.width,
+    y: Math.max(
+      queuePosition.y + queue.height / 2,
+      participantsPosition.y + participants.height + participantsGap,
+    ),
+  };
+
+  return clampWidgetOffset(
+    "chat",
+    {
+      x: targetPosition.x - chatBasePosition.x,
+      y: targetPosition.y - chatBasePosition.y,
+    },
+    viewportSize,
+  );
+}
+
 export function getWidgetBounds(
   widgetId: WidgetId,
   viewportSize: ViewportSize,
@@ -262,7 +302,7 @@ function getStoredWidgetOffset(
   const storageKey = getWidgetOffsetStorageKey(widgetId, viewportSize);
   const savedValue = window.localStorage.getItem(storageKey);
   if (!savedValue) {
-    return { x: 0, y: 0 };
+    return getDefaultWidgetOffset(widgetId, viewportSize);
   }
 
   try {
@@ -272,7 +312,7 @@ function getStoredWidgetOffset(
       typeof parsedValue.y !== "number"
     ) {
       window.localStorage.removeItem(storageKey);
-      return { x: 0, y: 0 };
+      return getDefaultWidgetOffset(widgetId, viewportSize);
     }
 
     const clampedOffset = clampWidgetOffset(
@@ -291,7 +331,7 @@ function getStoredWidgetOffset(
     return clampedOffset;
   } catch {
     window.localStorage.removeItem(storageKey);
-    return { x: 0, y: 0 };
+    return getDefaultWidgetOffset(widgetId, viewportSize);
   }
 }
 
@@ -304,12 +344,12 @@ function getStoredWidgetOffsets(viewportSize: ViewportSize): WidgetOffsets {
   };
 }
 
-function getDefaultWidgetOffsets(): WidgetOffsets {
+function getDefaultWidgetOffsets(viewportSize: ViewportSize): WidgetOffsets {
   return {
-    chat: { x: 0, y: 0 },
-    participants: { x: 0, y: 0 },
-    profile: { x: 0, y: 0 },
-    queue: { x: 0, y: 0 },
+    chat: getDefaultWidgetOffset("chat", viewportSize),
+    participants: getDefaultWidgetOffset("participants", viewportSize),
+    profile: getDefaultWidgetOffset("profile", viewportSize),
+    queue: getDefaultWidgetOffset("queue", viewportSize),
   };
 }
 
@@ -319,10 +359,25 @@ function getResizedWidgetOffset(
   currentViewportSize: ViewportSize,
   nextViewportSize: ViewportSize,
 ) {
-  return getWidgetViewportDensity(widgetId, currentViewportSize) ===
+  if (
+    getWidgetViewportDensity(widgetId, currentViewportSize) !==
     getWidgetViewportDensity(widgetId, nextViewportSize)
-    ? clampWidgetOffset(widgetId, currentOffset, nextViewportSize)
-    : getStoredWidgetOffset(widgetId, nextViewportSize);
+  ) {
+    return getStoredWidgetOffset(widgetId, nextViewportSize);
+  }
+
+  const currentDefaultOffset = getDefaultWidgetOffset(
+    widgetId,
+    currentViewportSize,
+  );
+  if (
+    currentOffset.x === currentDefaultOffset.x &&
+    currentOffset.y === currentDefaultOffset.y
+  ) {
+    return getDefaultWidgetOffset(widgetId, nextViewportSize);
+  }
+
+  return clampWidgetOffset(widgetId, currentOffset, nextViewportSize);
 }
 
 function getInitialWidgetLayoutState(): FloatingWidgetLayoutState {
@@ -507,7 +562,7 @@ export function useFloatingWidgetsState() {
   function resetWidgetPositions() {
     setLayout((current) => ({
       ...current,
-      offsets: getDefaultWidgetOffsets(),
+      offsets: getDefaultWidgetOffsets(current.viewportSize),
     }));
     setResetVersion((current) => current + 1);
 
