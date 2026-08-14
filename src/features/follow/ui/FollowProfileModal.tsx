@@ -16,7 +16,6 @@ import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { FollowUser } from "@/src/features/follow/model/types";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
@@ -85,7 +84,6 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
   const publicBadgesQuery = usePublicUserBadges(
     shouldLoadBadgeFallback ? user.slug : null,
   );
-  const relationship = useFollowingRelationship(user.slug);
   const representativeBadge =
     profile?.representativeBadge === undefined
       ? getRepresentativeBadge(publicBadgesQuery.data)
@@ -151,11 +149,9 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                         <div className={styles.followAction}>
                           <FollowToggleButton
                             className={styles.followButton}
-                            disabled={
-                              relationship.isLoading || relationship.isError
-                            }
+                            disabled={profileQuery.isLoading || profileQuery.isError}
                             disabledLabel={
-                              relationship.isLoading ? (
+                              profileQuery.isLoading ? (
                                 <LoadingSpinner
                                   ariaLabel="팔로우 관계 확인 중"
                                   size={16}
@@ -165,7 +161,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                               )
                             }
                             initialRelationship={
-                              relationship.data ? "FOLLOWING" : "NONE"
+                              profile?.relationship ?? "NONE"
                             }
                             targetSlug={user.slug}
                           />

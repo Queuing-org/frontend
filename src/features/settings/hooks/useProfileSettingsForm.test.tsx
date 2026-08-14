@@ -75,14 +75,14 @@ describe("프로필 통합 저장 폼", () => {
     );
   });
 
-  it("메시지만 변경하면 현재 nickname과 빈 statusMessage도 보낸다", () => {
+  it("메시지만 변경하면 nickname을 제외하고 빈 statusMessage만 보낸다", () => {
     const { result } = renderProfileForm();
 
     act(() => result.current.updateStatusMessageDraft(""));
     submit(result);
 
     expect(mutate).toHaveBeenCalledWith(
-      { nickname: "민지", statusMessage: "" },
+      { statusMessage: "" },
       expect.any(Object),
     );
   });

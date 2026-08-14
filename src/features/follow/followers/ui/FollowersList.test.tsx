@@ -32,7 +32,8 @@ const follower: FollowerUser = {
 describe("FollowersList", () => {
   it("빈 목록 안내를 공통 빈 상태로 표시한다", () => {
     vi.mocked(useFollowersList).mockReturnValue({
-      data: { hasNext: false, items: [], nextCursor: null },
+      data: { pages: [{ hasNext: false, items: [], nextCursor: null }] },
+      fetchNextPage: vi.fn(), hasNextPage: false, isFetchingNextPage: false,
     } as ReturnType<typeof useFollowersList>);
 
     render(<FollowersList onSelectUser={vi.fn()} />);
@@ -46,7 +47,8 @@ describe("FollowersList", () => {
     const onSelectUser = vi.fn();
     const items = [follower];
     vi.mocked(useFollowersList).mockImplementation(() => ({
-      data: { hasNext: false, items, nextCursor: null },
+      data: { pages: [{ hasNext: false, items, nextCursor: null }] },
+      fetchNextPage: vi.fn(), hasNextPage: false, isFetchingNextPage: false,
     }) as ReturnType<typeof useFollowersList>);
     render(<FollowersList onSelectUser={onSelectUser} />);
 

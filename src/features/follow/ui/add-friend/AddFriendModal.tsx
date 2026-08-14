@@ -1,10 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { CircleX } from "lucide-react";
 import { useAddFriendModalState } from "@/src/features/follow/hooks/useAddFriendModalState";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { useInfiniteScrollSentinel } from "@/src/shared/lib/useInfiniteScrollSentinel";
 import styles from "./AddFriendModal.module.css";
 
 type AddFriendModalProps = {
@@ -23,6 +24,16 @@ const FOCUSABLE_SELECTOR = [
 export default function AddFriendModal({ onClose }: AddFriendModalProps) {
   const dialogRef = useRef<HTMLElement>(null);
   const modal = useAddFriendModalState();
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = modal;
+  const loadNextPage = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+  const sentinelRef = useInfiniteScrollSentinel({
+    enabled: Boolean(modal.hasNextPage) && !modal.isFetchingNextPage && !modal.isFetchNextPageError,
+    onVisible: loadNextPage,
+  });
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -183,6 +194,17 @@ export default function AddFriendModal({ onClose }: AddFriendModalProps) {
                       </li>
                     ))}
                   </ul>
+                ) : null}
+                <div ref={sentinelRef} aria-hidden="true" />
+                {modal.isFetchingNextPage ? (
+                  <div className={styles.resultState}>
+                    <LoadingSpinner ariaLabel="친구 검색 결과 더 불러오는 중" size={18} />
+                  </div>
+                ) : null}
+                {modal.isFetchNextPageError ? (
+                  <button type="button" className={styles.resultButton} onClick={loadNextPage}>
+                    다시 시도
+                  </button>
                 ) : null}
               </div>
             ) : null}

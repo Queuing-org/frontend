@@ -1,6 +1,4 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import type { ApiError } from "@/src/shared/api/api-error";
-import type { FollowingListResponse } from "@/src/features/follow/model/types";
+import { useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { fetchFollowing } from "../api/fetchFollowing";
 import type { FetchFollowingParams } from "../model/types";
 import { followKeys } from "@/src/features/follow/model/queryKeys";
@@ -8,8 +6,19 @@ import { followKeys } from "@/src/features/follow/model/queryKeys";
 export function useFollowingList(
   params?: FetchFollowingParams,
 ) {
-  return useSuspenseQuery<FollowingListResponse, ApiError>({
-    queryKey: followKeys.followings(params?.lastId, params?.size),
-    queryFn: () => fetchFollowing(params),
+  return useSuspenseInfiniteQuery({
+    queryKey: followKeys.followings(undefined, params?.size),
+    queryFn: ({ pageParam, signal }) => fetchFollowing({
+      size: params?.size,
+      ...(typeof pageParam === "number" ? { lastId: pageParam } : {}),
+    }, signal),
+    initialPageParam: null as number | null,
+    getNextPageParam: (lastPage, allPages) => {
+      const next = lastPage.hasNext ? lastPage.nextCursor : null;
+      return typeof next === "number" &&
+        !allPages.some((page) => page !== lastPage && page.nextCursor === next)
+        ? next
+        : undefined;
+    },
   });
 }

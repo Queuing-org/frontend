@@ -1,9 +1,5 @@
-export type UserRelationship =
-  | "ME"
-  | "FRIEND"
-  | "FOLLOWING"
-  | "FOLLOWER"
-  | "NONE";
+import type { UserRelationship } from "@/src/features/user/model/types";
+export type { UserRelationship } from "@/src/features/user/model/types";
 
 export type SearchUser = {
   nickname: string;
@@ -15,6 +11,7 @@ export type SearchUser = {
 export type SearchUsersResponse = {
   items: SearchUser[];
   hasNext: boolean;
+  nextCursor: number | null;
 };
 
 export type SearchUserParams = {

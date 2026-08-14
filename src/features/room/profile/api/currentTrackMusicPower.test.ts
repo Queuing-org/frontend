@@ -25,23 +25,21 @@ describe("현재 곡 신청자 음악력 API", () => {
     vi.clearAllMocks();
   });
 
-  it("PUT에 vote와 방 비밀번호 헤더를 전송한다", async () => {
+  it("현재 신청자 userSlug 기준 PUT에 vote를 전송한다", async () => {
     vi.mocked(axiosInstance.put).mockResolvedValue({
       data: { result: response },
     });
 
     await expect(
       setCurrentTrackMusicPowerVote({
-        roomSlug: "rooms/sample",
-        password: "secret",
+        targetUserSlug: "requester/user",
         vote: "UPVOTE",
       }),
     ).resolves.toEqual(response);
 
     expect(axiosInstance.put).toHaveBeenCalledWith(
-      "/api/v1/rooms/rooms%2Fsample/current-track/music-power",
+      "/api/v1/user-profiles/requester%2Fuser/music-power",
       { vote: "UPVOTE" },
-      { headers: { "X-Room-Password": "secret" } },
     );
   });
 });

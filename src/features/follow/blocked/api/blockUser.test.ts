@@ -3,15 +3,15 @@ import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { blockUser } from "./blockUser";
 
 vi.mock("@/src/shared/api/axiosInstance", () => ({
-  axiosInstance: { post: vi.fn() },
+  axiosInstance: { put: vi.fn() },
 }));
 
 it("인코딩한 사용자 slug의 차단 API를 호출한다", async () => {
-  vi.mocked(axiosInstance.post).mockResolvedValue({ data: { result: true } });
+  vi.mocked(axiosInstance.put).mockResolvedValue({ status: 204 });
 
   await blockUser("target/user");
 
-  expect(axiosInstance.post).toHaveBeenCalledWith(
-    "/api/v1/user-profiles/target%2Fuser/blocks",
+  expect(axiosInstance.put).toHaveBeenCalledWith(
+    "/api/v1/user-profiles/me/blocked-users/target%2Fuser",
   );
 });

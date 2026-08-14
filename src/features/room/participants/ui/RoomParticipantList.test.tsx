@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useQueries } from "@tanstack/react-query";
 import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import RoomParticipantList, {
   PARTICIPANT_CARD_DOM_LIMIT,
 } from "./RoomParticipantList";
@@ -15,8 +15,8 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return { ...actual, useQueries: vi.fn(() => []) };
 });
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
+vi.mock("@/src/features/user/profile/hooks/useUserProfile", () => ({
+  useUserProfile: vi.fn(),
 }));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
   default: ({
@@ -136,10 +136,11 @@ describe("RoomParticipantList", () => {
     IntersectionObserverMock.options = undefined;
     IntersectionObserverMock.observed = [];
     vi.stubGlobal("IntersectionObserver", IntersectionObserverMock);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: { relationship: "NONE" },
+      isError: false,
       isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
+    } as ReturnType<typeof useUserProfile>);
   });
 
   afterEach(() => {

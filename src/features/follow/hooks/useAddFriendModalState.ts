@@ -32,6 +32,13 @@ export function useAddFriendModalState() {
     limit: SEARCH_RESULT_LIMIT,
   });
   const followUser = useFollow();
+  const users = Array.from(
+    new Map(
+      (searchUsers.data?.pages ?? [])
+        .flatMap((page) => page.items)
+        .map((user) => [user.slug, user]),
+    ).values(),
+  );
 
   const resetFeedback = () => {
     if (followUser.isPending) {
@@ -89,12 +96,16 @@ export function useAddFriendModalState() {
     isSearchError: !isSearchDebouncing && searchUsers.isError,
     isSearchLoading:
       isSearchEligible && (isSearchDebouncing || searchUsers.isLoading),
+    isFetchingNextPage: searchUsers.isFetchingNextPage,
+    isFetchNextPageError: searchUsers.isFetchNextPageError,
+    hasNextPage: searchUsers.hasNextPage,
+    fetchNextPage: searchUsers.fetchNextPage,
     isSubmitting: followUser.isPending,
     isSuccess,
     query,
     selectUser,
     submit,
     updateQuery,
-    users: isSearchDebouncing ? [] : (searchUsers.data?.items ?? []),
+    users: isSearchDebouncing ? [] : users,
   };
 }

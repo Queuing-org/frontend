@@ -18,7 +18,6 @@ import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButt
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
@@ -170,9 +169,6 @@ export default function RoomProfilePanel({
         ...(canTransfer ? (["transfer"] as const) : []),
       ]
     : [];
-  const { data: isFollowingCurrentRequester } = useFollowingRelationship(
-    canFollow ? targetSlug : null,
-  );
 
   let followButtonLabel: ReactNode = "팔로우";
   if (!currentRequester) {
@@ -208,8 +204,7 @@ export default function RoomProfilePanel({
   const isMusicPowerVoteDisabled =
     isCurrentUserLoading ||
     isSelf ||
-    !targetSlug ||
-    !roomSlug;
+    !targetSlug;
   const musicPowerVoteDisabledLabel = (() => {
     if (isCurrentUserLoading) {
       return "로그인 상태를 확인하고 있습니다";
@@ -269,8 +264,7 @@ export default function RoomProfilePanel({
     setMusicPowerNotice(null);
     musicPowerVote.mutate(
       {
-        roomSlug,
-        password: roomPassword,
+        targetUserSlug: targetSlug,
         vote,
       },
       {
@@ -449,11 +443,15 @@ export default function RoomProfilePanel({
                   <div className={styles.followAction}>
                     <FollowToggleButton
                       className={styles.followButton}
-                      disabled={!canFollow}
-                      disabledLabel={followButtonLabel}
+                      disabled={!canFollow || isPublicProfileLoading || isPublicProfileError}
+                      disabledLabel={
+                        isPublicProfileLoading ? (
+                          <LoadingSpinner ariaLabel="팔로우 관계 확인 중" size={16} />
+                        ) : isPublicProfileError ? "확인 실패" : followButtonLabel
+                      }
                       followingLabel="팔로잉"
                       initialRelationship={
-                        isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
+                        publicProfile?.relationship ?? "NONE"
                       }
                       targetSlug={targetSlug}
                     />

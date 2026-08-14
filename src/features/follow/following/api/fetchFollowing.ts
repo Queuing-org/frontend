@@ -9,7 +9,7 @@ export async function fetchFollowing(
   signal?: AbortSignal,
 ): Promise<FollowingListResponse> {
   const res = await axiosInstance.get<ApiResponse<FollowingListResponse>>(
-    "/api/v1/follows/followings",
+    "/api/v1/user-profiles/me/following",
     { params, signal },
   );
 

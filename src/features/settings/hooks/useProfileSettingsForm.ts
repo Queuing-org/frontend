@@ -124,11 +124,10 @@ export function useProfileSettingsForm() {
     }
 
     const submittedFields: ProfileField[] = [];
-    const payload: UpdateMePayload = {
-      nickname: hasNicknameChange ? trimmedNickname : currentNickname,
-    };
+    const payload: UpdateMePayload = {};
 
     if (hasNicknameChange) {
+      payload.nickname = trimmedNickname;
       submittedFields.push("nickname");
     }
 

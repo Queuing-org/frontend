@@ -12,9 +12,9 @@ export interface User {
   listeningDurationSeconds?: number;
 }
 
-export type OnboardingPayload = {
-  nickname: string;
-  //   profileImageUrl?: string | null;
-  //   favoriteGenres?: string[];
-  //   favoriteSongTitle?: string;
-};
+export type UserRelationship =
+  | "ME"
+  | "FRIEND"
+  | "FOLLOWING"
+  | "FOLLOWER"
+  | "NONE";

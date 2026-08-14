@@ -8,7 +8,6 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
@@ -35,9 +34,6 @@ vi.mock("next/image", () => ({
 }));
 vi.mock("@/src/features/badge/hooks/usePublicUserBadges", () => ({
   usePublicUserBadges: vi.fn(),
-}));
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
 }));
 vi.mock("@/src/features/user/profile/hooks/useMusicPower", () => ({
   useMusicPower: vi.fn(),
@@ -185,6 +181,7 @@ describe("RoomProfilePanel", () => {
       data: {
         nickname: "대상",
         listeningDurationSeconds: 14_700,
+        relationship: "NONE",
         profileImageUrl: null,
         queuingCount: 1234,
         slug: "target-user",
@@ -196,10 +193,6 @@ describe("RoomProfilePanel", () => {
       data: undefined,
       isLoading: false,
     } as ReturnType<typeof usePublicUserBadges>);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
-      isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
         musicPower: 55,
@@ -284,8 +277,7 @@ describe("RoomProfilePanel", () => {
     await user.click(screen.getByRole("button", { name: "음악력 올리기" }));
     expect(mutate).toHaveBeenLastCalledWith(
       {
-        roomSlug: "room",
-        password: "secret",
+        targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
       expect.objectContaining({ onError: expect.any(Function) }),
@@ -318,8 +310,7 @@ describe("RoomProfilePanel", () => {
     await user.click(upButton);
     expect(mutate).toHaveBeenLastCalledWith(
       {
-        roomSlug: "room",
-        password: "secret",
+        targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
       expect.objectContaining({ onError: expect.any(Function) }),
@@ -341,8 +332,7 @@ describe("RoomProfilePanel", () => {
     await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
     expect(mutate).toHaveBeenCalledWith(
       {
-        roomSlug: "room",
-        password: "secret",
+        targetUserSlug: "target-user",
         vote: "DOWNVOTE",
       },
       expect.objectContaining({ onError: expect.any(Function) }),
@@ -532,10 +522,18 @@ describe("RoomProfilePanel", () => {
   });
 
   it("프로필 상단 아래에 팔로잉과 관리 액션을 상시 표시한다", () => {
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: true,
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        listeningDurationSeconds: 14_700,
+        musicPower: 55,
+        profileImageUrl: null,
+        relationship: "FOLLOWING",
+        slug: "requester",
+      },
+      isError: false,
       isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
+    } as ReturnType<typeof useUserProfile>);
     renderPanel();
 
     expect(screen.getByText("현재 큐잉 중...")).toBeInTheDocument();

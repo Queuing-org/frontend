@@ -6,7 +6,7 @@ export const userKeys = {
   musicPowerRoot: () => ["musicPower"] as const,
   musicPower: (userSlug: string | null | undefined) =>
     [...userKeys.musicPowerRoot(), userSlug ?? null] as const,
-  search: (query: string, lastId?: number, limit?: number) =>
-    ["searchUsers", query, lastId, limit] as const,
+  search: (query: string, limit?: number) =>
+    ["searchUsers", query, limit ?? null] as const,
   searchRoot: () => ["searchUsers"] as const,
 };

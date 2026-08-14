@@ -1,15 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import FollowProfileModal from "./FollowProfileModal";
 
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
-}));
 vi.mock("@/src/features/badge/hooks/usePublicUserBadges", () => ({
   usePublicUserBadges: vi.fn(),
 }));
@@ -55,6 +51,7 @@ describe("FollowProfileModal", () => {
       data: {
         listeningDurationSeconds: 3_660,
         musicPower: 77,
+        relationship: "NONE",
         nickname: "공개 닉네임",
         profileImageUrl: null,
         queuingCount: 12,
@@ -72,11 +69,6 @@ describe("FollowProfileModal", () => {
       data: undefined,
       isLoading: false,
     } as ReturnType<typeof usePublicUserBadges>);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
   });
 
   it("공개 프로필 통계와 음악력 값만 표시한다", () => {

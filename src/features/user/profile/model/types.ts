@@ -1,7 +1,8 @@
 import type { BadgeSummary } from "@/src/features/badge/model/types";
+import type { UserRelationship } from "@/src/features/user/model/types";
 
 export type UpdateMePayload = {
-  nickname: string;
+  nickname?: string;
   statusMessage?: string | null;
 };
 
@@ -15,6 +16,7 @@ export type UserProfile = {
   musicPower?: number;
   queuingCount?: number;
   listeningDurationSeconds?: number;
+  relationship?: UserRelationship | null;
 };
 
 export type MusicPowerVote = "UPVOTE" | "DOWNVOTE";

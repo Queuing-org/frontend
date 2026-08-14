@@ -2,7 +2,7 @@
 
 import type { RefObject } from "react";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import ManagementMenuShell from "@/src/shared/ui/management-menu/ManagementMenuShell";
 import styles from "./RoomMemberManagementMenu.module.css";
@@ -50,8 +50,7 @@ export default function RoomMemberManagementMenu({
   triggerRef,
 }: Props) {
   const canFollow = actions.includes("follow") && Boolean(targetUserSlug);
-  const { data: isFollowing, isLoading: isRelationshipLoading } =
-    useFollowingRelationship(canFollow ? targetUserSlug : null);
+  const relationshipQuery = useUserProfile(canFollow ? targetUserSlug : null);
 
   const runAndClose = (action: () => void) => {
     action();
@@ -72,15 +71,15 @@ export default function RoomMemberManagementMenu({
         <div className={styles.followAction}>
           <FollowToggleButton
             className={styles.menuItem}
-            disabled={isRelationshipLoading}
+            disabled={relationshipQuery.isLoading || relationshipQuery.isError}
             disabledLabel={
-              isRelationshipLoading ? (
+              relationshipQuery.isLoading ? (
                 <LoadingSpinner ariaLabel="팔로우 관계 확인 중" size={16} />
               ) : (
                 "팔로우"
               )
             }
-            initialRelationship={isFollowing ? "FOLLOWING" : "NONE"}
+            initialRelationship={relationshipQuery.data?.relationship ?? "NONE"}
             onSuccess={onClose}
             role="menuitem"
             targetSlug={targetUserSlug}

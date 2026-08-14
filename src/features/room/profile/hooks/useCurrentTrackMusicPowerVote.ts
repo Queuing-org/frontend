@@ -10,8 +10,7 @@ import { syncMusicPowerCaches } from "@/src/features/user/profile/model/syncMusi
 import { setCurrentTrackMusicPowerVote } from "../api/setCurrentTrackMusicPowerVote";
 
 type CurrentTrackVoteVariables = {
-  roomSlug: string;
-  password?: string | null;
+  targetUserSlug: string;
   vote: MusicPowerVote;
 };
 
@@ -19,8 +18,8 @@ export function useCurrentTrackMusicPowerVote() {
   const queryClient = useQueryClient();
 
   return useMutation<MusicPowerResponse, ApiError, CurrentTrackVoteVariables>({
-    mutationFn: ({ roomSlug, password, vote }) =>
-      setCurrentTrackMusicPowerVote({ roomSlug, password, vote }),
+    mutationFn: ({ targetUserSlug, vote }) =>
+      setCurrentTrackMusicPowerVote({ targetUserSlug, vote }),
     onSuccess: (musicPower) => {
       syncMusicPowerCaches(queryClient, musicPower);
     },

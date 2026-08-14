@@ -46,17 +46,18 @@ describe("칭호 API 계약", () => {
 
     await expect(fetchMyBadges()).resolves.toEqual(response);
     expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/users/me/badges",
+      "/api/v1/user-profiles/me/badges",
     );
   });
 
   it("대표 칭호 설정 payload는 badgeCode만 전송한다", async () => {
-    vi.mocked(axiosInstance.put).mockResolvedValue({ data: { result: null } });
+    const badge = { badgeCode: "ROOM_CREATE_00001", name: "방 팠음" };
+    vi.mocked(axiosInstance.put).mockResolvedValue({ data: { result: badge } });
 
-    await updateRepresentativeBadge({ badgeCode: "ROOM_CREATE_00001" });
+    await expect(updateRepresentativeBadge({ badgeCode: "ROOM_CREATE_00001" })).resolves.toEqual(badge);
 
     expect(axiosInstance.put).toHaveBeenCalledWith(
-      "/api/v1/users/me/badges/representative",
+      "/api/v1/user-profiles/me/representative-badge",
       { badgeCode: "ROOM_CREATE_00001" },
     );
   });
@@ -79,7 +80,7 @@ describe("칭호 API 계약", () => {
       queryFn({ signal: abortController.signal } as never),
     ).resolves.toEqual(response);
     expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/users/user%20slug/badges",
+      "/api/v1/user-profiles/user%20slug/badges",
       { signal: abortController.signal },
     );
 
@@ -93,19 +94,17 @@ describe("칭호 API 계약", () => {
       data: { result: true },
     });
 
-    await expect(clearRepresentativeBadge()).resolves.toBe(true);
+    await expect(clearRepresentativeBadge()).resolves.toBeUndefined();
     expect(axiosInstance.delete).toHaveBeenCalledWith(
-      "/api/v1/users/me/badges/representative",
+      "/api/v1/user-profiles/me/representative-badge",
     );
   });
 
-  it("대표 칭호 해제 result가 false면 실패로 처리한다", async () => {
+  it("대표 칭호 해제 204 응답은 body를 파싱하지 않는다", async () => {
     vi.mocked(axiosInstance.delete).mockResolvedValue({
       data: { result: false },
     });
 
-    await expect(clearRepresentativeBadge()).rejects.toThrow(
-      "대표 칭호를 해제하지 못했습니다.",
-    );
+    await expect(clearRepresentativeBadge()).resolves.toBeUndefined();
   });
 });
