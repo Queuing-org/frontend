@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { BlockUserTarget } from "@/src/features/follow/blocked/ui/BlockUserModal";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
+import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import ChatArea from "./ChatArea";
@@ -13,8 +13,8 @@ import ChatArea from "./ChatArea";
 vi.mock("next/image", () => ({
   default: () => <span data-testid="chat-avatar" />,
 }));
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
+vi.mock("@/src/features/user/profile/hooks/useUserProfile", () => ({
+  useUserProfile: vi.fn(),
 }));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
   default: ({
@@ -194,10 +194,11 @@ describe("ChatArea 관리 메뉴", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     resolveParticipantByUserSlug.mockResolvedValue(null);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: { relationship: "NONE" },
+      isError: false,
       isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
+    } as ReturnType<typeof useUserProfile>);
     vi.mocked(useKickRoomParticipant).mockReturnValue({
       error: null,
       isPending: false,

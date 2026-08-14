@@ -38,6 +38,7 @@ export type RoomInfoUpdatedData = {
   title: string;
   hasPassword: boolean;
   maxParticipants: number | null;
+  trackLimitMinutes: number | null;
   tags: RoomTag[];
 };
 
@@ -128,6 +129,8 @@ export function isRoomInfoUpdatedData(
     typeof value.hasPassword === "boolean" &&
     (value.maxParticipants === null ||
       typeof value.maxParticipants === "number") &&
+    (value.trackLimitMinutes === null ||
+      typeof value.trackLimitMinutes === "number") &&
     Array.isArray(value.tags) &&
     value.tags.every(isRoomTag)
   );

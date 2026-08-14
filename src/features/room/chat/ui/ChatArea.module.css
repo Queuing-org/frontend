@@ -218,6 +218,11 @@
   line-height: inherit;
 }
 
+.message[data-deleted="true"] .content {
+  color: #8b94a3;
+  opacity: 0.72;
+}
+
 .state,
 .empty {
   display: flex;

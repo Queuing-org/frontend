@@ -20,6 +20,8 @@ import type {
   WsEvent,
 } from "@/src/features/room/model/types";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
+import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
+import { storeRoomDeletedNotice } from "@/src/features/room/model/roomTerminationNotice";
 import { clearStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 import { userKeys } from "@/src/features/user/model/queryKeys";
@@ -157,6 +159,16 @@ export function useRoomRealtimeEvents({
   const rejoinAbortControllerRef = useRef<AbortController | null>(null);
   const hasRedirectedAfterKickRef = useRef(false);
   const scheduledRoomInvalidationScopesRef = useRef(new Set<string>());
+  const hasTerminatedRoomRef = useRef(false);
+  const terminateDeletedRoomRef = useRef<(roomSlug: string) => void>(() => undefined);
+  const roomMetaRefreshAbortControllerRef = useRef<AbortController | null>(null);
+  const roomMetaRefreshGenerationRef = useRef(0);
+
+  const cancelRoomMetaRefresh = useCallback(() => {
+    roomMetaRefreshGenerationRef.current += 1;
+    roomMetaRefreshAbortControllerRef.current?.abort();
+    roomMetaRefreshAbortControllerRef.current = null;
+  }, []);
 
   const clearScheduledRoomInvalidations = useCallback(() => {
     for (const scopeKey of scheduledRoomInvalidationScopesRef.current) {
@@ -189,6 +201,7 @@ export function useRoomRealtimeEvents({
   }, []);
 
   const cleanupRoomSubscription = useCallback(() => {
+    cancelRoomMetaRefresh();
     clearScheduledRoomInvalidations();
     cancelRejoin();
     cleanupBrokerSubscription();
@@ -197,6 +210,7 @@ export function useRoomRealtimeEvents({
     reconnectPendingRef.current = false;
   }, [
     cancelRejoin,
+    cancelRoomMetaRefresh,
     cleanupBrokerSubscription,
     cleanupUserSubscription,
     clearScheduledRoomInvalidations,
@@ -204,6 +218,7 @@ export function useRoomRealtimeEvents({
 
   const leaveRoomSession = useCallback(() => {
     const config = roomSubscriptionConfigRef.current;
+    cancelRoomMetaRefresh();
     clearScheduledRoomInvalidations();
     cancelRejoin();
     cleanupBrokerSubscription();
@@ -216,6 +231,7 @@ export function useRoomRealtimeEvents({
     }
   }, [
     cancelRejoin,
+    cancelRoomMetaRefresh,
     cleanupBrokerSubscription,
     cleanupUserSubscription,
     clearScheduledRoomInvalidations,
@@ -263,6 +279,10 @@ export function useRoomRealtimeEvents({
 
   const handleRoomEvent = useCallback(
     (roomSlug: string, event: WsEvent) => {
+      if (event.type === "ROOM_DELETED") {
+        terminateDeletedRoomRef.current(roomSlug);
+        return;
+      }
       if (event.type === "PLAYBACK_SYNC" && isPlaybackSyncData(event.data)) {
         const syncedPlayback: LivePlaybackState = {
           roomSlug,
@@ -327,7 +347,27 @@ export function useRoomRealtimeEvents({
           roomKeys.meta(roomSlug),
           (current) => applyRoomInfoUpdate(current, change),
         );
-        scheduleRoomInvalidation(roomSlug, ["meta"]);
+        roomMetaRefreshAbortControllerRef.current?.abort();
+        const abortController = new AbortController();
+        const generation = roomMetaRefreshGenerationRef.current + 1;
+        roomMetaRefreshGenerationRef.current = generation;
+        roomMetaRefreshAbortControllerRef.current = abortController;
+        void fetchRoomMeta(roomSlug, abortController.signal)
+          .then((meta) => {
+            if (
+              !abortController.signal.aborted &&
+              !hasTerminatedRoomRef.current &&
+              roomMetaRefreshGenerationRef.current === generation
+            ) {
+              queryClient.setQueryData(roomKeys.meta(roomSlug), meta);
+            }
+          })
+          .catch(() => undefined)
+          .finally(() => {
+            if (roomMetaRefreshAbortControllerRef.current === abortController) {
+              roomMetaRefreshAbortControllerRef.current = null;
+            }
+          });
         void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
         return;
       }
@@ -370,6 +410,46 @@ export function useRoomRealtimeEvents({
     [queryClient, scheduleRoomInvalidation, setLivePlaybackStatus],
   );
 
+  const terminateDeletedRoom = useCallback((roomSlug: string) => {
+    if (hasTerminatedRoomRef.current) return;
+    hasTerminatedRoomRef.current = true;
+    cancelRoomMetaRefresh();
+    clearScheduledRoomInvalidations();
+    cancelRejoin();
+    cleanupBrokerSubscription();
+    cleanupUserSubscription();
+    roomSubscriptionConfigRef.current = null;
+    reconnectPendingRef.current = false;
+    cleanupChatSubscriptions();
+    resetChatState();
+    setLivePlaybackStatus(null);
+    clearStoredRoomJoinPassword(roomSlug);
+    queryClient.removeQueries({ queryKey: playlistKeys.roomPlaybackPrefix(roomSlug) });
+    queryClient.removeQueries({ queryKey: playlistKeys.roomParticipantsPrefix(roomSlug) });
+    queryClient.removeQueries({ queryKey: playlistKeys.roomQueuePrefix(roomSlug) });
+    queryClient.removeQueries({ queryKey: roomKeys.meta(roomSlug) });
+    void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
+    storeRoomDeletedNotice();
+    setStatus("error");
+    router.replace("/");
+  }, [
+    cancelRejoin,
+    cancelRoomMetaRefresh,
+    clearScheduledRoomInvalidations,
+    cleanupBrokerSubscription,
+    cleanupChatSubscriptions,
+    cleanupUserSubscription,
+    queryClient,
+    resetChatState,
+    router,
+    setLivePlaybackStatus,
+    setStatus,
+  ]);
+
+  useEffect(() => {
+    terminateDeletedRoomRef.current = terminateDeletedRoom;
+  }, [terminateDeletedRoom]);
+
   const subscribeWithConfig = useCallback(
     (config: RoomSubscriptionConfig, force = false) => {
       if (!force && roomSubscriptionRef.current) {
@@ -410,6 +490,7 @@ export function useRoomRealtimeEvents({
       }
 
       cancelRejoin();
+      cancelRoomMetaRefresh();
       clearScheduledRoomInvalidations();
       cleanupBrokerSubscription();
       cleanupUserSubscription();
@@ -433,6 +514,7 @@ export function useRoomRealtimeEvents({
     },
     [
       cancelRejoin,
+      cancelRoomMetaRefresh,
       clearScheduledRoomInvalidations,
       cleanupBrokerSubscription,
       cleanupChatSubscriptions,
@@ -474,6 +556,7 @@ export function useRoomRealtimeEvents({
 
   useEffect(() => {
     hasRedirectedAfterKickRef.current = false;
+    hasTerminatedRoomRef.current = false;
   }, [slug]);
 
   useEffect(() => clearScheduledRoomInvalidations, [
@@ -545,6 +628,10 @@ export function useRoomRealtimeEvents({
                     code: "room.rejoin-failed",
                     message: "방 연결을 복구하지 못했습니다.",
                   });
+            if (joinError.code === "room.not-found") {
+              terminateDeletedRoom(config.slug);
+              return;
+            }
             const shouldRequestPassword =
               isRoomAccessDeniedError(joinError) ||
               (config.password !== null &&
@@ -570,6 +657,7 @@ export function useRoomRealtimeEvents({
         }
 
         cancelRejoin();
+        cancelRoomMetaRefresh();
         clearScheduledRoomInvalidations();
         cleanupBrokerSubscription();
         cleanupUserSubscription();
@@ -590,12 +678,21 @@ export function useRoomRealtimeEvents({
           return;
         }
 
-        if (
-          !isWsErrorData(errorData) ||
-          errorData.code !== PARTICIPANT_KICKED_ERROR_CODE
-        ) {
+        const parsedError = isWsErrorData(errorData)
+          ? errorData
+          : errorData && typeof errorData === "object" && "error" in errorData &&
+              isWsErrorData((errorData as { error: unknown }).error)
+            ? (errorData as { error: WsErrorData }).error
+            : null;
+        if (!parsedError) {
           return;
         }
+
+        if (parsedError.code === "room.not-found") {
+          terminateDeletedRoom(slug);
+          return;
+        }
+        if (parsedError.code !== PARTICIPANT_KICKED_ERROR_CODE) return;
 
         hasRedirectedAfterKickRef.current = true;
         cleanupRoomSubscription();
@@ -603,7 +700,7 @@ export function useRoomRealtimeEvents({
         clearStoredRoomJoinPassword(slug);
         resetChatState();
         setStatus("error");
-        setJoinErrorMessage(errorData.message);
+        setJoinErrorMessage(parsedError.message);
         void queryClient.removeQueries({
           queryKey: playlistKeys.roomPlaybackPrefix(slug),
         });
@@ -621,6 +718,7 @@ export function useRoomRealtimeEvents({
     cleanupChatSubscriptions,
     cleanupRoomSubscription,
     cancelRejoin,
+    cancelRoomMetaRefresh,
     clearScheduledRoomInvalidations,
     cleanupBrokerSubscription,
     cleanupUserSubscription,
@@ -634,6 +732,7 @@ export function useRoomRealtimeEvents({
     slug,
     subscribeWithConfig,
     subscribeUserEvents,
+    terminateDeletedRoom,
   ]);
 
   const ensureRoomSubscription = useCallback(

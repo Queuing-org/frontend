@@ -3,6 +3,7 @@ import type { ChatMessage } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   appendUniqueChatMessage,
+  applyChatMessageTombstones,
   createChatMessageIdentityIndex,
   getChatMessageManagementActions,
   getLatestReportableChatMessageKey,
@@ -32,6 +33,9 @@ function message(overrides: Partial<ChatMessage>): ChatMessage {
 }
 
 describe("getChatMessageManagementActions", () => {
+  it("삭제 tombstone 메시지는 신고를 포함한 관리 액션에서 제외한다", () => {
+    expect(getChatMessageManagementActions(message({ isDeleted: true }), currentUser)).toEqual([]);
+  });
   it("본인 메시지에는 관리 액션을 제공하지 않는다", () => {
     expect(
       getChatMessageManagementActions(
@@ -143,6 +147,29 @@ describe("getLatestReportableChatMessageKey", () => {
       ),
     ).toBeNull();
     expect(getLatestReportableChatMessageKey([message({})], null)).toBeNull();
+  });
+
+  it("삭제된 메시지는 최근 신고 대상으로 선택하지 않는다", () => {
+    expect(getLatestReportableChatMessageKey([
+      message({ messageKey: "live", sentAt: 1 }),
+      message({ messageKey: "deleted", sentAt: 2, isDeleted: true }),
+    ], "target-user")).toBe("live");
+  });
+});
+
+describe("chat deletion tombstone", () => {
+  it("삭제 이벤트가 메시지보다 먼저 와도 뒤늦은 기록을 서버 문구로 치환한다", () => {
+    const result = applyChatMessageTombstones(
+      [message({ messageKey: "late", content: "원문" })],
+      new Map([["late", "삭제된 채팅입니다."]]),
+    );
+    expect(result[0]).toMatchObject({ content: "삭제된 채팅입니다.", isDeleted: true });
+  });
+
+  it("메시지가 먼저 있어도 tombstone 적용 시 원문을 치환한다", () => {
+    const existing = [message({ messageKey: "existing", content: "원문" })];
+    expect(applyChatMessageTombstones(existing, new Map([["existing", "서버 삭제 문구"]]))[0])
+      .toMatchObject({ content: "서버 삭제 문구", isDeleted: true });
   });
 });
 

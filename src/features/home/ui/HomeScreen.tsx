@@ -36,6 +36,7 @@ import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
+import RoomDeletedNoticeBanner from "./RoomDeletedNoticeBanner";
 
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
@@ -109,6 +110,7 @@ export default function HomeScreen() {
 
   return (
     <div className={styles.screen}>
+      <RoomDeletedNoticeBanner />
       <HomeRoomsContent
         activeFilters={roomListFilters}
         hasPageModalOpen={hasPageModalOpen}
