@@ -20,7 +20,7 @@ type MoveMyQueueEntryVariables = MoveMyQueueEntryParams & {
 export function useMoveMyQueueEntry() {
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, ApiError, MoveMyQueueEntryVariables, {
+  return useMutation<void, ApiError, MoveMyQueueEntryVariables, {
     previousRoomQueueSnapshots: QueueOrderSnapshot[];
   }>({
     mutationFn: ({ beforeEntryId, movedEntryId, password, slug }) =>

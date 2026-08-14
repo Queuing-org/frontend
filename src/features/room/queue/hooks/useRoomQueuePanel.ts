@@ -39,7 +39,7 @@ type MovePayload = {
 function getQueueErrorMessage(error: unknown) {
   if (
     error instanceof ApiError &&
-    error.code === "room.queue-mutation-conflict"
+    error.code === "room.queue-update-conflict"
   ) {
     return "";
   }

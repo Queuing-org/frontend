@@ -9,28 +9,20 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
 describe("fetchRooms v26.8 cursor", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("대응하는 cursor 필드만 보내고 legacy lastId는 보내지 않는다", async () => {
+  it("opaque cursor 하나만 보내고 legacy cursor 필드는 보내지 않는다", async () => {
     vi.mocked(axiosInstance.get).mockResolvedValue({
       data: { result: { rooms: [], hasNext: false } },
     });
 
     await fetchRooms({
-      cursorSeed: 7,
-      cursorLastId: 9,
-      cursorLastCreatedAt: "2026-08-02T00:00:00Z",
-      cursorLastRandomRank: 0.5,
-      cursorLastParticipantCount: 3,
+      cursor: "opaque-next",
       size: 30,
       ...({ lastId: 99 } as Record<string, number>),
     });
 
     expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/rooms", {
       params: {
-        cursorSeed: 7,
-        cursorLastId: 9,
-        cursorLastCreatedAt: "2026-08-02T00:00:00Z",
-        cursorLastRandomRank: 0.5,
-        cursorLastParticipantCount: 3,
+        cursor: "opaque-next",
         size: 30,
       },
       signal: undefined,
@@ -43,13 +35,13 @@ describe("fetchRooms v26.8 cursor", () => {
     });
 
     await fetchRooms({
-      cursorLastId: 9,
+      cursor: "next-room",
       tags: [" kpop ", "anime", "kpop"],
     });
 
     expect(axiosInstance.get).toHaveBeenCalledWith("/api/v1/rooms", {
       params: {
-        cursorLastId: 9,
+        cursor: "next-room",
         tags: "anime,kpop",
       },
       signal: undefined,

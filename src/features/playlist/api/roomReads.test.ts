@@ -43,7 +43,7 @@ describe("v26.8.0 방 조회 API", () => {
     vi.clearAllMocks();
   });
 
-  it("큐 첫 페이지는 size만, 다음 페이지는 cursor와 queueRevision을 함께 보낸다", async () => {
+  it("큐 첫 페이지는 size만, 다음 페이지는 opaque cursor만 보낸다", async () => {
     const abortController = new AbortController();
     vi.mocked(axiosInstance.get)
       .mockResolvedValueOnce({
@@ -80,12 +80,11 @@ describe("v26.8.0 방 조회 API", () => {
       slug: "room",
       password: "secret",
       cursor: "entry-1",
-      queueRevision: 12,
     });
 
     expect(axiosInstance.get).toHaveBeenNthCalledWith(
       1,
-      "/api/v1/rooms/room/playlist",
+      "/api/v1/rooms/room/queue-entries",
       {
         params: { size: 30 },
         headers: { "X-Room-Password": "secret" },
@@ -94,11 +93,10 @@ describe("v26.8.0 방 조회 API", () => {
     );
     expect(axiosInstance.get).toHaveBeenNthCalledWith(
       2,
-      "/api/v1/rooms/room/playlist",
+      "/api/v1/rooms/room/queue-entries",
       {
         params: {
           cursor: "entry-1",
-          queueRevision: 12,
           size: 30,
         },
         headers: { "X-Room-Password": "secret" },

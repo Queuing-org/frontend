@@ -33,7 +33,7 @@ describe("fetchRoomChats", () => {
     ).resolves.toEqual(response);
 
     expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/rooms/room%20slug/chats",
+      "/api/v1/rooms/room%20slug/chat-messages",
       {
         headers: { "X-Room-Password": "secret" },
         params: { cursorId: 42, size: 100 },

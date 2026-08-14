@@ -130,7 +130,7 @@ describe("my queue mutations", () => {
     const queryClient = createQueryClient();
     vi.spyOn(queryClient, "resetQueries");
     vi.spyOn(queryClient, "invalidateQueries");
-    vi.mocked(deleteMyQueueEntry).mockResolvedValue(true);
+    vi.mocked(deleteMyQueueEntry).mockResolvedValue();
     const { result } = renderHook(() => useDeleteMyQueueEntry(), {
       wrapper: createWrapper(queryClient),
     });
@@ -149,12 +149,12 @@ describe("my queue mutations", () => {
     const queryClient = createQueryClient();
     vi.spyOn(queryClient, "resetQueries");
     vi.spyOn(queryClient, "invalidateQueries");
-    vi.mocked(moveMyQueueEntry).mockResolvedValue(true);
+    vi.mocked(moveMyQueueEntry).mockResolvedValue();
     const { result } = renderHook(() => useMoveMyQueueEntry(), {
       wrapper: createWrapper(queryClient),
     });
 
-    let movePromise: Promise<boolean> | null = null;
+    let movePromise: Promise<void> | null = null;
     act(() => {
       movePromise = result.current.mutateAsync({
         beforeEntryId: "entry-2",
@@ -195,11 +195,11 @@ describe("my queue mutations", () => {
     const queryClient = createQueryClient();
     vi.spyOn(queryClient, "resetQueries");
     vi.spyOn(queryClient, "invalidateQueries");
-    vi.mocked(moveRoomQueueEntry).mockResolvedValue(true);
+    vi.mocked(moveRoomQueueEntry).mockResolvedValue();
     const { result } = renderHook(() => useMoveRoomQueueEntry(), {
       wrapper: createWrapper(queryClient),
     });
-    let movePromise: Promise<boolean> | null = null;
+    let movePromise: Promise<void> | null = null;
 
     act(() => {
       movePromise = result.current.mutateAsync({
@@ -241,7 +241,7 @@ describe("my queue mutations", () => {
     const { result } = renderHook(() => useMoveRoomQueueEntry(), {
       wrapper: createWrapper(queryClient),
     });
-    let movePromise: Promise<boolean> | null = null;
+    let movePromise: Promise<void> | null = null;
 
     act(() => {
       movePromise = result.current.mutateAsync({

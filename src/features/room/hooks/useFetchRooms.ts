@@ -26,15 +26,7 @@ const DEFAULT_ROOMS_QUERY_PARAMS: RoomListQueryParams = {
 
 export type RoomsQueryParams = Partial<RoomListQueryParams>;
 
-type RoomsPageParam =
-  | {
-      cursorLastCreatedAt?: string;
-      cursorLastId?: number;
-      cursorLastParticipantCount?: number;
-      cursorLastRandomRank?: number;
-      cursorSeed?: number | string;
-    }
-  | undefined;
+type RoomsPageParam = string | null;
 
 export function getRoomsFromPages(data?: InfiniteData<RoomsResponse>): Room[] {
   const seenRoomIds = new Set<number>();
@@ -71,72 +63,24 @@ export function normalizeRoomsQueryParams(
   };
 }
 
-function hasCursorValue(value: unknown): value is number | string {
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-
-  return typeof value === "string" && value.length > 0;
-}
-
-function getCursorPageParam(lastPage: RoomsResponse): RoomsPageParam {
-  const cursorPageParam = {
-    ...(hasCursorValue(lastPage.nextCursorSeed)
-      ? { cursorSeed: lastPage.nextCursorSeed }
-      : {}),
-    ...(typeof lastPage.nextCursorLastId === "number"
-      ? { cursorLastId: lastPage.nextCursorLastId }
-      : {}),
-    ...(hasCursorValue(lastPage.nextCursorLastCreatedAt)
-      ? { cursorLastCreatedAt: lastPage.nextCursorLastCreatedAt }
-      : {}),
-    ...(typeof lastPage.nextCursorLastRandomRank === "number"
-      ? { cursorLastRandomRank: lastPage.nextCursorLastRandomRank }
-      : {}),
-    ...(typeof lastPage.nextCursorLastParticipantCount === "number"
-      ? { cursorLastParticipantCount: lastPage.nextCursorLastParticipantCount }
-      : {}),
-  };
-
-  return Object.keys(cursorPageParam).length > 0
-    ? cursorPageParam
-    : undefined;
-}
-
 function getNextRoomsPageParam(
   lastPage: RoomsResponse,
   _allPages: readonly RoomsResponse[],
   _lastPageParam: RoomsPageParam,
   allPageParams: readonly RoomsPageParam[],
-): RoomsPageParam {
+): RoomsPageParam | undefined {
   if (!lastPage.hasNext) {
     return undefined;
   }
 
-  const nextPageParam = getCursorPageParam(lastPage);
+  const nextPageParam = lastPage.nextCursor?.trim() || undefined;
   if (!nextPageParam) {
     return undefined;
   }
 
-  const cursorWasAlreadyRequested = allPageParams.some(
-    (pageParam) =>
-      pageParam != null && isSameRoomsPageParam(pageParam, nextPageParam),
-  );
+  const cursorWasAlreadyRequested = allPageParams.includes(nextPageParam);
 
   return cursorWasAlreadyRequested ? undefined : nextPageParam;
-}
-
-function isSameRoomsPageParam(
-  left: Exclude<RoomsPageParam, undefined>,
-  right: Exclude<RoomsPageParam, undefined>,
-) {
-  return (
-    left.cursorSeed === right.cursorSeed &&
-    left.cursorLastId === right.cursorLastId &&
-    left.cursorLastCreatedAt === right.cursorLastCreatedAt &&
-    left.cursorLastRandomRank === right.cursorLastRandomRank &&
-    left.cursorLastParticipantCount === right.cursorLastParticipantCount
-  );
 }
 
 function getPageFetchParams(pageParam: RoomsPageParam): FetchRoomsParams {
@@ -144,13 +88,7 @@ function getPageFetchParams(pageParam: RoomsPageParam): FetchRoomsParams {
     return {};
   }
 
-  return {
-    cursorLastCreatedAt: pageParam.cursorLastCreatedAt,
-    cursorLastId: pageParam.cursorLastId,
-    cursorLastParticipantCount: pageParam.cursorLastParticipantCount,
-    cursorLastRandomRank: pageParam.cursorLastRandomRank,
-    cursorSeed: pageParam.cursorSeed,
-  };
+  return { cursor: pageParam };
 }
 
 export function useRoomsQuery(params: RoomsQueryParams = {}) {
@@ -175,7 +113,7 @@ export function useRoomsQuery(params: RoomsQueryParams = {}) {
         },
         signal,
       ),
-    initialPageParam: undefined,
+    initialPageParam: null,
     maxPages: ROOM_DISCOVERY_MAX_PAGES,
     getNextPageParam: getNextRoomsPageParam,
   });

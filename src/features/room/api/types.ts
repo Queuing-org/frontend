@@ -16,7 +16,7 @@ export type RandomEntryRoomResult = {
 };
 
 export type UpdateRoomPayload = {
-  title: string;
+  title?: string;
   password?: string | null;
   tags?: string[];
   maxParticipants?: number | null;

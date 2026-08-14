@@ -7,7 +7,7 @@ import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { useRandomEntryRoom } from "./useRandomEntryRoom";
 
 function getRandomEntryErrorMessage(error: ApiError) {
-  if (error.code === "room.random-entry-unavailable" || error.status === 404) {
+  if (error.code === "room.random-join-unavailable") {
     return "입장 가능한 공개 방이 없어요.";
   }
 

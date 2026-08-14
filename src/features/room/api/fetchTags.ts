@@ -5,7 +5,7 @@ import { ApiResponse } from "@/src/shared/api/types";
 
 export async function fetchRoomTags(): Promise<RoomTag[]> {
   const res = await axiosInstance.get<ApiResponse<{ tags: RoomTag[] }>>(
-    "/api/v1/tags"
+    "/api/v1/music-tags",
   );
 
   return unwrapApiResponse(res.data).tags;

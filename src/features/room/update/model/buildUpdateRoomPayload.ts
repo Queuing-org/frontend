@@ -39,7 +39,11 @@ export function buildUpdateRoomPayload({
 }: BuildUpdateRoomPayloadParams): UpdateRoomPayload | null {
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
-  const changedFields: Partial<Omit<UpdateRoomPayload, "title">> = {};
+  const changedFields: UpdateRoomPayload = {};
+
+  if (trimmedTitle !== initialTitle.trim()) {
+    changedFields.title = trimmedTitle;
+  }
 
   if (!haveSameItems(selectedTagSlugs, initialTagSlugs)) {
     changedFields.tags = selectedTagSlugs;
@@ -59,13 +63,9 @@ export function buildUpdateRoomPayload({
     changedFields.trackLimitMinutes = trackLimitMinutes;
   }
 
-  const hasChangedFields = Object.keys(changedFields).length > 0;
-  if (trimmedTitle === initialTitle.trim() && !hasChangedFields) {
+  if (Object.keys(changedFields).length === 0) {
     return null;
   }
 
-  return {
-    title: trimmedTitle,
-    ...changedFields,
-  };
+  return changedFields;
 }

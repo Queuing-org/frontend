@@ -42,7 +42,7 @@ describe("queueOrderOptimistic", () => {
           totalPendingCount: 3,
         },
       ],
-      pageParams: [null, { cursor: "a", queueRevision: 1 }],
+      pageParams: [null, "a"],
     };
 
     const result = applyPendingEntryOrder(data, ["b", "a"]);

@@ -11,15 +11,11 @@ vi.mock("../api/fetchRoomQueue", () => ({
   getNextRoomQueuePageParam: (lastPage: {
     hasNext: boolean;
     nextCursor: string | null;
-    queueRevision: number;
   }) =>
     lastPage.hasNext && lastPage.nextCursor
-      ? {
-          cursor: lastPage.nextCursor,
-          queueRevision: lastPage.queueRevision,
-        }
+      ? lastPage.nextCursor
       : undefined,
-  QUEUE_CONFLICT_CODE: "room.queue-mutation-conflict",
+  QUEUE_CONFLICT_CODE: "room.queue-update-conflict",
 }));
 
 const page = (entryId: string, hasNext: boolean, revision: number) => ({
@@ -60,7 +56,7 @@ describe("useMyRoomQueue", () => {
       .mockRejectedValueOnce(
         new ApiError({
           status: 409,
-          code: "room.queue-mutation-conflict",
+          code: "room.queue-update-conflict",
           message: "conflict",
         }),
       )
@@ -85,15 +81,15 @@ describe("useMyRoomQueue", () => {
     );
     expect(fetchRoomQueuePage).toHaveBeenNthCalledWith(
       1,
-      expect.objectContaining({ cursor: undefined, queueRevision: undefined }),
+      expect.objectContaining({ cursor: null }),
     );
     expect(fetchRoomQueuePage).toHaveBeenNthCalledWith(
       2,
-      expect.objectContaining({ cursor: "old", queueRevision: 10 }),
+      expect.objectContaining({ cursor: "old" }),
     );
     expect(fetchRoomQueuePage).toHaveBeenNthCalledWith(
       3,
-      expect.objectContaining({ cursor: undefined, queueRevision: undefined }),
+      expect.objectContaining({ cursor: null }),
     );
     expect(result.current.data?.pages).toHaveLength(1);
   });

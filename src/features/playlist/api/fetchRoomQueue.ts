@@ -10,7 +10,7 @@ import type {
 } from "../model/types";
 
 export const QUEUE_PAGE_SIZE = 30;
-export const QUEUE_CONFLICT_CODE = "room.queue-mutation-conflict";
+export const QUEUE_CONFLICT_CODE = "room.queue-update-conflict";
 
 type FetchRoomQueuePageParams = RoomQueueRequestParams & {
   signal?: AbortSignal;
@@ -29,29 +29,23 @@ export function getNextRoomQueuePageParam(page: RoomQueuePage) {
     });
   }
 
-  return {
-    cursor: page.nextCursor,
-    queueRevision: page.queueRevision,
-  };
+  return page.nextCursor;
 }
 
 export async function fetchRoomQueuePage({
   slug,
   password,
   cursor,
-  queueRevision,
   signal,
   size = QUEUE_PAGE_SIZE,
   mine = false,
 }: FetchRoomQueuePageParams): Promise<RoomQueuePage> {
-  const playlistPath = mine ? "/playlist/me" : "/playlist";
+  const queuePath = mine ? "/queue-entries/me" : "/queue-entries";
   const res = await axiosInstance.get<ApiResponse<RoomQueuePage>>(
-    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}${playlistPath}`,
+    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}${queuePath}`,
     {
       params: {
-        ...(cursor && queueRevision != null
-          ? { cursor, queueRevision }
-          : {}),
+        ...(cursor ? { cursor } : {}),
         size,
       },
       headers: buildRoomPasswordHeaders(password),
