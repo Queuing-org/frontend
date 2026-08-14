@@ -51,7 +51,7 @@
 - [x] 문서/incident 정리
 - [x] targeted/full QA
 - [x] 기능 단위 commit
-- [ ] push/Draft PR
+- [x] push/Draft PR
 
 ## Residual Risk
 
