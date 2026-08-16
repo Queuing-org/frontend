@@ -160,6 +160,15 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const hasThumbnailBlockingError = Boolean(
     thumbnailSelection.errorMessage || thumbnailUploadErrorMessage,
   );
+  const canGoNext =
+    currentStep === 0
+      ? trimmedTitle.length > 0 &&
+        !isSubmitting &&
+        !hasThumbnailBlockingError &&
+        !hasSelectedThumbnailWithoutToken
+      : currentStep === 1
+        ? selectedTagSlugs.length > 0 && !isSubmitting
+        : !isSubmitting;
   const stepTitle = createSteps[currentStep].title;
 
   const toggleTag = (slug: string) => {
@@ -228,7 +237,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   };
 
   const goToNextStep = () => {
-    if (isSubmitting) {
+    if (!canGoNext) {
       return;
     }
 
@@ -558,7 +567,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   type="button"
                   className={styles.primaryButton}
                   onClick={goToNextStep}
-                  disabled={isSubmitting}
+                  disabled={!canGoNext}
                 >
                   다음
                 </button>

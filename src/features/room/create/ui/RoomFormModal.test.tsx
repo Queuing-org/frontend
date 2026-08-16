@@ -130,6 +130,22 @@ describe("RoomFormModal room form flows", () => {
     });
   });
 
+  it("방 제목이 비어 있으면 다음을 비활성화한다", async () => {
+    const user = userEvent.setup();
+    renderCreateRoomModal();
+
+    const titleInput = screen.getByLabelText("방 제목");
+    const nextButton = screen.getByRole("button", { name: "다음" });
+
+    expect(nextButton).toBeDisabled();
+    await user.type(titleInput, "   ");
+    expect(nextButton).toBeDisabled();
+    await user.type(titleInput, "제목");
+    expect(nextButton).toBeEnabled();
+    await user.clear(titleInput);
+    expect(nextButton).toBeDisabled();
+  });
+
   it("파일 선택 즉시 업로드하고 실패를 필드와 공통 알림으로 표시한다", async () => {
     const user = userEvent.setup();
     vi.mocked(uploadTemporaryRoomThumbnail).mockRejectedValue(
@@ -161,7 +177,7 @@ describe("RoomFormModal room form flows", () => {
       "true",
     );
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
   });
 
   it("업로드 중에는 제목 입력을 유지하고 단계 이동만 막는다", async () => {
@@ -348,24 +364,13 @@ describe("RoomFormModal room form flows", () => {
       .filter((button) => button.hasAttribute("aria-pressed"));
     expect(tagButtons[0]).toHaveAccessibleName("FREE");
 
-    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
     expect(screen.getByRole("heading", { name: "장르 선택" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "다음" }));
-    expect(screen.getByRole("group", { name: "방 장르" })).toHaveAttribute(
-      "aria-invalid",
-      "true",
-    );
-    expect(notify).toHaveBeenCalledWith({
-      dedupeKey: "room-create:tags",
-      message: "장르를 하나 이상 선택해 주세요.",
-      tone: "error",
-    });
-
     await selectRequiredTag(user);
     expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
     await selectRequiredTag(user);
-    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
     await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     expect(screen.getByLabelText("최대 인원 수")).toBeInTheDocument();

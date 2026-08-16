@@ -3,7 +3,7 @@
 ## Automated Verification
 
 - `npm run lint`: passed
-- `npm run test`: passed — 133 files, 513 tests
+- `npm run test`: passed — 133 files, 514 tests
 - `npm run build`: passed
 - `git diff --check`: passed
 
@@ -22,6 +22,7 @@
 - First read-only review: `fix`; provider timer, leave flow, edit validation, profile native validation, accessibility, stale follow conflict, and missing integration coverage were corrected.
 - Second read-only review: `fix`; room password correction, add-track field ownership, create/edit field-specific clearing, delayed owner lookup, and additional UI integration tests were corrected.
 - Final publication review: `pass`; no blocking findings.
+- User regression follow-up: `pass`; restored disabled gating for the create-room `다음` button when the trimmed title or genre selection is empty, and retained blocking for thumbnail upload/error states. The focused room-form suite passed 19 tests before the full suite.
 
 ## Residual Risk
 
