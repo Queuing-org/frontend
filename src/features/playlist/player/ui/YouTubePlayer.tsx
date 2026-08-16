@@ -1,31 +1,40 @@
 "use client";
 
 import type { PlaybackStatus } from "@/src/features/room/model/types";
-import { useYouTubeIframePlayer } from "../hooks/useYouTubeIframePlayer";
+import {
+  type LocalSeekRequest,
+  useYouTubeIframePlayer,
+} from "../hooks/useYouTubeIframePlayer";
 import styles from "./YouTubePlayer.module.css";
 
 type YouTubePlayerProps = {
   videoId: string | null;
   playbackStatus?: PlaybackStatus | null;
   currentTimeMs?: number | null;
+  localSeekRequest?: LocalSeekRequest | null;
   onPlayerReady?: () => void;
   onPlaybackStateChange?: (args: {
     status: PlaybackStatus;
     currentTimeMs: number;
   }) => void;
+  playbackKey?: string | null;
 };
 
 export default function YouTubePlayer({
   videoId,
   playbackStatus,
   currentTimeMs,
+  localSeekRequest,
   onPlayerReady,
   onPlaybackStateChange,
+  playbackKey,
 }: YouTubePlayerProps) {
   const { playerError, playerMountRef } = useYouTubeIframePlayer({
     currentTimeMs,
+    localSeekRequest,
     onPlaybackStateChange,
     onPlayerReady,
+    playbackKey,
     playbackStatus,
     playerHostClassName: styles.playerHost,
     videoId,

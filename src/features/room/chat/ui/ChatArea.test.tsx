@@ -112,12 +112,16 @@ function ChatAreaHarness({
   chatMessages,
   hasUnloadedParticipants = false,
   isOwner = false,
+  onTimestampSeek,
   participantItems = participants,
+  timestampMaxSeconds,
 }: {
   chatMessages: ChatMessage[];
   hasUnloadedParticipants?: boolean;
   isOwner?: boolean;
+  onTimestampSeek?: (seconds: number) => void;
   participantItems?: typeof participants;
+  timestampMaxSeconds?: number | null;
 }) {
   const [blockedSenderSlugs, setBlockedSenderSlugs] = useState<
     ReadonlySet<string>
@@ -132,6 +136,7 @@ function ChatAreaHarness({
       isLoadingOlderMessages={false}
       messages={chatMessages}
       onLoadOlderMessages={vi.fn()}
+      onTimestampSeek={onTimestampSeek}
       onUserBlocked={(userSlug) => {
         onUserBlocked(userSlug);
         setBlockedSenderSlugs((current) => {
@@ -158,6 +163,7 @@ function ChatAreaHarness({
       roomPassword="secret"
       roomSlug="room-slug"
       scrollToLatestKey={0}
+      timestampMaxSeconds={timestampMaxSeconds}
     />
   );
 }
@@ -213,6 +219,41 @@ describe("ChatArea 관리 메뉴", () => {
       reset: vi.fn(),
       variables: undefined,
     } as unknown as ReturnType<typeof useTransferRoomOwner>);
+  });
+
+  it("영상 범위 안의 채팅 시간을 버튼으로 표시하고 초 단위 이동을 요청한다", async () => {
+    const user = userEvent.setup();
+    const onTimestampSeek = vi.fn();
+    render(
+      <ChatAreaHarness
+        chatMessages={[
+          message("회원", { content: "여기 봐요 12:11 진짜 좋음" }),
+        ]}
+        onTimestampSeek={onTimestampSeek}
+        timestampMaxSeconds={800}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "12:11 지점으로 이동" }),
+    );
+
+    expect(onTimestampSeek).toHaveBeenCalledWith(731);
+  });
+
+  it("영상 길이를 벗어난 채팅 시간은 이동 버튼으로 만들지 않는다", () => {
+    render(
+      <ChatAreaHarness
+        chatMessages={[message("회원", { content: "너무 뒤 12:11" })]}
+        onTimestampSeek={vi.fn()}
+        timestampMaxSeconds={700}
+      />,
+    );
+
+    expect(screen.getByText("12:11")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "12:11 지점으로 이동" }),
+    ).not.toBeInTheDocument();
   });
 
   it("작성자 유형과 식별자에 맞는 메뉴만 표시하고 한 번에 하나만 연다", async () => {

@@ -2,6 +2,7 @@ import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getYouTubeIframeAllowWithAutoplay,
+  type LocalSeekRequest,
   useYouTubeIframePlayer,
 } from "./useYouTubeIframePlayer";
 
@@ -25,16 +26,24 @@ type PlayerOptions = {
 
 function PlayerHarness({
   currentTimeMs = 5_000,
+  localSeekRequest = null,
   playbackStatus = "PLAYING",
+  playbackKey = "entry-1",
+  videoId = "video-1",
 }: {
   currentTimeMs?: number;
+  localSeekRequest?: LocalSeekRequest | null;
   playbackStatus?: "PLAYING" | "PAUSED";
+  playbackKey?: string;
+  videoId?: string;
 }) {
   const { playerMountRef } = useYouTubeIframePlayer({
     currentTimeMs,
+    localSeekRequest,
     playbackStatus,
+    playbackKey,
     playerHostClassName: "player-host",
-    videoId: "video-1",
+    videoId,
   });
 
   return <div ref={playerMountRef} />;
@@ -129,5 +138,47 @@ describe("useYouTubeIframePlayer", () => {
     });
     expect(player.pauseVideo).toHaveBeenCalledOnce();
     expect(player.playVideo).not.toHaveBeenCalled();
+  });
+
+  it("로컬 seek 이후 같은 곡의 서버 시간 보정은 무시하고 곡 변경 시 복귀한다", async () => {
+    const { player, getPlayerOptions } = installYouTubePlayerMock();
+    const { rerender } = render(<PlayerHarness currentTimeMs={5_000} />);
+
+    await waitFor(() => expect(getPlayerOptions()).toBeDefined());
+    act(() => {
+      getPlayerOptions()?.events?.onReady?.({ target: player });
+    });
+
+    rerender(
+      <PlayerHarness
+        currentTimeMs={5_000}
+        localSeekRequest={{ id: 1, playbackKey: "entry-1", seconds: 731 }}
+      />,
+    );
+    expect(player.seekTo).toHaveBeenCalledWith(731, true);
+
+    player.seekTo.mockClear();
+    player.getCurrentTime.mockReturnValue(731);
+    rerender(
+      <PlayerHarness
+        currentTimeMs={10_000}
+        localSeekRequest={{ id: 1, playbackKey: "entry-1", seconds: 731 }}
+      />,
+    );
+    expect(player.seekTo).not.toHaveBeenCalled();
+
+    player.getCurrentTime.mockReturnValue(0);
+    rerender(
+      <PlayerHarness
+        currentTimeMs={12_000}
+        localSeekRequest={null}
+        playbackKey="entry-2"
+        videoId="video-2"
+      />,
+    );
+    expect(player.loadVideoById).toHaveBeenLastCalledWith({
+      videoId: "video-2",
+      startSeconds: 12,
+    });
   });
 });

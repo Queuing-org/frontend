@@ -37,6 +37,7 @@ import {
   getVisibleChatMessageWindow,
   type ChatMessageManagementAction,
 } from "../model/chatMessages";
+import { getChatContentSegments } from "../model/chatTimestamps";
 import ReportChatMessageModal, {
   type ReportChatMessageTarget,
 } from "./ReportChatMessageModal";
@@ -51,6 +52,7 @@ type Props = {
   isLoadingOlderMessages: boolean;
   messages: ChatMessage[];
   onLoadOlderMessages: () => void;
+  onTimestampSeek?: (seconds: number) => void;
   onUserBlocked: (userSlug: string) => void;
   participants: PlaylistParticipant[];
   resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
@@ -58,6 +60,7 @@ type Props = {
   roomPassword?: string | null;
   roomSlug: string;
   scrollToLatestKey: number;
+  timestampMaxSeconds?: number | null;
   wheelRegionRef?: RefObject<HTMLElement | null>;
 };
 
@@ -74,7 +77,9 @@ type ChatMessageRowProps = {
   onCloseMenu: () => void;
   onKick: (message: ChatMessage) => void;
   onReport: (message: ChatMessage) => void;
+  onTimestampSeek?: (seconds: number) => void;
   onTransfer: (message: ChatMessage) => void;
+  timestampMaxSeconds?: number | null;
   triggerRef: RefObject<HTMLButtonElement | null>;
   onToggleMenu: (
     messageKey: string,
@@ -100,11 +105,14 @@ function ChatMessageRow({
   onCloseMenu,
   onKick,
   onReport,
+  onTimestampSeek,
   onTransfer,
+  timestampMaxSeconds,
   triggerRef,
   onToggleMenu,
 }: ChatMessageRowProps) {
   const menuId = `chat-message-menu-${messageKey.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+  const contentSegments = getChatContentSegments(message.content);
 
   return (
     <li
@@ -133,7 +141,32 @@ function ChatMessageRow({
         <span className={styles.senderLine}>
           <span className={styles.nickname}>{message.senderNickname}</span>
         </span>
-        <span className={styles.content}>{message.content}</span>
+        <span className={styles.content}>
+          {contentSegments.map((segment, index) => {
+            const canSeek =
+              segment.type === "timestamp" &&
+              !message.isDeleted &&
+              Boolean(onTimestampSeek) &&
+              (timestampMaxSeconds == null ||
+                segment.seconds < timestampMaxSeconds);
+
+            if (segment.type === "timestamp" && canSeek) {
+              return (
+                <button
+                  key={`${segment.text}-${index}`}
+                  type="button"
+                  className={styles.timestampButton}
+                  aria-label={`${segment.text} 지점으로 이동`}
+                  onClick={() => onTimestampSeek?.(segment.seconds)}
+                >
+                  {segment.text}
+                </button>
+              );
+            }
+
+            return <span key={`${segment.text}-${index}`}>{segment.text}</span>;
+          })}
+        </span>
       </div>
       {actions.length > 0 ? (
         <span className={styles.management}>
@@ -188,6 +221,7 @@ export default function ChatArea({
   isLoadingOlderMessages,
   messages,
   onLoadOlderMessages,
+  onTimestampSeek,
   onUserBlocked,
   participants,
   resolveParticipantByUserSlug,
@@ -195,6 +229,7 @@ export default function ChatArea({
   roomPassword,
   roomSlug,
   scrollToLatestKey,
+  timestampMaxSeconds,
   wheelRegionRef: externalWheelRegionRef,
 }: Props) {
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null);
@@ -601,7 +636,9 @@ export default function ChatArea({
                     onCloseMenu={closeMenu}
                     onKick={handleKick}
                     onReport={handleReport}
+                    onTimestampSeek={onTimestampSeek}
                     onTransfer={handleTransfer}
+                    timestampMaxSeconds={timestampMaxSeconds}
                     triggerRef={activeTriggerRef}
                     onToggleMenu={handleToggleMenu}
                   />

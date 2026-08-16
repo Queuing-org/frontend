@@ -218,6 +218,31 @@
   line-height: inherit;
 }
 
+.timestampButton {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4285f4;
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  line-height: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.timestampButton:hover {
+  color: #2f86ed;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.timestampButton:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #4285f4;
+  outline-offset: 2px;
+}
+
 .message[data-deleted="true"] .content {
   color: #8b94a3;
   opacity: 0.72;

@@ -33,6 +33,7 @@ import {
   shouldKeepPasswordFormAfterSubmit,
 } from "@/src/features/room/join/model/roomJoinErrors";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
+import type { LocalSeekRequest } from "@/src/features/playlist/player/hooks/useYouTubeIframePlayer";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import RoomPasswordDialog from "@/src/features/room/join/ui/RoomPasswordDialog";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
@@ -511,6 +512,32 @@ function RoomPlaybackJoinedContent({
     roomMeta,
     slug,
   });
+  const playbackKey = playback.currentVideoId
+    ? `${roomPlayback?.currentEntry?.entryId ?? "video"}:${playback.currentVideoId}`
+    : null;
+  const [localSeekRequest, setLocalSeekRequest] =
+    useState<LocalSeekRequest | null>(null);
+  const localSeekRequestIdRef = useRef(0);
+  const timestampMaxSeconds =
+    typeof playback.currentTrackDurationMs === "number" &&
+    playback.currentTrackDurationMs > 0
+      ? playback.currentTrackDurationMs / 1000
+      : null;
+  const handleTimestampSeek = useCallback(
+    (seconds: number) => {
+      if (!playbackKey || !playback.currentVideoId) {
+        return;
+      }
+
+      localSeekRequestIdRef.current += 1;
+      setLocalSeekRequest({
+        id: localSeekRequestIdRef.current,
+        playbackKey,
+        seconds,
+      });
+    },
+    [playback.currentVideoId, playbackKey],
+  );
   const currentUserSlug = currentUser?.slug?.trim() || null;
   const roomOwnerSlug = roomMeta.owner?.slug?.trim() || null;
   useEffect(() => {
@@ -702,6 +729,8 @@ function RoomPlaybackJoinedContent({
                   videoId={playback.currentVideoId}
                   playbackStatus={playback.playbackStatus?.status ?? null}
                   currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+                  localSeekRequest={localSeekRequest}
+                  playbackKey={playbackKey}
                 />
                 {playback.currentRequester ? (
                   <CurrentRequesterCard
@@ -731,6 +760,11 @@ function RoomPlaybackJoinedContent({
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      onTimestampSeek={
+                        playback.currentVideoId
+                          ? handleTimestampSeek
+                          : undefined
+                      }
                       hasUnloadedParticipants={hasNextParticipantsPage}
                       onUserBlocked={handleUserBlocked}
                       participants={participants}
@@ -741,6 +775,7 @@ function RoomPlaybackJoinedContent({
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
+                      timestampMaxSeconds={timestampMaxSeconds}
                       wheelRegionRef={mobileInlineChatRef}
                     />
                   </div>
@@ -880,6 +915,8 @@ function RoomPlaybackJoinedContent({
               videoId={playback.currentVideoId}
               playbackStatus={playback.playbackStatus?.status ?? null}
               currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+              localSeekRequest={localSeekRequest}
+              playbackKey={playbackKey}
             />
             {playback.currentRequester ? (
               <CurrentRequesterCard
@@ -905,6 +942,9 @@ function RoomPlaybackJoinedContent({
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              onTimestampSeek={
+                playback.currentVideoId ? handleTimestampSeek : undefined
+              }
               hasUnloadedParticipants={hasNextParticipantsPage}
               onUserBlocked={handleUserBlocked}
               participants={participants}
@@ -913,6 +953,7 @@ function RoomPlaybackJoinedContent({
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
+              timestampMaxSeconds={timestampMaxSeconds}
               wheelRegionRef={desktopWheelRegionRef}
             />
           </div>
