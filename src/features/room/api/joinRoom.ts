@@ -21,6 +21,7 @@ type JoinRoomOptions = {
 
 const SOCKET_CONNECT_TIMEOUT_MS = 12_000;
 const ROOM_JOIN_TIMEOUT_MS = 8_000;
+const ROOM_ALREADY_PARTICIPATING_ERROR_CODE = "room.already-participating";
 
 function createJoinCancelledError() {
   return new ApiError({
@@ -237,7 +238,11 @@ export async function joinRoom(
       options.signal?.addEventListener("abort", handleAbort, { once: true });
       subscription = subscribeUserJoinEvents(safeSlug, {
         onJoined: finishResolve,
-        onError: finishReject,
+        onError: (error) => {
+          finishReject(error, {
+            leave: error.code !== ROOM_ALREADY_PARTICIPATING_ERROR_CODE,
+          });
+        },
       });
       publishJoinRequest(safeSlug, payload);
       joinPublished = true;

@@ -22,7 +22,7 @@ Next.js routes (`src/app`)
 ### `src/features`
 
 - Owns domain-specific API clients, query hooks, models, interaction state, and UI.
-- Current top-level domains include auth, badge, follow, home, onboarding, playlist, room, settings, and user.
+- Current top-level domains include auth, badge, follow, home, playlist, room, settings, and user.
 - A feature may import from `src/shared` and from another feature only when the dependency is explicit and does not create a cycle.
 - Shared behavior used by multiple domains should move to `src/shared`; domain behavior should not.
 - Room discovery owns room-list navigation, pagination triggers, and the shared home/search control dock under `src/features/room/discovery`. The home screen assembles those room-domain capabilities but the room domain must not depend back on `src/features/home`.
@@ -47,6 +47,8 @@ Next.js routes (`src/app`)
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
 - `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
+- Deleted-room navigation uses a one-shot `sessionStorage` notice owned by the room model and rendered by home. Terminal room cleanup remains owned by the room realtime hook.
+- Public `UserProfile.relationship` is the authoritative follow-button state. Follow/search lists use cursor-based infinite queries and keep transient paging state inside TanStack Query.
 
 ## High-Risk Boundaries
 

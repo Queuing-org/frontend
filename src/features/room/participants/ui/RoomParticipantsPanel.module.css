@@ -283,7 +283,7 @@
   color: #d24b4b;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .root {
     padding: 1rem 0.625rem;
   }
@@ -297,7 +297,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .root {
     padding: 0 8px 14.4px;
   }

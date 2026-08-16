@@ -16,32 +16,16 @@ export type RoomListQueryParams = {
 
 export type FetchRoomsParams = {
   createdOrder?: RoomCreatedOrder;
-  cursorLastCreatedAt?: string | null;
-  cursorLastId?: number | null;
-  cursorLastParticipantCount?: number | null;
-  cursorLastRandomRank?: number | null;
-  cursorSeed?: number | string | null;
+  cursor?: string | null;
   keyword?: string;
   participantOrder?: RoomParticipantOrder;
   size?: number;
   tags?: readonly string[];
 };
 
-function isPresentQueryValue(value: unknown): value is number | string {
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-
-  return typeof value === "string" && value.trim().length > 0;
-}
-
 export async function fetchRooms({
   createdOrder,
-  cursorLastCreatedAt,
-  cursorLastId,
-  cursorLastParticipantCount,
-  cursorLastRandomRank,
-  cursorSeed,
+  cursor,
   keyword,
   participantOrder,
   size,
@@ -49,9 +33,7 @@ export async function fetchRooms({
 }: FetchRoomsParams = {}, signal?: AbortSignal): Promise<RoomsResponse> {
   const trimmedKeyword = keyword?.trim();
   const normalizedTags = normalizeRoomTagSlugs(tags);
-  const normalizedCursorSeed =
-    typeof cursorSeed === "string" ? cursorSeed.trim() : cursorSeed;
-  const normalizedCursorLastCreatedAt = cursorLastCreatedAt?.trim();
+  const normalizedCursor = cursor?.trim();
 
   const res = await axiosInstance.get<ApiResponse<RoomsResponse>>(
     "/api/v1/rooms",
@@ -63,19 +45,7 @@ export async function fetchRooms({
         ...(normalizedTags.length > 0
           ? { tags: normalizedTags.join(",") }
           : {}),
-        ...(isPresentQueryValue(normalizedCursorSeed)
-          ? { cursorSeed: normalizedCursorSeed }
-          : {}),
-        ...(typeof cursorLastId === "number" ? { cursorLastId } : {}),
-        ...(isPresentQueryValue(normalizedCursorLastCreatedAt)
-          ? { cursorLastCreatedAt: normalizedCursorLastCreatedAt }
-          : {}),
-        ...(typeof cursorLastRandomRank === "number"
-          ? { cursorLastRandomRank }
-          : {}),
-        ...(typeof cursorLastParticipantCount === "number"
-          ? { cursorLastParticipantCount }
-          : {}),
+        ...(normalizedCursor ? { cursor: normalizedCursor } : {}),
         ...(typeof size === "number" ? { size } : {}),
       },
       signal,

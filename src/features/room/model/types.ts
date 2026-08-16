@@ -45,11 +45,7 @@ export type RoomOwner = {
 export type RoomsResponse = {
   rooms: Room[];
   hasNext: boolean;
-  nextCursorSeed?: number | string | null;
-  nextCursorLastId?: number | null;
-  nextCursorLastCreatedAt?: string | null;
-  nextCursorLastRandomRank?: number | null;
-  nextCursorLastParticipantCount?: number | null;
+  nextCursor: string | null;
 }; // 웹소켓 호출 가이드 범위 외(기존 REST 목록 응답)
 
 // ---- WebSocket(STOMP) minimal types ----
@@ -84,6 +80,13 @@ export type ChatMessage = {
   senderNickname: string;
   senderProfileImageUrl: string | null;
   sentAt: number;
+  isDeleted?: boolean;
+};
+
+export type ChatMessageDeletedData = {
+  messageKey: string;
+  content: string;
+  deletedAt: number;
 };
 
 export type ChatHistoryResponse = {

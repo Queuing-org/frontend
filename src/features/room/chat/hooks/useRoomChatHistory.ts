@@ -9,6 +9,7 @@ import { ApiError } from "@/src/shared/api/api-error";
 import { CHAT_MESSAGE_WINDOW_SIZE } from "../constants/chat";
 import {
   appendUniqueChatMessage,
+  applyChatMessageTombstones,
   type ChatMessageIdentityIndex,
   createChatMessageIdentityIndex,
   getChatMessageIdentityKeys,
@@ -86,6 +87,7 @@ export function useRoomChatHistory({
   const initialChatHistorySlugRef = useRef<string | null>(null);
   const chatMessagesRef = useRef<ChatMessage[]>([]);
   const chatMessageIndexRef = useRef(createChatMessageIdentityIndex([]));
+  const deletedMessageTombstonesRef = useRef(new Map<string, string>());
   const historyAbortControllerRef = useRef<AbortController | null>(null);
   const backfillAbortControllerRef = useRef<AbortController | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -104,10 +106,14 @@ export function useRoomChatHistory({
   const { mutateAsync: backfillRoomChats } = useRoomChats();
 
   const replaceChatMessages = useCallback((messages: ChatMessage[]) => {
+    const tombstonedMessages = applyChatMessageTombstones(
+      messages,
+      deletedMessageTombstonesRef.current,
+    );
     const nextMessages =
-      messages.length > CHAT_MESSAGE_WINDOW_SIZE
-        ? messages.slice(-CHAT_MESSAGE_WINDOW_SIZE)
-        : messages;
+      tombstonedMessages.length > CHAT_MESSAGE_WINDOW_SIZE
+        ? tombstonedMessages.slice(-CHAT_MESSAGE_WINDOW_SIZE)
+        : tombstonedMessages;
 
     chatMessagesRef.current = nextMessages;
     chatMessageIndexRef.current = createChatMessageIdentityIndex(nextMessages);
@@ -139,6 +145,7 @@ export function useRoomChatHistory({
   const reset = useCallback(() => {
     abortRequests();
     initialChatHistorySlugRef.current = null;
+    deletedMessageTombstonesRef.current.clear();
     replaceChatMessages([]);
     setChatHistoryCursor(null);
     setHasOlderChatMessages(false);
@@ -172,15 +179,24 @@ export function useRoomChatHistory({
   );
 
   const appendMessage = useCallback((message: ChatMessage) => {
+    const [nextMessage] = applyChatMessageTombstones(
+      [message],
+      deletedMessageTombstonesRef.current,
+    );
     const nextMessages = appendUniqueChatMessage(
       chatMessagesRef.current,
-      message,
+      nextMessage,
       chatMessageIndexRef.current,
       CHAT_MESSAGE_WINDOW_SIZE,
     );
     chatMessagesRef.current = nextMessages;
     setChatMessages(nextMessages);
   }, []);
+
+  const markMessageDeleted = useCallback((messageKey: string, content: string) => {
+    deletedMessageTombstonesRef.current.set(messageKey, content);
+    replaceChatMessages(chatMessagesRef.current);
+  }, [replaceChatMessages]);
 
   const loadInitialChatHistory = useCallback(() => {
     if (!slug || chatMessagesRef.current.length > 0) {
@@ -412,6 +428,7 @@ export function useRoomChatHistory({
     isLoadingOlderMessages:
       isLoadingOlderChatMessages || isInitializingChatHistory,
     loadOlderMessages,
+    markMessageDeleted,
     messages: chatMessages,
     reset,
     scrollToLatestKey: chatScrollToLatestKey,

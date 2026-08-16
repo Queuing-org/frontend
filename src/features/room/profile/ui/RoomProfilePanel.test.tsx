@@ -8,13 +8,13 @@ import {
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import RoomProfilePanel from "./RoomProfilePanel";
+import { ApiError } from "@/src/shared/api/api-error";
 
 vi.mock("next/image", () => ({
   default: ({
@@ -35,9 +35,6 @@ vi.mock("next/image", () => ({
 }));
 vi.mock("@/src/features/badge/hooks/usePublicUserBadges", () => ({
   usePublicUserBadges: vi.fn(),
-}));
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
 }));
 vi.mock("@/src/features/user/profile/hooks/useMusicPower", () => ({
   useMusicPower: vi.fn(),
@@ -151,6 +148,7 @@ function renderPanel(
         options?.currentUser === undefined ? currentUser : options.currentUser
       }
       currentRequester={currentRequester}
+      currentEntryId="entry-1"
       hasUnloadedParticipants={options?.hasUnloadedParticipants}
       isCurrentUserLoading={false}
       kickTarget={
@@ -185,6 +183,7 @@ describe("RoomProfilePanel", () => {
       data: {
         nickname: "대상",
         listeningDurationSeconds: 14_700,
+        relationship: "NONE",
         profileImageUrl: null,
         queuingCount: 1234,
         slug: "target-user",
@@ -196,10 +195,6 @@ describe("RoomProfilePanel", () => {
       data: undefined,
       isLoading: false,
     } as ReturnType<typeof usePublicUserBadges>);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
-      isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
         musicPower: 55,
@@ -234,6 +229,11 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByText("4시간 5분")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
+    expect(screen.getByText("대상")).toHaveAttribute("data-line-clamp", "2");
+    expect(screen.getByText("좋은 음악 같이 들어요")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
     expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
     expect(screen.queryByText("최애곡")).not.toBeInTheDocument();
     expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
@@ -241,7 +241,7 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("공개 프로필에 칭호와 음악력이 있으면 중복 fallback 조회를 비활성화한다", () => {
+  it("공개 프로필에 점수가 있어도 재생 건별 투표 상태 조회를 유지한다", () => {
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         musicPower: 42,
@@ -258,13 +258,16 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(useMusicPower).toHaveBeenLastCalledWith(null);
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      { entryId: "entry-1", roomSlug: "room" },
+    );
     expect(usePublicUserBadges).toHaveBeenLastCalledWith(null);
     expect(screen.getByText("방 팠음")).toBeInTheDocument();
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getByText("55")).toBeInTheDocument();
   });
 
-  it("공개 프로필 조회가 실패하면 칭호와 음악력 fallback을 활성화한다", () => {
+  it("공개 프로필 조회가 실패해도 재생 건별 음악력과 칭호 fallback을 활성화한다", () => {
     vi.mocked(useUserProfile).mockReturnValue({
       data: undefined,
       isError: true,
@@ -273,19 +276,23 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(useMusicPower).toHaveBeenLastCalledWith("target-user");
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      { entryId: "entry-1", roomSlug: "room" },
+    );
     expect(usePublicUserBadges).toHaveBeenLastCalledWith("target-user");
   });
 
-  it("기존 투표 상태와 무관하게 클릭한 방향을 PUT mutation에 전달한다", async () => {
+  it("투표 전에는 방과 재생 항목을 포함해 PUT mutation에 전달한다", async () => {
     const user = userEvent.setup();
     const { rerender } = renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 올리기" }));
     expect(mutate).toHaveBeenLastCalledWith(
       {
+        entryId: "entry-1",
         roomSlug: "room",
-        password: "secret",
+        targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
       expect.objectContaining({ onError: expect.any(Function) }),
@@ -294,7 +301,7 @@ describe("RoomProfilePanel", () => {
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
         musicPower: 56,
-        myVote: "UPVOTE",
+        myVote: null,
         targetUserSlug: "target-user",
       },
       isLoading: false,
@@ -303,6 +310,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={currentUser}
         currentRequester={requester}
+        currentEntryId="entry-2"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -316,17 +324,19 @@ describe("RoomProfilePanel", () => {
     const upButton = screen.getByRole("button", { name: "음악력 올리기" });
     expect(upButton).not.toHaveAttribute("aria-pressed");
     await user.click(upButton);
+    expect(mutate).toHaveBeenCalledTimes(2);
     expect(mutate).toHaveBeenLastCalledWith(
       {
+        entryId: "entry-2",
         roomSlug: "room",
-        password: "secret",
+        targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
   });
 
-  it("반대 방향 클릭은 DOWNVOTE로 교체한다", async () => {
+  it("이미 투표한 재생 건의 반대 방향 클릭도 API 없이 안내한다", async () => {
     const user = userEvent.setup();
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
@@ -339,13 +349,9 @@ describe("RoomProfilePanel", () => {
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
-    expect(mutate).toHaveBeenCalledWith(
-      {
-        roomSlug: "room",
-        password: "secret",
-        vote: "DOWNVOTE",
-      },
-      expect.objectContaining({ onError: expect.any(Function) }),
+    expect(mutate).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "각 노래당 한번만 투표할 수 있어요",
     );
   });
 
@@ -384,6 +390,28 @@ describe("RoomProfilePanel", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("backend already-evaluated 오류를 동일한 1회 제한 문구로 정규화한다", () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: ApiError) => void;
+    };
+    act(() => {
+      mutationOptions.onError(
+        new ApiError({
+          status: 409,
+          code: "music-power.already-evaluated",
+          message: "이미 평가했습니다.",
+        }),
+      );
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "각 노래당 한번만 투표할 수 있어요",
+    );
+  });
+
   it("신청자가 바뀌면 이전 신청자의 음악력 안내를 표시하지 않는다", () => {
     const { rerender } = renderPanel();
 
@@ -400,6 +428,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={currentUser}
         currentRequester={{ ...requester, slug: "next-user" }}
+        currentEntryId="entry-2"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "next-user" }}
         onUserBlocked={onUserBlocked}
@@ -436,11 +465,57 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
+    const upButton = screen.getByRole("button", { name: "음악력 올리기" });
+    const downButton = screen.getByRole("button", { name: "음악력 내리기" });
+
+    expect(upButton).toBeEnabled();
+    expect(downButton).toBeEnabled();
+
+    fireEvent.click(upButton);
+    fireEvent.click(downButton);
+
+    expect(mutate).not.toHaveBeenCalled();
   });
 
-  it("본인에게는 내 노래 상태만 표시하고 음악력·관계 액션을 숨긴다", () => {
+  it("처리 중 재클릭해도 기존 요청의 오류 안내를 무효화하지 않는다", () => {
+    const { rerender } = renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    vi.mocked(useCurrentTrackMusicPowerVote).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate,
+    } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
+
+    rerender(
+      <RoomProfilePanel
+        currentUser={currentUser}
+        currentRequester={requester}
+        currentEntryId="entry-1"
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
+        reportMessageKey="message-key"
+        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
+        roomMeta={roomMeta}
+        roomPassword="secret"
+        roomSlug="room"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 내리기" }));
+    expect(mutate).toHaveBeenCalledOnce();
+
+    act(() => {
+      mutationOptions.onError(new Error("음악력 투표 오류"));
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("음악력 투표 오류");
+  });
+
+  it("본인에게는 공통 타이틀과 내 노래 상태를 표시하고 음악력·관계 액션을 숨긴다", () => {
     const selfUser = {
       nickname: "대상",
       profileImageUrl: null,
@@ -449,7 +524,8 @@ describe("RoomProfilePanel", () => {
     };
     renderPanel(requester, { currentUser: selfUser });
 
-    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
+    expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );
     expect(
@@ -474,6 +550,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={null}
         currentRequester={requester}
+        currentEntryId="entry-1"
         isCurrentUserLoading
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -495,6 +572,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={selfUser}
         currentRequester={requester}
+        currentEntryId="entry-1"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -505,7 +583,8 @@ describe("RoomProfilePanel", () => {
       />,
     );
 
-    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
+    expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );
     expect(
@@ -532,13 +611,23 @@ describe("RoomProfilePanel", () => {
   });
 
   it("프로필 상단 아래에 팔로잉과 관리 액션을 상시 표시한다", () => {
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: true,
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        listeningDurationSeconds: 14_700,
+        musicPower: 55,
+        profileImageUrl: null,
+        relationship: "FOLLOWING",
+        slug: "requester",
+      },
+      isError: false,
       isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
+    } as ReturnType<typeof useUserProfile>);
     renderPanel();
 
-    expect(screen.getByText("현재 큐잉 중...")).toBeInTheDocument();
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
+    expect(screen.queryByText("현재 큐잉 중...")).not.toBeInTheDocument();
+    expect(screen.queryByText("공개 프로필")).not.toBeInTheDocument();
     const actions = screen.getByRole("group", { name: "프로필 액션" });
     expect(actions).toContainElement(
       screen.getByRole("button", { name: "팔로잉" }),
@@ -547,6 +636,45 @@ describe("RoomProfilePanel", () => {
       screen.getByRole("button", { name: "관리" }),
     );
     expect(screen.queryByText("온라인")).not.toBeInTheDocument();
+  });
+
+  it("프로필 online 필드가 있을 때만 접근성 상태 점을 표시한다", () => {
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        online: false,
+        profileImageUrl: null,
+        slug: "target-user",
+      },
+      isError: false,
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+
+    const { rerender } = renderPanel();
+    expect(screen.getByRole("img", { name: "오프라인" })).toBeInTheDocument();
+
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        profileImageUrl: null,
+        slug: "target-user",
+      },
+      isError: false,
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+    rerender(
+      <RoomProfilePanel
+        currentUser={currentUser}
+        currentRequester={requester}
+        currentEntryId="entry-1"
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
+        roomMeta={roomMeta}
+        roomSlug="room"
+      />,
+    );
+    expect(screen.queryByRole("img", { name: "오프라인" })).not.toBeInTheDocument();
   });
 
   it("관리와 음악력 버튼에 지정된 8x8 SVG 아이콘을 사용한다", () => {

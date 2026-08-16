@@ -16,7 +16,6 @@ import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { FollowUser } from "@/src/features/follow/model/types";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
@@ -24,13 +23,21 @@ import UserProfileContent from "@/src/features/user/profile/ui/UserProfileConten
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import ManagementMenuShell from "@/src/shared/ui/management-menu/ManagementMenuShell";
 import FloatingPanelShell from "@/src/shared/ui/floating-panel/FloatingPanelShell";
-import { getDesktopViewportDensity } from "@/src/shared/lib/viewportDensity";
+import {
+  getDesktopViewportDensity,
+  MOBILE_VIEWPORT_MAX_WIDTH,
+} from "@/src/shared/lib/viewportDensity";
 import styles from "./FollowProfileModal.module.css";
 
 const PROFILE_PANEL_SIZE = {
   compact: { height: 304, width: 240 },
   normal: { height: 380, width: 300 },
 } as const;
+const PROFILE_PANEL_SAFE_MARGIN = {
+  compact: 142.4,
+  normal: 178,
+} as const;
+const MOBILE_PROFILE_PANEL_SAFE_MARGIN = 24;
 
 function subscribeToViewport(callback: () => void) {
   window.addEventListener("resize", callback);
@@ -71,6 +78,18 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
     width: viewportWidth,
   });
   const panelSize = PROFILE_PANEL_SIZE[viewportDensity];
+  const panelSafeMargin =
+    viewportWidth <= MOBILE_VIEWPORT_MAX_WIDTH
+      ? MOBILE_PROFILE_PANEL_SAFE_MARGIN
+      : PROFILE_PANEL_SAFE_MARGIN[viewportDensity];
+  const availablePanelHeight = Math.max(
+    160,
+    viewportHeight - panelSafeMargin,
+  );
+  const panelHeight = viewportHeight
+    ? Math.min(panelSize.height, availablePanelHeight)
+    : panelSize.height;
+  const isHeightConstrained = panelHeight < panelSize.height;
   const profileQuery = useUserProfile(user.slug);
   const profile = profileQuery.data;
   const shouldLoadMusicPowerFallback =
@@ -85,7 +104,6 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
   const publicBadgesQuery = usePublicUserBadges(
     shouldLoadBadgeFallback ? user.slug : null,
   );
-  const relationship = useFollowingRelationship(user.slug);
   const representativeBadge =
     profile?.representativeBadge === undefined
       ? getRepresentativeBadge(publicBadgesQuery.data)
@@ -130,6 +148,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
             <div
               ref={dialogRef}
               className={styles.dialog}
+              data-height-constrained={isHeightConstrained || undefined}
               role="dialog"
               aria-label={`${displayNickname} 프로필 상세`}
               inert={blockTarget ? true : undefined}
@@ -137,11 +156,12 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
             >
               <FloatingPanelShell
                 contentClassName={styles.profilePanelContent}
-                height={panelSize.height}
+                height={panelHeight}
                 width={panelSize.width}
               >
                 <div className={styles.content}>
                   <UserProfileContent
+                    activityLabel={null}
                     actions={
                       <div
                         className={styles.actionRow}
@@ -151,11 +171,9 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                         <div className={styles.followAction}>
                           <FollowToggleButton
                             className={styles.followButton}
-                            disabled={
-                              relationship.isLoading || relationship.isError
-                            }
+                            disabled={profileQuery.isLoading || profileQuery.isError}
                             disabledLabel={
-                              relationship.isLoading ? (
+                              profileQuery.isLoading ? (
                                 <LoadingSpinner
                                   ariaLabel="팔로우 관계 확인 중"
                                   size={16}
@@ -165,8 +183,9 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                               )
                             }
                             initialRelationship={
-                              relationship.data ? "FOLLOWING" : "NONE"
+                              profile?.relationship ?? "NONE"
                             }
+                            followingLabel="팔로잉"
                             targetSlug={user.slug}
                           />
                         </div>
@@ -235,8 +254,10 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                       profile?.musicPower ?? musicPowerQuery.data?.musicPower
                     }
                     nickname={displayNickname}
+                    online={profile?.online ?? user.online}
                     queuingCount={profile?.queuingCount}
                     statusMessage={profile?.statusMessage?.trim() ?? ""}
+                    textLineClamp={2}
                   />
                 </div>
               </FloatingPanelShell>

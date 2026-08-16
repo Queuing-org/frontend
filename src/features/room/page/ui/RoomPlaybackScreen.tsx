@@ -71,6 +71,7 @@ import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import { getRoomChatLayout } from "../model/roomChatLayout";
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -94,7 +95,7 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const isMobileLayout = useMediaQuery("(max-width: 760px)");
+  const isMobileLayout = useMediaQuery(MOBILE_VIEWPORT_MEDIA_QUERY);
   const slug = normalizeRoomSlug(params.slug ?? "");
   const queryClient = useQueryClient();
   const activeJoinAbortControllerRef = useRef<AbortController | null>(null);
@@ -495,6 +496,13 @@ function RoomPlaybackJoinedContent({
 }: RoomPlaybackJoinedContentProps) {
   const router = useRouter();
   const { data: roomMeta } = useRoomMeta(slug);
+  const observedOwnershipRef = useRef<{
+    ownerSlug: string | null;
+    slug: string;
+  } | null>(null);
+  const [ownerChangedDialogSlug, setOwnerChangedDialogSlug] = useState<
+    string | null
+  >(null);
   const playback = useRoomPlaybackViewModel({
     currentUser,
     livePlaybackStatus,
@@ -503,6 +511,31 @@ function RoomPlaybackJoinedContent({
     roomMeta,
     slug,
   });
+  const currentUserSlug = currentUser?.slug?.trim() || null;
+  const roomOwnerSlug = roomMeta.owner?.slug?.trim() || null;
+  useEffect(() => {
+    const previous = observedOwnershipRef.current;
+
+    if (!previous || previous.slug !== slug) {
+      observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
+      return;
+    }
+
+    const didBecomeOwner =
+      previous.ownerSlug !== roomOwnerSlug &&
+      Boolean(currentUserSlug && currentUserSlug === roomOwnerSlug);
+
+    if (didBecomeOwner) {
+      const timerId = window.setTimeout(() => {
+        setOwnerChangedDialogSlug(slug);
+      }, 0);
+      observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
+
+      return () => window.clearTimeout(timerId);
+    }
+
+    observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
+  }, [currentUserSlug, roomOwnerSlug, slug]);
   const chatDisabledReason = isCurrentUserLoading
     ? "로그인 상태 확인 중입니다."
     : currentUser
@@ -577,6 +610,17 @@ function RoomPlaybackJoinedContent({
       }}
     />
   );
+  const ownerChangedDialog = (
+    <RoomActionConfirmDialog
+      confirmLabel="확인"
+      description="방장 권한을 이어받았어요. 이제 방 설정과 참가자를 관리할 수 있습니다."
+      open={ownerChangedDialogSlug === slug}
+      showCancelButton={false}
+      title="방장이 되었어요"
+      onCancel={() => setOwnerChangedDialogSlug(null)}
+      onConfirm={() => setOwnerChangedDialogSlug(null)}
+    />
+  );
   const desktopChatLayout = getRoomChatLayout(
     floatingWidgets.viewportSize,
     Boolean(playback.currentRequester),
@@ -639,7 +683,7 @@ function RoomPlaybackJoinedContent({
               </div>
               <AddTrackAction
                 className={styles.mobileHeaderAddTrack}
-                label="노래 신청"
+                label="노래신청"
                 loginLabel="로그인"
                 roomPassword={roomPassword}
                 slug={slug}
@@ -772,6 +816,7 @@ function RoomPlaybackJoinedContent({
           </nav>
         </div>
         {leaveDialog}
+        {ownerChangedDialog}
       </div>
     );
   }
@@ -796,6 +841,23 @@ function RoomPlaybackJoinedContent({
           className={styles.backgroundImage}
         />
       </div>
+      <button
+        ref={leaveButtonRef}
+        type="button"
+        className={styles.desktopExitButton}
+        aria-label="방 나가기"
+        onClick={() => setIsLeaveDialogOpen(true)}
+      >
+        <Image
+          src="/icons/door.svg"
+          alt=""
+          aria-hidden="true"
+          width={13}
+          height={14}
+          className={styles.desktopExitIcon}
+        />
+        <span>나가기</span>
+      </button>
       <div ref={desktopWheelRegionRef} className={styles.container}>
         <div className={styles.mainArea}>
           <RoomInfo
@@ -856,12 +918,11 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.controlBarDock}>
             <RoomButtonControlBar
-              exitButtonRef={leaveButtonRef}
               isChatOpen={floatingWidgets.widgets.chat.isOpen}
               isParticipantsOpen={floatingWidgets.widgets.participants.isOpen}
               isProfileOpen={floatingWidgets.widgets.profile.isOpen}
               isQueueOpen={floatingWidgets.widgets.queue.isOpen}
-              onExit={() => setIsLeaveDialogOpen(true)}
+              onCloseAll={floatingWidgets.closeAllWidgets}
               onToggleChat={() => floatingWidgets.toggleWidget("chat")}
               onToggleParticipants={() =>
                 floatingWidgets.toggleWidget("participants")
@@ -903,6 +964,7 @@ function RoomPlaybackJoinedContent({
         onWidgetStop={floatingWidgets.handleWidgetStop}
       />
       {leaveDialog}
+      {ownerChangedDialog}
     </div>
   );
 }

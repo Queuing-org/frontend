@@ -52,9 +52,10 @@ export function useProfileSettingsForm() {
   const isNicknameValid =
     trimmedNickname.length >= NICKNAME_MIN_LENGTH &&
     trimmedNickname.length <= NICKNAME_MAX_LENGTH;
+  const hasProfileChanges = hasNicknameChange || hasStatusMessageChange;
   const canUpdateProfile =
     Boolean(me) &&
-    (hasNicknameChange || hasStatusMessageChange) &&
+    hasProfileChanges &&
     (!hasNicknameChange || isNicknameValid) &&
     !isUpdatingProfile;
 
@@ -124,11 +125,10 @@ export function useProfileSettingsForm() {
     }
 
     const submittedFields: ProfileField[] = [];
-    const payload: UpdateMePayload = {
-      nickname: hasNicknameChange ? trimmedNickname : currentNickname,
-    };
+    const payload: UpdateMePayload = {};
 
     if (hasNicknameChange) {
+      payload.nickname = trimmedNickname;
       submittedFields.push("nickname");
     }
 
@@ -167,6 +167,7 @@ export function useProfileSettingsForm() {
     clearProfileStatusMessage,
     handleProfileSubmit,
     hasProfile: Boolean(me),
+    hasProfileChanges,
     isMeError,
     isMeLoading,
     isUpdatingProfile,

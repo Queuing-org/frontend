@@ -228,6 +228,23 @@ type ChatMessageManagementOptions = {
 };
 
 const BLOCKED_CHAT_MESSAGE_CONTENT = "차단된 사용자의 채팅입니다";
+export const DELETED_CHAT_MESSAGE_CONTENT = "삭제된 채팅입니다.";
+
+export function applyChatMessageTombstones(
+  messages: readonly ChatMessage[],
+  tombstones: ReadonlyMap<string, string>,
+) {
+  return messages.map((message) => {
+    const messageKey = message.messageKey?.trim();
+    const deletedContent = messageKey ? tombstones.get(messageKey) : undefined;
+    if (deletedContent !== undefined) {
+      return { ...message, content: deletedContent, isDeleted: true };
+    }
+    return message.content === DELETED_CHAT_MESSAGE_CONTENT
+      ? { ...message, isDeleted: true }
+      : message;
+  });
+}
 
 export function shouldDisplayChatMessage(
   message: ChatMessage,
@@ -268,7 +285,7 @@ export function getChatMessageManagementActions(
   currentUser: User | null,
   { canKick = false, canTransfer = false }: ChatMessageManagementOptions = {},
 ): ChatMessageManagementAction[] {
-  if (!currentUser || isChatMessageFromUser(message, currentUser)) {
+  if (message.isDeleted || !currentUser || isChatMessageFromUser(message, currentUser)) {
     return [];
   }
 
@@ -304,7 +321,7 @@ export function getLatestReportableChatMessageKey(
   for (let index = messages.length - 1; index >= 0; index -= 1) {
     const message = messages[index];
     const messageKey = message.messageKey?.trim();
-    if (message.senderSlug === normalizedUserSlug && messageKey) {
+    if (!message.isDeleted && message.senderSlug === normalizedUserSlug && messageKey) {
       return messageKey;
     }
   }

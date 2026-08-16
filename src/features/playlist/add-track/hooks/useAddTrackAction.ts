@@ -183,7 +183,7 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
 
     const story = form.storyValue.trim();
     if (story.length > ADD_TRACK_STORY_MAX_LENGTH) {
-      form.setErrorMessage("사연은 300자 이하로 입력해주세요.");
+      form.setErrorMessage("사연은 30자 이하로 입력해주세요.");
       return;
     }
 

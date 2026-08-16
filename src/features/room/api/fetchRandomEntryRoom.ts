@@ -5,7 +5,7 @@ import type { RandomEntryRoomResult } from "./types";
 
 export async function fetchRandomEntryRoom(): Promise<RandomEntryRoomResult> {
   const res = await axiosInstance.get<ApiResponse<RandomEntryRoomResult>>(
-    "/api/v1/rooms/random",
+    "/api/v1/rooms/random-selection",
   );
 
   return unwrapApiResponse(res.data);

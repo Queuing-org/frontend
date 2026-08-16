@@ -111,6 +111,7 @@ function ChatMessageRow({
       className={styles.message}
       data-chat-message-key={messageKey}
       data-menu-open={isMenuOpen || undefined}
+      data-deleted={message.isDeleted || undefined}
     >
       <div className={styles.avatarWrap}>
         {message.senderProfileImageUrl ? (

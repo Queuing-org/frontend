@@ -7,7 +7,6 @@ export type PlaylistProtectedRequestParams = {
 
 export type RoomQueueRequestParams = PlaylistProtectedRequestParams & {
   cursor?: string | null;
-  queueRevision?: number | null;
   size?: number;
   mine?: boolean;
 };
@@ -101,10 +100,7 @@ export type RoomQueuePage = {
   totalPendingCount: number;
 };
 
-export type RoomQueuePageParam = {
-  cursor: string;
-  queueRevision: number;
-};
+export type RoomQueuePageParam = string;
 
 export type RoomParticipantsPage = {
   items: PlaylistParticipant[];

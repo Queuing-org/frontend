@@ -1,15 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import FollowProfileModal from "./FollowProfileModal";
 
-vi.mock("@/src/features/follow/following/hooks/useFollowingRelationship", () => ({
-  useFollowingRelationship: vi.fn(),
-}));
 vi.mock("@/src/features/badge/hooks/usePublicUserBadges", () => ({
   usePublicUserBadges: vi.fn(),
 }));
@@ -51,10 +47,13 @@ const followUser = {
 
 describe("FollowProfileModal", () => {
   beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 768 });
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         listeningDurationSeconds: 3_660,
         musicPower: 77,
+        relationship: "NONE",
         nickname: "공개 닉네임",
         profileImageUrl: null,
         queuingCount: 12,
@@ -72,14 +71,60 @@ describe("FollowProfileModal", () => {
       data: undefined,
       isLoading: false,
     } as ReturnType<typeof usePublicUserBadges>);
-    vi.mocked(useFollowingRelationship).mockReturnValue({
-      data: false,
-      isError: false,
-      isLoading: false,
-    } as ReturnType<typeof useFollowingRelationship>);
   });
 
-  it("공개 프로필 통계와 음악력 값만 표시한다", () => {
+  it("기본 compact 높이에서는 내부 스크롤 모드를 켜지 않는다", () => {
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "공개 닉네임 프로필 상세" }),
+    ).not.toHaveAttribute("data-height-constrained");
+  });
+
+  it("안전 여백을 포함한 사용 가능 높이가 부족할 때만 패널을 줄여 스크롤 모드로 전환한다", () => {
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 300 });
+
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "공개 닉네임 프로필 상세",
+    });
+    expect(dialog).toHaveAttribute("data-height-constrained", "true");
+    expect(dialog.firstElementChild).toHaveStyle({ height: "160px" });
+  });
+
+  it("모바일에서는 12px 상하 안전 여백을 제외하고 380px 기본 높이를 유지한다", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 500 });
+
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "공개 닉네임 프로필 상세",
+    });
+    expect(dialog).not.toHaveAttribute("data-height-constrained");
+    expect(dialog.firstElementChild).toHaveStyle({ height: "380px" });
+  });
+
+  it("프로필 통계와 음악력 값을 2줄 텍스트로 표시한다", () => {
     render(
       <FollowProfileModal
         onBlocked={vi.fn()}
@@ -89,8 +134,17 @@ describe("FollowProfileModal", () => {
     );
 
     expect(screen.getByText("공개 닉네임")).toBeInTheDocument();
+    expect(screen.queryByText("공개 프로필")).not.toBeInTheDocument();
     expect(screen.getByText("리듬 장인")).toBeInTheDocument();
     expect(screen.getByText("오늘도 큐잉")).toBeInTheDocument();
+    expect(screen.getByText("공개 닉네임")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
+    expect(screen.getByText("오늘도 큐잉")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByText("77")).toBeInTheDocument();
     expect(screen.queryByText("PROFILE")).not.toBeInTheDocument();

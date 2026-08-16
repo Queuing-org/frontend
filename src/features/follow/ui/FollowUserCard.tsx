@@ -2,16 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import styles from "./FollowUserCard.module.css";
 
 type Props = {
   nickname: string;
   onSelect?: (trigger: HTMLButtonElement) => void;
   presence?: {
-    inRoom: boolean;
     online: boolean;
-    text: string;
   };
   profileImageUrl: string | null;
   roomLink?: {
@@ -29,6 +27,7 @@ export default function FollowUserCard({
   roomLink,
   trailingAction,
 }: Props) {
+  const roomTooltipId = useId();
   const profileImageSrc = profileImageUrl || "/Basic_Profile.png";
   const profile = (
     <>
@@ -45,22 +44,14 @@ export default function FollowUserCard({
           <span
             className={styles.presenceDot}
             data-online={presence.online}
-            aria-hidden="true"
+            role="img"
+            aria-label={presence.online ? "온라인" : "오프라인"}
           />
         ) : null}
       </span>
 
       <span className={styles.meta}>
         <span className={styles.nickname}>{nickname}</span>
-        {presence ? (
-          <span
-            className={styles.status}
-            data-in-room={presence.inRoom}
-            data-online={presence.online}
-          >
-            {presence.text}
-          </span>
-        ) : null}
       </span>
     </>
   );
@@ -87,6 +78,7 @@ export default function FollowUserCard({
             className={styles.roomAction}
             href={roomLink.href}
             aria-label={roomLink.label}
+            aria-describedby={roomTooltipId}
           >
             <Image
               src="/icons/round_arrow.svg"
@@ -95,6 +87,13 @@ export default function FollowUserCard({
               height={16}
               className={styles.roomActionIcon}
             />
+            <span
+              id={roomTooltipId}
+              className={styles.roomActionTooltip}
+              role="tooltip"
+            >
+              따라가기
+            </span>
           </Link>
         ) : null}
         {trailingAction ? (

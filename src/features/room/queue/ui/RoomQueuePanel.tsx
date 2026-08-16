@@ -83,6 +83,7 @@ function RoomQueuePanelContent({
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
       isEmptyLoading={queuePanel.isEmptyLoading}
+      isCurrentUserEntry={queuePanel.isCurrentUserEntry}
       isMoveMyPending={queuePanel.moveMyQueueEntry.isPending}
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}

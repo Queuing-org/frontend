@@ -8,7 +8,7 @@ export async function fetchPublicUserBadges(
   signal?: AbortSignal,
 ): Promise<PublicUserBadgeList> {
   const res = await axiosInstance.get<ApiResponse<PublicUserBadgeList>>(
-    `/api/v1/users/${encodeURIComponent(userSlug)}/badges`,
+    `/api/v1/user-profiles/${encodeURIComponent(userSlug)}/badges`,
     { signal },
   );
 

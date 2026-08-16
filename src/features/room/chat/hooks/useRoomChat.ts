@@ -26,6 +26,7 @@ export function useRoomChat({
     initializeFromJoinData,
     isLoadingOlderMessages,
     loadOlderMessages,
+    markMessageDeleted,
     messages,
     reset: resetHistory,
     scrollToLatestKey,
@@ -45,6 +46,8 @@ export function useRoomChat({
     currentUser,
     isEnabled,
     onMessage: appendMessage,
+    onMessageDeleted: ({ messageKey, content }) =>
+      markMessageDeleted(messageKey, content),
     onPendingMessageBackfill: backfillLatestMessages,
     roomPassword,
     slug,

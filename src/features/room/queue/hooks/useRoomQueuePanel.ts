@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
@@ -39,7 +39,7 @@ type MovePayload = {
 function getQueueErrorMessage(error: unknown) {
   if (
     error instanceof ApiError &&
-    error.code === "room.queue-mutation-conflict"
+    error.code === "room.queue-update-conflict"
   ) {
     return "";
   }
@@ -98,8 +98,12 @@ export function useRoomQueuePanel({
     [myQueueData?.pages],
   );
   const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
+  const isCurrentUserEntry = useCallback(
+    (entry: PlaylistEntry) => isEntryRequestedByUser(entry, currentUser),
+    [currentUser],
+  );
   const canDeleteEntry = (entry: PlaylistEntry) =>
-    isPendingQueueEntry(entry) && isEntryRequestedByUser(entry, currentUser);
+    isPendingQueueEntry(entry) && isCurrentUserEntry(entry);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry);
 
@@ -108,7 +112,7 @@ export function useRoomQueuePanel({
     activeTab === "mine" && (isCurrentUserLoading || isMyQueueLoading);
   if (activeTab === "mine") {
     if (!isEmptyLoading && !currentUser) {
-      emptyMessage = "내 신청곡을 확인할 수 없습니다.";
+      emptyMessage = "내 노래를 확인할 수 없습니다.";
     } else if (!isEmptyLoading) {
       emptyMessage = "내가 신청한 곡이 아직 없습니다.";
     }
@@ -228,6 +232,7 @@ export function useRoomQueuePanel({
     hasNextAllQueuePage: allQueueQuery.hasNextPage,
     hasNextMyQueuePage,
     isEmptyLoading,
+    isCurrentUserEntry,
     isOwner,
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,

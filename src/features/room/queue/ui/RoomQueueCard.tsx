@@ -11,6 +11,7 @@ import styles from "./RoomQueueCard.module.css";
 type Props = {
   dragActivatorProps?: ComponentPropsWithoutRef<"li">;
   entry: PlaylistEntry;
+  highlighted?: boolean;
   isDeletePending?: boolean;
   onDelete?: (entryId: string) => void;
   showDeleteButton?: boolean;
@@ -21,6 +22,7 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
     className,
     dragActivatorProps,
     entry,
+    highlighted = false,
     isDeletePending = false,
     onDelete,
     showDeleteButton = false,
@@ -55,6 +57,7 @@ const RoomQueueCard = forwardRef<HTMLLIElement, Props>(function RoomQueueCard(
         .filter(Boolean)
         .join(" ")}
       data-active={entry.status.isActive}
+      data-current-user={highlighted || undefined}
       data-has-delete={hasDeleteButton}
       data-marquee-group
       {...props}

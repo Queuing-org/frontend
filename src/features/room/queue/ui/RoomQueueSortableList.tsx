@@ -37,6 +37,7 @@ type Props = {
   emptyMessage: ReactNode;
   entries: PlaylistEntry[];
   hasUnloadedEntries?: boolean;
+  highlightEntry?: (entry: PlaylistEntry) => boolean;
   isDeletePending?: boolean;
   isMovePending?: boolean;
   moveMode: "owner" | "self";
@@ -52,6 +53,7 @@ type PendingOrder = {
 type SortableQueueCardProps = {
   disabled: boolean;
   entry: PlaylistEntry;
+  highlighted: boolean;
   isDragSessionActive: boolean;
   isDeletePending: boolean;
   onDelete?: (entryId: string) => void;
@@ -63,6 +65,7 @@ const disableLayoutAnimation = () => false;
 function SortableQueueCard({
   disabled,
   entry,
+  highlighted,
   isDragSessionActive,
   isDeletePending,
   onDelete,
@@ -90,6 +93,7 @@ function SortableQueueCard({
         "aria-label": `${entry.track.title} 순서 변경`,
       }}
       entry={entry}
+      highlighted={highlighted}
       data-queue-virtual-item="true"
       style={
         isDragSessionActive
@@ -112,6 +116,7 @@ type StaticQueueListProps = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   className: string;
   entries: PlaylistEntry[];
+  highlightEntry?: (entry: PlaylistEntry) => boolean;
   isDeletePending?: boolean;
   onDelete?: (entryId: string) => void;
 };
@@ -120,6 +125,7 @@ function StaticQueueList({
   canDeleteEntry,
   className,
   entries,
+  highlightEntry,
   isDeletePending = false,
   onDelete,
 }: StaticQueueListProps) {
@@ -144,6 +150,7 @@ function StaticQueueList({
         <RoomQueueCard
           key={entry.entryId}
           entry={entry}
+          highlighted={highlightEntry?.(entry) ?? false}
           data-drag-disabled="true"
           data-queue-virtual-item="true"
           isDeletePending={isDeletePending}
@@ -166,6 +173,7 @@ type SortableQueueListWindowProps = {
   activeEntryId: string | null;
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   entries: PlaylistEntry[];
+  highlightEntry?: (entry: PlaylistEntry) => boolean;
   isDeletePending: boolean;
   isMovePending: boolean;
   onDelete?: (entryId: string) => void;
@@ -175,6 +183,7 @@ function SortableQueueListWindow({
   activeEntryId,
   canDeleteEntry,
   entries,
+  highlightEntry,
   isDeletePending,
   isMovePending,
   onDelete,
@@ -209,6 +218,7 @@ function SortableQueueListWindow({
             key={entry.entryId}
             disabled={isMovePending || entries.length < 2}
             entry={entry}
+            highlighted={highlightEntry?.(entry) ?? false}
             isDragSessionActive={isDragging}
             isDeletePending={isDeletePending}
             onDelete={onDelete}
@@ -232,6 +242,7 @@ export default function RoomQueueSortableList({
   emptyMessage,
   entries,
   hasUnloadedEntries = false,
+  highlightEntry,
   isDeletePending = false,
   isMovePending = false,
   moveMode,
@@ -357,6 +368,7 @@ export default function RoomQueueSortableList({
         <StaticQueueList
           className={styles.fixedTopList}
           entries={activeFixedEntries}
+          highlightEntry={highlightEntry}
         />
       ) : null}
       {lockedPendingEntries.length > 0 ? (
@@ -364,6 +376,7 @@ export default function RoomQueueSortableList({
           canDeleteEntry={canDeleteEntry ?? (() => true)}
           className={styles.fixedTopList}
           entries={lockedPendingEntries}
+          highlightEntry={highlightEntry}
           isDeletePending={isDeletePending}
           onDelete={onDelete}
         />
@@ -380,6 +393,7 @@ export default function RoomQueueSortableList({
             activeEntryId={activeEntryId}
             canDeleteEntry={canDeleteEntry}
             entries={pendingEntries}
+            highlightEntry={highlightEntry}
             isDeletePending={isDeletePending}
             isMovePending={isMovePending}
             onDelete={onDelete}
@@ -390,6 +404,7 @@ export default function RoomQueueSortableList({
         <StaticQueueList
           className={styles.fixedList}
           entries={fixedEntries}
+          highlightEntry={highlightEntry}
         />
       ) : null}
     </div>

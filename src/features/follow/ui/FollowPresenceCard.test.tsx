@@ -21,7 +21,7 @@ const baseUser: FollowUser = {
 };
 
 describe("FollowPresenceCard", () => {
-  it("온라인 사용자가 참여 중인 방은 텍스트로 표시하고 화살표만 링크로 제공한다", () => {
+  it("온라인 사용자가 참여 중인 방은 상태 문구 없이 화살표 링크만 제공한다", () => {
     render(
       <FollowPresenceCard
         user={{
@@ -31,25 +31,27 @@ describe("FollowPresenceCard", () => {
       />,
     );
 
-    expect(screen.getByText("새벽 재즈 참여 중")).not.toHaveAttribute(
-      "href",
-    );
+    expect(screen.queryByText("새벽 재즈 참여 중")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
     ).toHaveAttribute("href", "/room/late-night-jazz");
+    const tooltip = screen.getByText("따라가기");
+    expect(
+      screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
+    ).toHaveAttribute("aria-describedby", tooltip.id);
   });
 
-  it("방에 참여하지 않은 온라인 사용자는 온라인으로 표시한다", () => {
+  it("방에 참여하지 않은 온라인 사용자는 접근성 라벨이 있는 초록점만 표시한다", () => {
     const { container } = render(<FollowPresenceCard user={baseUser} />);
 
-    expect(screen.getByText("온라인")).toBeInTheDocument();
+    expect(screen.queryByText("온라인")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(
-      container.querySelector('[data-online="true"][aria-hidden="true"]'),
+      container.querySelector('[data-online="true"][aria-label="온라인"]'),
     ).toBeInTheDocument();
   });
 
-  it("오프라인이면 stale room이 있어도 오프라인만 표시한다", () => {
+  it("오프라인이면 stale room을 숨기고 접근성 라벨이 있는 빨간점만 표시한다", () => {
     const { container } = render(
       <FollowPresenceCard
         user={{
@@ -60,12 +62,28 @@ describe("FollowPresenceCard", () => {
       />,
     );
 
-    expect(screen.getByText("오프라인")).toBeInTheDocument();
+    expect(screen.queryByText("오프라인")).not.toBeInTheDocument();
     expect(screen.queryByText("새벽 재즈 참여 중")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(
-      container.querySelector('[data-online="false"][aria-hidden="true"]'),
+      container.querySelector('[data-online="false"][aria-label="오프라인"]'),
     ).toBeInTheDocument();
+  });
+
+  it("presence 권한이 없으면 오프라인을 추정하지 않고 점과 방 링크를 숨긴다", () => {
+    const { container } = render(
+      <FollowPresenceCard
+        user={{
+          cursorId: 2,
+          nickname: "지수",
+          profileImageUrl: null,
+          slug: "jisoo",
+        }}
+      />,
+    );
+
+    expect(container.querySelector("[data-online]")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("카드 본문을 누르면 프로필 선택을 전달하고 방 화살표는 별도 링크로 유지한다", async () => {

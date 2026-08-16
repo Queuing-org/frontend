@@ -11,8 +11,9 @@
 
 .skipButton {
   position: absolute;
-  top: var(--room-requester-skip-top, 10px);
+  top: 50%;
   right: var(--room-requester-skip-right, 14px);
+  transform: translateY(-50%);
 }
 
 .avatar {
@@ -97,7 +98,7 @@
   max-width: min(var(--room-requester-story-max-width, 600px), 36vw);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .card {
     padding: 0.875rem 1rem;
     border-bottom: 1px solid #eeeeef;
@@ -106,7 +107,6 @@
   }
 
   .skipButton {
-    top: 0.75rem;
     right: 0.75rem;
   }
 

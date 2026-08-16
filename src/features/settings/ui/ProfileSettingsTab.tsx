@@ -77,6 +77,7 @@ export default function ProfileSettingsTab() {
         <ProfileSettingsForm
           canUpdateProfile={form.canUpdateProfile}
           hasProfile={form.hasProfile}
+          hasProfileChanges={form.hasProfileChanges}
           isMeError={form.isMeError}
           isMeLoading={form.isMeLoading}
           isUpdatingProfile={form.isUpdatingProfile}

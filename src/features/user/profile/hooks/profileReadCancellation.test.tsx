@@ -49,7 +49,7 @@ describe("profile read cancellation", () => {
       { initialProps: { slug: "first" }, wrapper: createWrapper() },
     );
     await waitFor(() => expect(fetchMusicPower).toHaveBeenCalledOnce());
-    const firstSignal = vi.mocked(fetchMusicPower).mock.calls[0]?.[1];
+    const firstSignal = vi.mocked(fetchMusicPower).mock.calls[0]?.[2];
 
     rerender({ slug: "second" });
 

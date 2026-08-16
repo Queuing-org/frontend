@@ -30,7 +30,7 @@ export default function AddTrackAction({
   let appearance: "loading" | "login" | "primary" = "primary";
   let buttonDisabled = false;
   let buttonLabel: ReactNode = isQueueDock
-    ? (labelOverride ?? "큐잉하기")
+    ? (labelOverride ?? "노래신청")
     : "곡 추가";
   let buttonAction = action.openModal;
 
@@ -43,7 +43,7 @@ export default function AddTrackAction({
   } else if (!action.isLoggedIn) {
     appearance = "login";
     buttonLabel = isQueueDock
-      ? (loginLabel ?? "로그인 후 큐잉")
+      ? (loginLabel ?? "로그인 후 노래신청")
       : "로그인후 곡 신청하기";
     buttonAction = redirectToGoogleLogin;
   }

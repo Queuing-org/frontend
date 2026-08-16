@@ -18,7 +18,6 @@ import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButt
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
-import { useFollowingRelationship } from "@/src/features/follow/following/hooks/useFollowingRelationship";
 import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
@@ -45,6 +44,7 @@ import styles from "./RoomProfilePanel.module.css";
 type Props = {
   currentUser: User | null;
   currentRequester: CurrentRequesterProfile | null;
+  currentEntryId?: string | null;
   currentTrackTitle?: string | null;
   hasUnloadedParticipants?: boolean;
   isCurrentUserLoading: boolean;
@@ -62,6 +62,8 @@ const MUSIC_POWER_LIMIT_NOTICE =
   "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.";
 const MUSIC_POWER_LOGIN_NOTICE =
   "로그인 후 음악력을 올리거나 내릴 수 있습니다.";
+const MUSIC_POWER_ALREADY_EVALUATED_NOTICE =
+  "각 노래당 한번만 투표할 수 있어요";
 
 type MusicPowerNotice = {
   message: string;
@@ -84,6 +86,7 @@ function isCurrentUserProfile(
 export default function RoomProfilePanel({
   currentUser,
   currentRequester,
+  currentEntryId,
   hasUnloadedParticipants = false,
   isCurrentUserLoading,
   kickTarget,
@@ -117,17 +120,20 @@ export default function RoomProfilePanel({
   const musicPowerNoticeTimerRef = useRef<number | null>(null);
   const musicPowerNoticeSequenceRef = useRef(0);
   const targetSlug = currentRequester?.slug ?? null;
+  const isSelf = isCurrentUserProfile(currentRequester, currentUser);
   const {
     data: publicProfile,
     isError: isPublicProfileError,
     isLoading: isPublicProfileLoading,
   } = useUserProfile(targetSlug);
-  const shouldLoadMusicPowerFallback =
-    Boolean(targetSlug) &&
-    (isPublicProfileError ||
-      (Boolean(publicProfile) && typeof publicProfile?.musicPower !== "number"));
+  const shouldLoadCurrentTrackMusicPower = Boolean(
+    currentUser && targetSlug && currentEntryId && !isSelf,
+  );
   const musicPowerQuery = useMusicPower(
-    shouldLoadMusicPowerFallback ? targetSlug : null,
+    shouldLoadCurrentTrackMusicPower ? targetSlug : null,
+    shouldLoadCurrentTrackMusicPower
+      ? { entryId: currentEntryId!, roomSlug }
+      : undefined,
   );
   const musicPowerVote = useCurrentTrackMusicPowerVote();
   const kickParticipant = useKickRoomParticipant();
@@ -146,7 +152,6 @@ export default function RoomProfilePanel({
   const { data: publicBadges, isLoading: isPublicBadgesLoading } =
     usePublicUserBadges(shouldLoadBadgeFallback ? targetSlug : null);
 
-  const isSelf = isCurrentUserProfile(currentRequester, currentUser);
   const shouldShowFollowAction = Boolean(currentRequester) && !isSelf;
   const canFollow = shouldShowFollowAction && !!targetSlug && !!currentUser;
   const canManage = canFollow;
@@ -170,9 +175,6 @@ export default function RoomProfilePanel({
         ...(canTransfer ? (["transfer"] as const) : []),
       ]
     : [];
-  const { data: isFollowingCurrentRequester } = useFollowingRelationship(
-    canFollow ? targetSlug : null,
-  );
 
   let followButtonLabel: ReactNode = "팔로우";
   if (!currentRequester) {
@@ -201,7 +203,7 @@ export default function RoomProfilePanel({
     (shouldLoadBadgeFallback && isPublicBadgesLoading);
   const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
   const musicPower =
-    publicProfile?.musicPower ?? musicPowerQuery.data?.musicPower;
+    musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
   const listeningDurationSeconds =
     publicProfile?.listeningDurationSeconds ??
     (isSelf ? currentUser?.listeningDurationSeconds : undefined);
@@ -209,7 +211,7 @@ export default function RoomProfilePanel({
     isCurrentUserLoading ||
     isSelf ||
     !targetSlug ||
-    !roomSlug;
+    !currentEntryId;
   const musicPowerVoteDisabledLabel = (() => {
     if (isCurrentUserLoading) {
       return "로그인 상태를 확인하고 있습니다";
@@ -219,6 +221,9 @@ export default function RoomProfilePanel({
     }
     if (!targetSlug) {
       return "투표 대상은 회원 신청자만 가능합니다";
+    }
+    if (!currentEntryId) {
+      return "현재 재생 곡을 확인할 수 없습니다";
     }
     return null;
   })();
@@ -248,11 +253,10 @@ export default function RoomProfilePanel({
   };
 
   const handleMusicPowerVote = (vote: MusicPowerVote) => {
-    if (!targetSlug || isCurrentUserLoading) {
+    if (!targetSlug || !currentEntryId || isCurrentUserLoading) {
       return;
     }
 
-    const noticeSequence = ++musicPowerNoticeSequenceRef.current;
     if (!currentUser) {
       showMusicPowerNotice(MUSIC_POWER_LOGIN_NOTICE, targetSlug);
       return;
@@ -262,6 +266,16 @@ export default function RoomProfilePanel({
       return;
     }
 
+    if (musicPowerVote.isPending) {
+      return;
+    }
+
+    if (musicPowerQuery.data?.myVote) {
+      showMusicPowerNotice(MUSIC_POWER_ALREADY_EVALUATED_NOTICE, targetSlug);
+      return;
+    }
+
+    const noticeSequence = ++musicPowerNoticeSequenceRef.current;
     if (musicPowerNoticeTimerRef.current !== null) {
       window.clearTimeout(musicPowerNoticeTimerRef.current);
       musicPowerNoticeTimerRef.current = null;
@@ -269,8 +283,9 @@ export default function RoomProfilePanel({
     setMusicPowerNotice(null);
     musicPowerVote.mutate(
       {
+        entryId: currentEntryId,
         roomSlug,
-        password: roomPassword,
+        targetUserSlug: targetSlug,
         vote,
       },
       {
@@ -280,7 +295,9 @@ export default function RoomProfilePanel({
           }
 
           showMusicPowerNotice(
-            error.message || MUSIC_POWER_LIMIT_NOTICE,
+            error.code === "music-power.already-evaluated"
+              ? MUSIC_POWER_ALREADY_EVALUATED_NOTICE
+              : error.message || MUSIC_POWER_LIMIT_NOTICE,
             targetSlug,
           );
         },
@@ -437,6 +454,9 @@ export default function RoomProfilePanel({
     <div className={styles.root}>
       {currentRequester ? (
         <>
+          <div className={styles.header}>
+            <div className={styles.title}>현재 큐잉 중</div>
+          </div>
           <UserProfileContent
             actions={
               !isSelf && shouldShowFollowAction ? (
@@ -449,11 +469,15 @@ export default function RoomProfilePanel({
                   <div className={styles.followAction}>
                     <FollowToggleButton
                       className={styles.followButton}
-                      disabled={!canFollow}
-                      disabledLabel={followButtonLabel}
+                      disabled={!canFollow || isPublicProfileLoading || isPublicProfileError}
+                      disabledLabel={
+                        isPublicProfileLoading ? (
+                          <LoadingSpinner ariaLabel="팔로우 관계 확인 중" size={16} />
+                        ) : isPublicProfileError ? "확인 실패" : followButtonLabel
+                      }
                       followingLabel="팔로잉"
                       initialRelationship={
-                        isFollowingCurrentRequester ? "FOLLOWING" : "NONE"
+                        publicProfile?.relationship ?? "NONE"
                       }
                       targetSlug={targetSlug}
                     />
@@ -516,7 +540,7 @@ export default function RoomProfilePanel({
                 </div>
               ) : null
             }
-            activityLabel="현재 큐잉 중..."
+            activityLabel={null}
             avatarUrl={displayAvatarUrl}
             badgeLabel={targetSlug ? badgeValue : "-"}
             feedback={
@@ -606,11 +630,12 @@ export default function RoomProfilePanel({
               ) : null
             }
             nickname={displayNickname}
+            online={publicProfile?.online}
             primaryStatus={
               isSelf ? (
                 <div
                   className={styles.selfTrackStatus}
-                  aria-label="내 신청곡 재생 상태"
+                  aria-label="내 노래 재생 상태"
                 >
                   <span
                     className={styles.selfTrackStatusDot}
@@ -622,6 +647,7 @@ export default function RoomProfilePanel({
             }
             queuingCount={publicProfile?.queuingCount}
             statusMessage={statusMessage}
+            textLineClamp={2}
           />
           <BlockUserModal
             onBlocked={(target) => {

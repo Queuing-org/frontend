@@ -88,7 +88,7 @@
   text-align: center;
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .state {
     padding: 19.2px 12.8px;
     font-size: 0.624rem;

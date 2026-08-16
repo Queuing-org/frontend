@@ -8,30 +8,11 @@ import { isSafeInternalPath } from "@/src/shared/lib/isSafeInternalPath";
 
 const AUTH_CHECK_MAX_RETRIES = 3;
 const AUTH_CHECK_RETRY_DELAY_MS = 400;
-const ONBOARDING_REQUIRED_CODES = new Set([
-  "user.profile-not-found",
-  "user-profile.not-found",
-  "user.onboarding-required",
-  "user.not-onboarded",
-]);
-
 function isUnauthenticatedError(error: unknown) {
   return (
     error instanceof ApiError &&
     (error.status === 401 || error.code === "user.not-authenticated")
   );
-}
-
-function isOnboardingRequiredError(error: unknown) {
-  if (!(error instanceof ApiError)) {
-    return false;
-  }
-
-  if (error.code && ONBOARDING_REQUIRED_CODES.has(error.code)) {
-    return true;
-  }
-
-  return error.status === 403 || error.status === 404;
 }
 
 export default function AuthCallbackContent() {
@@ -56,11 +37,6 @@ export default function AuthCallbackContent() {
         }
 
         router.replace(next);
-        return;
-      }
-
-      if (isOnboardingRequiredError(error)) {
-        router.replace(`/onboarding?next=${encodeURIComponent(next)}`);
         return;
       }
 

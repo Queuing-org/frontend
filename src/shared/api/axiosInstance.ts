@@ -3,7 +3,7 @@ import axios, {
   type InternalAxiosRequestConfig,
 } from "axios";
 import { API_BASE_URL } from "./config";
-import { ApiError } from "./api-error";
+import { ApiError, type ApiFieldError } from "./api-error";
 import { refreshCsrf } from "./csrf/ensureCsrf";
 import {
   getRateLimitRetryDelayMs,
@@ -47,23 +47,36 @@ function getNestedString(
 }
 
 function getBackendErrorData(data: unknown) {
-  if (!isRecord(data)) {
+  if (!isRecord(data) || !isRecord(data.error)) {
     return {
       code: undefined,
-      message: typeof data === "string" ? data : undefined,
+      fieldErrors: undefined,
+      message: undefined,
       statusCode: undefined,
     };
   }
 
-  const error = data.error;
-  const backendError = isRecord(error) ? error : data;
+  const backendError = data.error;
   const statusCode = backendError.statusCode;
+  const rawFieldErrors = backendError.fieldErrors;
+  const fieldErrors = Array.isArray(rawFieldErrors)
+    ? rawFieldErrors.flatMap((fieldError): ApiFieldError[] => {
+        if (
+          !isRecord(fieldError) ||
+          typeof fieldError.field !== "string" ||
+          typeof fieldError.reason !== "string"
+        ) {
+          return [];
+        }
+
+        return [{ field: fieldError.field, reason: fieldError.reason }];
+      })
+    : [];
 
   return {
     code: getNestedString(backendError, "code"),
-    message:
-      getNestedString(backendError, "message") ??
-      getNestedString(data, "message"),
+    fieldErrors: fieldErrors.length > 0 ? fieldErrors : undefined,
+    message: getNestedString(backendError, "message"),
     statusCode: typeof statusCode === "number" ? statusCode : undefined,
   };
 }
@@ -123,7 +136,8 @@ axiosInstance.interceptors.response.use(
 axiosInstance.interceptors.response.use(
   (res) => res,
   async (err) => {
-    const status = err?.response?.status ?? 0;
+    const backendError = getBackendErrorData(err?.response?.data);
+    const status = backendError.statusCode ?? err?.response?.status ?? 0;
     const retryAfterMs = parseRetryAfterMs(
       err?.response?.headers?.["retry-after"],
     );
@@ -144,25 +158,17 @@ axiosInstance.interceptors.response.use(
       return axiosInstance(config);
     }
 
-    const backendError = err?.response?.data?.error;
-    const backendStatus = backendError?.statusCode;
-    const backendCode = backendError?.code;
-    const backendMessage = backendError?.message;
-
     const message =
-      backendMessage ??
-      err?.response?.data?.message ??
-      err?.response?.data ??
+      backendError.message ??
       err?.message ??
       "Unknown error";
 
-    const finalStatus = backendStatus ?? status;
-
     return Promise.reject(
       new ApiError({
-        status: finalStatus,
+        status,
         message: String(message),
-        code: backendCode,
+        code: backendError.code,
+        fieldErrors: backendError.fieldErrors,
         retryAfterMs,
       })
     );

@@ -21,7 +21,7 @@ export async function fetchRoomChats({
   slug,
 }: FetchRoomChatsParams): Promise<ChatHistoryResponse> {
   const res = await axiosInstance.get<ApiResponse<ChatHistoryResponse>>(
-    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/chats`,
+    `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/chat-messages`,
     {
       params: {
         ...(typeof cursorId === "number" ? { cursorId } : {}),

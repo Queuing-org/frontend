@@ -6,6 +6,7 @@ import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
+import WithdrawalDialog from "./WithdrawalDialog";
 import styles from "./AccountSettingsTab.module.css";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
@@ -19,7 +20,7 @@ type AccountSettingsTabProps = {
 export default function AccountSettingsTab({
   onLoggedOut,
 }: AccountSettingsTabProps) {
-  const [isConfirmingWithdraw, setIsConfirmingWithdraw] = useState(false);
+  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const { data: me } = useMe();
   const {
     mutate: logout,
@@ -35,21 +36,18 @@ export default function AccountSettingsTab({
   const isAccountActionPending = isLoggingOut || isWithdrawing;
 
   function handleLogout() {
-    setIsConfirmingWithdraw(false);
+    setIsWithdrawalDialogOpen(false);
     logout(undefined, {
       onSuccess: onLoggedOut,
     });
   }
 
-  function handleWithdraw() {
-    if (!isConfirmingWithdraw) {
-      resetWithdraw();
-      setIsConfirmingWithdraw(true);
-      return;
-    }
-
-    withdraw(undefined, {
-      onSuccess: onLoggedOut,
+  function handleWithdraw(reason: string) {
+    withdraw({ reason }, {
+      onSuccess: () => {
+        setIsWithdrawalDialogOpen(false);
+        onLoggedOut();
+      },
     });
   }
 
@@ -121,41 +119,31 @@ export default function AccountSettingsTab({
         <button
           type="button"
           className={`${styles.actionButton} ${styles.withdrawButton}`}
-          onClick={handleWithdraw}
+          onClick={() => {
+            resetWithdraw();
+            setIsWithdrawalDialogOpen(true);
+          }}
           disabled={!me || isAccountActionPending}
         >
-          {isWithdrawing ? (
-            <LoadingSpinner ariaLabel="회원 탈퇴 중" size={16} />
-          ) : isConfirmingWithdraw ? (
-            "탈퇴 확인"
-          ) : (
-            "회원탈퇴"
-          )}
+          회원탈퇴
         </button>
-        {isConfirmingWithdraw && !isWithdrawing ? (
-          <button
-            type="button"
-            className={`${styles.actionButton} ${styles.cancelWithdrawButton}`}
-            onClick={() => setIsConfirmingWithdraw(false)}
-          >
-            취소
-          </button>
-        ) : null}
       </div>
-
-      {isConfirmingWithdraw ? (
-        <p className={styles.confirmText}>탈퇴하려면 한 번 더 눌러주세요.</p>
-      ) : null}
 
       {logoutError ? (
         <p className={styles.errorText} role="alert">
           로그아웃 실패: {logoutError.message}
         </p>
       ) : null}
-      {withdrawError ? (
-        <p className={styles.errorText} role="alert">
-          회원탈퇴 실패: {withdrawError.message}
-        </p>
+      {isWithdrawalDialogOpen ? (
+        <WithdrawalDialog
+          errorMessage={withdrawError?.message}
+          isPending={isWithdrawing}
+          onClose={() => {
+            setIsWithdrawalDialogOpen(false);
+            resetWithdraw();
+          }}
+          onSubmit={handleWithdraw}
+        />
       ) : null}
     </div>
   );

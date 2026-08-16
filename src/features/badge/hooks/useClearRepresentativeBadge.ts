@@ -8,7 +8,7 @@ import { invalidateRepresentativeBadgeQueries } from "../model/invalidateReprese
 export function useClearRepresentativeBadge() {
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, ApiError>({
+  return useMutation<void, ApiError>({
     mutationFn: clearRepresentativeBadge,
     onSuccess: async () => {
       await invalidateRepresentativeBadgeQueries(queryClient);

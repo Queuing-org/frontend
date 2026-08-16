@@ -12,12 +12,7 @@ export default function FollowPresenceCard({
   onSelect,
   user,
 }: Props) {
-  const visibleRoom = user.online ? user.room : null;
-  const statusText = visibleRoom
-    ? `${visibleRoom.title} 참여 중`
-    : user.online
-      ? "온라인"
-      : "오프라인";
+  const visibleRoom = user.online === true ? user.room : null;
 
   return (
     <FollowUserCard
@@ -25,11 +20,9 @@ export default function FollowPresenceCard({
       onSelect={
         onSelect ? (trigger) => onSelect(user, trigger) : undefined
       }
-      presence={{
-        inRoom: Boolean(visibleRoom),
-        online: user.online,
-        text: statusText,
-      }}
+      presence={
+        user.online === undefined ? undefined : { online: user.online }
+      }
       profileImageUrl={user.profileImageUrl}
       roomLink={
         visibleRoom

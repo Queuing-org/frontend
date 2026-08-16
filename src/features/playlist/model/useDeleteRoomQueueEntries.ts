@@ -17,7 +17,7 @@ type RoomQueueSnapshot = [readonly unknown[], RoomQueueData | undefined];
 export function useDeleteRoomQueueEntries() {
   const queryClient = useQueryClient();
 
-  return useMutation<boolean, ApiError, DeleteRoomQueueEntriesParams, {
+  return useMutation<void, ApiError, DeleteRoomQueueEntriesParams, {
     previousRoomQueueSnapshots: RoomQueueSnapshot[];
   }>({
     mutationFn: deleteRoomQueueEntries,

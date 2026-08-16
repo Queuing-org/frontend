@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import type { DraggableData } from "react-draggable";
 import {
   getDesktopViewportDensity,
+  MOBILE_VIEWPORT_MEDIA_QUERY,
   type DesktopViewportDensity,
   type ViewportSize,
 } from "@/src/shared/lib/viewportDensity";
@@ -57,7 +58,6 @@ export type FloatingWidgetViewState = {
 export type FloatingWidgetsView = Record<WidgetId, FloatingWidgetViewState>;
 
 const MAX_WIDGET_OUT_OF_VIEW_RATIO = 0.6;
-const MOBILE_WIDGET_QUERY = "(max-width: 760px)";
 const LAPTOP_COMPACT_SCALE = 0.8;
 const CHAT_PARTICIPANTS_GAP = 24;
 const CHAT_OFFSET_STORAGE_KEY = "chatWidgetOffset:v2";
@@ -79,11 +79,11 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
     width: 300,
   },
   profile: {
-    height: 380,
+    height: 431,
     left: 24,
     offsetStorageKey: "profileWidgetOffset",
     openStorageKey: "isProfileOpen",
-    top: 80,
+    top: 60,
     width: 300,
   },
   participants: {
@@ -165,7 +165,7 @@ function isMobileWidgetViewport() {
     return false;
   }
 
-  return window.matchMedia(MOBILE_WIDGET_QUERY).matches;
+  return window.matchMedia(MOBILE_VIEWPORT_MEDIA_QUERY).matches;
 }
 
 function getStoredBoolean(key: string) {
@@ -629,6 +629,22 @@ export function useFloatingWidgetsState() {
     }
   }
 
+  function closeAllWidgets() {
+    WIDGET_IDS.forEach((widgetId) => {
+      setWidgetOpen(widgetId, false);
+    });
+    setActiveWidget(null);
+
+    if (!isMobileWidgetViewport()) {
+      WIDGET_IDS.forEach((widgetId) => {
+        window.localStorage.setItem(
+          WIDGET_CONFIG[widgetId].openStorageKey,
+          "false",
+        );
+      });
+    }
+  }
+
   function activateWidget(widgetId: WidgetId) {
     setActiveWidget(widgetId);
   }
@@ -721,6 +737,7 @@ export function useFloatingWidgetsState() {
 
   return {
     activateWidget,
+    closeAllWidgets,
     handleWidgetStop,
     isViewportReady: isHydrated,
     resetWidgetPositions,

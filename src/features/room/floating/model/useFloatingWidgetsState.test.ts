@@ -40,7 +40,7 @@ beforeEach(() => {
       addEventListener: vi.fn(),
       addListener: vi.fn(),
       dispatchEvent: vi.fn(),
-      matches: query === "(max-width: 760px)" && window.innerWidth <= 760,
+      matches: query === "(max-width: 480px)" && window.innerWidth <= 480,
       media: query,
       onchange: null,
       removeEventListener: vi.fn(),
@@ -152,8 +152,8 @@ describe("floating widget laptop compact layout", () => {
   ])("%s viewport에서 위젯 geometry를 정확히 80%%로 줄인다", (_, viewport) => {
     const profile = getWidgetConfig("profile", viewport);
     expect(profile).toMatchObject({
-      height: 304,
-      top: 64,
+      height: 344.8,
+      top: 48,
       width: 240,
     });
     expect(profile.left).toBeCloseTo(19.2);
@@ -166,11 +166,11 @@ describe("floating widget laptop compact layout", () => {
     expect(queue.left).toBeCloseTo(19.2);
   });
 
-  it("FHD viewport에서는 기존 위젯 geometry를 유지한다", () => {
+  it("FHD viewport에서는 확장된 프로필 위젯 geometry를 사용한다", () => {
     expect(getWidgetConfig("profile", normalViewport)).toMatchObject({
-      height: 380,
+      height: 431,
       left: 24,
-      top: 80,
+      top: 60,
       width: 300,
     });
   });
@@ -207,7 +207,7 @@ describe("floating widget laptop compact layout", () => {
     const { result } = renderHook(() => useFloatingWidgetsState());
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 380,
+      height: 431,
       offset: { x: 11, y: 12 },
       width: 300,
     });
@@ -218,7 +218,7 @@ describe("floating widget laptop compact layout", () => {
     });
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 304,
+      height: 344.8,
       offset: { x: 21, y: 22 },
       width: 240,
     });
@@ -291,6 +291,37 @@ describe("floating widget laptop compact layout", () => {
     expect(window.localStorage.getItem("profileWidgetOffset")).toBe(
       JSON.stringify({ x: 11, y: 12 }),
     );
+  });
+
+  it("열린 모든 위젯을 닫고 open 저장 상태를 false로 동기화한다", () => {
+    widgetIds.forEach((widgetId) => {
+      const storageKey =
+        widgetId === "chat"
+          ? "isChatOpen"
+          : widgetId === "participants"
+            ? "isParticipantsOpen"
+            : widgetId === "profile"
+              ? "isProfileOpen"
+              : "isQueueOpen";
+      window.localStorage.setItem(storageKey, "true");
+    });
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(Object.values(result.current.widgets).every((widget) => widget.isOpen)).toBe(
+      true,
+    );
+
+    act(() => {
+      result.current.closeAllWidgets();
+    });
+
+    expect(Object.values(result.current.widgets).every((widget) => !widget.isOpen)).toBe(
+      true,
+    );
+    expect(window.localStorage.getItem("isChatOpen")).toBe("false");
+    expect(window.localStorage.getItem("isParticipantsOpen")).toBe("false");
+    expect(window.localStorage.getItem("isProfileOpen")).toBe("false");
+    expect(window.localStorage.getItem("isQueueOpen")).toBe("false");
   });
 
   it("서버 렌더에서는 저장된 open 상태를 노출하지 않는다", () => {

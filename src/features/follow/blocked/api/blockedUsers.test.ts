@@ -30,7 +30,7 @@ describe("blocked users API", () => {
 
     await expect(fetchBlockedUsers()).resolves.toEqual(result);
     expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/user-profiles/me/blocks",
+      "/api/v1/user-profiles/me/blocked-users",
       { params: { size: 20 } },
     );
   });
@@ -43,29 +43,27 @@ describe("blocked users API", () => {
     await fetchBlockedUsers({ lastId: 287, size: 20 });
 
     expect(axiosInstance.get).toHaveBeenCalledWith(
-      "/api/v1/user-profiles/me/blocks",
+      "/api/v1/user-profiles/me/blocked-users",
       { params: { lastId: 287, size: 20 } },
     );
   });
 
-  it("인코딩한 slug로 차단 해제하고 true 결과를 검증한다", async () => {
+  it("인코딩한 slug로 차단 해제 204 요청을 보낸다", async () => {
     vi.mocked(axiosInstance.delete).mockResolvedValue({
       data: { result: true },
     });
 
-    await expect(unblockUser("target/user")).resolves.toBe(true);
+    await expect(unblockUser("target/user")).resolves.toBeUndefined();
     expect(axiosInstance.delete).toHaveBeenCalledWith(
-      "/api/v1/user-profiles/target%2Fuser/blocks",
+      "/api/v1/user-profiles/me/blocked-users/target%2Fuser",
     );
   });
 
-  it("차단 해제 응답이 false면 실패로 처리한다", async () => {
+  it("차단 해제 응답 body는 파싱하지 않는다", async () => {
     vi.mocked(axiosInstance.delete).mockResolvedValue({
       data: { result: false },
     });
 
-    await expect(unblockUser("target-user")).rejects.toMatchObject({
-      message: "차단을 해제하지 못했습니다.",
-    });
+    await expect(unblockUser("target-user")).resolves.toBeUndefined();
   });
 });

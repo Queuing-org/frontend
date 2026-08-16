@@ -7,13 +7,18 @@ import { useRoomChatRealtime } from "./useRoomChatRealtime";
 
 const websocket = vi.hoisted(() => ({
   userEventHandler: null as ((message: IMessage) => void) | null,
+  chatEventHandler: null as ((message: IMessage) => void) | null,
+  onMessageDeleted: vi.fn(),
 }));
 
 vi.mock("@/src/features/room/api/websocket/publishChatMessage", () => ({
   publishChatMessage: vi.fn(),
 }));
 vi.mock("@/src/features/room/api/websocket/subscribeRoomChatEvents", () => ({
-  subscribeRoomChatEvents: vi.fn(() => createSubscription()),
+  subscribeRoomChatEvents: vi.fn((_slug, handler: (message: IMessage) => void) => {
+    websocket.chatEventHandler = handler;
+    return createSubscription();
+  }),
 }));
 vi.mock("@/src/features/room/api/websocket/subscribeRoomEvents", () => ({
   subscribeRoomEvents: vi.fn(() => createSubscription()),
@@ -67,6 +72,7 @@ function renderRealtimeChat(
       currentUser,
       isEnabled: true,
       onMessage,
+      onMessageDeleted: websocket.onMessageDeleted,
       onPendingMessageBackfill,
       slug: "room",
     }),
@@ -77,6 +83,25 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     websocket.userEventHandler = null;
+    websocket.chatEventHandler = null;
+  });
+
+  it("CHAT_MESSAGE_DELETED를 chat topic에서 삭제 callback으로 전달한다", () => {
+    const { unmount } = renderRealtimeChat();
+    act(() => {
+      websocket.chatEventHandler?.({
+        body: JSON.stringify({
+          type: "CHAT_MESSAGE_DELETED",
+          roomSlug: "room",
+          timestamp: 1,
+          data: { messageKey: "message-1", content: "삭제된 채팅입니다.", deletedAt: 1 },
+        }),
+      } as IMessage);
+    });
+    expect(websocket.onMessageDeleted).toHaveBeenCalledWith({
+      messageKey: "message-1", content: "삭제된 채팅입니다.", deletedAt: 1,
+    });
+    unmount();
   });
 
   afterEach(() => {

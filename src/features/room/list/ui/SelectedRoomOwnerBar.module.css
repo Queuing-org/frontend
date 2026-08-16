@@ -43,7 +43,7 @@
   white-space: nowrap;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .bar {
     height: 44.8px;
     gap: 9.6px;

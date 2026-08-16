@@ -4,9 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import { publishChatMessage } from "@/src/features/room/api/websocket/publishChatMessage";
 import { subscribeRoomChatEvents } from "@/src/features/room/api/websocket/subscribeRoomChatEvents";
-import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import { subscribeUserRoomEvents } from "@/src/features/room/api/websocket/subscribeUserRoomEvents";
-import type { ChatMessage, WsEvent } from "@/src/features/room/model/types";
+import type { ChatMessage, ChatMessageDeletedData, WsEvent } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { isChatMessageFromUser } from "../model/chatMessages";
@@ -14,6 +13,7 @@ import {
   getVisibleChatSendErrorMessage,
   isWsErrorData,
   parseChatMessageEvent,
+  parseChatMessageDeletedEvent,
 } from "../model/chatRealtimeEvents";
 import { CHAT_MAX_LENGTH } from "../constants/chat";
 
@@ -21,6 +21,7 @@ type UseRoomChatRealtimeParams = {
   currentUser: User | null;
   isEnabled: boolean;
   onMessage: (message: ChatMessage) => void;
+  onMessageDeleted: (data: ChatMessageDeletedData) => void;
   onPendingMessageBackfill: (
     contents: readonly string[],
   ) => Promise<readonly string[]>;
@@ -49,16 +50,12 @@ export function useRoomChatRealtime({
   currentUser,
   isEnabled,
   onMessage,
+  onMessageDeleted,
   onPendingMessageBackfill,
   roomPassword,
   slug,
 }: UseRoomChatRealtimeParams) {
   const chatSubscriptionRef = useRef<{
-    password: string | null;
-    slug: string;
-    subscription: StompSubscription;
-  } | null>(null);
-  const roomEventChatSubscriptionRef = useRef<{
     password: string | null;
     slug: string;
     subscription: StompSubscription;
@@ -354,20 +351,6 @@ export function useRoomChatRealtime({
     chatSubscriptionRef.current = null;
   }, []);
 
-  const cleanupRoomEventChatSubscription = useCallback(() => {
-    if (!roomEventChatSubscriptionRef.current) {
-      return;
-    }
-
-    try {
-      roomEventChatSubscriptionRef.current.subscription.unsubscribe();
-    } catch {
-      // The socket may already be closing while the page is leaving.
-    }
-
-    roomEventChatSubscriptionRef.current = null;
-  }, []);
-
   const cleanupUserEventSubscription = useCallback(() => {
     if (!userEventSubscriptionRef.current) {
       return;
@@ -384,12 +367,10 @@ export function useRoomChatRealtime({
 
   const cleanupSubscriptions = useCallback(() => {
     cleanupChatSubscription();
-    cleanupRoomEventChatSubscription();
     cleanupUserEventSubscription();
     clearAllPendingChatSends();
   }, [
     cleanupChatSubscription,
-    cleanupRoomEventChatSubscription,
     cleanupUserEventSubscription,
     clearAllPendingChatSends,
   ]);
@@ -406,6 +387,11 @@ export function useRoomChatRealtime({
 
   const handleChatMessageBody = useCallback(
     (roomSlug: string, body: string) => {
+      const deletedMessage = parseChatMessageDeletedEvent(body, roomSlug);
+      if (deletedMessage) {
+        onMessageDeleted(deletedMessage);
+        return;
+      }
       const chatMessage = parseChatMessageEvent(body, roomSlug);
 
       if (!chatMessage) {
@@ -418,7 +404,7 @@ export function useRoomChatRealtime({
         resolvePendingChatSend({ content: chatMessage.content });
       }
     },
-    [onMessage, resolvePendingChatSend],
+    [onMessage, onMessageDeleted, resolvePendingChatSend],
   );
 
   const ensureChatSubscription = useCallback(
@@ -449,36 +435,6 @@ export function useRoomChatRealtime({
       };
     },
     [cleanupChatSubscription, handleChatMessageBody],
-  );
-
-  const ensureRoomEventChatSubscription = useCallback(
-    (roomSlug: string, password?: string | null) => {
-      const subscriptionPassword = password ?? null;
-
-      if (
-        roomEventChatSubscriptionRef.current?.slug === roomSlug &&
-        roomEventChatSubscriptionRef.current.password === subscriptionPassword
-      ) {
-        return;
-      }
-
-      cleanupRoomEventChatSubscription();
-
-      roomEventChatSubscriptionRef.current = {
-        password: subscriptionPassword,
-        slug: roomSlug,
-        subscription: subscribeRoomEvents(
-          roomSlug,
-          ({ body }) => {
-            if (!body) return;
-
-            handleChatMessageBody(roomSlug, body);
-          },
-          subscriptionPassword,
-        ),
-      };
-    },
-    [cleanupRoomEventChatSubscription, handleChatMessageBody],
   );
 
   const ensureUserEventSubscription = useCallback(
@@ -587,7 +543,6 @@ export function useRoomChatRealtime({
     }
 
     ensureChatSubscription(slug, roomPassword);
-    ensureRoomEventChatSubscription(slug, roomPassword);
 
     if (currentUser) {
       ensureUserEventSubscription(slug);
@@ -601,7 +556,6 @@ export function useRoomChatRealtime({
     cleanupUserEventSubscription,
     currentUser,
     ensureChatSubscription,
-    ensureRoomEventChatSubscription,
     ensureUserEventSubscription,
     isEnabled,
     roomPassword,

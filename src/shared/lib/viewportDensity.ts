@@ -3,7 +3,8 @@ export type ViewportSize = {
   width: number;
 };
 
-export const MOBILE_VIEWPORT_MAX_WIDTH = 760;
+export const MOBILE_VIEWPORT_MAX_WIDTH = 480;
+export const MOBILE_VIEWPORT_MEDIA_QUERY = `(max-width: ${MOBILE_VIEWPORT_MAX_WIDTH}px)`;
 export const LAPTOP_COMPACT_MAX_HEIGHT = 900;
 
 export type DesktopViewportDensity = "compact" | "normal";

@@ -44,11 +44,7 @@ describe("방 탐색 화면 캐시 재검증", () => {
   it("검색·모바일 목록과 infinite cache가 세 페이지를 넘지 않는다", () => {
     const pages = Array.from({ length: 4 }, (_, pageIndex) => ({
       hasNext: pageIndex < 3,
-      nextCursorLastId: null,
-      nextCursorLastCreatedAt: null,
-      nextCursorLastParticipantCount: null,
-      nextCursorLastRandomRank: null,
-      nextCursorSeed: null,
+      nextCursor: null,
       rooms: Array.from({ length: 30 }, (_, roomIndex) => {
         const id = pageIndex * 30 + roomIndex + 1;
         return { id, slug: `room-${id}` } as Room;
@@ -69,11 +65,10 @@ describe("방 탐색 화면 캐시 재검증", () => {
   it("서버가 이미 요청한 방 cursor를 반복하면 자동 near-end pagination을 중단한다", () => {
     useRoomsQuery();
     const options = useInfiniteQuery.mock.calls[0]?.[0];
-    const repeatedCursor = { cursorLastId: 30, cursorSeed: 123 };
+    const repeatedCursor = "opaque-30";
     const lastPage = {
       hasNext: true,
-      nextCursorLastId: 30,
-      nextCursorSeed: 123,
+      nextCursor: repeatedCursor,
       rooms: [],
     } satisfies RoomsResponse;
 
@@ -82,7 +77,7 @@ describe("방 탐색 화면 캐시 재검증", () => {
         lastPage,
         [lastPage],
         repeatedCursor,
-        [undefined, repeatedCursor],
+        [null, repeatedCursor],
       ),
     ).toBeUndefined();
   });

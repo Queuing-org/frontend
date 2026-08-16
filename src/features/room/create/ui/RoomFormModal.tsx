@@ -119,7 +119,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [password, setPassword] = useState("");
   const [participationMode, setParticipationMode] =
     useState<ParticipationMode>("public");
-  const [maxParticipants, setMaxParticipants] = useState("");
+  const [maxParticipants, setMaxParticipants] = useState("10");
   const [trackLimitMinutes, setTrackLimitMinutes] = useState("");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [showTagSelectionError, setShowTagSelectionError] = useState(false);

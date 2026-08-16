@@ -22,7 +22,7 @@ it("차단 성공 시 팔로우와 사용자 검색 캐시를 무효화한다", 
   const { result } = renderHook(() => useBlockUser(), { wrapper });
 
   await act(async () => {
-    await result.current.mutateAsync("target-user");
+    await result.current.mutateAsync({ targetSlug: "target-user" });
   });
 
   expect(queryClient.getQueryState(followingKey)?.isInvalidated).toBe(true);

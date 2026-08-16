@@ -10,6 +10,7 @@ type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
   emptyMessage: ReactNode;
   entries: PlaylistEntry[];
+  highlightEntry?: (entry: PlaylistEntry) => boolean;
   isDeletePending?: boolean;
   listClassName?: string;
   onDeleteEntry?: (entryId: string) => void;
@@ -19,6 +20,7 @@ export default function RoomQueueList({
   canDeleteEntry,
   emptyMessage,
   entries,
+  highlightEntry,
   isDeletePending = false,
   listClassName,
   onDeleteEntry,
@@ -48,6 +50,7 @@ export default function RoomQueueList({
           key={entry.entryId}
           data-queue-virtual-item="true"
           entry={entry}
+          highlighted={highlightEntry?.(entry) ?? false}
           isDeletePending={isDeletePending}
           onDelete={onDeleteEntry}
           showDeleteButton={canDeleteEntry?.(entry) ?? false}

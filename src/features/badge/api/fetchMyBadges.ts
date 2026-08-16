@@ -5,7 +5,7 @@ import type { UserBadgeList } from "../model/types";
 
 export async function fetchMyBadges(): Promise<UserBadgeList> {
   const res = await axiosInstance.get<ApiResponse<UserBadgeList>>(
-    "/api/v1/users/me/badges",
+    "/api/v1/user-profiles/me/badges",
   );
 
   return unwrapApiResponse(res.data);

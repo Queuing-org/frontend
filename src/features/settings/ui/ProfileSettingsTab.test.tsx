@@ -44,6 +44,7 @@ function mockProfileForm(
     clearProfileStatusMessage,
     handleProfileSubmit,
     hasProfile: true,
+    hasProfileChanges: false,
     isMeError: false,
     isMeLoading: false,
     isUpdatingProfile: false,
@@ -164,15 +165,29 @@ describe("설정 칭호 목록", () => {
   });
 
   it("프로필 변경이 있으면 단일 완료 버튼을 활성화한다", () => {
-    mockProfileForm({ canUpdateProfile: true });
+    mockProfileForm({ canUpdateProfile: true, hasProfileChanges: true });
     render(<ProfileSettingsTab />);
 
     expect(screen.getByRole("button", { name: "완료" })).toBeEnabled();
     expect(screen.queryByRole("button", { name: /수정/ })).not.toBeInTheDocument();
   });
 
+  it("프로필 변경이 없으면 완료 버튼을 숨기고 invalid 변경이면 비활성화한다", () => {
+    const { rerender } = render(<ProfileSettingsTab />);
+
+    expect(screen.queryByRole("button", { name: "완료" })).not.toBeInTheDocument();
+
+    mockProfileForm({ canUpdateProfile: false, hasProfileChanges: true });
+    rerender(<ProfileSettingsTab />);
+
+    expect(screen.getByRole("button", { name: "완료" })).toBeDisabled();
+  });
+
   it("프로필 피드백과 완료 버튼을 같은 footer 행에 둔다", () => {
-    mockProfileForm({ successMessage: "프로필이 변경되었습니다." });
+    mockProfileForm({
+      hasProfileChanges: true,
+      successMessage: "프로필이 변경되었습니다.",
+    });
     render(<ProfileSettingsTab />);
 
     const feedback = screen.getByRole("status");
@@ -190,7 +205,7 @@ describe("설정 칭호 목록", () => {
 
   it("일반 Enter는 통합 저장하고 한글 조합 중 Enter는 무시한다", async () => {
     const user = userEvent.setup();
-    mockProfileForm({ canUpdateProfile: true });
+    mockProfileForm({ canUpdateProfile: true, hasProfileChanges: true });
     render(<ProfileSettingsTab />);
     const nicknameInput = screen.getByLabelText("사용자 이름");
 

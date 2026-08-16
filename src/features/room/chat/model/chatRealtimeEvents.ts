@@ -1,5 +1,6 @@
 import type {
   ChatMessage,
+  ChatMessageDeletedData,
   WsErrorData,
   WsEvent,
 } from "@/src/features/room/model/types";
@@ -63,4 +64,32 @@ export function parseChatMessageEvent(
   }
 
   return event.data;
+}
+
+export function parseChatMessageDeletedEvent(
+  body: string,
+  roomSlug: string,
+): ChatMessageDeletedData | null {
+  let parsedBody: unknown;
+  try {
+    parsedBody = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (!parsedBody || typeof parsedBody !== "object") {
+    return null;
+  }
+  const event = parsedBody as Partial<WsEvent>;
+  const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
+  const eventRoomSlug = typeof event.roomSlug === "string"
+    ? normalizeRoomSlug(event.roomSlug)
+    : normalizedRoomSlug;
+  if (eventRoomSlug !== normalizedRoomSlug || event.type !== "CHAT_MESSAGE_DELETED") {
+    return null;
+  }
+  const data = event.data as Partial<ChatMessageDeletedData> | undefined;
+  return data && typeof data.messageKey === "string" && data.messageKey.trim() &&
+    typeof data.content === "string" && typeof data.deletedAt === "number"
+    ? data as ChatMessageDeletedData
+    : null;
 }

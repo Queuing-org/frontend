@@ -218,27 +218,11 @@
 .withdrawButton,
 .withdrawButton:disabled {
   background: transparent;
-  color: #d24b4b;
-  opacity: 1;
+  color: #8d8d8d;
 }
 
-.withdrawButton:hover:not(:disabled),
-.cancelWithdrawButton:hover:not(:disabled) {
+.withdrawButton:hover:not(:disabled) {
   color: #3c3c3c;
-}
-
-.cancelWithdrawButton {
-  color: #8d8d8d;
-}
-
-.confirmText {
-  flex: 0 0 auto;
-  margin: -14px 0 0;
-  color: #8d8d8d;
-  font-size: 13px;
-  font-weight: var(--fw-medium);
-  line-height: 1.5;
-  text-align: center;
 }
 
 .errorText {
@@ -278,7 +262,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .accountPanel {
     gap: 16px;
     overflow-y: auto;
@@ -333,9 +317,10 @@
   .errorText {
     text-align: left;
   }
+
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .accountPanel {
     gap: 20.8px;
   }

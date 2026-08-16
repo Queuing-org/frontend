@@ -116,7 +116,7 @@
   outline-offset: 2px;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .root {
     gap: 0.5rem;
   }
@@ -133,7 +133,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .root {
     gap: 8px;
   }

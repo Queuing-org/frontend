@@ -146,23 +146,9 @@ export default function EditRoomFormModal({
 
           <form className={styles.form} onSubmit={form.handleSubmit}>
             <header className={styles.formHeader}>
-            <h2 id="room-edit-modal-title" className={styles.modeBadge}>
-              EDIT
-            </h2>
-            <div className={styles.headerActions}>
-              <button
-                ref={deleteButtonRef}
-                type="button"
-                className={styles.deleteRoomButton}
-                disabled={!roomSlug || form.isSubmitting}
-                onClick={() => {
-                  deleteRoomMutation.reset();
-                  setIsDeleteDialogOpen(true);
-                }}
-              >
-                큐 삭제
-              </button>
-            </div>
+              <h2 id="room-edit-modal-title" className={styles.modeBadge}>
+                EDIT
+              </h2>
             </header>
 
             <div className={styles.formBody}>
@@ -257,71 +243,71 @@ export default function EditRoomFormModal({
             </section>
 
             <div className={styles.settingsStack}>
-              <div className={styles.inlineSettingsRow}>
-                <div className={styles.compactSettingField}>
-                  <label
-                    className={styles.settingLabel}
-                    htmlFor="edit-room-track-limit"
-                  >
-                    곡 당 제한 시간
-                  </label>
-                  <select
-                    id="edit-room-track-limit"
-                    className={styles.select}
-                    value={form.trackLimitMinutes}
-                    onChange={(event) =>
-                      form.updateTrackLimitMinutes(event.target.value)
-                    }
-                    disabled={form.isSubmitting}
-                  >
-                    <option value="">제한 없음</option>
-                    {hasLegacyTrackLimitMinutes ? (
-                      <option value={String(initialTrackLimitMinutes)}>
-                        {initialTrackLimitMinutes}분 (현재 설정)
-                      </option>
-                    ) : null}
-                    {form.trackLimitMinuteOptions.map((option) => (
-                      <option key={option} value={String(option)}>
-                        {option}분
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className={styles.compactSettingField}>
-                  <label
-                    className={styles.settingLabel}
-                    htmlFor="edit-room-max-participants"
-                  >
-                    최대 인원 수
-                  </label>
-                  <select
-                    id="edit-room-max-participants"
-                    className={styles.select}
-                    value={form.maxParticipants}
-                    onChange={(event) =>
-                      form.updateMaxParticipants(event.target.value)
-                    }
-                    disabled={form.isSubmitting}
-                  >
-                    {initialMaxParticipants == null ? (
-                      <option value="">제한 없음 (현재 설정)</option>
-                    ) : null}
-                    {hasLegacyMaxParticipants ? (
-                      <option value={String(initialMaxParticipants)}>
-                        {initialMaxParticipants}명 (현재 설정)
-                      </option>
-                    ) : null}
-                    {form.maxParticipantOptions.map((option) => (
-                      <option key={option} value={String(option)}>
-                        {option}명
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className={styles.settingRow}>
+                <label
+                  className={styles.settingLabel}
+                  htmlFor="edit-room-track-limit"
+                >
+                  곡 당 제한 시간
+                </label>
+                <select
+                  id="edit-room-track-limit"
+                  className={styles.select}
+                  value={form.trackLimitMinutes}
+                  onChange={(event) =>
+                    form.updateTrackLimitMinutes(event.target.value)
+                  }
+                  disabled={form.isSubmitting}
+                >
+                  <option value="">제한 없음</option>
+                  {hasLegacyTrackLimitMinutes ? (
+                    <option value={String(initialTrackLimitMinutes)}>
+                      {initialTrackLimitMinutes}분 (현재 설정)
+                    </option>
+                  ) : null}
+                  {form.trackLimitMinuteOptions.map((option) => (
+                    <option key={option} value={String(option)}>
+                      {option}분
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div className={styles.settingRow}>
+              <div className={styles.maxParticipantsField}>
+                <label
+                  className={styles.settingLabel}
+                  htmlFor="edit-room-max-participants"
+                >
+                  최대 인원 수
+                </label>
+                <select
+                  id="edit-room-max-participants"
+                  className={styles.select}
+                  value={form.maxParticipants}
+                  onChange={(event) =>
+                    form.updateMaxParticipants(event.target.value)
+                  }
+                  disabled={form.isSubmitting}
+                >
+                  {initialMaxParticipants == null ? (
+                    <option value="">제한 없음 (현재 설정)</option>
+                  ) : null}
+                  {hasLegacyMaxParticipants ? (
+                    <option value={String(initialMaxParticipants)}>
+                      {initialMaxParticipants}명 (현재 설정)
+                    </option>
+                  ) : null}
+                  {form.maxParticipantOptions.map((option) => (
+                    <option key={option} value={String(option)}>
+                      {option}명
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div
+                className={`${styles.settingRow} ${styles.participationSettingRow}`}
+              >
                 <label
                   className={styles.settingLabel}
                   htmlFor="edit-room-participation"
@@ -366,8 +352,20 @@ export default function EditRoomFormModal({
 
             <footer className={styles.formFooter}>
               <button
+                ref={deleteButtonRef}
+                type="button"
+                className={`${styles.footerButton} ${styles.deleteRoomButton}`}
+                disabled={!roomSlug || form.isSubmitting}
+                onClick={() => {
+                  deleteRoomMutation.reset();
+                  setIsDeleteDialogOpen(true);
+                }}
+              >
+                방 삭제
+              </button>
+              <button
                 type="submit"
-                className={styles.submitButton}
+                className={`${styles.footerButton} ${styles.submitButton}`}
                 disabled={!form.canSubmit}
               >
                 {form.isSubmitting ? (
@@ -385,10 +383,10 @@ export default function EditRoomFormModal({
         </div>
       </div>
       <RoomActionConfirmDialog
-        confirmLabel="큐 삭제하기"
+        confirmLabel="방 삭제하기"
         description={
           <>
-            해당 큐를 삭제하시겠어요?
+            해당 방을 삭제하시겠어요?
             <br />
             전체 트랙이 삭제되고 기록을 복원할 수 없으며,
             <br />

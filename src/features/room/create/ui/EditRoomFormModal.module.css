@@ -11,7 +11,7 @@
 
 .modal {
   position: relative;
-  width: min(664px, 100%);
+  width: min(816px, 100%);
   height: min(1236px, calc(100dvh - 48px));
   min-height: min(720px, calc(100dvh - 48px));
   overflow: hidden;
@@ -80,7 +80,7 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 144px;
   gap: 16px;
   padding: 84px 76px 16px 28px;
@@ -102,45 +102,6 @@
   font-weight: var(--fw-regular);
   line-height: 1;
   box-shadow: 0 2px 4px rgba(60, 60, 60, 0.08);
-}
-
-.headerActions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.deleteRoomButton {
-  min-height: 38px;
-  padding: 8px 16px;
-  border: 1px solid #ff0000;
-  border-radius: 8px;
-  background: #ff0000;
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: var(--fw-semibold);
-  line-height: 1.4;
-  cursor: pointer;
-  transition:
-    background-color 160ms ease,
-    opacity 160ms ease;
-}
-
-.deleteRoomButton:hover:not(:disabled),
-.deleteRoomButton:focus-visible:not(:disabled) {
-  border-color: #d90000;
-  background: #d90000;
-}
-
-.deleteRoomButton:focus-visible {
-  outline: 2px solid #ff6b6b;
-  outline-offset: 2px;
-}
-
-.deleteRoomButton:disabled {
-  cursor: default;
-  opacity: 0.45;
 }
 
 .formBody {
@@ -337,26 +298,18 @@
 }
 
 .settingsStack {
-  display: flex;
+  display: grid;
   max-width: 100%;
-  flex-direction: column;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
   gap: 20px;
   padding-top: 4px;
 }
 
-.inlineSettingsRow {
-  display: grid;
+.maxParticipantsField {
+  display: flex;
   min-width: 0;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-}
-
-.compactSettingField {
-  display: grid;
-  min-width: 0;
-  grid-template-columns: max-content minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .settingRow {
@@ -365,6 +318,10 @@
   grid-template-columns: 148px minmax(0, 1fr);
   align-items: start;
   gap: 24px;
+}
+
+.participationSettingRow {
+  grid-column: 1;
 }
 
 .settingLabel {
@@ -511,13 +468,16 @@
 }
 
 .formFooter {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 12px;
   padding: 18px 28px 28px;
   background: #ffffff;
   box-sizing: border-box;
 }
 
-.submitButton {
+.footerButton {
   display: inline-flex;
   width: 100%;
   height: 68px;
@@ -538,18 +498,34 @@
     opacity 160ms ease;
 }
 
+.deleteRoomButton {
+  border-color: #ff0000;
+  background: #ff0000;
+}
+
+.submitButton {
+  border-color: #242424;
+  background: #242424;
+}
+
+.deleteRoomButton:hover:not(:disabled),
+.deleteRoomButton:focus-visible:not(:disabled) {
+  border-color: #d90000;
+  background: #d90000;
+}
+
 .submitButton:hover:not(:disabled),
 .submitButton:focus-visible:not(:disabled) {
   border-color: #000000;
   background: #000000;
 }
 
-.submitButton:focus-visible {
+.footerButton:focus-visible {
   outline: 2px solid #4285f4;
   outline-offset: 3px;
 }
 
-.submitButton:disabled {
+.footerButton:disabled {
   border-color: #d9d9d9;
   background: #d9d9d9;
   color: #ffffff;
@@ -585,10 +561,6 @@
     font-size: 14px;
   }
 
-  .deleteRoomButton {
-    font-size: 13px;
-  }
-
   .formBody {
     gap: 26px;
     padding: 12px 18px 24px;
@@ -616,19 +588,22 @@
     font-size: 15px;
   }
 
+  .settingsStack {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
   .settingRow {
     grid-template-columns: 1fr;
     gap: 8px;
   }
 
-  .inlineSettingsRow {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .maxParticipantsField {
+    gap: 8px;
   }
 
-  .compactSettingField {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .participationSettingRow {
+    grid-column: auto;
   }
 
   .settingLabel {
@@ -644,13 +619,13 @@
     padding: 14px 18px 18px;
   }
 
-  .submitButton {
+  .footerButton {
     height: 56px;
     font-size: 16px;
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .overlay {
     padding: 19.2px;
   }
@@ -685,17 +660,6 @@
     height: 28.8px;
     padding: 0 12.8px;
     font-size: 12.8px;
-  }
-
-  .headerActions {
-    gap: 6.4px;
-  }
-
-  .deleteRoomButton {
-    min-height: 27.2px;
-    padding: 4.8px 9.6px;
-    border-radius: 6.4px;
-    font-size: 11.2px;
   }
 
   .formBody {
@@ -750,21 +714,22 @@
   }
 
   .settingsStack {
+    grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
     gap: 16px;
     padding-top: 3.2px;
   }
 
-  .inlineSettingsRow {
-    gap: 16px;
-  }
-
-  .compactSettingField {
-    gap: 9.6px;
+  .maxParticipantsField {
+    gap: 8px;
   }
 
   .settingRow {
     grid-template-columns: 118.4px minmax(0, 1fr);
     gap: 19.2px;
+  }
+
+  .participationSettingRow {
+    grid-column: 1;
   }
 
   .settingLabel {
@@ -813,7 +778,7 @@
     padding: 14.4px 22.4px 22.4px;
   }
 
-  .submitButton {
+  .footerButton {
     height: 54.4px;
     font-size: 14.4px;
   }

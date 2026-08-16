@@ -12,7 +12,7 @@ export async function fetchBlockedUsers({
 }: FetchBlockedUsersParams = {}): Promise<BlockedUserListResponse> {
   const { data } = await axiosInstance.get<
     ApiResponse<BlockedUserListResponse>
-  >("/api/v1/user-profiles/me/blocks", {
+  >("/api/v1/user-profiles/me/blocked-users", {
     params: {
       ...(typeof lastId === "number" ? { lastId } : {}),
       size,

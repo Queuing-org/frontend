@@ -42,7 +42,7 @@
   -webkit-user-drag: none;
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .queueDockButton {
     gap: 14.4px;
     min-width: 85.6px;

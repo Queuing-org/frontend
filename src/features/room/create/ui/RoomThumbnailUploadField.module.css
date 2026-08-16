@@ -231,7 +231,7 @@
   color: #5f6368;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .root { gap: 6.4px; }
   .controlRow { gap: 6.4px; }
   .root[data-variant="create"] .uploadButton { width: 99.2px; height: 99.2px; }

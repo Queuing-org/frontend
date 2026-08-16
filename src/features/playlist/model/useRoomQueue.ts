@@ -29,8 +29,7 @@ export function useRoomQueue(
       fetchRoomQueuePage({
         slug,
         password,
-        cursor: pageParam?.cursor,
-        queueRevision: pageParam?.queueRevision,
+        cursor: pageParam,
         mine: false,
         signal,
       }),

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { extractYouTubeVideoId } from "../model/extractYouTubeVideoId";
 
-export const ADD_TRACK_STORY_MAX_LENGTH = 300;
+export const ADD_TRACK_STORY_MAX_LENGTH = 30;
 
 export function useAddTrackForm() {
   const [inputValue, setInputValue] = useState("");

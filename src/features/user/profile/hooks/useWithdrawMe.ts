@@ -5,12 +5,12 @@ import type { ApiError } from "@/src/shared/api/api-error";
 import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 import { followKeys } from "@/src/features/follow/model/queryKeys";
 import { userKeys } from "@/src/features/user/model/queryKeys";
-import { withdrawMe } from "../api/withdrawMe";
+import { withdrawMe, type WithdrawMeParams } from "../api/withdrawMe";
 
 export function useWithdrawMe() {
   const qc = useQueryClient();
 
-  return useMutation<void, ApiError, void>({
+  return useMutation<void, ApiError, WithdrawMeParams>({
     mutationFn: withdrawMe,
     onSuccess: () => {
       qc.setQueryData(userKeys.me(), null);
