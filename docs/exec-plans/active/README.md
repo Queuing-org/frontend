@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ci-pending — Draft PR #50, 공통 액션 피드백 스택과 소셜·프로필·방·큐·설정 결과 알림 통합 게시 완료
+
 - [2026-08-14-backend-hotfix-260812-migration](./2026-08-14-backend-hotfix-260812-migration/plan.md): implementing — backend hotfix c91f8a 에러·REST·실시간·관계 cursor 계약 전환과 새 Draft PR 전달
 
 - [2026-08-13-chat-default-position](./2026-08-13-chat-default-position/plan.md): ci-pending — 채팅 플로팅 패널을 참가자 아래·신청곡 패널 중앙 높이 기준으로 초기 배치하고 Draft PR #48 갱신
