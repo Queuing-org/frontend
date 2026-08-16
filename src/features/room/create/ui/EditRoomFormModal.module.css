@@ -313,16 +313,9 @@
 .settingsStack {
   display: grid;
   max-width: 100%;
-  grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
   padding-top: 4px;
-}
-
-.maxParticipantsField {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .settingRow {
@@ -334,7 +327,7 @@
 }
 
 .participationSettingRow {
-  grid-column: 1;
+  grid-column: 1 / -1;
 }
 
 .settingLabel {
@@ -375,6 +368,10 @@
   padding: 0 58px 0 18px;
 }
 
+.participationValue {
+  cursor: pointer;
+}
+
 .participationToggle {
   position: absolute;
   top: 0;
@@ -397,23 +394,31 @@
 }
 
 .participationChevron {
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid #b0b0b5;
-  border-bottom: 2px solid #b0b0b5;
-  transform: translateY(-25%) rotate(45deg);
+  width: 16px;
+  height: 8px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #b0b0b5 50%),
+    linear-gradient(135deg, #b0b0b5 50%, transparent 50%);
+  background-position:
+    0 0,
+    8px 0;
+  background-repeat: no-repeat;
+  background-size:
+    8px 8px,
+    8px 8px;
+  transform: rotate(0deg);
   transition: transform 160ms ease;
 }
 
 .participationChevron[data-open="true"] {
-  transform: translateY(25%) rotate(225deg);
+  transform: rotate(180deg);
 }
 
 .participationMenu {
   position: absolute;
   z-index: 20;
+  top: calc(100% + 6px);
   right: 0;
-  bottom: calc(100% + 6px);
   left: 0;
   display: flex;
   padding: 6px;
@@ -468,9 +473,9 @@
 }
 
 .formFooter {
-  display: flex;
+  display: grid;
   flex: 0 0 auto;
-  flex-direction: column;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   padding: 18px 28px 28px;
   background: #ffffff;
@@ -598,10 +603,6 @@
     gap: 8px;
   }
 
-  .maxParticipantsField {
-    gap: 8px;
-  }
-
   .participationSettingRow {
     grid-column: auto;
   }
@@ -714,13 +715,9 @@
   }
 
   .settingsStack {
-    grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
     padding-top: 3.2px;
-  }
-
-  .maxParticipantsField {
-    gap: 8px;
   }
 
   .settingRow {
@@ -729,7 +726,7 @@
   }
 
   .participationSettingRow {
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   .settingLabel {
@@ -755,7 +752,7 @@
   }
 
   .participationMenu {
-    bottom: calc(100% + 4.8px);
+    top: calc(100% + 4.8px);
     padding: 4.8px;
     border-radius: 8px;
     gap: 1.6px;

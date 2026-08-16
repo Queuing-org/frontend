@@ -137,6 +137,46 @@ describe("EditRoomFormModal feedback", () => {
     expect(screen.queryByText("400")).not.toBeInTheDocument();
   });
 
+  it("설정 두 필드를 같은 행 구조로 배치하고 참여 제한 전체 영역을 토글한다", async () => {
+    const user = userEvent.setup();
+    render(
+      <EditRoomFormModal
+        initialTitle="기존 방"
+        onClose={vi.fn()}
+        open
+        roomSlug="existing-room"
+      />,
+    );
+
+    const trackLimitField = screen.getByLabelText("곡 당 제한 시간").parentElement;
+    const maxParticipantsField = screen.getByLabelText("최대 인원 수").parentElement;
+    expect(trackLimitField?.className).toBe(maxParticipantsField?.className);
+
+    const participationInput = screen.getByLabelText("참여 제한");
+    await user.click(participationInput);
+    expect(
+      screen.getByRole("group", { name: "참여 제한 옵션" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("group", { name: "참여 제한 옵션" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "참여 제한 옵션 열기" }),
+    ).toHaveFocus();
+
+    await user.click(participationInput);
+    await user.click(document.body);
+    expect(
+      screen.queryByRole("group", { name: "참여 제한 옵션" }),
+    ).not.toBeInTheDocument();
+
+    const deleteButton = screen.getByRole("button", { name: "방 삭제" });
+    const submitButton = screen.getByRole("button", { name: "편집 완료" });
+    expect(deleteButton.parentElement).toBe(submitButton.parentElement);
+  });
+
   it("직접 방 삭제 성공은 실시간 삭제와 같은 key로 한 번 알린다", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

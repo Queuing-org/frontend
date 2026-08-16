@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { useRouter } from "next/navigation";
 import { XCircle } from "lucide-react";
 import { useEditRoomForm } from "@/src/features/room/update/hooks/useEditRoomForm";
@@ -307,7 +312,7 @@ export default function EditRoomFormModal({
                 </select>
               </div>
 
-              <div className={styles.maxParticipantsField}>
+              <div className={styles.settingRow}>
                 <label
                   className={styles.settingLabel}
                   htmlFor="edit-room-max-participants"
@@ -458,6 +463,8 @@ function EditParticipationControl({
   const [isOpen, setIsOpen] = useState(false);
   const controlRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const focusAfterCloseRef = useRef<"password" | "toggle" | null>(null);
   const isPasswordMode = mode === "password";
   const errorId = "edit-room-participation-error";
   const helperId = "edit-room-participation-helper";
@@ -482,7 +489,7 @@ function EditParticipationControl({
 
       event.preventDefault();
       setIsOpen(false);
-      toggleRef.current?.focus();
+      focusAfterCloseRef.current = isPasswordMode ? "password" : "toggle";
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -492,19 +499,54 @@ function EditParticipationControl({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen]);
+  }, [isOpen, isPasswordMode]);
+
+  useEffect(() => {
+    if (isOpen || focusAfterCloseRef.current === null) {
+      return;
+    }
+
+    if (focusAfterCloseRef.current === "password" && isPasswordMode) {
+      passwordInputRef.current?.focus();
+    } else {
+      toggleRef.current?.focus();
+    }
+    focusAfterCloseRef.current = null;
+  }, [isOpen, isPasswordMode]);
 
   const selectMode = (nextMode: EditParticipationMode) => {
+    focusAfterCloseRef.current =
+      nextMode === "password" ? "password" : "toggle";
     onModeChange(nextMode);
     setIsOpen(false);
-    toggleRef.current?.focus();
+  };
+
+  const handleControlClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (disabled) {
+      return;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest(`.${styles.participationOption}`)
+    ) {
+      return;
+    }
+
+    setIsOpen((current) => !current);
   };
 
   return (
     <div className={styles.participationColumn}>
-      <div ref={controlRef} className={styles.participationControl}>
+      <div
+        ref={controlRef}
+        className={styles.participationControl}
+        onClick={handleControlClick}
+      >
         {isPasswordMode ? (
           <input
+            ref={passwordInputRef}
             id="edit-room-participation"
             className={styles.participationInput}
             data-invalid={Boolean(errorMessage)}
@@ -522,7 +564,7 @@ function EditParticipationControl({
         ) : (
           <input
             id="edit-room-participation"
-            className={styles.participationInput}
+            className={`${styles.participationInput} ${styles.participationValue}`}
             type="text"
             value="누구나 참여"
             readOnly
@@ -538,7 +580,6 @@ function EditParticipationControl({
           aria-label="참여 제한 옵션 열기"
           aria-expanded={isOpen}
           aria-controls="edit-room-participation-options"
-          onClick={() => setIsOpen((current) => !current)}
         >
           <span
             className={styles.participationChevron}
