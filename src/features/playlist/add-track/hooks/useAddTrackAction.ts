@@ -21,6 +21,7 @@ import {
   ADD_TRACK_STORY_MAX_LENGTH,
   useAddTrackForm,
 } from "./useAddTrackForm";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 const ADD_TRACK_CONFIRM_TIMEOUT_MS = 15_000;
 const TRACK_DURATION_LIMIT_ERROR_CODE = "room.track-duration-limit-exceeded";
@@ -77,6 +78,7 @@ function getAddTrackErrorMessage(errorData: WsErrorData) {
 
 export function useAddTrackAction(slug: string, roomPassword?: string | null) {
   const queryClient = useQueryClient();
+  const { notify } = useActionFeedback();
   const { data: me, isError, isLoading } = useMe();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const form = useAddTrackForm();
@@ -175,21 +177,33 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
     form.setErrorMessage("");
   };
 
+  const showError = (
+    field: "url" | "story" | "form",
+    message: string,
+  ) => {
+    form.setError(field, message);
+    notify({
+      dedupeKey: `add-track:${normalizeRoomSlug(slug) || slug}:${field}`,
+      message,
+      tone: "error",
+    });
+  };
+
   const submit = () => {
     if (!form.videoId) {
-      form.setErrorMessage("올바른 유튜브 링크를 입력해주세요.");
+      showError("url", "올바른 유튜브 링크를 입력해주세요.");
       return;
     }
 
     const story = form.storyValue.trim();
     if (story.length > ADD_TRACK_STORY_MAX_LENGTH) {
-      form.setErrorMessage("사연은 30자 이하로 입력해주세요.");
+      showError("story", "사연은 30자 이하로 입력해주세요.");
       return;
     }
 
     const normalizedSlug = normalizeRoomSlug(slug);
     if (!normalizedSlug) {
-      form.setErrorMessage("방 정보를 확인하지 못했습니다.");
+      showError("form", "방 정보를 확인하지 못했습니다.");
       return;
     }
 
@@ -238,7 +252,12 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
         }
 
         clearPendingAddTrack();
-        form.setErrorMessage(getAddTrackErrorMessage(event.data));
+        showError(
+          event.data.code === TRACK_DURATION_LIMIT_ERROR_CODE
+            ? "url"
+            : "form",
+          getAddTrackErrorMessage(event.data),
+        );
       });
 
       const timeoutId = setTimeout(() => {
@@ -248,7 +267,8 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
 
         refreshQueueState(normalizedSlug);
         clearPendingAddTrack();
-        form.setErrorMessage(
+        showError(
+          "form",
           "큐잉 결과 확인이 지연되었습니다. 잠시 후 큐 목록을 확인해주세요.",
         );
       }, ADD_TRACK_CONFIRM_TIMEOUT_MS);
@@ -264,8 +284,9 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
       });
     } catch (error) {
       clearPendingAddTrack();
-      form.setErrorMessage(
-        error instanceof Error
+      showError(
+        "form",
+        error instanceof Error && error.message
           ? error.message
           : "곡 신청 요청을 보내지 못했습니다.",
       );

@@ -14,3 +14,4 @@ Completed runs preserve decisions and verification evidence. They are historical
 - `2026-08-16-room-ui-followup/`: 방 나가기·플로팅 패널 닫기·큐 강조·프로필 표시 후속 개선
 - `2026-08-16-profile-hotfix-260814/`: 모바일 480px 경계, 프로필 presence·사유 UI, 참가·세션·재생 건별 음악력 hotfix 잔여 전환
 - `2026-08-16-profile-room-withdrawal-ui/`: 친구 프로필, 방 상태 안내, 2단계 회원 탈퇴, 방 수정 UI 후속 개편
+- `2026-08-16-chat-timestamp-not-found-profile-limit/`: 개인 채팅 타임스탬프 seek, 404 상단 액션, 최애곡 20자 제한, Draft PR #50

@@ -31,6 +31,12 @@ type YouTubeNamespace = {
   ) => YouTubePlayerInstance;
 };
 
+export type LocalSeekRequest = {
+  id: number;
+  playbackKey: string;
+  seconds: number;
+};
+
 declare global {
   interface Window {
     YT?: YouTubeNamespace;
@@ -162,21 +168,25 @@ function mapYouTubePlayerState(state: number): PlaybackStatus | null {
 
 type UseYouTubeIframePlayerParams = {
   currentTimeMs?: number | null;
+  localSeekRequest?: LocalSeekRequest | null;
   onPlaybackStateChange?: (args: {
     status: PlaybackStatus;
     currentTimeMs: number;
   }) => void;
   onPlayerReady?: () => void;
   playbackStatus?: PlaybackStatus | null;
+  playbackKey?: string | null;
   playerHostClassName: string;
   videoId: string | null;
 };
 
 export function useYouTubeIframePlayer({
   currentTimeMs,
+  localSeekRequest,
   onPlaybackStateChange,
   onPlayerReady,
   playbackStatus,
+  playbackKey,
   playerHostClassName,
   videoId,
 }: UseYouTubeIframePlayerParams) {
@@ -184,10 +194,14 @@ export function useYouTubeIframePlayer({
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
   const isReadyRef = useRef(false);
   const loadedVideoIdRef = useRef<string | null>(null);
+  const localSeekPlaybackKeyRef = useRef<string | null>(null);
+  const localSeekRequestIdRef = useRef<number | null>(null);
+  const localSeekSecondsRef = useRef<number | null>(null);
   const desiredPlaybackRef = useRef({
     videoId,
     playbackStatus,
     currentTimeMs,
+    playbackKey,
   });
   const onPlayerReadyRef = useRef(onPlayerReady);
   const onPlaybackStateChangeRef = useRef(onPlaybackStateChange);
@@ -222,6 +236,9 @@ export function useYouTubeIframePlayer({
     playerRef.current = null;
     isReadyRef.current = false;
     loadedVideoIdRef.current = null;
+    localSeekPlaybackKeyRef.current = null;
+    localSeekRequestIdRef.current = null;
+    localSeekSecondsRef.current = null;
   }, []);
 
   const ensurePlayerHost = useCallback(() => {
@@ -244,10 +261,13 @@ export function useYouTubeIframePlayer({
       desiredPlayback.videoId,
       desiredPlayback.playbackStatus,
     );
-    const nextTimeSeconds = Math.max(
-      0,
-      (desiredPlayback.currentTimeMs ?? 0) / 1000,
-    );
+    const hasLocalSeekOverride =
+      Boolean(desiredPlayback.playbackKey) &&
+      localSeekPlaybackKeyRef.current === desiredPlayback.playbackKey &&
+      localSeekSecondsRef.current !== null;
+    const nextTimeSeconds = hasLocalSeekOverride
+      ? localSeekSecondsRef.current ?? 0
+      : Math.max(0, (desiredPlayback.currentTimeMs ?? 0) / 1000);
 
     if (!player || !isReadyRef.current) {
       return;
@@ -272,7 +292,7 @@ export function useYouTubeIframePlayer({
           startSeconds: nextTimeSeconds,
         });
       }
-    } else {
+    } else if (!hasLocalSeekOverride) {
       const currentSeconds = player.getCurrentTime();
       if (Math.abs(currentSeconds - nextTimeSeconds) >= SEEK_THRESHOLD_SECONDS) {
         player.seekTo(nextTimeSeconds, true);
@@ -384,12 +404,57 @@ export function useYouTubeIframePlayer({
       videoId,
       playbackStatus,
       currentTimeMs,
+      playbackKey,
     };
-  }, [currentTimeMs, playbackStatus, videoId]);
+  }, [currentTimeMs, playbackKey, playbackStatus, videoId]);
+
+  useEffect(() => {
+    if (localSeekPlaybackKeyRef.current === playbackKey) {
+      return;
+    }
+
+    localSeekPlaybackKeyRef.current = null;
+    localSeekRequestIdRef.current = null;
+    localSeekSecondsRef.current = null;
+  }, [playbackKey]);
+
+  useEffect(() => {
+    if (
+      !localSeekRequest ||
+      !playbackKey ||
+      localSeekRequest.playbackKey !== playbackKey ||
+      localSeekRequest.id === localSeekRequestIdRef.current
+    ) {
+      return;
+    }
+
+    const nextSeconds = Math.max(0, localSeekRequest.seconds);
+    localSeekPlaybackKeyRef.current = playbackKey;
+    localSeekRequestIdRef.current = localSeekRequest.id;
+    localSeekSecondsRef.current = nextSeconds;
+
+    const player = playerRef.current;
+    if (
+      player &&
+      isReadyRef.current &&
+      loadedVideoIdRef.current === videoId
+    ) {
+      player.seekTo(nextSeconds, true);
+      return;
+    }
+
+    applyDesiredPlayback();
+  }, [applyDesiredPlayback, localSeekRequest, playbackKey, videoId]);
 
   useEffect(() => {
     applyDesiredPlayback();
-  }, [applyDesiredPlayback, currentTimeMs, playbackStatus, videoId]);
+  }, [
+    applyDesiredPlayback,
+    currentTimeMs,
+    playbackKey,
+    playbackStatus,
+    videoId,
+  ]);
 
   useEffect(() => destroyPlayer, [destroyPlayer]);
 

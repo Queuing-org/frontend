@@ -33,6 +33,7 @@ import {
   shouldKeepPasswordFormAfterSubmit,
 } from "@/src/features/room/join/model/roomJoinErrors";
 import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
+import type { LocalSeekRequest } from "@/src/features/playlist/player/hooks/useYouTubeIframePlayer";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import RoomPasswordDialog from "@/src/features/room/join/ui/RoomPasswordDialog";
 import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
@@ -67,11 +68,13 @@ import {
   type LivePlaybackState,
 } from "../hooks/useRoomPlaybackViewModel";
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
+import { useRoomOwnerSuccessionFeedback } from "../hooks/useRoomOwnerSuccessionFeedback";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
-import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import { getRoomChatLayout } from "../model/roomChatLayout";
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
+import RoomLeaveConfirmDialog from "./RoomLeaveConfirmDialog";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -95,6 +98,7 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
+  const { notify } = useActionFeedback();
   const isMobileLayout = useMediaQuery(MOBILE_VIEWPORT_MEDIA_QUERY);
   const slug = normalizeRoomSlug(params.slug ?? "");
   const queryClient = useQueryClient();
@@ -248,7 +252,13 @@ export default function RoomPlaybackScreen() {
       if (abortController.signal.aborted) return;
 
       const err = error as ApiError;
-      setJoinErrorMessage(err.message ?? "방에 입장할 수 없습니다.");
+      const message = err.message ?? "방에 입장할 수 없습니다.";
+      setJoinErrorMessage(message);
+      notify({
+        dedupeKey: `room-join:${slug}:password`,
+        message,
+        tone: "error",
+      });
 
       if (shouldKeepPasswordFormAfterSubmit(err)) {
         setStatus("needs-password");
@@ -370,6 +380,7 @@ export default function RoomPlaybackScreen() {
           errorMessage={currentJoinErrorMessage}
           open
           onClose={() => router.replace("/")}
+          onPasswordChange={() => setJoinErrorMessage("")}
           onSubmit={handlePasswordSubmit}
           submitting={isSubmittingPassword}
         />
@@ -442,6 +453,9 @@ export default function RoomPlaybackScreen() {
         isParticipantsLoadMoreError={isParticipantsLoadMoreError}
         livePlaybackStatus={livePlaybackStatus}
         mobileTab={mobileTab}
+        onLeaveRoom={() =>
+          leaveRoomSession({ requirePublishSuccess: true })
+        }
         onLoadMoreParticipants={handleLoadNextParticipantsPage}
         resolveParticipantByUserSlug={resolveParticipantByUserSlug}
         roomChat={roomChat}
@@ -465,6 +479,7 @@ type RoomPlaybackJoinedContentProps = {
   isParticipantsLoadMoreError: boolean;
   livePlaybackStatus: LivePlaybackState | null;
   mobileTab: MobileRoomTab;
+  onLeaveRoom: () => boolean;
   onLoadMoreParticipants: () => Promise<unknown>;
   resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomChat: ReturnType<typeof useRoomChat>;
@@ -485,6 +500,7 @@ function RoomPlaybackJoinedContent({
   isParticipantsLoadMoreError,
   livePlaybackStatus,
   mobileTab,
+  onLeaveRoom,
   onLoadMoreParticipants,
   resolveParticipantByUserSlug,
   roomChat,
@@ -494,15 +510,7 @@ function RoomPlaybackJoinedContent({
   setMobileTab,
   slug,
 }: RoomPlaybackJoinedContentProps) {
-  const router = useRouter();
   const { data: roomMeta } = useRoomMeta(slug);
-  const observedOwnershipRef = useRef<{
-    ownerSlug: string | null;
-    slug: string;
-  } | null>(null);
-  const [ownerChangedDialogSlug, setOwnerChangedDialogSlug] = useState<
-    string | null
-  >(null);
   const playback = useRoomPlaybackViewModel({
     currentUser,
     livePlaybackStatus,
@@ -511,31 +519,41 @@ function RoomPlaybackJoinedContent({
     roomMeta,
     slug,
   });
+  const playbackKey = playback.currentVideoId
+    ? `${roomPlayback?.currentEntry?.entryId ?? "video"}:${playback.currentVideoId}`
+    : null;
+  const [localSeekRequest, setLocalSeekRequest] =
+    useState<LocalSeekRequest | null>(null);
+  const localSeekRequestIdRef = useRef(0);
+  const timestampMaxSeconds =
+    typeof playback.currentTrackDurationMs === "number" &&
+    playback.currentTrackDurationMs > 0
+      ? playback.currentTrackDurationMs / 1000
+      : null;
+  const handleTimestampSeek = useCallback(
+    (seconds: number) => {
+      if (!playbackKey || !playback.currentVideoId) {
+        return;
+      }
+
+      localSeekRequestIdRef.current += 1;
+      setLocalSeekRequest({
+        id: localSeekRequestIdRef.current,
+        playbackKey,
+        seconds,
+      });
+    },
+    [playback.currentVideoId, playbackKey],
+  );
   const currentUserSlug = currentUser?.slug?.trim() || null;
   const roomOwnerSlug = roomMeta.owner?.slug?.trim() || null;
-  useEffect(() => {
-    const previous = observedOwnershipRef.current;
-
-    if (!previous || previous.slug !== slug) {
-      observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
-      return;
-    }
-
-    const didBecomeOwner =
-      previous.ownerSlug !== roomOwnerSlug &&
-      Boolean(currentUserSlug && currentUserSlug === roomOwnerSlug);
-
-    if (didBecomeOwner) {
-      const timerId = window.setTimeout(() => {
-        setOwnerChangedDialogSlug(slug);
-      }, 0);
-      observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
-
-      return () => window.clearTimeout(timerId);
-    }
-
-    observedOwnershipRef.current = { ownerSlug: roomOwnerSlug, slug };
-  }, [currentUserSlug, roomOwnerSlug, slug]);
+  useRoomOwnerSuccessionFeedback({
+    currentUserSlug,
+    isCurrentUserLoading,
+    ownerSlug: roomOwnerSlug,
+    roomSlug: slug,
+    roomTitle: roomMeta.title,
+  });
   const chatDisabledReason = isCurrentUserLoading
     ? "로그인 상태 확인 중입니다."
     : currentUser
@@ -550,7 +568,6 @@ function RoomPlaybackJoinedContent({
     loadOlderMessages: handleLoadOlderChatMessages,
     messages: chatMessages,
     scrollToLatestKey: chatScrollToLatestKey,
-    sendErrorMessage: chatSendErrorMessage,
     sendMessage: handleSendChatMessage,
   } = roomChat;
   const currentRequesterReportMessageKey =
@@ -592,33 +609,13 @@ function RoomPlaybackJoinedContent({
     requestAnimationFrame(() => leaveButtonRef.current?.focus());
   }, []);
   const leaveDialog = (
-    <RoomActionConfirmDialog
-      confirmLabel="나가기"
-      description={
-        <>
-          해당 큐에서 나가시겠어요?
-          <br />
-          신청한 노래가 모두 삭제되고 복원할 수 없습니다.
-        </>
-      }
-      open={isLeaveDialogOpen}
-      title={roomMeta.title}
+    <RoomLeaveConfirmDialog
       onCancel={closeLeaveDialog}
-      onConfirm={() => {
-        setIsLeaveDialogOpen(false);
-        router.replace("/");
-      }}
-    />
-  );
-  const ownerChangedDialog = (
-    <RoomActionConfirmDialog
-      confirmLabel="확인"
-      description="방장 권한을 이어받았어요. 이제 방 설정과 참가자를 관리할 수 있습니다."
-      open={ownerChangedDialogSlug === slug}
-      showCancelButton={false}
-      title="방장이 되었어요"
-      onCancel={() => setOwnerChangedDialogSlug(null)}
-      onConfirm={() => setOwnerChangedDialogSlug(null)}
+      onLeaveRoom={onLeaveRoom}
+      onSuccess={() => setIsLeaveDialogOpen(false)}
+      open={isLeaveDialogOpen}
+      roomSlug={slug}
+      roomTitle={roomMeta.title}
     />
   );
   const desktopChatLayout = getRoomChatLayout(
@@ -702,6 +699,8 @@ function RoomPlaybackJoinedContent({
                   videoId={playback.currentVideoId}
                   playbackStatus={playback.playbackStatus?.status ?? null}
                   currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+                  localSeekRequest={localSeekRequest}
+                  playbackKey={playbackKey}
                 />
                 {playback.currentRequester ? (
                   <CurrentRequesterCard
@@ -731,6 +730,11 @@ function RoomPlaybackJoinedContent({
                       isLoadingOlderMessages={isLoadingOlderMessages}
                       messages={chatMessages}
                       onLoadOlderMessages={handleLoadOlderChatMessages}
+                      onTimestampSeek={
+                        playback.currentVideoId
+                          ? handleTimestampSeek
+                          : undefined
+                      }
                       hasUnloadedParticipants={hasNextParticipantsPage}
                       onUserBlocked={handleUserBlocked}
                       participants={participants}
@@ -741,13 +745,13 @@ function RoomPlaybackJoinedContent({
                       roomPassword={roomPassword}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
+                      timestampMaxSeconds={timestampMaxSeconds}
                       wheelRegionRef={mobileInlineChatRef}
                     />
                   </div>
                   <div className={styles.mobileChatComposer}>
                     <RoomChatComposer
                       disabledReason={chatDisabledReason}
-                      errorMessage={chatSendErrorMessage}
                       isSending={isChatSending}
                       onLoginClick={redirectToGoogleLogin}
                       onSendMessage={handleSendChatMessage}
@@ -816,7 +820,6 @@ function RoomPlaybackJoinedContent({
           </nav>
         </div>
         {leaveDialog}
-        {ownerChangedDialog}
       </div>
     );
   }
@@ -880,6 +883,8 @@ function RoomPlaybackJoinedContent({
               videoId={playback.currentVideoId}
               playbackStatus={playback.playbackStatus?.status ?? null}
               currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+              localSeekRequest={localSeekRequest}
+              playbackKey={playbackKey}
             />
             {playback.currentRequester ? (
               <CurrentRequesterCard
@@ -905,6 +910,9 @@ function RoomPlaybackJoinedContent({
               isLoadingOlderMessages={isLoadingOlderMessages}
               messages={chatMessages}
               onLoadOlderMessages={handleLoadOlderChatMessages}
+              onTimestampSeek={
+                playback.currentVideoId ? handleTimestampSeek : undefined
+              }
               hasUnloadedParticipants={hasNextParticipantsPage}
               onUserBlocked={handleUserBlocked}
               participants={participants}
@@ -913,6 +921,7 @@ function RoomPlaybackJoinedContent({
               roomPassword={roomPassword}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
+              timestampMaxSeconds={timestampMaxSeconds}
               wheelRegionRef={desktopWheelRegionRef}
             />
           </div>
@@ -937,7 +946,6 @@ function RoomPlaybackJoinedContent({
       <RoomFloatingWidgets
         chatMessages={chatMessages}
         chatDisabledReason={chatDisabledReason}
-        chatErrorMessage={chatSendErrorMessage}
         currentRequester={playback.currentRequester}
         currentEntry={roomPlayback?.currentEntry ?? null}
         currentTrackTitle={playback.currentTrackTitle}
@@ -964,7 +972,6 @@ function RoomPlaybackJoinedContent({
         onWidgetStop={floatingWidgets.handleWidgetStop}
       />
       {leaveDialog}
-      {ownerChangedDialog}
     </div>
   );
 }

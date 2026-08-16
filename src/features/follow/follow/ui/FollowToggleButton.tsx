@@ -5,6 +5,7 @@ import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useUnfollow } from "@/src/features/follow/unfollow/hooks/useUnfollow";
 import { useFollow } from "../hooks/useFollow";
 import type { FollowRelationship } from "../model/types";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./FollowToggleButton.module.css";
 
 type FollowToggleButtonProps = {
@@ -15,6 +16,7 @@ type FollowToggleButtonProps = {
   initialRelationship?: FollowRelationship | null;
   onSuccess?: () => void;
   role?: AriaRole;
+  targetNickname?: string | null;
   targetSlug?: string | null;
 };
 
@@ -30,8 +32,10 @@ export default function FollowToggleButton({
   initialRelationship = "NONE",
   onSuccess,
   role,
+  targetNickname,
   targetSlug,
 }: FollowToggleButtonProps) {
+  const { notify } = useActionFeedback();
   const followMutation = useFollow();
   const unfollowMutation = useUnfollow();
   const [localFollowState, setLocalFollowState] = useState<{
@@ -47,11 +51,7 @@ export default function FollowToggleButton({
   const isFollowing = localIsFollowing ?? isInitiallyFollowing;
   const isPending = followMutation.isPending || unfollowMutation.isPending;
   const isDisabled = disabled || !targetSlug || isPending;
-  const error = followMutation.error ?? unfollowMutation.error;
-  const errorTargetSlug =
-    followMutation.variables?.targetSlug ??
-    unfollowMutation.variables?.targetSlug;
-  const hasError = Boolean(error) && errorTargetSlug === targetSlug;
+  const nickname = targetNickname?.trim() || "사용자";
 
   const label = (() => {
     if (isPending) {
@@ -84,7 +84,19 @@ export default function FollowToggleButton({
         {
           onSuccess: () => {
             setLocalFollowState({ targetSlug, isFollowing: false });
+            notify({
+              dedupeKey: `unfollow:${targetSlug}`,
+              message: `'${nickname}'님을 언팔로우했습니다.`,
+              tone: "default",
+            });
             onSuccess?.();
+          },
+          onError: (error) => {
+            notify({
+              dedupeKey: `unfollow:${targetSlug}`,
+              message: error.message || "언팔로우하지 못했습니다.",
+              tone: "error",
+            });
           },
         },
       );
@@ -96,7 +108,25 @@ export default function FollowToggleButton({
       {
         onSuccess: () => {
           setLocalFollowState({ targetSlug, isFollowing: true });
+          notify({
+            dedupeKey: `follow:${targetSlug}`,
+            message: `'${nickname}'님을 팔로우했습니다!`,
+            tone: "default",
+          });
           onSuccess?.();
+        },
+        onError: (error) => {
+          const isAlreadyFollowing =
+            error.status === 409 ||
+            error.code === "follow.already-following" ||
+            error.message.includes("이미 팔로우");
+          notify({
+            dedupeKey: `follow:${targetSlug}`,
+            message: isAlreadyFollowing
+              ? "이미 팔로우 중인 사용자입니다."
+              : error.message || "팔로우하지 못했습니다.",
+            tone: isAlreadyFollowing ? "default" : "error",
+          });
         },
       },
     );
@@ -114,7 +144,6 @@ export default function FollowToggleButton({
       >
         {label}
       </button>
-      {hasError ? <div className={styles.error}>{error?.message}</div> : null}
     </div>
   );
 }

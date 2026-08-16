@@ -47,7 +47,7 @@ Next.js routes (`src/app`)
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
 - `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
-- Deleted-room navigation uses a one-shot `sessionStorage` notice owned by the room model and rendered by home. Terminal room cleanup remains owned by the room realtime hook.
+- App-scoped action feedback survives route-child replacement, so terminal room cleanup can notify before navigating home without a `sessionStorage` handoff.
 - Public `UserProfile.relationship` is the authoritative follow-button state. Follow/search lists use cursor-based infinite queries and keep transient paging state inside TanStack Query.
 
 ## High-Risk Boundaries

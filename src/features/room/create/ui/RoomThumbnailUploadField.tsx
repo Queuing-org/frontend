@@ -61,6 +61,8 @@ export default function RoomThumbnailUploadField({
         type="file"
         accept={ROOM_THUMBNAIL_ACCEPT}
         disabled={disabled}
+        aria-invalid={Boolean(errorMessage)}
+        aria-describedby={errorMessage ? `${inputId}-error` : undefined}
         onChange={handleInputChange}
       />
       <div className={styles.controlRow}>
@@ -69,6 +71,7 @@ export default function RoomThumbnailUploadField({
           className={styles.uploadButton}
           aria-label={actionLabel}
           data-has-image={Boolean(displayImageUrl)}
+          data-invalid={Boolean(errorMessage)}
           data-selected={
             showsDefaultOption && hasSelectedFile ? true : undefined
           }
@@ -122,7 +125,7 @@ export default function RoomThumbnailUploadField({
         ) : null}
       </div>
       {errorMessage ? (
-        <p className={styles.feedback} role="alert">
+        <p id={`${inputId}-error`} className={styles.visuallyHidden}>
           {errorMessage}
         </p>
       ) : statusMessage ? (

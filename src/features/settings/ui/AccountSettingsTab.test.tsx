@@ -54,7 +54,7 @@ describe("AccountSettingsTab 회원 탈퇴 사유", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
     const nextButton = screen.getByRole("button", { name: "탈퇴하기" });
-    expect(nextButton).toBeDisabled();
+    expect(nextButton).toBeEnabled();
 
     fireEvent.click(screen.getByRole("checkbox", { name: "기타" }));
     fireEvent.click(
@@ -112,6 +112,6 @@ describe("AccountSettingsTab 회원 탈퇴 사유", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
     expect(screen.getByRole("checkbox", { name: "기타" })).not.toBeChecked();
-    expect(screen.getByRole("button", { name: "탈퇴하기" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "탈퇴하기" })).toBeEnabled();
   });
 });

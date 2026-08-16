@@ -8,6 +8,7 @@ import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
 import WithdrawalDialog from "./WithdrawalDialog";
 import styles from "./AccountSettingsTab.module.css";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
 const PRIVACY_POLICY_URL =
@@ -21,16 +22,15 @@ export default function AccountSettingsTab({
   onLoggedOut,
 }: AccountSettingsTabProps) {
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
+  const { notify } = useActionFeedback();
   const { data: me } = useMe();
   const {
     mutate: logout,
     isPending: isLoggingOut,
-    error: logoutError,
   } = useLogout();
   const {
     mutate: withdraw,
     isPending: isWithdrawing,
-    error: withdrawError,
     reset: resetWithdraw,
   } = useWithdrawMe();
   const isAccountActionPending = isLoggingOut || isWithdrawing;
@@ -38,15 +38,41 @@ export default function AccountSettingsTab({
   function handleLogout() {
     setIsWithdrawalDialogOpen(false);
     logout(undefined, {
-      onSuccess: onLoggedOut,
+      onSuccess: () => {
+        notify({
+          dedupeKey: "account:logout",
+          message: "로그아웃했습니다.",
+          tone: "default",
+        });
+        onLoggedOut();
+      },
+      onError: (error) => {
+        notify({
+          dedupeKey: "account:logout",
+          message: error.message || "로그아웃하지 못했습니다.",
+          tone: "error",
+        });
+      },
     });
   }
 
   function handleWithdraw(reason: string) {
     withdraw({ reason }, {
       onSuccess: () => {
+        notify({
+          dedupeKey: "account:withdraw",
+          message: "회원 탈퇴가 완료되었습니다.",
+          tone: "default",
+        });
         setIsWithdrawalDialogOpen(false);
         onLoggedOut();
+      },
+      onError: (error) => {
+        notify({
+          dedupeKey: "account:withdraw",
+          message: error.message || "회원 탈퇴를 완료하지 못했습니다.",
+          tone: "error",
+        });
       },
     });
   }
@@ -129,14 +155,8 @@ export default function AccountSettingsTab({
         </button>
       </div>
 
-      {logoutError ? (
-        <p className={styles.errorText} role="alert">
-          로그아웃 실패: {logoutError.message}
-        </p>
-      ) : null}
       {isWithdrawalDialogOpen ? (
         <WithdrawalDialog
-          errorMessage={withdrawError?.message}
           isPending={isWithdrawing}
           onClose={() => {
             setIsWithdrawalDialogOpen(false);

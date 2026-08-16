@@ -42,10 +42,7 @@ export default function CreateGenreStep({
     return (
       <div className={styles.stepContent}>
         <div className={styles.stateText}>장르가 없습니다.</div>
-        <p
-          className={styles.errorText}
-          role={errorMessage ? "alert" : undefined}
-        >
+        <p className={styles.visuallyHidden}>
           {errorMessage ?? ""}
         </p>
       </div>
@@ -54,7 +51,12 @@ export default function CreateGenreStep({
 
   return (
     <div className={styles.stepContent}>
-      <div className={styles.tagGrid}>
+      <fieldset
+        className={styles.tagGrid}
+        aria-invalid={Boolean(errorMessage)}
+        aria-describedby={errorMessage ? "create-room-tags-error" : undefined}
+      >
+        <legend className={styles.visuallyHidden}>방 장르</legend>
         {orderRoomTags(tags).map((tag) => {
           const selected = selectedTagSlugs.includes(tag.slug);
           const maxReached = selectedTagSlugs.length >= maxTags;
@@ -74,8 +76,8 @@ export default function CreateGenreStep({
             </button>
           );
         })}
-      </div>
-      <p className={styles.errorText} role={errorMessage ? "alert" : undefined}>
+      </fieldset>
+      <p id="create-room-tags-error" className={styles.visuallyHidden}>
         {errorMessage ?? ""}
       </p>
     </div>

@@ -136,11 +136,36 @@
   line-height: 1.2;
 }
 
+.selectField[aria-invalid="true"] {
+  border-color: #d94b4b;
+}
+
 .textInput {
   min-width: 0;
   padding: 12px 16px;
   outline: none;
   transition: box-shadow 160ms ease;
+}
+
+.textInputControl {
+  position: relative;
+  min-width: 0;
+}
+
+.textInputWithCounter {
+  padding-right: 64px;
+}
+
+.characterCount {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  color: #b0b0b5;
+  font-size: 12px;
+  font-weight: var(--fw-regular);
+  line-height: 1;
+  pointer-events: none;
+  transform: translateY(-50%);
 }
 
 .textInput[data-feedback="success"] {
@@ -383,6 +408,15 @@
     height: 38px;
   }
 
+  .textInputWithCounter {
+    padding-right: 56px;
+  }
+
+  .characterCount {
+    right: 12px;
+    font-size: 11px;
+  }
+
   .profileStats {
     gap: 8px;
     margin: 8px 8px 0;
@@ -445,6 +479,15 @@
 
   .textInput {
     padding: 9.6px 12.8px;
+  }
+
+  .textInputWithCounter {
+    padding-right: 51.2px;
+  }
+
+  .characterCount {
+    right: 12.8px;
+    font-size: 9.6px;
   }
 
   .formFooter {

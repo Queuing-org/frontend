@@ -21,7 +21,6 @@ import type {
 } from "@/src/features/room/model/types";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
-import { storeRoomDeletedNotice } from "@/src/features/room/model/roomTerminationNotice";
 import { clearStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
 import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 import { userKeys } from "@/src/features/user/model/queryKeys";
@@ -53,6 +52,7 @@ import {
   scheduleQueryInvalidation,
 } from "@/src/shared/api/query/scheduleQueryInvalidation";
 import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomReadInvalidationScope";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import {
   applyMusicPowerChange,
   applyMusicPowerToProfile,
@@ -152,6 +152,7 @@ export function useRoomRealtimeEvents({
 }: UseRoomRealtimeEventsParams) {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { notify } = useActionFeedback();
   const roomSubscriptionRef = useRef<StompSubscription | null>(null);
   const userSubscriptionRef = useRef<StompSubscription | null>(null);
   const roomSubscriptionConfigRef = useRef<RoomSubscriptionConfig | null>(null);
@@ -216,26 +217,35 @@ export function useRoomRealtimeEvents({
     clearScheduledRoomInvalidations,
   ]);
 
-  const leaveRoomSession = useCallback(() => {
-    const config = roomSubscriptionConfigRef.current;
-    cancelRoomMetaRefresh();
-    clearScheduledRoomInvalidations();
-    cancelRejoin();
-    cleanupBrokerSubscription();
-    cleanupUserSubscription();
-    roomSubscriptionConfigRef.current = null;
-    reconnectPendingRef.current = false;
+  const leaveRoomSession = useCallback(
+    (
+      { requirePublishSuccess = false }: { requirePublishSuccess?: boolean } = {},
+    ) => {
+      const config = roomSubscriptionConfigRef.current;
+      const didPublish = config ? publishLeaveRequest(config.slug) : false;
 
-    if (config) {
-      publishLeaveRequest(config.slug);
-    }
-  }, [
-    cancelRejoin,
-    cancelRoomMetaRefresh,
-    cleanupBrokerSubscription,
-    cleanupUserSubscription,
-    clearScheduledRoomInvalidations,
-  ]);
+      if (requirePublishSuccess && !didPublish) {
+        return false;
+      }
+
+      cancelRoomMetaRefresh();
+      clearScheduledRoomInvalidations();
+      cancelRejoin();
+      cleanupBrokerSubscription();
+      cleanupUserSubscription();
+      roomSubscriptionConfigRef.current = null;
+      reconnectPendingRef.current = false;
+
+      return didPublish;
+    },
+    [
+      cancelRejoin,
+      cancelRoomMetaRefresh,
+      cleanupBrokerSubscription,
+      cleanupUserSubscription,
+      clearScheduledRoomInvalidations,
+    ],
+  );
 
   const scheduleRoomInvalidation = useCallback(
     (roomSlug: string, targets: readonly RoomInvalidationTarget[]) => {
@@ -429,7 +439,11 @@ export function useRoomRealtimeEvents({
     queryClient.removeQueries({ queryKey: playlistKeys.roomQueuePrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: roomKeys.meta(roomSlug) });
     void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
-    storeRoomDeletedNotice();
+    notify({
+      dedupeKey: `room-delete:${roomSlug}`,
+      message: "방이 삭제되어 홈으로 이동했습니다.",
+      tone: "default",
+    });
     setStatus("error");
     router.replace("/");
   }, [
@@ -439,6 +453,7 @@ export function useRoomRealtimeEvents({
     cleanupBrokerSubscription,
     cleanupChatSubscriptions,
     cleanupUserSubscription,
+    notify,
     queryClient,
     resetChatState,
     router,

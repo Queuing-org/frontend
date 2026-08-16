@@ -16,6 +16,7 @@ import {
   parseChatMessageDeletedEvent,
 } from "../model/chatRealtimeEvents";
 import { CHAT_MAX_LENGTH } from "../constants/chat";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 type UseRoomChatRealtimeParams = {
   currentUser: User | null;
@@ -55,6 +56,7 @@ export function useRoomChatRealtime({
   roomPassword,
   slug,
 }: UseRoomChatRealtimeParams) {
+  const { notify } = useActionFeedback();
   const chatSubscriptionRef = useRef<{
     password: string | null;
     slug: string;
@@ -75,6 +77,17 @@ export function useRoomChatRealtime({
   const runPendingCheckRef = useRef<() => void>(() => undefined);
   const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
   const [isChatSending, setIsChatSending] = useState(false);
+  const showChatSendError = useCallback(
+    (message: string) => {
+      setChatSendErrorMessage(message);
+      notify({
+        dedupeKey: `chat-send:${normalizeRoomSlug(slug) || slug}`,
+        message,
+        tone: "error",
+      });
+    },
+    [notify, slug],
+  );
 
   const clearPendingCheckTimer = useCallback(() => {
     if (pendingCheckTimeoutRef.current !== null) {
@@ -166,7 +179,7 @@ export function useRoomChatRealtime({
       setIsChatSending(false);
 
       if (errorMessage) {
-        setChatSendErrorMessage(errorMessage);
+        showChatSendError(errorMessage);
       } else {
         setChatSendErrorMessage("");
       }
@@ -175,7 +188,7 @@ export function useRoomChatRealtime({
 
       return true;
     },
-    [releaseOrphanedBackfillRequest, schedulePendingCheck],
+    [releaseOrphanedBackfillRequest, schedulePendingCheck, showChatSendError],
   );
 
   const requestPendingChatBackfill = useCallback(
@@ -261,8 +274,9 @@ export function useRoomChatRealtime({
     );
     releaseOrphanedBackfillRequest();
     setIsChatSending(false);
+    showChatSendError("채팅 전송을 확인하지 못했습니다.");
     return true;
-  }, [releaseOrphanedBackfillRequest]);
+  }, [releaseOrphanedBackfillRequest, showChatSendError]);
 
   const runPendingCheck = useCallback(async () => {
     const pendingGeneration = pendingGenerationRef.current;
@@ -486,22 +500,22 @@ export function useRoomChatRealtime({
       const trimmedMessage = message.trim();
 
       if (!slug || !isEnabled) {
-        setChatSendErrorMessage("방 입장 후 채팅할 수 있습니다.");
+        showChatSendError("방 입장 후 채팅할 수 있습니다.");
         return false;
       }
 
       if (!currentUser) {
-        setChatSendErrorMessage("로그인 후 채팅할 수 있습니다.");
+        showChatSendError("로그인 후 채팅할 수 있습니다.");
         return false;
       }
 
       if (!trimmedMessage) {
-        setChatSendErrorMessage("채팅 내용을 입력해주세요.");
+        showChatSendError("채팅 내용을 입력해주세요.");
         return false;
       }
 
       if (trimmedMessage.length > CHAT_MAX_LENGTH) {
-        setChatSendErrorMessage("채팅은 200자 이하로 입력해주세요.");
+        showChatSendError("채팅은 200자 이하로 입력해주세요.");
         return false;
       }
 
@@ -532,6 +546,7 @@ export function useRoomChatRealtime({
       isEnabled,
       registerPendingChatSend,
       resolvePendingChatSend,
+      showChatSendError,
       slug,
     ],
   );

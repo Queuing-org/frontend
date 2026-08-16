@@ -17,6 +17,7 @@ import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJo
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
 import CreateGenreStep from "./CreateGenreStep";
 import CreateSettingsStep, {
@@ -109,6 +110,7 @@ type CreateRoomFormModalProps = {
 
 function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const router = useRouter();
+  const { notify } = useActionFeedback();
   const createRoomMutation = useCreateRoom();
   const uploadTemporaryRoomThumbnailMutation =
     useUploadTemporaryRoomThumbnail();
@@ -123,7 +125,10 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const [trackLimitMinutes, setTrackLimitMinutes] = useState("");
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [showTagSelectionError, setShowTagSelectionError] = useState(false);
-  const [didTryFinish, setDidTryFinish] = useState(false);
+  const [showTitleError, setShowTitleError] = useState(false);
+  const [showPasswordError, setShowPasswordError] = useState(false);
+  const [showMaxParticipantsError, setShowMaxParticipantsError] =
+    useState(false);
   const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
     useState(false);
 
@@ -192,8 +197,35 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   };
 
   const requestStep = (step: number) => {
+    if (currentStep === 0 && step > 0) {
+      if (!trimmedTitle) {
+        setShowTitleError(true);
+        notify({
+          dedupeKey: "room-create:title",
+          message: "방 제목을 입력해 주세요.",
+          tone: "error",
+        });
+        return;
+      }
+      if (hasThumbnailBlockingError || hasSelectedThumbnailWithoutToken) {
+        notify({
+          dedupeKey: "room-create:thumbnail",
+          message:
+            thumbnailSelection.errorMessage ||
+            thumbnailUploadErrorMessage ||
+            "썸네일 업로드가 끝날 때까지 기다려 주세요.",
+          tone: "error",
+        });
+        return;
+      }
+    }
     if (currentStep === 1 && step > 1 && selectedTagSlugs.length === 0) {
       setShowTagSelectionError(true);
+      notify({
+        dedupeKey: "room-create:tags",
+        message: "장르를 하나 이상 선택해 주세요.",
+        tone: "error",
+      });
       return;
     }
 
@@ -232,18 +264,30 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   };
 
   const finishCreateRoom = async () => {
-    setDidTryFinish(true);
-
     if (!trimmedTitle) {
+      setShowTitleError(true);
+      notify({
+        dedupeKey: "room-create:title",
+        message: "방 제목을 입력해 주세요.",
+        tone: "error",
+      });
       visitStep(0);
       return;
     }
 
     if (selectedTagSlugs.length === 0) {
       setShowTagSelectionError(true);
+      notify({
+        dedupeKey: "room-create:tags",
+        message: "장르를 하나 이상 선택해 주세요.",
+        tone: "error",
+      });
       visitStep(1);
       return;
     }
+
+    setShowPasswordError(needsPassword);
+    setShowMaxParticipantsError(hasSettingsValidationError);
 
     if (
       needsPassword ||
@@ -251,10 +295,27 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       hasThumbnailBlockingError ||
       hasSelectedThumbnailWithoutToken
     ) {
+      const message = needsPassword
+        ? "방 비밀번호를 입력해 주세요."
+        : thumbnailSelection.errorMessage ||
+          thumbnailUploadErrorMessage ||
+          "썸네일 업로드가 끝날 때까지 기다려 주세요.";
+      notify({
+        dedupeKey: needsPassword
+          ? "room-create:password"
+          : "room-create:thumbnail",
+        message,
+        tone: "error",
+      });
       return;
     }
 
     if (hasSettingsValidationError) {
+      notify({
+        dedupeKey: "room-create:max-participants",
+        message: maxParticipantsError || "최대 인원을 선택해 주세요.",
+        tone: "error",
+      });
       visitStep(createSteps.length - 1);
       return;
     }
@@ -280,9 +341,22 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           : {}),
       });
 
+      notify({
+        dedupeKey: `room-create:${normalizeRoomSlug(result.slug)}`,
+        message: `'${trimmedTitle}' 방을 만들었습니다!`,
+        tone: "default",
+      });
       navigateToRoom(result.slug, createdRoomPassword);
-    } catch {
+    } catch (error) {
       setIsNavigatingToCreatedRoom(false);
+      notify({
+        dedupeKey: "room-create:submit",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "방을 만들지 못했습니다.",
+        tone: "error",
+      });
     }
   };
 
@@ -291,7 +365,18 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     const selectedFile = thumbnailSelection.selectFile(files);
 
     if (selectedFile) {
-      uploadTemporaryRoomThumbnailMutation.mutate({ file: selectedFile });
+      uploadTemporaryRoomThumbnailMutation.mutate(
+        { file: selectedFile },
+        {
+          onError: (error) => {
+            notify({
+              dedupeKey: "room-create:thumbnail",
+              message: error.message || "썸네일을 업로드하지 못했습니다.",
+              tone: "error",
+            });
+          },
+        },
+      );
     }
   };
 
@@ -305,6 +390,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       return (
         <CreateBasicInfoStep
           title={title}
+          titleInvalid={showTitleError}
           maxTitleLength={ROOM_TITLE_MAX_LENGTH}
           disabled={createRoomMutation.isPending || isNavigatingToCreatedRoom}
           thumbnailDisabled={isSubmitting}
@@ -330,9 +416,10 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           isThumbnailPreviewUnavailable={
             thumbnailSelection.isPreviewUnavailable
           }
-          onTitleChange={(nextTitle) =>
-            setTitle(nextTitle.slice(0, ROOM_TITLE_MAX_LENGTH))
-          }
+          onTitleChange={(nextTitle) => {
+            setTitle(nextTitle.slice(0, ROOM_TITLE_MAX_LENGTH));
+            setShowTitleError(false);
+          }}
           onThumbnailChange={handleThumbnailChange}
           onThumbnailClear={handleThumbnailClear}
           onThumbnailPreviewError={thumbnailSelection.markPreviewUnavailable}
@@ -372,24 +459,23 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         trackLimitMinutes={trackLimitMinutes}
         disabled={isSubmitting}
         maxParticipantsError={
-          didTryFinish ? maxParticipantsError : null
+          showMaxParticipantsError ? maxParticipantsError : null
         }
-        showPasswordError={didTryFinish && needsPassword}
+        showPasswordError={showPasswordError && needsPassword}
         onMaxParticipantsChange={(nextValue) => {
           setMaxParticipants(nextValue);
-          setDidTryFinish(false);
+          setShowMaxParticipantsError(false);
         }}
         onParticipationModeChange={(mode) => {
           setParticipationMode(mode);
-          setDidTryFinish(false);
+          setShowPasswordError(false);
         }}
         onPasswordChange={(nextPassword) => {
           setPassword(nextPassword);
-          setDidTryFinish(false);
+          setShowPasswordError(false);
         }}
         onTrackLimitMinutesChange={(nextValue) => {
           setTrackLimitMinutes(nextValue);
-          setDidTryFinish(false);
         }}
         trackLimitMinuteOptions={ROOM_TRACK_LIMIT_MINUTE_OPTIONS}
         maxParticipantOptions={ROOM_MAX_PARTICIPANT_OPTIONS}
@@ -464,11 +550,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
 
             <div className={styles.stepBody}>{renderStepContent()}</div>
 
-            {createRoomMutation.error ? (
-              <p className={styles.errorText}>
-                생성 실패: {createRoomMutation.error.message}
-              </p>
-            ) : null}
             <div className={styles.actions}>
               {currentStep > 0 ? (
                 <button

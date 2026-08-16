@@ -23,7 +23,6 @@ import {
   getParticipantUserSlug,
   isParticipantRoomOwner,
   isSameUser,
-  type ParticipantKickTarget,
 } from "../model/participantIdentity";
 import styles from "./RoomParticipantsPanel.module.css";
 
@@ -37,7 +36,7 @@ type Props = {
   isTransferPending: boolean;
   kickingParticipantKey: string | null;
   onBlockParticipant: (participant: PlaylistParticipant) => void;
-  onKickParticipant: (target: ParticipantKickTarget) => void;
+  onKickParticipant: (participant: PlaylistParticipant) => void;
   onReportParticipant: (participant: PlaylistParticipant) => void;
   onTransferOwner: (participant: PlaylistParticipant) => void;
   owner: RoomOwner | null;

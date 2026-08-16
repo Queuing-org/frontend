@@ -69,7 +69,13 @@ describe("BlockedUsersList", () => {
 
     await user.click(screen.getByRole("button", { name: "차단 해제" }));
     expect(reset).toHaveBeenCalledOnce();
-    expect(mutate).toHaveBeenCalledWith("minji");
+    expect(mutate).toHaveBeenCalledWith(
+      "minji",
+      expect.objectContaining({
+        onError: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
+    );
   });
 
   it("더 보기는 다음 cursor 페이지를 요청한다", async () => {

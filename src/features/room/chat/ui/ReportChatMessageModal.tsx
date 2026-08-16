@@ -10,6 +10,7 @@ import {
   type ChatReportReason,
 } from "../constants/reportReasons";
 import { useReportChatMessage } from "../hooks/useReportChatMessage";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./ReportChatMessageModal.module.css";
 
 export type ReportChatMessageTarget = {
@@ -27,14 +28,17 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
   const [selectedReasons, setSelectedReasons] = useState<
     Set<ChatReportReason>
   >(new Set());
+  const [isReasonInvalid, setIsReasonInvalid] = useState(false);
   const firstCheckboxRef = useRef<HTMLInputElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const reportMessage = useReportChatMessage();
+  const { notify } = useActionFeedback();
   const resetReportMessage = reportMessage.reset;
   const open = Boolean(target);
   const handleClose = useCallback(() => {
     if (!reportMessage.isPending) {
       setSelectedReasons(new Set());
+      setIsReasonInvalid(false);
       resetReportMessage();
       onClose();
     }
@@ -72,10 +76,20 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
       }
       return nextReasons;
     });
+    setIsReasonInvalid(false);
     reportMessage.reset();
   };
   const handleSubmit = () => {
-    if (!reason || reportMessage.isPending) {
+    if (reportMessage.isPending) {
+      return;
+    }
+    if (!reason) {
+      setIsReasonInvalid(true);
+      notify({
+        dedupeKey: `report-reason:${target.slug}`,
+        message: "신고 사유를 하나 이상 선택해 주세요.",
+        tone: "error",
+      });
       return;
     }
 
@@ -86,7 +100,26 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
         reason,
         slug: target.slug,
       },
-      { onSuccess: handleClose },
+      {
+        onSuccess: () => {
+          notify({
+            dedupeKey: `report:${target.slug}:${target.messageKey}`,
+            message: "신고가 접수되었습니다.",
+            tone: "default",
+          });
+          setSelectedReasons(new Set());
+          setIsReasonInvalid(false);
+          resetReportMessage();
+          onClose();
+        },
+        onError: (error) => {
+          notify({
+            dedupeKey: `report:${target.slug}:${target.messageKey}`,
+            message: error.message || "신고를 접수하지 못했습니다.",
+            tone: "error",
+          });
+        },
+      },
     );
   };
 
@@ -114,7 +147,12 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
           <p className={styles.description}>
             신고할 사유를 모두 선택해주세요.
           </p>
-          <fieldset className={styles.reasons} disabled={reportMessage.isPending}>
+          <fieldset
+            className={styles.reasons}
+            disabled={reportMessage.isPending}
+            aria-invalid={isReasonInvalid}
+            aria-describedby={isReasonInvalid ? `${titleId}-reason-error` : undefined}
+          >
             <legend className={styles.visuallyHidden}>신고 사유</legend>
             {CHAT_REPORT_REASONS.map((reportReason, index) => (
               <label key={reportReason} className={styles.reasonItem}>
@@ -128,11 +166,9 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
               </label>
             ))}
           </fieldset>
-          {reportMessage.error ? (
-            <p className={styles.error} role="alert">
-              {reportMessage.error.message}
-            </p>
-          ) : null}
+          <span id={`${titleId}-reason-error`} className={styles.visuallyHidden}>
+            신고 사유를 하나 이상 선택해 주세요.
+          </span>
           <div className={styles.actions}>
             <button
               type="button"
@@ -146,7 +182,7 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
               type="button"
               className={styles.primaryButton}
               onClick={handleSubmit}
-              disabled={!reason || reportMessage.isPending}
+              disabled={reportMessage.isPending}
             >
               {reportMessage.isPending ? (
                 <LoadingSpinner

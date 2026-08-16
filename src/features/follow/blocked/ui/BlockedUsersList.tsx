@@ -10,11 +10,13 @@ import {
 } from "../hooks/useUnblockUser";
 import BlockedUserCard from "./BlockedUserCard";
 import styles from "./BlockedUsersPanel.module.css";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 export default function BlockedUsersList() {
   const blockedUsers = useBlockedUsers();
   const unblockUser = useUnblockUser();
   const pendingUnblockSlugs = usePendingUnblockUserSlugs();
+  const { notify } = useActionFeedback();
   const users = blockedUsers.data.pages.flatMap((page) => page.items);
   const handleUnblock = useCallback(
     (slug: string) => {
@@ -22,9 +24,25 @@ export default function BlockedUsersList() {
         return;
       }
       unblockUser.reset();
-      unblockUser.mutate(slug);
+      const target = users.find((user) => user.slug === slug);
+      unblockUser.mutate(slug, {
+        onSuccess: () => {
+          notify({
+            dedupeKey: `unblock:${slug}`,
+            message: `'${target?.nickname ?? "사용자"}'님의 차단을 해제했습니다.`,
+            tone: "default",
+          });
+        },
+        onError: (error) => {
+          notify({
+            dedupeKey: `unblock:${slug}`,
+            message: error.message || "차단을 해제하지 못했습니다.",
+            tone: "error",
+          });
+        },
+      });
     },
-    [pendingUnblockSlugs, unblockUser],
+    [notify, pendingUnblockSlugs, unblockUser, users],
   );
 
   if (users.length === 0) {
@@ -43,12 +61,6 @@ export default function BlockedUsersList() {
           />
         ))}
       </ul>
-
-      {unblockUser.error ? (
-        <p className={styles.error} role="alert">
-          {unblockUser.error.message}
-        </p>
-      ) : null}
 
       {blockedUsers.hasNextPage ? (
         <button

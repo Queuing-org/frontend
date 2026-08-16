@@ -1,18 +1,19 @@
 import { act, renderHook } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
-import {
-  PROFILE_FIELD_FEEDBACK_DURATION_MS,
-  STATUS_MESSAGE_MAX_LENGTH,
-  useProfileSettingsForm,
-} from "./useProfileSettingsForm";
+import { STATUS_MESSAGE_MAX_LENGTH, useProfileSettingsForm } from "./useProfileSettingsForm";
+
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
 
 vi.mock("@/src/features/user/session/hooks/useMe", () => ({
   useMe: vi.fn(),
 }));
 vi.mock("@/src/features/user/profile/hooks/useUpdateMe", () => ({
   useUpdateMe: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 
 const mutate = vi.fn();
@@ -58,10 +59,6 @@ describe("프로필 통합 저장 폼", () => {
     } as unknown as ReturnType<typeof useUpdateMe>);
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
   it("닉네임만 변경하면 nickname만 한 요청으로 보낸다", () => {
     const { result } = renderProfileForm();
 
@@ -101,7 +98,7 @@ describe("프로필 통합 저장 폼", () => {
     );
   });
 
-  it("변경이 있고 변경된 닉네임이 유효할 때만 통합 저장을 활성화한다", () => {
+  it("변경이 있으면 저장을 활성화하고 닉네임 검증은 제출 시 수행한다", () => {
     const { result } = renderProfileForm();
 
     expect(result.current.canUpdateProfile).toBe(false);
@@ -112,8 +109,13 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.hasProfileChanges).toBe(true);
 
     act(() => result.current.updateNicknameDraft("한"));
-    expect(result.current.canUpdateProfile).toBe(false);
+    expect(result.current.canUpdateProfile).toBe(true);
     expect(result.current.hasProfileChanges).toBe(true);
+
+    submit(result);
+    expect(mutate).not.toHaveBeenCalled();
+    expect(result.current.nicknameFeedback).toBe("error");
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
 
     act(() => result.current.updateNicknameDraft("한글"));
     expect(result.current.canUpdateProfile).toBe(true);
@@ -130,7 +132,7 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.canUpdateProfile).toBe(false);
   });
 
-  it("줄바꿈을 제거하고 255자로 제한한다", () => {
+  it("줄바꿈을 제거하고 20자로 제한한다", () => {
     const { result } = renderProfileForm();
 
     act(() =>
@@ -145,8 +147,7 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.statusMessage).not.toContain("\n");
   });
 
-  it("성공한 요청에 포함된 필드만 정확히 2초간 초록 상태로 표시한다", () => {
-    vi.useFakeTimers();
+  it("저장 성공은 필드 상태 대신 공통 알림으로 표시한다", () => {
     const { result } = renderProfileForm();
 
     act(() => result.current.updateStatusMessageDraft("새 메시지"));
@@ -154,17 +155,15 @@ describe("프로필 통합 저장 폼", () => {
     act(() => getMutationOptions().onSuccess());
 
     expect(result.current.nicknameFeedback).toBeNull();
-    expect(result.current.statusMessageFeedback).toBe("success");
-
-    act(() => vi.advanceTimersByTime(PROFILE_FIELD_FEEDBACK_DURATION_MS - 1));
-    expect(result.current.statusMessageFeedback).toBe("success");
-
-    act(() => vi.advanceTimersByTime(1));
     expect(result.current.statusMessageFeedback).toBeNull();
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "profile:update",
+      message: "최애곡을 변경했습니다.",
+      tone: "default",
+    });
   });
 
-  it("함께 저장한 요청이 실패하면 두 필드를 2초간 빨갛게 표시한다", () => {
-    vi.useFakeTimers();
+  it("함께 저장한 요청이 실패하면 두 필드를 빨갛게 유지하고 오류 알림을 표시한다", () => {
     const { result } = renderProfileForm();
 
     act(() => result.current.updateNicknameDraft("새 닉네임"));
@@ -175,13 +174,10 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.nicknameFeedback).toBe("error");
     expect(result.current.statusMessageFeedback).toBe("error");
 
-    act(() => vi.advanceTimersByTime(PROFILE_FIELD_FEEDBACK_DURATION_MS));
-    expect(result.current.nicknameFeedback).toBeNull();
-    expect(result.current.statusMessageFeedback).toBeNull();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
   });
 
-  it("재입력과 재요청은 이전 필드 피드백 타이머를 정리한다", () => {
-    vi.useFakeTimers();
+  it("재입력과 재요청은 이전 필드 오류를 정리한다", () => {
     const { result } = renderProfileForm();
 
     act(() => result.current.updateNicknameDraft("새 닉네임"));
@@ -191,25 +187,24 @@ describe("프로필 통합 저장 폼", () => {
 
     submit(result);
     expect(result.current.nicknameFeedback).toBeNull();
-    expect(vi.getTimerCount()).toBe(0);
 
     act(() => getMutationOptions().onError());
     expect(result.current.nicknameFeedback).toBe("error");
     act(() => result.current.updateNicknameDraft("다른 닉네임"));
     expect(result.current.nicknameFeedback).toBeNull();
-    expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("언마운트 시 진행 중인 필드 피드백 타이머를 정리한다", () => {
-    vi.useFakeTimers();
-    const { result, unmount } = renderProfileForm();
+  it("값을 수정한 필드의 오류만 해제한다", () => {
+    const { result } = renderProfileForm();
 
     act(() => result.current.updateNicknameDraft("새 닉네임"));
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
     submit(result);
-    act(() => getMutationOptions().onSuccess());
-    expect(vi.getTimerCount()).toBe(1);
+    act(() => getMutationOptions().onError());
 
-    unmount();
-    expect(vi.getTimerCount()).toBe(0);
+    act(() => result.current.updateNicknameDraft("다른 닉네임"));
+
+    expect(result.current.nicknameFeedback).toBeNull();
+    expect(result.current.statusMessageFeedback).toBe("error");
   });
 });

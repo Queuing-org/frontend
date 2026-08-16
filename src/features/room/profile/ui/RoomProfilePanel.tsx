@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   useCallback,
-  useEffect,
   useId,
   useRef,
   useState,
@@ -22,13 +21,18 @@ import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
-import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import RoomMemberManagementMenu, {
   type RoomMemberManagementAction,
 } from "@/src/features/room/management/ui/RoomMemberManagementMenu";
+import {
+  getRoomMemberFailureMessage,
+  getRoomMemberFeedbackKey,
+  getRoomMemberSuccessMessage,
+} from "@/src/features/room/management/model/roomMemberFeedback";
 import {
   getParticipantKickTarget,
   type ParticipantKickTarget,
@@ -57,18 +61,10 @@ type Props = {
   roomSlug: string;
 };
 
-const MUSIC_POWER_NOTICE_DURATION_MS = 2_000;
-const MUSIC_POWER_LIMIT_NOTICE =
-  "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.";
 const MUSIC_POWER_LOGIN_NOTICE =
-  "로그인 후 음악력을 올리거나 내릴 수 있습니다.";
+  "로그인 후 음악력을 평가할 수 있습니다.";
 const MUSIC_POWER_ALREADY_EVALUATED_NOTICE =
-  "각 노래당 한번만 투표할 수 있어요";
-
-type MusicPowerNotice = {
-  message: string;
-  targetSlug: string;
-};
+  "같은 곡에는 한 번만 음악력을 평가할 수 있습니다.";
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -101,24 +97,15 @@ export default function RoomProfilePanel({
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
-  const [managementMessage, setManagementMessage] = useState<string | null>(
-    null,
-  );
-  const [participantResolutionError, setParticipantResolutionError] = useState<{
-    message: string;
-    targetSlug: string;
-  } | null>(null);
   const [participantResolutionAction, setParticipantResolutionAction] =
     useState<{
       action: "kick" | "transfer";
       targetSlug: string;
     } | null>(null);
-  const [musicPowerNotice, setMusicPowerNotice] =
-    useState<MusicPowerNotice | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
   const managementMenuId = useId();
-  const musicPowerNoticeTimerRef = useRef<number | null>(null);
-  const musicPowerNoticeSequenceRef = useRef(0);
+  const musicPowerRequestKeyRef = useRef<string | null>(null);
+  const { notify } = useActionFeedback();
   const targetSlug = currentRequester?.slug ?? null;
   const isSelf = isCurrentUserProfile(currentRequester, currentUser);
   const {
@@ -138,12 +125,6 @@ export default function RoomProfilePanel({
   const musicPowerVote = useCurrentTrackMusicPowerVote();
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
-  const {
-    begin: beginTransferOwnerRequest,
-    clear: clearTransferOwnerError,
-    message: transferOwnerErrorMessage,
-    show: showTransferOwnerError,
-  } = useTransientManagementError();
   const shouldLoadBadgeFallback =
     Boolean(targetSlug) &&
     (isPublicProfileError ||
@@ -228,37 +209,17 @@ export default function RoomProfilePanel({
     return null;
   })();
 
-  useEffect(() => {
-    return () => {
-      if (musicPowerNoticeTimerRef.current !== null) {
-        window.clearTimeout(musicPowerNoticeTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    clearTransferOwnerError();
-  }, [clearTransferOwnerError, roomSlug, targetSlug]);
-
-  const showMusicPowerNotice = (message: string, noticeTargetSlug: string) => {
-    if (musicPowerNoticeTimerRef.current !== null) {
-      window.clearTimeout(musicPowerNoticeTimerRef.current);
-    }
-
-    setMusicPowerNotice({ message, targetSlug: noticeTargetSlug });
-    musicPowerNoticeTimerRef.current = window.setTimeout(() => {
-      setMusicPowerNotice(null);
-      musicPowerNoticeTimerRef.current = null;
-    }, MUSIC_POWER_NOTICE_DURATION_MS);
-  };
-
   const handleMusicPowerVote = (vote: MusicPowerVote) => {
     if (!targetSlug || !currentEntryId || isCurrentUserLoading) {
       return;
     }
 
     if (!currentUser) {
-      showMusicPowerNotice(MUSIC_POWER_LOGIN_NOTICE, targetSlug);
+      notify({
+        dedupeKey: `music-power:${roomSlug}:${currentEntryId}:${targetSlug}`,
+        message: MUSIC_POWER_LOGIN_NOTICE,
+        tone: "default",
+      });
       return;
     }
 
@@ -270,17 +231,21 @@ export default function RoomProfilePanel({
       return;
     }
 
-    if (musicPowerQuery.data?.myVote) {
-      showMusicPowerNotice(MUSIC_POWER_ALREADY_EVALUATED_NOTICE, targetSlug);
+    const requestKey = `${roomSlug}:${currentEntryId}:${targetSlug}`;
+    if (musicPowerRequestKeyRef.current === requestKey) {
       return;
     }
 
-    const noticeSequence = ++musicPowerNoticeSequenceRef.current;
-    if (musicPowerNoticeTimerRef.current !== null) {
-      window.clearTimeout(musicPowerNoticeTimerRef.current);
-      musicPowerNoticeTimerRef.current = null;
+    if (musicPowerQuery.data?.myVote) {
+      notify({
+        dedupeKey: `music-power:${requestKey}`,
+        message: MUSIC_POWER_ALREADY_EVALUATED_NOTICE,
+        tone: "default",
+      });
+      return;
     }
-    setMusicPowerNotice(null);
+
+    musicPowerRequestKeyRef.current = requestKey;
     musicPowerVote.mutate(
       {
         entryId: currentEntryId,
@@ -289,26 +254,44 @@ export default function RoomProfilePanel({
         vote,
       },
       {
-        onError: (error) => {
-          if (musicPowerNoticeSequenceRef.current !== noticeSequence) {
-            return;
+        onSuccess: () => {
+          if (musicPowerRequestKeyRef.current === requestKey) {
+            musicPowerRequestKeyRef.current = null;
           }
-
-          showMusicPowerNotice(
-            error.code === "music-power.already-evaluated"
+          notify({
+            dedupeKey: `music-power:${requestKey}`,
+            message:
+              vote === "UPVOTE"
+                ? `'${displayNickname}'님의 음악력을 올렸습니다!`
+                : `'${displayNickname}'님의 음악력을 내렸습니다.`,
+            tone: "default",
+          });
+        },
+        onError: (error) => {
+          if (musicPowerRequestKeyRef.current === requestKey) {
+            musicPowerRequestKeyRef.current = null;
+          }
+          const isAlreadyEvaluated =
+            error.code === "music-power.already-evaluated";
+          notify({
+            dedupeKey: `music-power:${requestKey}`,
+            message: isAlreadyEvaluated
               ? MUSIC_POWER_ALREADY_EVALUATED_NOTICE
-              : error.message || MUSIC_POWER_LIMIT_NOTICE,
-            targetSlug,
-          );
+              : error.message || "음악력을 변경하지 못했습니다.",
+            tone: isAlreadyEvaluated ? "default" : "error",
+          });
         },
       },
     );
   };
 
   const handleReport = () => {
-    setManagementMessage(null);
     if (!reportMessageKey) {
-      setManagementMessage("신고할 수 있는 채팅 메시지가 없습니다.");
+      notify({
+        dedupeKey: `report:no-message:${roomSlug}:${targetSlug ?? "guest"}`,
+        message: "신고할 수 있는 채팅 메시지가 없습니다.",
+        tone: "default",
+      });
       return;
     }
 
@@ -324,7 +307,6 @@ export default function RoomProfilePanel({
       return;
     }
 
-    setManagementMessage(null);
     setBlockTarget({ nickname: displayNickname, slug: targetSlug });
   };
 
@@ -351,8 +333,6 @@ export default function RoomProfilePanel({
     }
 
     let resolvedKickTarget = kickTarget;
-    setManagementMessage(null);
-    setParticipantResolutionError(null);
     if (!resolvedKickTarget) {
       setParticipantResolutionAction({ action: "kick", targetSlug });
       try {
@@ -360,9 +340,10 @@ export default function RoomProfilePanel({
           targetSlug,
         );
       } catch {
-        setParticipantResolutionError({
+        notify({
+          dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, targetSlug),
           message: "참가자 정보를 확인하지 못했습니다.",
-          targetSlug,
+          tone: "error",
         });
         return;
       } finally {
@@ -374,9 +355,10 @@ export default function RoomProfilePanel({
       }
     }
     if (!resolvedKickTarget) {
-      setParticipantResolutionError({
+      notify({
+        dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, targetSlug),
         message: "현재 참가 중인 회원을 찾지 못했습니다.",
-        targetSlug,
+        tone: "error",
       });
       return;
     }
@@ -390,7 +372,18 @@ export default function RoomProfilePanel({
       },
       {
         onSuccess: () => {
-          setManagementMessage(`${displayNickname}님을 내보냈습니다.`);
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, targetSlug),
+            message: getRoomMemberSuccessMessage("kick", displayNickname),
+            tone: "default",
+          });
+        },
+        onError: (error) => {
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, targetSlug),
+            message: getRoomMemberFailureMessage("kick", error.message),
+            tone: "error",
+          });
         },
       },
     );
@@ -402,7 +395,6 @@ export default function RoomProfilePanel({
     }
 
     let resolvedKickTarget = kickTarget;
-    setParticipantResolutionError(null);
     if (!resolvedKickTarget) {
       setParticipantResolutionAction({ action: "transfer", targetSlug });
       try {
@@ -410,9 +402,14 @@ export default function RoomProfilePanel({
           targetSlug,
         );
       } catch {
-        setParticipantResolutionError({
+        notify({
+          dedupeKey: getRoomMemberFeedbackKey(
+            "transfer",
+            roomSlug,
+            targetSlug,
+          ),
           message: "참가자 정보를 확인하지 못했습니다.",
-          targetSlug,
+          tone: "error",
         });
         return;
       } finally {
@@ -424,24 +421,46 @@ export default function RoomProfilePanel({
       }
     }
     if (!resolvedKickTarget) {
-      setParticipantResolutionError({
+      notify({
+        dedupeKey: getRoomMemberFeedbackKey(
+          "transfer",
+          roomSlug,
+          targetSlug,
+        ),
         message: "현재 참가 중인 회원을 찾지 못했습니다.",
-        targetSlug,
+        tone: "error",
       });
       return;
     }
 
-    const transferSequence = beginTransferOwnerRequest();
-    setManagementMessage(null);
     transferOwner.reset();
     transferOwner.mutate(
       { slug: roomSlug, userSlug: targetSlug },
       {
+        onSuccess: () => {
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey(
+              "transfer",
+              roomSlug,
+              targetSlug,
+            ),
+            message: getRoomMemberSuccessMessage(
+              "transfer",
+              displayNickname,
+            ),
+            tone: "default",
+          });
+        },
         onError: (error) => {
-          showTransferOwnerError(
-            transferSequence,
-            error.message || "방장을 위임하지 못했습니다.",
-          );
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey(
+              "transfer",
+              roomSlug,
+              targetSlug,
+            ),
+            message: getRoomMemberFailureMessage("transfer", error.message),
+            tone: "error",
+          });
         },
       },
     );
@@ -479,6 +498,7 @@ export default function RoomProfilePanel({
                       initialRelationship={
                         publicProfile?.relationship ?? "NONE"
                       }
+                      targetNickname={displayNickname}
                       targetSlug={targetSlug}
                     />
                   </div>
@@ -494,8 +514,6 @@ export default function RoomProfilePanel({
                           isManagementOpen ? managementMenuId : undefined
                         }
                         onClick={() => {
-                          setManagementMessage(null);
-                          setParticipantResolutionError(null);
                           setIsManagementOpen((current) => !current);
                         }}
                       >
@@ -532,6 +550,7 @@ export default function RoomProfilePanel({
                           onReport={handleReport}
                           onTransfer={handleTransfer}
                           targetUserSlug={targetSlug}
+                          targetNickname={displayNickname}
                           triggerRef={manageButtonRef}
                         />
                       ) : null}
@@ -543,31 +562,6 @@ export default function RoomProfilePanel({
             activityLabel={null}
             avatarUrl={displayAvatarUrl}
             badgeLabel={targetSlug ? badgeValue : "-"}
-            feedback={
-              <>
-                {managementMessage ? (
-                  <p className={styles.managementMessage} role="status">
-                    {managementMessage}
-                  </p>
-                ) : null}
-                {kickParticipant.error ? (
-                  <p className={styles.managementError} role="alert">
-                    {kickParticipant.error.message ||
-                      "사용자 관리 요청을 처리하지 못했습니다."}
-                  </p>
-                ) : null}
-                {participantResolutionError?.targetSlug === targetSlug ? (
-                  <p className={styles.managementError} role="alert">
-                    {participantResolutionError.message}
-                  </p>
-                ) : null}
-                {transferOwnerErrorMessage ? (
-                  <p className={styles.managementError} role="alert">
-                    {transferOwnerErrorMessage}
-                  </p>
-                ) : null}
-              </>
-            }
             isBadgeLoading={Boolean(targetSlug) && isBadgeLoading}
             isOwner={isTargetRoomOwner}
             listeningDurationSeconds={listeningDurationSeconds}
@@ -622,13 +616,6 @@ export default function RoomProfilePanel({
                 </div>
               ) : null
             }
-            musicPowerNotice={
-              musicPowerNotice?.targetSlug === targetSlug ? (
-                <p className={styles.musicPowerNotice} role="alert">
-                  {musicPowerNotice.message}
-                </p>
-              ) : null
-            }
             nickname={displayNickname}
             online={publicProfile?.online}
             primaryStatus={
@@ -651,7 +638,6 @@ export default function RoomProfilePanel({
           />
           <BlockUserModal
             onBlocked={(target) => {
-              setManagementMessage(`${target.nickname}님을 차단했습니다.`);
               onUserBlocked(target.slug);
             }}
             onClose={() => setBlockTarget(null)}

@@ -36,7 +36,6 @@ import AuthRequiredModal from "@/src/shared/ui/auth-required/AuthRequiredModal";
 import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
-import RoomDeletedNoticeBanner from "./RoomDeletedNoticeBanner";
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
 
 const RoomJoinPasswordModal = dynamic(
@@ -111,7 +110,6 @@ export default function HomeScreen() {
 
   return (
     <div className={styles.screen}>
-      <RoomDeletedNoticeBanner />
       <HomeRoomsContent
         activeFilters={roomListFilters}
         hasPageModalOpen={hasPageModalOpen}
@@ -205,7 +203,6 @@ function HomeRoomsContent({
     onSelectRoom: setCurrentRoomSlug,
   });
   const randomEntry = useRandomEntryNavigation();
-  const actionErrorMessage = randomEntry.errorMessage;
   const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
   const roomMetaQuery = useRoomMetaQuery(
     !isChromeReduced ? selectedRoomSlug : null,
@@ -242,7 +239,6 @@ function HomeRoomsContent({
       {isMobileLayout && !isChromeReduced ? (
         <MobileHomeRoomFeed
           activeFilters={activeFilters}
-          actionErrorMessage={actionErrorMessage}
           errorMessage={roomListErrorMessage}
           genreOptions={genreOptions}
           hasNextPage={Boolean(roomsQuery.hasNextPage)}
@@ -299,7 +295,6 @@ function HomeRoomsContent({
           onOpenFollow={onOpenFollow}
           onOpenSettings={onOpenSettings}
           isRandomEntryPending={randomEntry.isPending}
-          actionErrorMessage={actionErrorMessage}
           isNavigationLocked={isDiscoveryModalOpen}
           onEnterSelectedRoom={() => {
             if (visibleCurrentRoom) {

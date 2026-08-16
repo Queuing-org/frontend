@@ -186,6 +186,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                               profile?.relationship ?? "NONE"
                             }
                             followingLabel="팔로잉"
+                            targetNickname={displayNickname}
                             targetSlug={user.slug}
                           />
                         </div>

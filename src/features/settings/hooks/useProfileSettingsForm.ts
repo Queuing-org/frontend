@@ -1,37 +1,28 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useState, type FormEvent } from "react";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
 import type { UpdateMePayload } from "@/src/features/user/profile/model/types";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
-export const STATUS_MESSAGE_MAX_LENGTH = 255;
+export const STATUS_MESSAGE_MAX_LENGTH = 20;
 export const NICKNAME_MIN_LENGTH = 2;
 export const NICKNAME_MAX_LENGTH = 20;
-export const PROFILE_FIELD_FEEDBACK_DURATION_MS = 2_000;
 
-export type ProfileFieldFeedback = "success" | "error" | null;
+export type ProfileFieldFeedback = "error" | null;
 
 type ProfileField = "nickname" | "statusMessage";
-type ProfileFieldFeedbackState = Partial<
-  Record<ProfileField, Exclude<ProfileFieldFeedback, null>>
->;
+type ProfileFieldFeedbackState = Partial<Record<ProfileField, "error">>;
 
 export function useProfileSettingsForm() {
   const [nicknameDraft, setNicknameDraft] = useState<string | null>(null);
   const [statusMessageDraft, setStatusMessageDraft] = useState<string | null>(
     null,
   );
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [fieldFeedback, setFieldFeedback] =
     useState<ProfileFieldFeedbackState>({});
-  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { notify } = useActionFeedback();
   const { data: me, isLoading: isMeLoading, isError: isMeError } = useMe();
   const {
     mutate: updateMe,
@@ -41,7 +32,9 @@ export function useProfileSettingsForm() {
   } = useUpdateMe();
 
   const currentNickname = me?.nickname ?? "";
-  const currentStatusMessage = me?.statusMessage ?? "";
+  const currentStatusMessage = (me?.statusMessage ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .slice(0, STATUS_MESSAGE_MAX_LENGTH);
   const nickname = nicknameDraft ?? currentNickname;
   const statusMessage = statusMessageDraft ?? currentStatusMessage;
   const trimmedNickname = nickname.trim();
@@ -54,49 +47,27 @@ export function useProfileSettingsForm() {
     trimmedNickname.length <= NICKNAME_MAX_LENGTH;
   const hasProfileChanges = hasNicknameChange || hasStatusMessageChange;
   const canUpdateProfile =
-    Boolean(me) &&
-    hasProfileChanges &&
-    (!hasNicknameChange || isNicknameValid) &&
-    !isUpdatingProfile;
+    Boolean(me) && hasProfileChanges && !isUpdatingProfile;
 
-  const clearFieldFeedback = useCallback(() => {
-    if (feedbackTimerRef.current !== null) {
-      clearTimeout(feedbackTimerRef.current);
-      feedbackTimerRef.current = null;
-    }
+  const clearFieldFeedback = useCallback(() => setFieldFeedback({}), []);
+  const clearSingleFieldFeedback = useCallback((field: ProfileField) => {
+    setFieldFeedback((currentFeedback) => {
+      if (!currentFeedback[field]) {
+        return currentFeedback;
+      }
 
-    setFieldFeedback({});
+      const nextFeedback = { ...currentFeedback };
+      delete nextFeedback[field];
+      return nextFeedback;
+    });
+  }, []);
+  const showFieldErrors = useCallback((fields: readonly ProfileField[]) => {
+    setFieldFeedback(
+      Object.fromEntries(fields.map((field) => [field, "error"])),
+    );
   }, []);
 
-  const showFieldFeedback = useCallback(
-    (
-      fields: readonly ProfileField[],
-      feedback: Exclude<ProfileFieldFeedback, null>,
-    ) => {
-      clearFieldFeedback();
-      setFieldFeedback(
-        Object.fromEntries(fields.map((field) => [field, feedback])),
-      );
-      feedbackTimerRef.current = setTimeout(() => {
-        feedbackTimerRef.current = null;
-        setFieldFeedback({});
-      }, PROFILE_FIELD_FEEDBACK_DURATION_MS);
-    },
-    [clearFieldFeedback],
-  );
-
-  useEffect(
-    () => () => {
-      if (feedbackTimerRef.current !== null) {
-        clearTimeout(feedbackTimerRef.current);
-        feedbackTimerRef.current = null;
-      }
-    },
-    [],
-  );
-
   const clearProfileStatusMessage = () => {
-    setSuccessMessage(null);
     resetUpdateMe();
   };
 
@@ -107,20 +78,32 @@ export function useProfileSettingsForm() {
 
   const updateNicknameDraft = (value: string) => {
     setNicknameDraft(value);
-    resetProfileFeedback();
+    clearSingleFieldFeedback("nickname");
+    clearProfileStatusMessage();
   };
 
   const updateStatusMessageDraft = (value: string) => {
     setStatusMessageDraft(
       value.replace(/[\r\n]+/g, " ").slice(0, STATUS_MESSAGE_MAX_LENGTH),
     );
-    resetProfileFeedback();
+    clearSingleFieldFeedback("statusMessage");
+    clearProfileStatusMessage();
   };
 
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!me || !canUpdateProfile) {
+    if (!me || !hasProfileChanges || isUpdatingProfile) {
+      return;
+    }
+
+    if (hasNicknameChange && !isNicknameValid) {
+      showFieldErrors(["nickname"]);
+      notify({
+        dedupeKey: "profile:nickname:validation",
+        message: `사용자 이름은 ${NICKNAME_MIN_LENGTH}자 이상 ${NICKNAME_MAX_LENGTH}자 이하로 입력해 주세요.`,
+        tone: "error",
+      });
       return;
     }
 
@@ -147,17 +130,25 @@ export function useProfileSettingsForm() {
           setStatusMessageDraft(null);
         }
 
-        showFieldFeedback(submittedFields, "success");
-        setSuccessMessage(
-          submittedFields.length === 2
-            ? "프로필이 변경되었습니다."
-            : submittedFields[0] === "nickname"
-              ? "사용자 이름이 변경되었습니다."
-              : "한 줄 메시지가 변경되었습니다.",
-        );
+        clearFieldFeedback();
+        notify({
+          dedupeKey: "profile:update",
+          message:
+            submittedFields.length === 2
+              ? "프로필을 변경했습니다."
+              : submittedFields[0] === "nickname"
+                ? "사용자 이름을 변경했습니다."
+                : "최애곡을 변경했습니다.",
+          tone: "default",
+        });
       },
-      onError: () => {
-        showFieldFeedback(submittedFields, "error");
+      onError: (error) => {
+        showFieldErrors(submittedFields);
+        notify({
+          dedupeKey: "profile:update",
+          message: error?.message || "프로필을 변경하지 못했습니다.",
+          tone: "error",
+        });
       },
     });
   };
@@ -177,7 +168,6 @@ export function useProfileSettingsForm() {
     statusMessage,
     statusMessageFeedback: fieldFeedback.statusMessage ?? null,
     profileImageSrc: me?.profileImageUrl || "/Basic_Profile.png",
-    successMessage,
     updateError,
     updateNicknameDraft,
     updateStatusMessageDraft,

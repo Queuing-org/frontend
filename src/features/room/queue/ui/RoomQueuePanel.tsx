@@ -76,7 +76,6 @@ function RoomQueuePanelContent({
       allPendingCount={queuePanel.allPendingCount}
       canDeleteEntry={queuePanel.canDeleteEntry}
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
-      deleteErrorMessage={queuePanel.deleteErrorMessage}
       emptyMessage={queuePanel.emptyMessage}
       hasNextAllQueuePage={queuePanel.hasNextAllQueuePage}
       hasNextMyQueuePage={queuePanel.hasNextMyQueuePage}
@@ -90,7 +89,6 @@ function RoomQueuePanelContent({
       isRefetching={queuePanel.isRefetching}
       isFetchingNextAllQueuePage={queuePanel.isFetchingNextAllQueuePage}
       isFetchingNextMyQueuePage={queuePanel.isFetchingNextMyQueuePage}
-      moveErrorMessage={queuePanel.moveErrorMessage}
       myEntries={queuePanel.myEntries}
       myPendingCount={queuePanel.myPendingCount}
       queueErrorMessage={queuePanel.queueErrorMessage}

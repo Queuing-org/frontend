@@ -19,9 +19,13 @@ import { ApiError } from "@/src/shared/api/api-error";
 import { userKeys } from "@/src/features/user/model/queryKeys";
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => navigation,
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 vi.mock("@/src/features/room/api/fetchRoomMeta", () => ({ fetchRoomMeta: vi.fn() }));
 vi.mock("@/src/features/room/api/websocket/subscribeRoomEvents", () => ({
@@ -132,6 +136,57 @@ describe("useRoomRealtimeEvents", () => {
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
     expect(navigation.replace).toHaveBeenCalledWith("/");
     expect(publishLeaveRequest).not.toHaveBeenCalled();
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-delete:room",
+      message: "방이 삭제되어 홈으로 이동했습니다.",
+      tone: "default",
+    });
+  });
+
+  it("명시적 나가기는 publish 실패 시 구독을 유지하고 재시도할 수 있다", () => {
+    const queryClient = new QueryClient();
+    const unsubscribe = vi.fn();
+    vi.mocked(subscribeRoomEvents).mockReturnValue({
+      id: "room",
+      unsubscribe,
+    });
+    vi.mocked(publishLeaveRequest).mockReturnValue(false);
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions: vi.fn(),
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState: vi.fn(),
+          setJoinErrorMessage: vi.fn(),
+          setLivePlaybackStatus: vi.fn(),
+          setStatus: vi.fn(),
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room"));
+
+    let didLeave = true;
+    act(() => {
+      didLeave = result.current.leaveRoomSession({
+        requirePublishSuccess: true,
+      });
+    });
+    expect(didLeave).toBe(false);
+    expect(unsubscribe).not.toHaveBeenCalled();
+
+    vi.mocked(publishLeaveRequest).mockReturnValue(true);
+    act(() => {
+      didLeave = result.current.leaveRoomSession({
+        requirePublishSuccess: true,
+      });
+    });
+    expect(didLeave).toBe(true);
+    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 
   afterEach(() => {

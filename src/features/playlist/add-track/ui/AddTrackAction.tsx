@@ -59,7 +59,7 @@ export default function AddTrackAction({
         variant={variant}
       />
       <AddTrackModalView
-        disabled={!form.canSubmit}
+        disabled={false}
         open={action.isModalOpen}
         submitting={form.isSubmitting}
         value={form.inputValue}
@@ -67,6 +67,7 @@ export default function AddTrackAction({
         storyMaxLength={form.storyMaxLength}
         storyValue={form.storyValue}
         errorMessage={form.errorMessage}
+        errorField={form.errorField}
         onChange={form.updateInputValue}
         onClose={action.closeModal}
         onStoryChange={form.updateStoryValue}

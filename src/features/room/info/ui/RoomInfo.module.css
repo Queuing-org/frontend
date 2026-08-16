@@ -31,6 +31,10 @@
   justify-content: flex-start;
 }
 
+.roomInfoContainerRoom .roomInfoMain > .lockIcon {
+  margin-right: 0;
+}
+
 .title {
   display: inline-flex;
   color: #3c3c3c;

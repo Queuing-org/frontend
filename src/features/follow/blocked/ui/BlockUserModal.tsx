@@ -5,6 +5,7 @@ import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import { useBlockUser } from "../hooks/useBlockUser";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./BlockUserModal.module.css";
 
 const REASON_MAX_LENGTH = 500;
@@ -21,7 +22,6 @@ type Props = {
 };
 
 export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [reasonState, setReasonState] = useState({
@@ -29,6 +29,7 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
     value: "",
   });
   const blockUser = useBlockUser();
+  const { notify } = useActionFeedback();
   const resetBlockUser = blockUser.reset;
   const open = Boolean(target);
   const targetSlug = target?.slug ?? null;
@@ -67,12 +68,6 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
   }, [open]);
 
   useEffect(() => {
-    if (blockUser.isSuccess) {
-      closeButtonRef.current?.focus();
-    }
-  }, [blockUser.isSuccess]);
-
-  useEffect(() => {
     if (blockUser.error) {
       confirmButtonRef.current?.focus();
     }
@@ -94,7 +89,20 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
       {
         onSuccess: () => {
           setReasonState({ targetSlug: null, value: "" });
+          notify({
+            dedupeKey: `block:${target.slug}`,
+            message: `'${target.nickname}'님을 차단했습니다.`,
+            tone: "default",
+          });
           onBlocked?.(target);
+          onClose();
+        },
+        onError: (error) => {
+          notify({
+            dedupeKey: `block:${target.slug}`,
+            message: error.message || "사용자를 차단하지 못했습니다.",
+            tone: "error",
+          });
         },
       },
     );
@@ -118,25 +126,7 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
           aria-labelledby={titleId}
           aria-busy={blockUser.isPending}
         >
-          {blockUser.isSuccess ? (
-            <>
-              <h2 id={titleId} className={styles.title}>
-                차단 완료
-              </h2>
-              <p className={styles.description}>
-                {target.nickname}님을 차단했습니다.
-              </p>
-              <button
-                ref={closeButtonRef}
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleClose}
-              >
-                닫기
-              </button>
-            </>
-          ) : (
-            <>
+          <>
               <h2 id={titleId} className={styles.title}>
                 사용자 차단
               </h2>
@@ -166,11 +156,6 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
               <div className={styles.reasonCount} aria-live="polite">
                 {reason.length}/{REASON_MAX_LENGTH}
               </div>
-              {blockUser.error ? (
-                <p className={styles.error} role="alert">
-                  {blockUser.error.message}
-                </p>
-              ) : null}
               <div className={styles.actions}>
                 <button
                   type="button"
@@ -198,8 +183,7 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
                   )}
                 </button>
               </div>
-            </>
-          )}
+          </>
         </section>
       </div>
     </DialogPortal>

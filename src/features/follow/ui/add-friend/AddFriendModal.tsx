@@ -78,12 +78,6 @@ export default function AddFriendModal({ onClose }: AddFriendModalProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose]);
 
-  const feedback = modal.errorMessage
-    ? { message: modal.errorMessage, tone: "error" as const }
-    : modal.isSuccess
-      ? { message: "성공적으로 팔로우했어요!", tone: "success" as const }
-      : null;
-
   return (
     <div
       className={styles.overlay}
@@ -118,7 +112,7 @@ export default function AddFriendModal({ onClose }: AddFriendModalProps) {
           }}
         >
           <div className={styles.searchArea}>
-            <div className={styles.inputWrap} data-tone={feedback?.tone}>
+            <div className={styles.inputWrap}>
               <input
                 className={styles.input}
                 value={modal.query}
@@ -148,12 +142,6 @@ export default function AddFriendModal({ onClose }: AddFriendModalProps) {
                 </button>
               ) : null}
             </div>
-
-            {feedback ? (
-              <p className={styles.feedback} data-tone={feedback.tone} role="status">
-                {feedback.message}
-              </p>
-            ) : null}
 
             {modal.isResultsOpen ? (
               <div className={styles.results}>

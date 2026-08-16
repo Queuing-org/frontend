@@ -1,13 +1,18 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useUnfollow } from "@/src/features/follow/unfollow/hooks/useUnfollow";
 import { useFollow } from "../hooks/useFollow";
 import FollowToggleButton from "./FollowToggleButton";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 vi.mock("../hooks/useFollow", () => ({ useFollow: vi.fn() }));
 vi.mock("@/src/features/follow/unfollow/hooks/useUnfollow", () => ({
   useUnfollow: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 
 const unfollowMutate = vi.fn();
@@ -37,6 +42,7 @@ describe("FollowToggleButton", () => {
       <FollowToggleButton
         followingLabel="팔로잉"
         initialRelationship="FOLLOWING"
+        targetNickname="감튀"
         targetSlug="target-user"
       />,
     );
@@ -47,6 +53,13 @@ describe("FollowToggleButton", () => {
       { targetSlug: "target-user" },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+    const options = unfollowMutate.mock.lastCall?.[1] as { onSuccess: () => void };
+    act(() => options.onSuccess());
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "unfollow:target-user",
+      message: "'감튀'님을 언팔로우했습니다.",
+      tone: "default",
+    });
   });
 
   it("메뉴 역할을 전달하고 mutation 성공 뒤 callback을 실행한다", async () => {
@@ -64,6 +77,7 @@ describe("FollowToggleButton", () => {
       <FollowToggleButton
         onSuccess={onSuccess}
         role="menuitem"
+        targetNickname="감튀"
         targetSlug="target-user"
       />,
     );
@@ -72,8 +86,13 @@ describe("FollowToggleButton", () => {
     const options = followMutate.mock.calls[0]?.[1] as
       | { onSuccess?: () => void }
       | undefined;
-    options?.onSuccess?.();
+    act(() => options?.onSuccess?.());
 
     expect(onSuccess).toHaveBeenCalledOnce();
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "follow:target-user",
+      message: "'감튀'님을 팔로우했습니다!",
+      tone: "default",
+    });
   });
 });

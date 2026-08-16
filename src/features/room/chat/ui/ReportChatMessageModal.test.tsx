@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { reportChatMessage } from "../api/reportChatMessage";
 import ReportChatMessageModal from "./ReportChatMessageModal";
+import ActionFeedbackProvider from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 vi.mock("../api/reportChatMessage", () => ({ reportChatMessage: vi.fn() }));
 
@@ -14,14 +15,16 @@ function renderModal(onClose = vi.fn()) {
   });
   render(
     <QueryClientProvider client={queryClient}>
-      <ReportChatMessageModal
-        target={{
-          messageKey: "message-key",
-          password: "secret",
-          slug: "room-slug",
-        }}
-        onClose={onClose}
-      />
+      <ActionFeedbackProvider>
+        <ReportChatMessageModal
+          target={{
+            messageKey: "message-key",
+            password: "secret",
+            slug: "room-slug",
+          }}
+          onClose={onClose}
+        />
+      </ActionFeedbackProvider>
     </QueryClientProvider>,
   );
   return onClose;
@@ -32,10 +35,19 @@ describe("ReportChatMessageModal", () => {
     vi.clearAllMocks();
   });
 
-  it("사유 미선택 상태에서는 신고 버튼을 비활성화한다", () => {
+  it("사유 미선택 제출은 선택 그룹과 공통 알림을 오류로 표시한다", () => {
     renderModal();
 
-    expect(screen.getByRole("button", { name: "신고" })).toBeDisabled();
+    const submitButton = screen.getByRole("button", { name: "신고" });
+    expect(submitButton).toBeEnabled();
+    fireEvent.click(submitButton);
+    expect(screen.getByRole("group", { name: "신고 사유" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "신고 사유를 하나 이상 선택해 주세요.",
+    );
   });
 
   it("선택 순서와 무관하게 화면 순서대로 줄바꿈한 payload를 보내고 성공 시 닫는다", async () => {
@@ -56,7 +68,7 @@ describe("ReportChatMessageModal", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("실패 시 선택 상태를 유지하고 오류를 인라인 표시한다", async () => {
+  it("실패 시 선택 상태와 모달을 유지하고 공통 오류 알림을 표시한다", async () => {
     const user = userEvent.setup();
     vi.mocked(reportChatMessage).mockRejectedValue(
       new ApiError({ message: "신고하지 못했습니다.", status: 500 }),

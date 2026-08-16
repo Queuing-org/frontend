@@ -20,6 +20,7 @@ import {
   mergeCurrentEntryWithQueue,
   type QueueTab,
 } from "../model/roomQueue";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 type UseRoomQueuePanelParams = {
   currentEntry?: PlaylistEntry | null;
@@ -56,8 +57,7 @@ export function useRoomQueuePanel({
   roomSlug,
 }: UseRoomQueuePanelParams) {
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
-  const [moveErrorMessage, setMoveErrorMessage] = useState("");
-  const [deleteErrorMessage, setDeleteErrorMessage] = useState("");
+  const { notify } = useActionFeedback();
   const allQueueQuery = useRoomQueue(roomSlug, roomPassword);
   const {
     data: myQueueData,
@@ -119,7 +119,6 @@ export function useRoomQueuePanel({
   }
 
   const handleDeleteRoomEntry = (entryId: string) => {
-    setDeleteErrorMessage("");
     deleteRoomQueueEntries.mutate(
       {
         entryIds: [entryId],
@@ -128,16 +127,17 @@ export function useRoomQueuePanel({
       },
       {
         onError: (deleteError) => {
-          setDeleteErrorMessage(
-            deleteError.message || "큐 항목을 삭제하지 못했습니다.",
-          );
+          notify({
+            dedupeKey: `queue-delete:${roomSlug}:${entryId}`,
+            message: deleteError.message || "곡을 삭제하지 못했습니다.",
+            tone: "error",
+          });
         },
       },
     );
   };
 
   const handleDeleteMyEntry = (entryId: string) => {
-    setDeleteErrorMessage("");
     deleteMyQueueEntry.mutate(
       {
         entryId,
@@ -146,9 +146,11 @@ export function useRoomQueuePanel({
       },
       {
         onError: (deleteError) => {
-          setDeleteErrorMessage(
-            deleteError.message || "큐 항목을 삭제하지 못했습니다.",
-          );
+          notify({
+            dedupeKey: `queue-delete:${roomSlug}:${entryId}`,
+            message: deleteError.message || "곡을 삭제하지 못했습니다.",
+            tone: "error",
+          });
         },
       },
     );
@@ -159,7 +161,6 @@ export function useRoomQueuePanel({
     movedEntryId,
     orderedPendingEntryIds,
   }: MovePayload) => {
-    setMoveErrorMessage("");
     try {
       await moveRoomQueueEntry.mutateAsync({
         beforeEntryId,
@@ -169,11 +170,18 @@ export function useRoomQueuePanel({
         slug: roomSlug,
       });
     } catch (moveError) {
-      setMoveErrorMessage(
-        moveError instanceof Error && moveError.message
-          ? moveError.message
-          : "큐 순서를 변경하지 못했습니다.",
-      );
+      const isConflict =
+        moveError instanceof ApiError &&
+        moveError.code === "room.queue-update-conflict";
+      notify({
+        dedupeKey: `queue-move:${roomSlug}`,
+        message: isConflict
+          ? "큐가 변경되어 최신 순서로 다시 불러왔습니다."
+          : moveError instanceof Error && moveError.message
+            ? moveError.message
+            : "큐 순서를 변경하지 못했습니다.",
+        tone: isConflict ? "default" : "error",
+      });
     }
   };
 
@@ -182,7 +190,6 @@ export function useRoomQueuePanel({
     movedEntryId,
     orderedPendingEntryIds,
   }: MovePayload) => {
-    setMoveErrorMessage("");
     const movableEntryIds = getMovablePersonalQueueEntryIds(myEntries);
     const movableEntryIdSet = new Set(movableEntryIds);
     if (!isValidPersonalQueueMove(
@@ -190,9 +197,11 @@ export function useRoomQueuePanel({
       movedEntryId,
       beforeEntryId,
     )) {
-      setMoveErrorMessage(
-        "방장이 순서를 지정한 곡은 변경할 수 없어요.",
-      );
+      notify({
+        dedupeKey: `queue-move:${roomSlug}`,
+        message: "방장이 순서를 지정한 곡은 변경할 수 없습니다.",
+        tone: "error",
+      });
       return;
     }
 
@@ -207,11 +216,18 @@ export function useRoomQueuePanel({
         slug: roomSlug,
       });
     } catch (moveError) {
-      setMoveErrorMessage(
-        moveError instanceof Error && moveError.message
-          ? moveError.message
-          : "큐 순서를 변경하지 못했습니다.",
-      );
+      const isConflict =
+        moveError instanceof ApiError &&
+        moveError.code === "room.queue-update-conflict";
+      notify({
+        dedupeKey: `queue-move:${roomSlug}`,
+        message: isConflict
+          ? "큐가 변경되어 최신 순서로 다시 불러왔습니다."
+          : moveError instanceof Error && moveError.message
+            ? moveError.message
+            : "큐 순서를 변경하지 못했습니다.",
+        tone: isConflict ? "default" : "error",
+      });
     }
   };
 
@@ -221,7 +237,6 @@ export function useRoomQueuePanel({
     allPendingCount,
     canDeleteEntry,
     canDeleteEntryAsOwner,
-    deleteErrorMessage,
     deleteMyQueueEntry,
     deleteRoomQueueEntries,
     emptyMessage,
@@ -237,7 +252,6 @@ export function useRoomQueuePanel({
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,
     isRefetching: allQueueQuery.isRefetching || isMyRefetching,
-    moveErrorMessage,
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { blockUser } from "../api/blockUser";
 import BlockUserModal from "./BlockUserModal";
+import ActionFeedbackProvider from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 vi.mock("../api/blockUser", () => ({ blockUser: vi.fn() }));
 
@@ -21,11 +22,13 @@ function renderModal({
 
   const view = render(
     <QueryClientProvider client={queryClient}>
-      <BlockUserModal
-        target={{ nickname: "대상", slug: "target-user" }}
-        onBlocked={onBlocked}
-        onClose={onClose}
-      />
+      <ActionFeedbackProvider>
+        <BlockUserModal
+          target={{ nickname: "대상", slug: "target-user" }}
+          onBlocked={onBlocked}
+          onClose={onClose}
+        />
+      </ActionFeedbackProvider>
     </QueryClientProvider>,
   );
 
@@ -37,7 +40,7 @@ describe("BlockUserModal", () => {
     vi.clearAllMocks();
   });
 
-  it("확인 후 같은 모달에서 완료 화면을 보여준다", async () => {
+  it("성공하면 확인 모달을 닫고 공통 완료 알림을 표시한다", async () => {
     const user = userEvent.setup();
     const { onBlocked, onClose } = renderModal();
     vi.mocked(blockUser).mockResolvedValue();
@@ -57,12 +60,13 @@ describe("BlockUserModal", () => {
       expect.anything(),
     );
 
-    expect(await screen.findByRole("heading", { name: "차단 완료" })).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "'대상'님을 차단했습니다.",
+    );
     expect(onBlocked).toHaveBeenCalledWith({
       nickname: "대상",
       slug: "target-user",
     });
-    await user.click(screen.getByRole("button", { name: "닫기" }));
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -85,11 +89,13 @@ describe("BlockUserModal", () => {
     const { onBlocked, onClose, queryClient, rerender } = renderModal();
     const renderTarget = (nickname: string, slug: string) => (
       <QueryClientProvider client={queryClient}>
-        <BlockUserModal
-          target={{ nickname, slug }}
-          onBlocked={onBlocked}
-          onClose={onClose}
-        />
+        <ActionFeedbackProvider>
+          <BlockUserModal
+            target={{ nickname, slug }}
+            onBlocked={onBlocked}
+            onClose={onClose}
+          />
+        </ActionFeedbackProvider>
       </QueryClientProvider>
     );
 
@@ -114,7 +120,7 @@ describe("BlockUserModal", () => {
     ).toHaveValue("");
   });
 
-  it("실패하면 확인 화면을 유지하고 오류를 인라인 표시한다", async () => {
+  it("실패하면 확인 화면을 유지하고 공통 오류 알림을 표시한다", async () => {
     const user = userEvent.setup();
     vi.mocked(blockUser).mockRejectedValue(
       new ApiError({ message: "차단할 수 없습니다.", status: 500 }),
@@ -150,7 +156,9 @@ describe("BlockUserModal", () => {
       resolveBlock?.();
     });
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "차단 완료" })).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "'대상'님을 차단했습니다.",
+      );
     });
   });
 });

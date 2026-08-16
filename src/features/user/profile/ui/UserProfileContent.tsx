@@ -95,50 +95,56 @@ export default function UserProfileContent({
       {actions}
       {feedback}
       <div className={styles.grid}>
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>칭호</div>
-          <div className={styles.cardValue}>
-            {isBadgeLoading ? (
-              <LoadingSpinner ariaLabel="칭호 로딩 중" size={18} />
-            ) : (
-              badgeLabel
-            )}
+        <div className={styles.statsColumn}>
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>칭호</div>
+            <div className={styles.cardValue}>
+              {isBadgeLoading ? (
+                <LoadingSpinner ariaLabel="칭호 로딩 중" size={18} />
+              ) : (
+                badgeLabel
+              )}
+            </div>
+          </div>
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>큐잉 횟수</div>
+            <div className={styles.cardValue}>
+              {formatOptionalStat(queuingCount)}
+            </div>
+          </div>
+          <div className={styles.musicPowerRow}>
+            <div className={styles.card}>
+              <div className={styles.musicPowerHeading}>
+                <div className={styles.cardTitle}>음악력</div>
+                {musicPowerNotice}
+              </div>
+              <div className={styles.musicPowerValue}>
+                <span>{formatOptionalStat(musicPower)}</span>
+              </div>
+            </div>
+            {musicPowerActions}
           </div>
         </div>
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>한 줄 소개</div>
-          <div
-            className={`${styles.cardValue} ${styles.statusCardValue}`}
-            data-line-clamp={textLineClamp}
-            title={statusMessage || undefined}
-          >
-            {statusMessage || "-"}
+        <div className={styles.statsColumn}>
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>최애곡</div>
+            <div className={`${styles.cardValue} ${styles.favoriteSongValueSlot}`}>
+              <div
+                className={styles.statusCardValue}
+                data-line-clamp={textLineClamp}
+                title={statusMessage || undefined}
+              >
+                {statusMessage || "-"}
+              </div>
+            </div>
+          </div>
+          <div className={styles.card}>
+            <div className={styles.cardTitle}>이용 시간</div>
+            <div className={styles.cardValue}>
+              {formatListeningDuration(listeningDurationSeconds)}
+            </div>
           </div>
         </div>
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>큐잉 횟수</div>
-          <div className={styles.cardValue}>
-            {formatOptionalStat(queuingCount)}
-          </div>
-        </div>
-        <div className={styles.card}>
-          <div className={styles.cardTitle}>이용 시간</div>
-          <div className={styles.cardValue}>
-            {formatListeningDuration(listeningDurationSeconds)}
-          </div>
-        </div>
-      </div>
-      <div className={styles.musicPowerRow}>
-        <div className={styles.card}>
-          <div className={styles.musicPowerHeading}>
-            <div className={styles.cardTitle}>음악력</div>
-            {musicPowerNotice}
-          </div>
-          <div className={styles.musicPowerValue}>
-            <span>{formatOptionalStat(musicPower)}</span>
-          </div>
-        </div>
-        {musicPowerActions}
       </div>
     </>
   );

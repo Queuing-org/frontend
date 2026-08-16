@@ -5,6 +5,7 @@ import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import AddTrackFormFields from "./AddTrackFormFields";
 import styles from "./AddTrackModal.module.css";
+import type { AddTrackErrorField } from "../hooks/useAddTrackForm";
 
 type AddTrackModalProps = {
   disabled?: boolean;
@@ -15,6 +16,7 @@ type AddTrackModalProps = {
   storyMaxLength: number;
   storyValue: string;
   errorMessage: string;
+  errorField: AddTrackErrorField;
   onChange: (value: string) => void;
   onClose: () => void;
   onStoryChange: (value: string) => void;
@@ -30,6 +32,7 @@ export default function AddTrackModal({
   storyMaxLength,
   storyValue,
   errorMessage,
+  errorField,
   onChange,
   onClose,
   onStoryChange,
@@ -53,6 +56,7 @@ export default function AddTrackModal({
           <div className={styles.form}>
             <AddTrackFormFields
               errorMessage={errorMessage}
+              errorField={errorField}
               storyLength={storyLength}
               storyMaxLength={storyMaxLength}
               storyValue={storyValue}

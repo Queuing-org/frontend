@@ -1,9 +1,11 @@
 "use client";
 
 import styles from "./AddTrackModal.module.css";
+import type { AddTrackErrorField } from "../hooks/useAddTrackForm";
 
 type AddTrackFormFieldsProps = {
   errorMessage: string;
+  errorField: AddTrackErrorField;
   storyLength: number;
   storyMaxLength: number;
   storyValue: string;
@@ -15,6 +17,7 @@ type AddTrackFormFieldsProps = {
 
 export default function AddTrackFormFields({
   errorMessage,
+  errorField,
   storyLength,
   storyMaxLength,
   storyValue,
@@ -45,6 +48,8 @@ export default function AddTrackFormFields({
           className={styles.input}
           disabled={submitting}
           autoFocus
+          aria-invalid={errorField === "url"}
+          aria-describedby={errorField === "url" ? "add-track-error" : undefined}
         />
       </label>
 
@@ -61,14 +66,15 @@ export default function AddTrackFormFields({
           placeholder="함께 듣고 싶은 이유나 전하고 싶은 말을 적어주세요"
           className={styles.textarea}
           disabled={submitting}
-          maxLength={storyMaxLength}
           rows={4}
+          aria-invalid={errorField === "story"}
+          aria-describedby={errorField === "story" ? "add-track-error" : undefined}
         />
       </label>
 
-      {errorMessage ? (
-        <div className={styles.error}>{errorMessage}</div>
-      ) : null}
+      <div id="add-track-error" className={styles.visuallyHidden}>
+        {errorMessage}
+      </div>
     </>
   );
 }

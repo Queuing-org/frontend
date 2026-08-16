@@ -10,6 +10,8 @@ import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomPar
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import ChatArea from "./ChatArea";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 vi.mock("next/image", () => ({
   default: () => <span data-testid="chat-avatar" />,
 }));
@@ -34,6 +36,9 @@ vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
 }));
 vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
   useTransferRoomOwner: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 vi.mock("@/src/features/follow/blocked/ui/BlockUserModal", () => ({
   default: ({
@@ -112,12 +117,16 @@ function ChatAreaHarness({
   chatMessages,
   hasUnloadedParticipants = false,
   isOwner = false,
+  onTimestampSeek,
   participantItems = participants,
+  timestampMaxSeconds,
 }: {
   chatMessages: ChatMessage[];
   hasUnloadedParticipants?: boolean;
   isOwner?: boolean;
+  onTimestampSeek?: (seconds: number) => void;
   participantItems?: typeof participants;
+  timestampMaxSeconds?: number | null;
 }) {
   const [blockedSenderSlugs, setBlockedSenderSlugs] = useState<
     ReadonlySet<string>
@@ -132,6 +141,7 @@ function ChatAreaHarness({
       isLoadingOlderMessages={false}
       messages={chatMessages}
       onLoadOlderMessages={vi.fn()}
+      onTimestampSeek={onTimestampSeek}
       onUserBlocked={(userSlug) => {
         onUserBlocked(userSlug);
         setBlockedSenderSlugs((current) => {
@@ -158,6 +168,7 @@ function ChatAreaHarness({
       roomPassword="secret"
       roomSlug="room-slug"
       scrollToLatestKey={0}
+      timestampMaxSeconds={timestampMaxSeconds}
     />
   );
 }
@@ -213,6 +224,41 @@ describe("ChatArea 관리 메뉴", () => {
       reset: vi.fn(),
       variables: undefined,
     } as unknown as ReturnType<typeof useTransferRoomOwner>);
+  });
+
+  it("영상 범위 안의 채팅 시간을 버튼으로 표시하고 초 단위 이동을 요청한다", async () => {
+    const user = userEvent.setup();
+    const onTimestampSeek = vi.fn();
+    render(
+      <ChatAreaHarness
+        chatMessages={[
+          message("회원", { content: "여기 봐요 12:11 진짜 좋음" }),
+        ]}
+        onTimestampSeek={onTimestampSeek}
+        timestampMaxSeconds={800}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "12:11 지점으로 이동" }),
+    );
+
+    expect(onTimestampSeek).toHaveBeenCalledWith(731);
+  });
+
+  it("영상 길이를 벗어난 채팅 시간은 이동 버튼으로 만들지 않는다", () => {
+    render(
+      <ChatAreaHarness
+        chatMessages={[message("회원", { content: "너무 뒤 12:11" })]}
+        onTimestampSeek={vi.fn()}
+        timestampMaxSeconds={700}
+      />,
+    );
+
+    expect(screen.getByText("12:11")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "12:11 지점으로 이동" }),
+    ).not.toBeInTheDocument();
   });
 
   it("작성자 유형과 식별자에 맞는 메뉴만 표시하고 한 번에 하나만 연다", async () => {
@@ -274,7 +320,7 @@ describe("ChatArea 관리 메뉴", () => {
       { slug: "room-slug", userSlug: "회원-slug" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
-    expect(transferOptions).not.toHaveProperty("onSuccess");
+    expect(transferOptions).toHaveProperty("onSuccess");
     expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
   });
 
@@ -316,14 +362,17 @@ describe("ChatArea 관리 메뉴", () => {
     await user.click(getMenuTrigger("회원"));
     await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
 
-    expect(
-      await screen.findByText("현재 참가 중인 회원을 찾지 못했습니다."),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-member:transfer:room-slug:회원-slug",
+        message: "현재 참가 중인 회원을 찾지 못했습니다.",
+        tone: "error",
+      });
+    });
     expect(transferMutate).not.toHaveBeenCalled();
   });
 
-  it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {
-    vi.useFakeTimers();
+  it("방장 위임 실패를 공통 오류 알림으로 표시한다", () => {
     renderChat(messages, true);
 
     fireEvent.click(getMenuTrigger("회원"));
@@ -332,9 +381,11 @@ describe("ChatArea 관리 메뉴", () => {
       onError: (error: Error) => void;
     };
     act(() => transferOptions.onError(new Error("위임 실패")));
-    expect(screen.getByRole("alert")).toHaveTextContent("위임 실패");
-
-    act(() => vi.advanceTimersByTime(2_000));
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-member:transfer:room-slug:회원-slug",
+      message: "위임 실패",
+      tone: "error",
+    });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 

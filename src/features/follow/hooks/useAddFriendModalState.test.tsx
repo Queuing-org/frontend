@@ -3,13 +3,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useFollow } from "@/src/features/follow/follow/hooks/useFollow";
 import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers";
 import type { SearchUser } from "@/src/features/user/search/model/types";
+import { ApiError } from "@/src/shared/api/api-error";
 import { useAddFriendModalState } from "./useAddFriendModalState";
+
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
 
 vi.mock("@/src/features/follow/follow/hooks/useFollow", () => ({
   useFollow: vi.fn(),
 }));
 vi.mock("@/src/features/user/search/hooks/useSearchUsers", () => ({
   useSearchUsers: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 
 const followMutate = vi.fn();
@@ -90,7 +96,11 @@ describe("useAddFriendModalState", () => {
       onSuccess: () => void;
     };
     act(() => mutationOptions.onSuccess());
-    expect(result.current.isSuccess).toBe(true);
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "follow:gam-twi",
+      message: "'감튀'님을 팔로우했습니다!",
+      tone: "default",
+    });
   });
 
   it("입력값을 다시 수정하면 선택과 이전 feedback을 초기화한다", () => {
@@ -101,6 +111,31 @@ describe("useAddFriendModalState", () => {
 
     expect(result.current.isResultsOpen).toBe(true);
     expect(followReset).toHaveBeenCalled();
+  });
+
+  it("stale 관계에서 409가 오면 이미 팔로우 안내로 정규화한다", () => {
+    const { result } = renderHook(() => useAddFriendModalState());
+
+    act(() => result.current.selectUser(targetUser));
+    act(() => result.current.submit());
+    const mutationOptions = followMutate.mock.lastCall?.[1] as {
+      onError: (error: ApiError) => void;
+    };
+    act(() =>
+      mutationOptions.onError(
+        new ApiError({
+          code: "follow.already-following",
+          message: "conflict",
+          status: 409,
+        }),
+      ),
+    );
+
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "follow:gam-twi",
+      message: "이미 팔로우 중인 사용자입니다.",
+      tone: "default",
+    });
   });
 
   it("팔로우 요청 중에는 mutation 상태를 초기화하지 않는다", () => {

@@ -26,7 +26,6 @@ import styles from "./RoomFloatingWidgets.module.css";
 type Props = {
   chatMessages: readonly ChatMessage[];
   chatDisabledReason?: string;
-  chatErrorMessage?: string;
   currentRequester: CurrentRequesterProfile | null;
   currentEntry?: PlaylistEntry | null;
   currentTrackTitle?: string | null;
@@ -54,7 +53,6 @@ type Props = {
 export default function RoomFloatingWidgets({
   chatMessages,
   chatDisabledReason,
-  chatErrorMessage,
   currentRequester,
   currentEntry,
   currentTrackTitle,
@@ -238,7 +236,6 @@ export default function RoomFloatingWidgets({
               >
                 <RoomChatComposer
                   disabledReason={chatDisabledReason}
-                  errorMessage={chatErrorMessage}
                   isSending={isChatSending}
                   onLoginClick={onChatLoginClick}
                   onSendMessage={onSendChatMessage}

@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { publishNextTrack } from "@/src/features/playlist/api/websocket/publishNextTrack";
 import { scheduleQueryInvalidation } from "@/src/shared/api/query/scheduleQueryInvalidation";
 import { getRoomReadInvalidationScope } from "@/src/features/room/model/roomReadInvalidationScope";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 export function useSkipTrackAction(slug: string | null) {
   const queryClient = useQueryClient();
-  const [errorMessage, setErrorMessage] = useState("");
+  const { notify } = useActionFeedback();
 
   const skipTrack = () => {
     if (!slug) {
@@ -18,7 +18,6 @@ export function useSkipTrackAction(slug: string | null) {
 
     try {
       publishNextTrack(slug);
-      setErrorMessage("");
       scheduleQueryInvalidation({
         queryClient,
         queryKeys: [
@@ -28,16 +27,18 @@ export function useSkipTrackAction(slug: string | null) {
         scopeKey: getRoomReadInvalidationScope(slug),
       });
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "다음 곡으로 넘기지 못했습니다.",
-      );
+      notify({
+        dedupeKey: `skip-track:${slug}`,
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "다음 곡으로 넘기지 못했습니다.",
+        tone: "error",
+      });
     }
   };
 
   return {
-    errorMessage,
     skipTrack,
   };
 }

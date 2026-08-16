@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
@@ -11,15 +11,21 @@ import ReportChatMessageModal, {
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
-import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import type { ChatMessage, RoomMeta } from "@/src/features/room/model/types";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { User } from "@/src/features/user/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import {
+  getParticipantKickTarget,
   getParticipantKickTargetKey,
   getParticipantUserSlug,
 } from "../model/participantIdentity";
+import {
+  getRoomMemberFailureMessage,
+  getRoomMemberFeedbackKey,
+  getRoomMemberSuccessMessage,
+} from "@/src/features/room/management/model/roomMemberFeedback";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import RoomParticipantList from "./RoomParticipantList";
 import styles from "./RoomParticipantsPanel.module.css";
 
@@ -55,24 +61,14 @@ export default function RoomParticipantsPanel({
     useState<ReportChatMessageTarget | null>(null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
-  const {
-    begin: beginTransferOwnerRequest,
-    clear: clearTransferOwnerError,
-    message: transferOwnerErrorMessage,
-    show: showTransferOwnerError,
-  } = useTransientManagementError();
+  const { notify } = useActionFeedback();
   const owner = roomMeta?.owner ?? null;
   const participantCount = roomMeta
     ? Math.max(roomMeta.activeUsersCount, participants.length)
     : participants.length || undefined;
   const canModerateParticipants = isRoomOwner(owner, currentUser);
 
-  useEffect(() => {
-    clearTransferOwnerError();
-  }, [clearTransferOwnerError, roomSlug]);
-
   const handleReportParticipant = (participant: PlaylistParticipant) => {
-    clearTransferOwnerError();
     const userSlug =
       participant.participantType === "USER"
         ? getParticipantUserSlug(participant)
@@ -82,13 +78,17 @@ export default function RoomParticipantsPanel({
       userSlug,
     );
     if (!messageKey) {
+      notify({
+        dedupeKey: `report:no-message:${roomSlug}:${userSlug ?? "guest"}`,
+        message: "신고할 수 있는 채팅 메시지가 없습니다.",
+        tone: "default",
+      });
       return;
     }
     setReportTarget({ messageKey, password: roomPassword, slug: roomSlug });
   };
 
   const handleBlockParticipant = (participant: PlaylistParticipant) => {
-    clearTransferOwnerError();
     const userSlug = getParticipantUserSlug(participant);
     if (participant.participantType !== "USER" || !userSlug) {
       return;
@@ -101,16 +101,34 @@ export default function RoomParticipantsPanel({
     if (participant.participantType !== "USER" || !userSlug) {
       return;
     }
-    const transferSequence = beginTransferOwnerRequest();
     transferOwner.reset();
     transferOwner.mutate(
       { slug: roomSlug, userSlug },
       {
+        onSuccess: () => {
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey(
+              "transfer",
+              roomSlug,
+              userSlug,
+            ),
+            message: getRoomMemberSuccessMessage(
+              "transfer",
+              participant.nickname,
+            ),
+            tone: "default",
+          });
+        },
         onError: (error) => {
-          showTransferOwnerError(
-            transferSequence,
-            error.message || "방장을 위임하지 못했습니다.",
-          );
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey(
+              "transfer",
+              roomSlug,
+              userSlug,
+            ),
+            message: getRoomMemberFailureMessage("transfer", error.message),
+            tone: "error",
+          });
         },
       },
     );
@@ -131,14 +149,50 @@ export default function RoomParticipantsPanel({
             kickParticipant.variables ?? null,
           )}
           onBlockParticipant={handleBlockParticipant}
-          onKickParticipant={(target) => {
-            clearTransferOwnerError();
+          onKickParticipant={(participant) => {
+            const target = getParticipantKickTarget(participant);
+            const userSlug = getParticipantUserSlug(participant);
+            if (!target || !userSlug) {
+              return;
+            }
             kickParticipant.reset();
-            kickParticipant.mutate({
-              ...target,
-              password: roomPassword,
-              slug: roomSlug,
-            });
+            kickParticipant.mutate(
+              {
+                ...target,
+                password: roomPassword,
+                slug: roomSlug,
+              },
+              {
+                onSuccess: () => {
+                  notify({
+                    dedupeKey: getRoomMemberFeedbackKey(
+                      "kick",
+                      roomSlug,
+                      userSlug,
+                    ),
+                    message: getRoomMemberSuccessMessage(
+                      "kick",
+                      participant.nickname,
+                    ),
+                    tone: "default",
+                  });
+                },
+                onError: (error) => {
+                  notify({
+                    dedupeKey: getRoomMemberFeedbackKey(
+                      "kick",
+                      roomSlug,
+                      userSlug,
+                    ),
+                    message: getRoomMemberFailureMessage(
+                      "kick",
+                      error.message,
+                    ),
+                    tone: "error",
+                  });
+                },
+              },
+            );
           }}
           onReportParticipant={handleReportParticipant}
           onTransferOwner={handleTransferOwner}
@@ -172,17 +226,6 @@ export default function RoomParticipantsPanel({
               참가자를 더 불러오지 못했습니다.
             </span>
           ) : null}
-        </div>
-      ) : null}
-      {kickParticipant.isError ? (
-        <div className={styles.error} role="alert">
-          {kickParticipant.error?.message ||
-            "참가자 관리 요청을 처리하지 못했습니다."}
-        </div>
-      ) : null}
-      {transferOwnerErrorMessage ? (
-        <div className={styles.error} role="alert">
-          {transferOwnerErrorMessage}
         </div>
       ) : null}
       <BlockUserModal
