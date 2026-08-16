@@ -222,7 +222,7 @@ describe("RoomProfilePanel", () => {
     } as unknown as ReturnType<typeof useTransferRoomOwner>);
   });
 
-  it("통계와 한 줄 소개, 양방향 음악력 버튼을 표시한다", () => {
+  it("통계와 최애곡, 양방향 음악력 버튼을 표시한다", () => {
     renderPanel();
 
     expect(screen.getByText("1,234")).toBeInTheDocument();
@@ -234,8 +234,8 @@ describe("RoomProfilePanel", () => {
       "data-line-clamp",
       "2",
     );
-    expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
-    expect(screen.queryByText("최애곡")).not.toBeInTheDocument();
+    expect(screen.getByText("최애곡")).toBeInTheDocument();
+    expect(screen.queryByText("한 줄 소개")).not.toBeInTheDocument();
     expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
@@ -733,7 +733,7 @@ describe("RoomProfilePanel", () => {
     ).not.toBeInTheDocument();
 
     await user.click(manageButton);
-    await user.click(screen.getByText("한 줄 소개"));
+    await user.click(screen.getByText("최애곡"));
     expect(
       screen.queryByRole("menu", { name: "프로필 관리" }),
     ).not.toBeInTheDocument();

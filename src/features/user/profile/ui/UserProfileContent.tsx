@@ -106,7 +106,7 @@ export default function UserProfileContent({
           </div>
         </div>
         <div className={styles.card}>
-          <div className={styles.cardTitle}>한 줄 소개</div>
+          <div className={styles.cardTitle}>최애곡</div>
           <div
             className={`${styles.cardValue} ${styles.statusCardValue}`}
             data-line-clamp={textLineClamp}

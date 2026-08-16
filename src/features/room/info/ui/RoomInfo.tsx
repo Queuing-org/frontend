@@ -47,7 +47,7 @@ export default function RoomInfo({
   const tagsContent =
     tags.length > 0 ? (
       <div className={styles.tag}>
-        {lockContent}
+        {isRoom ? null : lockContent}
         {tags.map((tag) => (
           <span key={tag.slug} className={styles.tagItem}>
             {tag.name}
@@ -56,7 +56,7 @@ export default function RoomInfo({
       </div>
     ) : (
       <div className={styles.tag}>
-        {lockContent}
+        {isRoom ? null : lockContent}
         <span className={styles.tagItem}>태그없음</span>
       </div>
     );
@@ -76,6 +76,7 @@ export default function RoomInfo({
   return (
     <div className={containerClassName}>
       <div className={styles.roomInfoMain}>
+        {isRoom ? lockContent : null}
         {isRoom ? titleContent : tagsContent}
         {usersCountContent}
         {isRoom ? tagsContent : titleContent}
