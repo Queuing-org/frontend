@@ -3,7 +3,7 @@
 ## Automated Verification
 
 - `npm run lint`: passed
-- `npm run test`: passed — 133 files, 514 tests
+- `npm run test`: passed — 134 files, 515 tests
 - `npm run build`: passed
 - `git diff --check`: passed
 - Draft PR #50 checks for `830bb2b`: GitHub Actions lint/test/build, Vercel, CodeRabbit passed
@@ -24,6 +24,7 @@
 - Second read-only review: `fix`; room password correction, add-track field ownership, create/edit field-specific clearing, delayed owner lookup, and additional UI integration tests were corrected.
 - Final publication review: `pass`; no blocking findings.
 - User regression follow-up: `pass`; restored disabled gating for the create-room `다음` button when the trimmed title or genre selection is empty, and retained blocking for thumbnail upload/error states. The focused room-form suite passed 19 tests before the full suite.
+- Profile spacing follow-up: `pass`; the left `칭호 → 큐잉 횟수 → 음악력` column is independent from the two-line favorite-song column, and one CSS custom property owns its row gap. Shared profile coverage passed 3 files/39 tests before the full suite.
 
 ## Residual Risk
 

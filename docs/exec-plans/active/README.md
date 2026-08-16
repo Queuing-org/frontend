@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ready — Draft PR #50, 공통 액션 피드백 스택과 방 생성 필수값 다음 버튼 회귀 수정 검증 완료
+- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ci-pending — Draft PR #50, 프로필 2줄 최애곡과 통계 행 간격을 독립 배치하고 픽셀 변수 제공
 
 - [2026-08-14-backend-hotfix-260812-migration](./2026-08-14-backend-hotfix-260812-migration/plan.md): implementing — backend hotfix c91f8a 에러·REST·실시간·관계 cursor 계약 전환과 새 Draft PR 전달
 
