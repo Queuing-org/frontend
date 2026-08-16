@@ -8,6 +8,8 @@ import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsTab from "./ProfileSettingsTab";
 import { ApiError } from "@/src/shared/api/api-error";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 vi.mock("next/image", () => ({
   default: () => <span data-testid="profile-image" />,
 }));
@@ -23,6 +25,9 @@ vi.mock("@/src/features/badge/hooks/useSetRepresentativeBadge", () => ({
 vi.mock("../hooks/useProfileSettingsForm", () => ({
   STATUS_MESSAGE_MAX_LENGTH: 20,
   useProfileSettingsForm: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 vi.mock("./components/ProfileStats", () => ({
   default: () => <div data-testid="profile-stats" />,
@@ -59,7 +64,6 @@ function mockProfileForm(
     profileImageSrc: "/images/default-profile.png",
     statusMessage: "",
     statusMessageFeedback: null,
-    successMessage: null,
     updateError: null,
     updateNicknameDraft: vi.fn(),
     updateStatusMessageDraft: vi.fn(),
@@ -142,6 +146,7 @@ describe("설정 칭호 목록", () => {
 
     expect(clearMutate).toHaveBeenCalledOnce();
     expect(resetSetMutation).toHaveBeenCalledOnce();
+    expect(resetClearMutation).toHaveBeenCalledOnce();
     expect(mutate).not.toHaveBeenCalled();
   });
 
@@ -165,8 +170,15 @@ describe("설정 칭호 목록", () => {
       "ROOM_CREATE_00002",
     );
 
-    expect(mutate).toHaveBeenCalledWith({ badgeCode: "ROOM_CREATE_00002" });
+    expect(mutate).toHaveBeenCalledWith(
+      { badgeCode: "ROOM_CREATE_00002" },
+      expect.objectContaining({
+        onError: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
+    );
     expect(resetClearMutation).toHaveBeenCalledOnce();
+    expect(resetSetMutation).toHaveBeenCalledOnce();
     expect(clearProfileStatusMessage).toHaveBeenCalledOnce();
   });
 
@@ -189,11 +201,8 @@ describe("설정 칭호 목록", () => {
     expect(screen.getByRole("button", { name: "완료" })).toBeDisabled();
   });
 
-  it("프로필 피드백과 완료 버튼을 같은 footer 행에 둔다", () => {
-    mockProfileForm({
-      hasProfileChanges: true,
-      successMessage: "프로필이 변경되었습니다.",
-    });
+  it("완료 버튼을 footer 행에 둔다", () => {
+    mockProfileForm({ hasProfileChanges: true });
     render(<ProfileSettingsTab />);
 
     const feedback = screen.getByRole("status");
@@ -230,29 +239,21 @@ describe("설정 칭호 목록", () => {
     expect(handleProfileSubmit).not.toHaveBeenCalled();
   });
 
-  it("필드별 성공·실패 상태와 고정 피드백 영역을 렌더링한다", () => {
+  it("실패 필드에는 aria-invalid를 연결하고 인라인 결과 문구는 두지 않는다", () => {
     mockProfileForm({
-      nicknameFeedback: "success",
+      nicknameFeedback: null,
       statusMessageFeedback: "error",
-      successMessage: "프로필이 변경되었습니다.",
     });
     render(<ProfileSettingsTab />);
 
-    expect(screen.getByLabelText("사용자 이름")).toHaveAttribute(
-      "data-feedback",
-      "success",
-    );
-    expect(screen.getByLabelText("최애곡")).toHaveAttribute(
-      "data-feedback",
-      "error",
-    );
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "프로필이 변경되었습니다.",
-    );
+    expect(screen.getByLabelText("사용자 이름")).toHaveAttribute("aria-invalid", "false");
+    expect(screen.getByLabelText("최애곡")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
-  it("프로필 수정 오류에서 HTTP 상태 코드를 사용자에게 노출하지 않는다", () => {
+  it("프로필 수정 오류는 필드 상태로만 남기고 인라인에 노출하지 않는다", () => {
     mockProfileForm({
+      nicknameFeedback: "error",
       updateError: new ApiError({
         message: "이미 사용 중인 이름입니다.",
         status: 409,
@@ -260,26 +261,25 @@ describe("설정 칭호 목록", () => {
     });
     render(<ProfileSettingsTab />);
 
-    const error = screen.getByText(
-      "프로필 변경 실패: 이미 사용 중인 이름입니다.",
-    );
-    expect(error).not.toHaveTextContent("409");
+    expect(screen.getByLabelText("사용자 이름")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText(/이미 사용 중인 이름/)).not.toBeInTheDocument();
   });
 
-  it("프로필 성공 뒤 발생한 칭호 오류를 고정 피드백 영역에서 우선 표시한다", () => {
-    mockProfileForm({ successMessage: "프로필이 변경되었습니다." });
-    vi.mocked(useSetRepresentativeBadge).mockReturnValue({
-      error: new ApiError({ message: "칭호를 저장하지 못했습니다.", status: 500 }),
-      isPending: false,
-      mutate,
-      reset: resetSetMutation,
-    } as unknown as ReturnType<typeof useSetRepresentativeBadge>);
-
+  it("칭호 저장 실패는 공통 오류 알림으로 표시한다", async () => {
+    const user = userEvent.setup();
     render(<ProfileSettingsTab />);
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "대표 칭호 저장 실패: 칭호를 저장하지 못했습니다.",
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "칭호" }),
+      "ROOM_CREATE_00002",
     );
-    expect(screen.queryByText("프로필이 변경되었습니다.")).not.toBeInTheDocument();
+    const options = mutate.mock.lastCall?.[1] as { onError: (error: ApiError) => void };
+    options.onError(new ApiError({ message: "칭호를 저장하지 못했습니다.", status: 500 }));
+
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "profile:representative-badge",
+      message: "칭호를 저장하지 못했습니다.",
+      tone: "error",
+    });
   });
 });

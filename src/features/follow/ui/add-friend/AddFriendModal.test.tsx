@@ -31,12 +31,10 @@ function mockModalState(
   vi.mocked(useAddFriendModalState).mockReturnValue({
     canSubmit: false,
     clearQuery,
-    errorMessage: null,
     isResultsOpen: true,
     isSearchError: false,
     isSearchLoading: false,
     isSubmitting: false,
-    isSuccess: false,
     query: "감",
     selectUser,
     submit,
@@ -65,10 +63,9 @@ describe("AddFriendModal", () => {
     expect(selectUser).toHaveBeenCalledWith(searchedUser);
   });
 
-  it("선택된 사용자는 입력창에 닉네임으로 표시하고 서버 오류를 노출한다", () => {
+  it("선택된 사용자는 입력창에 닉네임으로 표시하고 인라인 오류는 두지 않는다", () => {
     mockModalState({
       canSubmit: true,
-      errorMessage: "이미 팔로우 중인 친구예요!",
       isResultsOpen: false,
       query: "감튀교",
       users: [],
@@ -79,9 +76,7 @@ describe("AddFriendModal", () => {
     expect(screen.getByRole("textbox", { name: "친구 닉네임 검색" })).toHaveValue(
       "감튀교",
     );
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "이미 팔로우 중인 친구예요!",
-    );
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("팔로우와 취소 액션을 각각 전달한다", async () => {
@@ -96,21 +91,6 @@ describe("AddFriendModal", () => {
 
     await user.click(screen.getByRole("button", { name: "취소" }));
     expect(onClose).toHaveBeenCalledOnce();
-  });
-
-  it("성공 feedback을 표시한다", () => {
-    mockModalState({
-      canSubmit: true,
-      isResultsOpen: false,
-      isSuccess: true,
-      users: [],
-    });
-
-    render(<AddFriendModal onClose={vi.fn()} />);
-
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "성공적으로 팔로우했어요!",
-    );
   });
 
   it("Escape로 모달을 닫는다", () => {

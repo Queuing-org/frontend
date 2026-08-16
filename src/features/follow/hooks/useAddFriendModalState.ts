@@ -6,6 +6,7 @@ import { useSearchUsers } from "@/src/features/user/search/hooks/useSearchUsers"
 import { MIN_USER_SEARCH_QUERY_LENGTH } from "@/src/features/user/search/model/searchUserQuery";
 import type { SearchUser } from "@/src/features/user/search/model/types";
 import { useDebouncedValue } from "@/src/shared/lib/useDebouncedValue";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 const SEARCH_RESULT_LIMIT = 10;
 const SEARCH_DEBOUNCE_MS = 250;
@@ -13,10 +14,7 @@ const SEARCH_DEBOUNCE_MS = 250;
 export function useAddFriendModalState() {
   const [query, setQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [localErrorMessage, setLocalErrorMessage] = useState<string | null>(
-    null,
-  );
+  const { notify } = useActionFeedback();
   const normalizedQuery = selectedUser ? "" : query.trim();
   const debouncedQuery = useDebouncedValue(
     normalizedQuery,
@@ -45,8 +43,6 @@ export function useAddFriendModalState() {
       return;
     }
 
-    setIsSuccess(false);
-    setLocalErrorMessage(null);
     followUser.reset();
   };
 
@@ -78,20 +74,44 @@ export function useAddFriendModalState() {
       selectedUser.relationship === "FOLLOWING" ||
       selectedUser.relationship === "FRIEND"
     ) {
-      setLocalErrorMessage("이미 팔로우 중인 친구예요!");
+      notify({
+        dedupeKey: `follow:${selectedUser.slug}`,
+        message: "이미 팔로우 중인 사용자입니다.",
+        tone: "default",
+      });
       return;
     }
 
     followUser.mutate(
       { targetSlug: selectedUser.slug },
-      { onSuccess: () => setIsSuccess(true) },
+      {
+        onSuccess: () => {
+          notify({
+            dedupeKey: `follow:${selectedUser.slug}`,
+            message: `'${selectedUser.nickname}'님을 팔로우했습니다!`,
+            tone: "default",
+          });
+        },
+        onError: (error) => {
+          const isAlreadyFollowing =
+            error.status === 409 ||
+            error.code === "follow.already-following" ||
+            error.message.includes("이미 팔로우");
+          notify({
+            dedupeKey: `follow:${selectedUser.slug}`,
+            message: isAlreadyFollowing
+              ? "이미 팔로우 중인 사용자입니다."
+              : error.message || "팔로우하지 못했습니다.",
+            tone: isAlreadyFollowing ? "default" : "error",
+          });
+        },
+      },
     );
   };
 
   return {
     canSubmit: Boolean(selectedUser) && selectedUser?.relationship !== "ME",
     clearQuery,
-    errorMessage: localErrorMessage ?? followUser.error?.message ?? null,
     isResultsOpen: isSearchEligible && !selectedUser,
     isSearchError: !isSearchDebouncing && searchUsers.isError,
     isSearchLoading:
@@ -101,7 +121,6 @@ export function useAddFriendModalState() {
     hasNextPage: searchUsers.hasNextPage,
     fetchNextPage: searchUsers.fetchNextPage,
     isSubmitting: followUser.isPending,
-    isSuccess,
     query,
     selectUser,
     submit,

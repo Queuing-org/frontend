@@ -13,9 +13,11 @@ import { useProfileSettingsForm } from "../hooks/useProfileSettingsForm";
 import ProfileSettingsForm from "./components/ProfileSettingsForm";
 import ProfileStats from "./components/ProfileStats";
 import styles from "./ProfileSettingsTab.module.css";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 export default function ProfileSettingsTab() {
   const form = useProfileSettingsForm();
+  const { notify } = useActionFeedback();
   const myBadgesQuery = useMyBadges(Boolean(form.me));
   const clearRepresentativeBadge = useClearRepresentativeBadge();
   const setRepresentativeBadge = useSetRepresentativeBadge();
@@ -36,12 +38,6 @@ export default function ProfileSettingsTab() {
   const badgeStatusMessage = (() => {
     if (myBadgesQuery.isError) {
       return "칭호를 불러오지 못했습니다.";
-    }
-
-    const badgeMutationError =
-      setRepresentativeBadge.error ?? clearRepresentativeBadge.error;
-    if (badgeMutationError) {
-      return `대표 칭호 저장 실패: ${badgeMutationError.message}`;
     }
 
     return null;
@@ -85,8 +81,6 @@ export default function ProfileSettingsTab() {
           nicknameFeedback={form.nicknameFeedback}
           statusMessage={form.statusMessage}
           statusMessageFeedback={form.statusMessageFeedback}
-          successMessage={form.successMessage}
-          updateError={form.updateError}
           badgeDisabled={
             !form.me ||
             isBadgeLoading ||
@@ -95,32 +89,69 @@ export default function ProfileSettingsTab() {
             setRepresentativeBadge.isPending ||
             clearRepresentativeBadge.isPending
           }
+          badgeInvalid={Boolean(
+            setRepresentativeBadge.error || clearRepresentativeBadge.error,
+          )}
           badgeOptions={badgeOptions}
           badgeStatusMessage={badgeStatusMessage}
           isBadgePending={isBadgePending}
           badgeValue={representativeBadge?.badgeCode ?? ""}
-          isBadgeStatusError={Boolean(
-            myBadgesQuery.isError ||
-              setRepresentativeBadge.error ||
-              clearRepresentativeBadge.error,
-          )}
+          isBadgeStatusError={myBadgesQuery.isError}
           onBadgeChange={(badgeCode) => {
             if (badgeCode === representativeBadge?.badgeCode) {
               return;
             }
 
             form.clearProfileStatusMessage();
+            setRepresentativeBadge.reset();
+            clearRepresentativeBadge.reset();
 
             if (!badgeCode) {
               if (representativeBadge) {
-                setRepresentativeBadge.reset();
-                clearRepresentativeBadge.mutate();
+                clearRepresentativeBadge.mutate(undefined, {
+                  onSuccess: () => {
+                    notify({
+                      dedupeKey: "profile:representative-badge",
+                      message: "대표 칭호를 해제했습니다.",
+                      tone: "default",
+                    });
+                  },
+                  onError: (error) => {
+                    notify({
+                      dedupeKey: "profile:representative-badge",
+                      message:
+                        error.message || "대표 칭호를 해제하지 못했습니다.",
+                      tone: "error",
+                    });
+                  },
+                });
               }
               return;
             }
 
-            clearRepresentativeBadge.reset();
-            setRepresentativeBadge.mutate({ badgeCode });
+            const badgeName =
+              badgeOptions.find((badge) => badge.badgeCode === badgeCode)
+                ?.name ?? "칭호";
+            setRepresentativeBadge.mutate(
+              { badgeCode },
+              {
+                onSuccess: () => {
+                  notify({
+                    dedupeKey: "profile:representative-badge",
+                    message: `'${badgeName}'을 대표 칭호로 설정했습니다.`,
+                    tone: "default",
+                  });
+                },
+                onError: (error) => {
+                  notify({
+                    dedupeKey: "profile:representative-badge",
+                    message:
+                      error.message || "대표 칭호를 설정하지 못했습니다.",
+                    tone: "error",
+                  });
+                },
+              },
+            );
           }}
           onNicknameChange={form.updateNicknameDraft}
           onProfileSubmit={form.handleProfileSubmit}

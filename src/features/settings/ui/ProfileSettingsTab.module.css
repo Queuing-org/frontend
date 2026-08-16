@@ -136,6 +136,10 @@
   line-height: 1.2;
 }
 
+.selectField[aria-invalid="true"] {
+  border-color: #d94b4b;
+}
+
 .textInput {
   min-width: 0;
   padding: 12px 16px;

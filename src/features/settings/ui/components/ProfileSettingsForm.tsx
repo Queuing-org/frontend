@@ -5,12 +5,12 @@ import {
   STATUS_MESSAGE_MAX_LENGTH,
   type ProfileFieldFeedback,
 } from "../../hooks/useProfileSettingsForm";
-import type { ApiError } from "@/src/shared/api/api-error";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "../ProfileSettingsTab.module.css";
 
 type ProfileSettingsFormProps = {
   badgeDisabled: boolean;
+  badgeInvalid: boolean;
   badgeOptions: Array<{
     badgeCode: string;
     name: string;
@@ -29,8 +29,6 @@ type ProfileSettingsFormProps = {
   nicknameFeedback: ProfileFieldFeedback;
   statusMessage: string;
   statusMessageFeedback: ProfileFieldFeedback;
-  successMessage: string | null;
-  updateError: ApiError | null;
   onBadgeChange: (badgeCode: string) => void;
   onNicknameChange: (value: string) => void;
   onProfileSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -48,6 +46,7 @@ function preventSubmitWhileComposing(event: KeyboardEvent<HTMLInputElement>) {
 
 export default function ProfileSettingsForm({
   badgeDisabled,
+  badgeInvalid,
   badgeOptions,
   badgeStatusMessage,
   badgeValue,
@@ -63,8 +62,6 @@ export default function ProfileSettingsForm({
   nicknameFeedback,
   statusMessage,
   statusMessageFeedback,
-  successMessage,
-  updateError,
   onBadgeChange,
   onNicknameChange,
   onProfileSubmit,
@@ -80,11 +77,7 @@ export default function ProfileSettingsForm({
         }
       : isBadgePending
         ? { message: "칭호 정보 처리 중", tone: "neutral" }
-        : updateError
-          ? { message: `프로필 변경 실패: ${updateError.message}`, tone: "error" }
-          : successMessage
-            ? { message: successMessage, tone: "success" }
-            : null;
+        : null;
 
   if (isMeLoading) {
     return (
@@ -95,7 +88,7 @@ export default function ProfileSettingsForm({
   }
 
   return (
-    <form className={styles.profileForm} onSubmit={onProfileSubmit}>
+    <form className={styles.profileForm} onSubmit={onProfileSubmit} noValidate>
       <div className={styles.formRow}>
         <label className={styles.fieldLabel} htmlFor="settings-nickname">
           사용자 이름
@@ -112,7 +105,16 @@ export default function ProfileSettingsForm({
           disabled={!hasProfile || isUpdatingProfile || isMeLoading}
           autoComplete="nickname"
           data-feedback={nicknameFeedback ?? undefined}
+          aria-invalid={nicknameFeedback === "error"}
+          aria-describedby={
+            nicknameFeedback === "error"
+              ? "settings-nickname-error"
+              : undefined
+          }
         />
+        <span id="settings-nickname-error" className={styles.srOnly}>
+          사용자 이름 입력을 확인해 주세요.
+        </span>
       </div>
       <div className={styles.formRow}>
         <label className={styles.fieldLabel} htmlFor="settings-status-message">
@@ -128,8 +130,13 @@ export default function ProfileSettingsForm({
             placeholder="최애곡을 입력하세요"
             maxLength={STATUS_MESSAGE_MAX_LENGTH}
             disabled={!hasProfile || isUpdatingProfile || isMeLoading}
-            aria-describedby="settings-status-message-count settings-status-message-hint"
+            aria-describedby={`settings-status-message-count settings-status-message-hint${
+              statusMessageFeedback === "error"
+                ? " settings-status-message-error"
+                : ""
+            }`}
             data-feedback={statusMessageFeedback ?? undefined}
+            aria-invalid={statusMessageFeedback === "error"}
           />
           <span
             id="settings-status-message-count"
@@ -140,6 +147,9 @@ export default function ProfileSettingsForm({
         </div>
         <span id="settings-status-message-hint" className={styles.srOnly}>
           최대 20자, 빈 문자열로 저장하면 삭제됩니다.
+        </span>
+        <span id="settings-status-message-error" className={styles.srOnly}>
+          최애곡 입력을 확인해 주세요.
         </span>
       </div>
       <div className={styles.formRow}>
@@ -153,6 +163,8 @@ export default function ProfileSettingsForm({
             value={badgeValue}
             onChange={(event) => onBadgeChange(event.target.value)}
             disabled={badgeDisabled}
+            aria-invalid={badgeInvalid}
+            aria-describedby={badgeInvalid ? "settings-badge-error" : undefined}
           >
             <option value="">
               {hasProfile ? "칭호 없음" : "로그인이 필요합니다"}
@@ -169,6 +181,9 @@ export default function ProfileSettingsForm({
           </select>
           <span className={styles.chevron} aria-hidden="true" />
         </div>
+        <span id="settings-badge-error" className={styles.srOnly}>
+          대표 칭호 저장에 실패했습니다.
+        </span>
       </div>
       <div className={styles.formFooter}>
         <div
@@ -177,7 +192,7 @@ export default function ProfileSettingsForm({
           role={feedback?.tone === "error" ? "alert" : "status"}
           aria-live="polite"
         >
-          {isBadgePending && !updateError && !successMessage && !isMeError ? (
+          {isBadgePending && !isMeError ? (
             <LoadingSpinner
               announce={false}
               ariaLabel="칭호 정보 처리 중"

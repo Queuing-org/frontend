@@ -16,6 +16,8 @@ import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowe
 import RoomProfilePanel from "./RoomProfilePanel";
 import { ApiError } from "@/src/shared/api/api-error";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 vi.mock("next/image", () => ({
   default: ({
     height,
@@ -50,6 +52,9 @@ vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
 }));
 vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
   useTransferRoomOwner: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 vi.mock("@/src/features/follow/follow/ui/FollowToggleButton", () => ({
   default: ({
@@ -336,6 +341,34 @@ describe("RoomProfilePanel", () => {
     );
   });
 
+  it("음악력 올리기 성공은 대상 닉네임을 포함한 공통 알림으로 표시한다", () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onSuccess: () => void;
+    };
+    act(() => mutationOptions.onSuccess());
+
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "music-power:room:entry-1:target-user",
+      message: "'대상'님의 음악력을 올렸습니다!",
+      tone: "default",
+    });
+  });
+
+  it("같은 곡의 음악력 버튼을 연타해도 mutation은 한 번만 요청한다", () => {
+    renderPanel();
+
+    const upButton = screen.getByRole("button", { name: "음악력 올리기" });
+    fireEvent.click(upButton);
+    fireEvent.click(upButton);
+    fireEvent.click(screen.getByRole("button", { name: "음악력 내리기" }));
+
+    expect(mutate).toHaveBeenCalledOnce();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it("이미 투표한 재생 건의 반대 방향 클릭도 API 없이 안내한다", async () => {
     const user = userEvent.setup();
     vi.mocked(useMusicPower).mockReturnValue({
@@ -350,42 +383,28 @@ describe("RoomProfilePanel", () => {
 
     await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
     expect(mutate).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "각 노래당 한번만 투표할 수 있어요",
-    );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "music-power:room:entry-1:target-user",
+      message: "같은 곡에는 한 번만 음악력을 평가할 수 있습니다.",
+      tone: "default",
+    });
   });
 
-  it("서버 오류를 음악력 제목 오른쪽에 2초 동안 표시한다", () => {
-    vi.useFakeTimers();
+  it("서버 오류를 공통 오류 알림으로 표시한다", () => {
     renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-
     const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
       onError: (error: Error) => void;
     };
     act(() => {
-      mutationOptions.onError(
-        new Error(
-          "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
-        ),
-      );
+      mutationOptions.onError(new Error("음악력을 변경하지 못했습니다."));
     });
 
-    const notice = screen.getByRole("alert");
-    expect(notice).toHaveTextContent(
-      "같은 사용자에게는 1시간에 한 번만 음악력을 올리거나 내릴 수 있습니다.",
-    );
-    expect(screen.getByText("음악력").parentElement).toContainElement(notice);
-
-    act(() => {
-      vi.advanceTimersByTime(1_999);
-    });
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-
-    act(() => {
-      vi.advanceTimersByTime(1);
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "music-power:room:entry-1:target-user",
+      message: "음악력을 변경하지 못했습니다.",
+      tone: "error",
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -407,12 +426,14 @@ describe("RoomProfilePanel", () => {
       );
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "각 노래당 한번만 투표할 수 있어요",
-    );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "music-power:room:entry-1:target-user",
+      message: "같은 곡에는 한 번만 음악력을 평가할 수 있습니다.",
+      tone: "default",
+    });
   });
 
-  it("신청자가 바뀌면 이전 신청자의 음악력 안내를 표시하지 않는다", () => {
+  it("신청자가 바뀌어도 음악력 오류는 인라인에 남기지 않는다", () => {
     const { rerender } = renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
@@ -422,7 +443,10 @@ describe("RoomProfilePanel", () => {
     act(() => {
       mutationOptions.onError(new Error("음악력 투표 오류"));
     });
-    expect(screen.getByRole("alert")).toBeInTheDocument();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+      message: "음악력 투표 오류",
+      tone: "error",
+    }));
 
     rerender(
       <RoomProfilePanel
@@ -451,9 +475,11 @@ describe("RoomProfilePanel", () => {
     fireEvent.click(upButton);
 
     expect(mutate).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "로그인 후 음악력을 올리거나 내릴 수 있습니다.",
-    );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "music-power:room:entry-1:target-user",
+      message: "로그인 후 음악력을 평가할 수 있습니다.",
+      tone: "default",
+    });
   });
 
   it("처리 중이어도 음악력 버튼을 비활성화하지 않는다", () => {
@@ -512,7 +538,10 @@ describe("RoomProfilePanel", () => {
     act(() => {
       mutationOptions.onError(new Error("음악력 투표 오류"));
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("음악력 투표 오류");
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+      message: "음악력 투표 오류",
+      tone: "error",
+    }));
   });
 
   it("본인에게는 공통 타이틀과 내 노래 상태를 표시하고 음악력·관계 액션을 숨긴다", () => {
@@ -797,9 +826,11 @@ describe("RoomProfilePanel", () => {
     await user.click(screen.getByRole("button", { name: "관리" }));
     await user.click(screen.getByRole("menuitem", { name: "신고" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "신고할 수 있는 채팅 메시지가 없습니다.",
-    );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "report:no-message:room:target-user",
+      message: "신고할 수 있는 채팅 메시지가 없습니다.",
+      tone: "default",
+    });
     expect(
       screen.queryByRole("dialog", { name: "채팅 메시지 신고" }),
     ).not.toBeInTheDocument();
@@ -881,9 +912,13 @@ describe("RoomProfilePanel", () => {
     await user.click(screen.getByRole("button", { name: "관리" }));
     await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
 
-    expect(
-      await screen.findByText("현재 참가 중인 회원을 찾지 못했습니다."),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-member:transfer:room:target-user",
+        message: "현재 참가 중인 회원을 찾지 못했습니다.",
+        tone: "error",
+      });
+    });
     expect(transferMutate).not.toHaveBeenCalled();
   });
 
@@ -920,14 +955,11 @@ describe("RoomProfilePanel", () => {
       { slug: "room", userSlug: "target-user" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
-    expect(transferMutate.mock.calls.at(-1)?.[1]).not.toHaveProperty(
-      "onSuccess",
-    );
+    expect(transferMutate.mock.calls.at(-1)?.[1]).toHaveProperty("onSuccess");
     expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
   });
 
-  it("방장 위임 실패만 2초 동안 표시하고 자동으로 제거한다", () => {
-    vi.useFakeTimers();
+  it("방장 위임 실패를 공통 오류 알림으로 표시한다", () => {
     renderPanel(requester, {
       currentUser: { ...currentUser, slug: "owner" },
     });
@@ -942,17 +974,10 @@ describe("RoomProfilePanel", () => {
       mutationOptions.onError(new Error("방장 위임 요청에 실패했습니다."));
     });
 
-    expect(screen.getByRole("alert")).toHaveTextContent(
-      "방장 위임 요청에 실패했습니다.",
-    );
-
-    act(() => {
-      vi.advanceTimersByTime(1_999);
-    });
-    expect(screen.getByRole("alert")).toBeInTheDocument();
-
-    act(() => {
-      vi.advanceTimersByTime(1);
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-member:transfer:room:target-user",
+      message: "방장 위임 요청에 실패했습니다.",
+      tone: "error",
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
