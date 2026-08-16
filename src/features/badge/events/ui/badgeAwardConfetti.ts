@@ -4,14 +4,12 @@ export async function launchBadgeAwardConfetti(signal?: AbortSignal) {
     return;
   }
   const scopedConfetti = confetti.create(undefined, {
-    disableForReducedMotion: true,
     resize: true,
   });
   const reset = () => scopedConfetti.reset();
   signal?.addEventListener("abort", reset, { once: true });
   const common = {
     colors: ["#2f86ed", "#7c5cff", "#ffcc4d", "#ff6b8a", "#ffffff"],
-    disableForReducedMotion: true,
     particleCount: 58,
     scalar: 0.9,
     spread: 72,

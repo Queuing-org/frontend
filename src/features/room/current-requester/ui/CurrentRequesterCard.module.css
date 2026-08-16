@@ -11,8 +11,9 @@
 
 .skipButton {
   position: absolute;
-  top: var(--room-requester-skip-top, 10px);
+  top: 50%;
   right: var(--room-requester-skip-right, 14px);
+  transform: translateY(-50%);
 }
 
 .avatar {
@@ -106,7 +107,6 @@
   }
 
   .skipButton {
-    top: 0.75rem;
     right: 0.75rem;
   }
 

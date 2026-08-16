@@ -1,7 +1,6 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
-import type { RefObject } from "react";
 import styles from "./RoomControlBar.module.css";
 
 type IconProps = {
@@ -13,31 +12,13 @@ type Props = {
   isParticipantsOpen: boolean;
   isProfileOpen: boolean;
   isQueueOpen: boolean;
-  exitButtonRef?: RefObject<HTMLButtonElement | null>;
-  onExit: () => void;
+  onCloseAll: () => void;
   onToggleChat: () => void;
   onToggleParticipants: () => void;
   onToggleProfile: () => void;
   onToggleQueue: () => void;
   onResetWidgetPositions: () => void;
 };
-
-function ProfileIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 20 20"
-      className={className}
-      aria-hidden="true"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M10 0C8.67392 0 7.40215 0.526784 6.46447 1.46447C5.52678 2.40215 5 3.67392 5 5C5 6.32608 5.52678 7.59785 6.46447 8.53553C7.40215 9.47322 8.67392 10 10 10C11.3261 10 12.5979 9.47322 13.5355 8.53553C14.4732 7.59785 15 6.32608 15 5C15 3.67392 14.4732 2.40215 13.5355 1.46447C12.5979 0.526784 11.3261 0 10 0ZM10 12.5C4.475 12.5 0 14.7375 0 17.5V20H20V17.5C20 14.7375 15.525 12.5 10 12.5Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
 
 function QueueIcon({ className }: IconProps) {
   return (
@@ -73,15 +54,6 @@ function ExitIcon({ className }: IconProps) {
   );
 }
 
-function HamburgerIcon({ className }: IconProps) {
-  return (
-    <span
-      className={[styles.hamburgerIcon, className].filter(Boolean).join(" ")}
-      aria-hidden="true"
-    />
-  );
-}
-
 function ChatIcon({ className }: IconProps) {
   return (
     <svg
@@ -101,8 +73,7 @@ export default function RoomButtonControlBar({
   isParticipantsOpen,
   isProfileOpen,
   isQueueOpen,
-  exitButtonRef,
-  onExit,
+  onCloseAll,
   onToggleChat,
   onToggleParticipants,
   onToggleProfile,
@@ -120,7 +91,10 @@ export default function RoomButtonControlBar({
           data-selected={isProfileOpen}
           onClick={onToggleProfile}
         >
-          <ProfileIcon className={styles.icon} />
+          <span
+            className={`${styles.maskIcon} ${styles.playerIcon}`}
+            aria-hidden="true"
+          />
         </button>
         <button
           type="button"
@@ -133,11 +107,10 @@ export default function RoomButtonControlBar({
           <QueueIcon className={styles.icon} />
         </button>
         <button
-          ref={exitButtonRef}
           type="button"
           className={styles.iconButton}
-          aria-label="나가기"
-          onClick={onExit}
+          aria-label="열린 모달 모두 닫기"
+          onClick={onCloseAll}
         >
           <ExitIcon className={styles.icon} />
         </button>
@@ -149,7 +122,10 @@ export default function RoomButtonControlBar({
           data-selected={isParticipantsOpen}
           onClick={onToggleParticipants}
         >
-          <HamburgerIcon className={styles.icon} />
+          <span
+            className={`${styles.maskIcon} ${styles.participantsIcon}`}
+            aria-hidden="true"
+          />
         </button>
         <button
           type="button"

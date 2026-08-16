@@ -22,6 +22,12 @@
   background: #f7f7f9;
 }
 
+.item[data-current-user="true"],
+.item[data-current-user="true"]:hover,
+.item[data-current-user="true"][data-dragging="true"] {
+  background: rgb(59 130 246 / 8%);
+}
+
 .item[data-drag-disabled="false"]:hover {
   cursor: move;
 }
@@ -31,6 +37,12 @@
   background: #fff;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
   opacity: 1;
+}
+
+.item[data-active="true"],
+.item[data-active="true"]:hover,
+.item[data-active="true"][data-dragging="true"] {
+  background: #f7f7f9;
 }
 
 .thumbnailWrap {
@@ -215,13 +227,6 @@
   width: 14px;
   height: 14px;
   -webkit-user-drag: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .equalizerBar {
-    animation: none;
-    transform: none;
-  }
 }
 
 @media (max-width: 760px) {

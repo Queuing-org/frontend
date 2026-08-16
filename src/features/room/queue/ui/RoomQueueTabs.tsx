@@ -37,7 +37,7 @@ export default function RoomQueueTabs({
         data-active={activeTab === "mine"}
         onClick={() => onChange("mine")}
       >
-        내 신청곡
+        내 노래
         <span className={styles.tabCount}>{myCount}</span>
       </button>
     </div>

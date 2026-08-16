@@ -80,10 +80,30 @@
   display: block;
 }
 
-.hamburgerIcon {
+.maskIcon {
+  display: block;
+  flex-shrink: 0;
   background: currentColor;
-  mask: url("/icons/hambuger.svg") center / contain no-repeat;
-  -webkit-mask: url("/icons/hambuger.svg") center / contain no-repeat;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+.playerIcon {
+  width: 24px;
+  height: 18px;
+  mask-image: url("/icons/player.svg");
+  -webkit-mask-image: url("/icons/player.svg");
+}
+
+.participantsIcon {
+  width: 27px;
+  height: 20px;
+  mask-image: url("/icons/player_list.svg");
+  -webkit-mask-image: url("/icons/player_list.svg");
 }
 
 @media (min-width: 761px) and (max-height: 900px) {

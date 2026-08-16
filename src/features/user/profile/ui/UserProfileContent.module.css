@@ -39,6 +39,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.name[data-line-clamp="2"],
+.statusCardValue[data-line-clamp="2"] {
+  display: -webkit-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
 .ownerIcon { flex-shrink: 0; opacity: 0.9; }
 .activity {
   margin-top: 3px;

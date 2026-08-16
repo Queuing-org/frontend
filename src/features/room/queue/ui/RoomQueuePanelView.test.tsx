@@ -28,6 +28,7 @@ describe("RoomQueuePanelView", () => {
         isDeleteMyPending={false}
         isDeleteRoomPending={false}
         isEmptyLoading={false}
+        isCurrentUserEntry={() => false}
         isFetchingNextAllQueuePage={false}
         isFetchingNextMyQueuePage={false}
         isMoveMyPending={false}

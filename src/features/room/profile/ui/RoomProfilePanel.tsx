@@ -431,6 +431,9 @@ export default function RoomProfilePanel({
     <div className={styles.root}>
       {currentRequester ? (
         <>
+          <div className={styles.header}>
+            <div className={styles.title}>현재 큐잉 중</div>
+          </div>
           <UserProfileContent
             actions={
               !isSelf && shouldShowFollowAction ? (
@@ -514,7 +517,7 @@ export default function RoomProfilePanel({
                 </div>
               ) : null
             }
-            activityLabel="현재 큐잉 중..."
+            activityLabel={null}
             avatarUrl={displayAvatarUrl}
             badgeLabel={targetSlug ? badgeValue : "-"}
             feedback={
@@ -608,7 +611,7 @@ export default function RoomProfilePanel({
               isSelf ? (
                 <div
                   className={styles.selfTrackStatus}
-                  aria-label="내 신청곡 재생 상태"
+                  aria-label="내 노래 재생 상태"
                 >
                   <span
                     className={styles.selfTrackStatusDot}
@@ -620,6 +623,7 @@ export default function RoomProfilePanel({
             }
             queuingCount={publicProfile?.queuingCount}
             statusMessage={statusMessage}
+            textLineClamp={2}
           />
           <BlockUserModal
             onBlocked={(target) => {

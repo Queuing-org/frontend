@@ -194,7 +194,7 @@
   display: inline-flex;
   max-width: 100%;
   align-items: center;
-  margin-right: var(--room-chat-nickname-margin-right, 12px);
+  margin-right: var(--room-chat-nickname-margin-right, 20px);
   vertical-align: bottom;
   white-space: nowrap;
 }

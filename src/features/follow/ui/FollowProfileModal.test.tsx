@@ -81,6 +81,7 @@ describe("FollowProfileModal", () => {
     );
 
     expect(screen.getByText("공개 닉네임")).toBeInTheDocument();
+    expect(screen.getByText("공개 프로필")).toBeInTheDocument();
     expect(screen.getByText("리듬 장인")).toBeInTheDocument();
     expect(screen.getByText("오늘도 큐잉")).toBeInTheDocument();
     expect(screen.getByText("12")).toBeInTheDocument();

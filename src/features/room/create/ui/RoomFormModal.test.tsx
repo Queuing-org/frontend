@@ -379,7 +379,7 @@ describe("RoomFormModal room form flows", () => {
     });
   });
 
-  it("필수 최대 인원은 정해진 옵션만 제공하고 미선택 생성을 막는다", async () => {
+  it("최대 인원은 빈 옵션 없이 10명이 기본이고 다른 인원도 선택할 수 있다", async () => {
     const user = userEvent.setup();
     vi.mocked(createRoom).mockResolvedValue({ slug: "required-capacity-room" });
     renderCreateRoomModal();
@@ -390,7 +390,7 @@ describe("RoomFormModal room form flows", () => {
     await user.click(screen.getByRole("button", { name: "다음" }));
 
     const maxParticipantsSelect = screen.getByLabelText("최대 인원 수");
-    expect(maxParticipantsSelect).toHaveValue("");
+    expect(maxParticipantsSelect).toHaveValue("10");
     expect(maxParticipantsSelect).toBeRequired();
     expect(
       within(maxParticipantsSelect).getAllByRole("option").map((option) => ({
@@ -398,7 +398,6 @@ describe("RoomFormModal room form flows", () => {
         value: (option as HTMLOptionElement).value,
       })),
     ).toEqual([
-      { text: "최대 인원 선택", value: "" },
       ...[2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(
         (participants) => ({
           text: `${participants}명`,
@@ -406,17 +405,17 @@ describe("RoomFormModal room form flows", () => {
         }),
       ),
     ]);
+    expect(within(maxParticipantsSelect).queryByDisplayValue(""))
+      .not.toBeInTheDocument();
     expect(within(maxParticipantsSelect).queryByText("제한 없음")).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "완료" }));
-    expect(screen.getByText("최대 인원을 선택해주세요.")).toBeInTheDocument();
-    expect(createRoom).not.toHaveBeenCalled();
-
     await selectRequiredMaxParticipants(user, "20");
+    expect(maxParticipantsSelect).toHaveValue("20");
+    await selectRequiredMaxParticipants(user, "10");
     await user.click(screen.getByRole("button", { name: "완료" }));
     await waitFor(() => expect(createRoom).toHaveBeenCalledOnce());
     expect(vi.mocked(createRoom).mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ maxParticipants: 20 }),
+      expect.objectContaining({ maxParticipants: 10 }),
     );
   });
 
@@ -430,9 +429,11 @@ describe("RoomFormModal room form flows", () => {
     await user.click(screen.getByRole("button", { name: "다음" }));
 
     await user.click(screen.getByLabelText("참여 제한"));
-    expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "참여 제한 옵션" })).toBeInTheDocument();
 
     const toggle = screen.getByRole("button", { name: "참여 제한 옵션 열기" });
+    await user.click(toggle);
+    expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
     await user.click(toggle);
     expect(screen.getByRole("group", { name: "참여 제한 옵션" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "누구나 참여", pressed: true })).toBeInTheDocument();
@@ -445,6 +446,25 @@ describe("RoomFormModal room form flows", () => {
     await user.click(toggle);
     fireEvent.pointerDown(document.body);
     expect(screen.queryByRole("group", { name: "참여 제한 옵션" })).not.toBeInTheDocument();
+  });
+
+  it("비밀번호 모드 선택과 입력 영역 클릭에서 비밀번호 포커스를 유지한다", async () => {
+    const user = userEvent.setup();
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "비밀번호 포커스 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+
+    await user.click(screen.getByRole("button", { name: "참여 제한 옵션 열기" }));
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+
+    const passwordInput = screen.getByLabelText("참여 제한");
+    expect(passwordInput).toHaveFocus();
+    await user.click(passwordInput);
+    expect(passwordInput).toHaveFocus();
+    expect(screen.getByRole("group", { name: "참여 제한 옵션" })).toBeInTheDocument();
   });
 
   it("공개 전환 중 비밀번호를 보존하고 공개 payload에서는 제외한다", async () => {
@@ -463,7 +483,6 @@ describe("RoomFormModal room form flows", () => {
     await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
     await user.type(screen.getByLabelText("참여 제한"), "secret");
 
-    await user.click(toggle);
     await user.click(screen.getByRole("button", { name: "누구나 참여" }));
     expect(screen.getByLabelText("참여 제한")).toHaveValue("누구나 참여");
 

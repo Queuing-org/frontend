@@ -16,6 +16,7 @@ type ProfileSettingsFormProps = {
   badgeValue: string;
   canUpdateProfile: boolean;
   hasProfile: boolean;
+  hasProfileChanges: boolean;
   isBadgeStatusError: boolean;
   isBadgePending: boolean;
   isMeError: boolean;
@@ -49,6 +50,7 @@ export default function ProfileSettingsForm({
   badgeValue,
   canUpdateProfile,
   hasProfile,
+  hasProfileChanges,
   isBadgeStatusError,
   isBadgePending,
   isMeError,
@@ -173,18 +175,24 @@ export default function ProfileSettingsForm({
           ) : null}
           {feedback?.message ?? ""}
         </div>
-        <button
-          type="submit"
-          className={styles.completeButton}
-          disabled={!canUpdateProfile}
-          aria-busy={isUpdatingProfile}
-        >
-          {isUpdatingProfile ? (
-            <LoadingSpinner ariaLabel="프로필 변경 중" color="#ffffff" size={16} />
-          ) : (
-            "완료"
-          )}
-        </button>
+        {hasProfileChanges ? (
+          <button
+            type="submit"
+            className={styles.completeButton}
+            disabled={!canUpdateProfile}
+            aria-busy={isUpdatingProfile}
+          >
+            {isUpdatingProfile ? (
+              <LoadingSpinner
+                ariaLabel="프로필 변경 중"
+                color="#ffffff"
+                size={16}
+              />
+            ) : (
+              "완료"
+            )}
+          </button>
+        ) : null}
       </div>
     </form>
   );

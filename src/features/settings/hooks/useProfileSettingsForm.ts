@@ -52,9 +52,10 @@ export function useProfileSettingsForm() {
   const isNicknameValid =
     trimmedNickname.length >= NICKNAME_MIN_LENGTH &&
     trimmedNickname.length <= NICKNAME_MAX_LENGTH;
+  const hasProfileChanges = hasNicknameChange || hasStatusMessageChange;
   const canUpdateProfile =
     Boolean(me) &&
-    (hasNicknameChange || hasStatusMessageChange) &&
+    hasProfileChanges &&
     (!hasNicknameChange || isNicknameValid) &&
     !isUpdatingProfile;
 
@@ -166,6 +167,7 @@ export function useProfileSettingsForm() {
     clearProfileStatusMessage,
     handleProfileSubmit,
     hasProfile: Boolean(me),
+    hasProfileChanges,
     isMeError,
     isMeLoading,
     isUpdatingProfile,

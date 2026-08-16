@@ -105,15 +105,29 @@ describe("프로필 통합 저장 폼", () => {
     const { result } = renderProfileForm();
 
     expect(result.current.canUpdateProfile).toBe(false);
+    expect(result.current.hasProfileChanges).toBe(false);
 
     act(() => result.current.updateStatusMessageDraft("새 메시지"));
     expect(result.current.canUpdateProfile).toBe(true);
+    expect(result.current.hasProfileChanges).toBe(true);
 
     act(() => result.current.updateNicknameDraft("한"));
     expect(result.current.canUpdateProfile).toBe(false);
+    expect(result.current.hasProfileChanges).toBe(true);
 
     act(() => result.current.updateNicknameDraft("한글"));
     expect(result.current.canUpdateProfile).toBe(true);
+  });
+
+  it("저장 성공 후 변경 상태를 초기화해 완료 버튼을 숨길 수 있게 한다", () => {
+    const { result } = renderProfileForm();
+
+    act(() => result.current.updateStatusMessageDraft("새 메시지"));
+    submit(result);
+    act(() => getMutationOptions().onSuccess());
+
+    expect(result.current.hasProfileChanges).toBe(false);
+    expect(result.current.canUpdateProfile).toBe(false);
   });
 
   it("줄바꿈을 제거하고 255자로 제한한다", () => {

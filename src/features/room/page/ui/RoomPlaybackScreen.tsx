@@ -797,6 +797,23 @@ function RoomPlaybackJoinedContent({
         />
       </div>
       <div ref={desktopWheelRegionRef} className={styles.container}>
+        <button
+          ref={leaveButtonRef}
+          type="button"
+          className={styles.desktopExitButton}
+          aria-label="방 나가기"
+          onClick={() => setIsLeaveDialogOpen(true)}
+        >
+          <Image
+            src="/icons/door.svg"
+            alt=""
+            aria-hidden="true"
+            width={13}
+            height={14}
+            className={styles.desktopExitIcon}
+          />
+          <span>나가기</span>
+        </button>
         <div className={styles.mainArea}>
           <RoomInfo
             roomInfo={roomMeta}
@@ -856,12 +873,11 @@ function RoomPlaybackJoinedContent({
           </div>
           <div className={styles.controlBarDock}>
             <RoomButtonControlBar
-              exitButtonRef={leaveButtonRef}
               isChatOpen={floatingWidgets.widgets.chat.isOpen}
               isParticipantsOpen={floatingWidgets.widgets.participants.isOpen}
               isProfileOpen={floatingWidgets.widgets.profile.isOpen}
               isQueueOpen={floatingWidgets.widgets.queue.isOpen}
-              onExit={() => setIsLeaveDialogOpen(true)}
+              onCloseAll={floatingWidgets.closeAllWidgets}
               onToggleChat={() => floatingWidgets.toggleWidget("chat")}
               onToggleParticipants={() =>
                 floatingWidgets.toggleWidget("participants")

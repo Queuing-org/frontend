@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import styles from "./FollowUserCard.module.css";
 
 type Props = {
@@ -29,6 +29,7 @@ export default function FollowUserCard({
   roomLink,
   trailingAction,
 }: Props) {
+  const roomTooltipId = useId();
   const profileImageSrc = profileImageUrl || "/Basic_Profile.png";
   const profile = (
     <>
@@ -87,6 +88,7 @@ export default function FollowUserCard({
             className={styles.roomAction}
             href={roomLink.href}
             aria-label={roomLink.label}
+            aria-describedby={roomTooltipId}
           >
             <Image
               src="/icons/round_arrow.svg"
@@ -95,6 +97,13 @@ export default function FollowUserCard({
               height={16}
               className={styles.roomActionIcon}
             />
+            <span
+              id={roomTooltipId}
+              className={styles.roomActionTooltip}
+              role="tooltip"
+            >
+              따라가기
+            </span>
           </Link>
         ) : null}
         {trailingAction ? (

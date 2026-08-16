@@ -629,6 +629,22 @@ export function useFloatingWidgetsState() {
     }
   }
 
+  function closeAllWidgets() {
+    WIDGET_IDS.forEach((widgetId) => {
+      setWidgetOpen(widgetId, false);
+    });
+    setActiveWidget(null);
+
+    if (!isMobileWidgetViewport()) {
+      WIDGET_IDS.forEach((widgetId) => {
+        window.localStorage.setItem(
+          WIDGET_CONFIG[widgetId].openStorageKey,
+          "false",
+        );
+      });
+    }
+  }
+
   function activateWidget(widgetId: WidgetId) {
     setActiveWidget(widgetId);
   }
@@ -721,6 +737,7 @@ export function useFloatingWidgetsState() {
 
   return {
     activateWidget,
+    closeAllWidgets,
     handleWidgetStop,
     isViewportReady: isHydrated,
     resetWidgetPositions,

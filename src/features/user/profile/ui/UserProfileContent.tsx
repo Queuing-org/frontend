@@ -7,7 +7,7 @@ import styles from "./UserProfileContent.module.css";
 
 type Props = {
   actions?: ReactNode;
-  activityLabel?: string;
+  activityLabel?: string | null;
   avatarUrl: string | null;
   badgeLabel: string;
   feedback?: ReactNode;
@@ -21,6 +21,7 @@ type Props = {
   primaryStatus?: ReactNode;
   queuingCount?: number;
   statusMessage: string;
+  textLineClamp?: 1 | 2;
 };
 
 export default function UserProfileContent({
@@ -39,6 +40,7 @@ export default function UserProfileContent({
   primaryStatus,
   queuingCount,
   statusMessage,
+  textLineClamp = 1,
 }: Props) {
   return (
     <>
@@ -61,7 +63,9 @@ export default function UserProfileContent({
         </div>
         <div className={styles.nameBlock}>
           <div className={styles.nameRow}>
-            <div className={styles.name}>{nickname}</div>
+            <div className={styles.name} data-line-clamp={textLineClamp}>
+              {nickname}
+            </div>
             {isOwner ? (
               <Image
                 src="/icons/onwer_black.svg"
@@ -72,7 +76,9 @@ export default function UserProfileContent({
               />
             ) : null}
           </div>
-          <div className={styles.activity}>{activityLabel}</div>
+          {activityLabel ? (
+            <div className={styles.activity}>{activityLabel}</div>
+          ) : null}
         </div>
       </div>
       {primaryStatus}
@@ -93,6 +99,7 @@ export default function UserProfileContent({
           <div className={styles.cardTitle}>한 줄 소개</div>
           <div
             className={`${styles.cardValue} ${styles.statusCardValue}`}
+            data-line-clamp={textLineClamp}
             title={statusMessage || undefined}
           >
             {statusMessage || "-"}

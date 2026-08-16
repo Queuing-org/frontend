@@ -44,30 +44,3 @@
     transform: translateX(var(--marquee-offset));
   }
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .viewport[data-overflowing="true"] {
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .viewport[data-overflowing="true"]::-webkit-scrollbar {
-    display: none;
-  }
-
-  .viewport[data-overflowing="true"] .track {
-    animation: none;
-  }
-
-  .viewport[data-overflowing="true"][data-activation="auto"] .track,
-  :global([data-marquee-group]:hover)
-    .viewport[data-overflowing="true"][data-activation="group-hover"]
-    .track,
-  :global([data-marquee-group]:focus-within)
-    .viewport[data-overflowing="true"][data-activation="group-hover"]
-    .track,
-  .viewport[data-overflowing="true"][data-activation="hover"]:hover .track,
-  .viewport[data-overflowing="true"][data-activation="hover"]:focus .track {
-    animation: none;
-  }
-}

@@ -37,6 +37,10 @@ describe("FollowPresenceCard", () => {
     expect(
       screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
     ).toHaveAttribute("href", "/room/late-night-jazz");
+    const tooltip = screen.getByText("따라가기");
+    expect(
+      screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
+    ).toHaveAttribute("aria-describedby", tooltip.id);
   });
 
   it("방에 참여하지 않은 온라인 사용자는 온라인으로 표시한다", () => {

@@ -32,9 +32,11 @@ describe("launchBadgeAwardConfetti", () => {
     await launch;
 
     expect(confettiMocks.create).toHaveBeenCalledWith(undefined, {
-      disableForReducedMotion: true,
       resize: true,
     });
+    for (const [options] of confettiMocks.fire.mock.calls) {
+      expect(options).not.toHaveProperty("disableForReducedMotion");
+    }
     expect(confettiMocks.reset).toHaveBeenCalledOnce();
   });
 

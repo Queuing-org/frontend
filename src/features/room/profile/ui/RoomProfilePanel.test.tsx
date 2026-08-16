@@ -227,6 +227,11 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByText("4시간 5분")).toBeInTheDocument();
     expect(screen.getByText("55")).toBeInTheDocument();
     expect(screen.getByText("좋은 음악 같이 들어요")).toBeInTheDocument();
+    expect(screen.getByText("대상")).toHaveAttribute("data-line-clamp", "2");
+    expect(screen.getByText("좋은 음악 같이 들어요")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
     expect(screen.getByText("한 줄 소개")).toBeInTheDocument();
     expect(screen.queryByText("최애곡")).not.toBeInTheDocument();
     expect(screen.queryByText(/1시간에 한 번/)).not.toBeInTheDocument();
@@ -439,7 +444,7 @@ describe("RoomProfilePanel", () => {
     };
     renderPanel(requester, { currentUser: selfUser });
 
-    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+    expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );
     expect(
@@ -495,7 +500,7 @@ describe("RoomProfilePanel", () => {
       />,
     );
 
-    expect(screen.getByLabelText("내 신청곡 재생 상태")).toHaveTextContent(
+    expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );
     expect(
@@ -536,7 +541,9 @@ describe("RoomProfilePanel", () => {
     } as ReturnType<typeof useUserProfile>);
     renderPanel();
 
-    expect(screen.getByText("현재 큐잉 중...")).toBeInTheDocument();
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
+    expect(screen.queryByText("현재 큐잉 중...")).not.toBeInTheDocument();
+    expect(screen.queryByText("공개 프로필")).not.toBeInTheDocument();
     const actions = screen.getByRole("group", { name: "프로필 액션" });
     expect(actions).toContainElement(
       screen.getByRole("button", { name: "팔로잉" }),

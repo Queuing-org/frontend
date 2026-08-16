@@ -293,6 +293,37 @@ describe("floating widget laptop compact layout", () => {
     );
   });
 
+  it("열린 모든 위젯을 닫고 open 저장 상태를 false로 동기화한다", () => {
+    widgetIds.forEach((widgetId) => {
+      const storageKey =
+        widgetId === "chat"
+          ? "isChatOpen"
+          : widgetId === "participants"
+            ? "isParticipantsOpen"
+            : widgetId === "profile"
+              ? "isProfileOpen"
+              : "isQueueOpen";
+      window.localStorage.setItem(storageKey, "true");
+    });
+    const { result } = renderHook(() => useFloatingWidgetsState());
+
+    expect(Object.values(result.current.widgets).every((widget) => widget.isOpen)).toBe(
+      true,
+    );
+
+    act(() => {
+      result.current.closeAllWidgets();
+    });
+
+    expect(Object.values(result.current.widgets).every((widget) => !widget.isOpen)).toBe(
+      true,
+    );
+    expect(window.localStorage.getItem("isChatOpen")).toBe("false");
+    expect(window.localStorage.getItem("isParticipantsOpen")).toBe("false");
+    expect(window.localStorage.getItem("isProfileOpen")).toBe("false");
+    expect(window.localStorage.getItem("isQueueOpen")).toBe("false");
+  });
+
   it("서버 렌더에서는 저장된 open 상태를 노출하지 않는다", () => {
     window.localStorage.setItem("isProfileOpen", "true");
 

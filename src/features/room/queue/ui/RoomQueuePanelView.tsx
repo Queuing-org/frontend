@@ -27,6 +27,7 @@ type RoomQueuePanelViewProps = {
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
   isEmptyLoading: boolean;
+  isCurrentUserEntry: (entry: PlaylistEntry) => boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
   isOwner: boolean;
@@ -61,6 +62,7 @@ export default function RoomQueuePanelView({
   isDeleteMyPending,
   isDeleteRoomPending,
   isEmptyLoading,
+  isCurrentUserEntry,
   isMoveMyPending,
   isMoveRoomPending,
   isOwner,
@@ -102,6 +104,7 @@ export default function RoomQueuePanelView({
           canDeleteEntryAsOwner={canDeleteEntryAsOwner}
           emptyMessage={emptyMessage}
           isEmptyLoading={isEmptyLoading}
+          isCurrentUserEntry={isCurrentUserEntry}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}
           isMoveMyPending={isMoveMyPending}
@@ -162,9 +165,9 @@ export default function RoomQueuePanelView({
           onClick={onLoadMoreMyQueue}
         >
           {isFetchingNextMyQueuePage ? (
-            <LoadingSpinner ariaLabel="내 신청곡 더 불러오는 중" size={16} />
+            <LoadingSpinner ariaLabel="내 노래 더 불러오는 중" size={16} />
           ) : (
-            "내 신청곡 더 보기"
+            "내 노래 더 보기"
           )}
         </button>
       ) : null}

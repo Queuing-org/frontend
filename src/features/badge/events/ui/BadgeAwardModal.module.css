@@ -156,13 +156,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .modal,
-  .emblemRing {
-    animation: none;
-  }
-}
-
 @media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
   .backdrop { padding: 19.2px; }
   .modal { width: min(328px, 100%); padding: 24px 24px 22.4px; border-radius: 22.4px; }

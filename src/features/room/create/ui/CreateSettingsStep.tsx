@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import styles from "./CreateSettingsStep.module.css";
 
 export type ParticipationMode = "public" | "password";
@@ -47,6 +52,8 @@ export default function CreateSettingsStep({
   const [isParticipationMenuOpen, setIsParticipationMenuOpen] = useState(false);
   const participationControlRef = useRef<HTMLDivElement>(null);
   const participationToggleRef = useRef<HTMLButtonElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
+  const focusAfterCloseRef = useRef<"password" | "toggle" | null>(null);
   const isPasswordMode = participationMode === "password";
   const passwordErrorId = "create-room-password-error";
 
@@ -70,7 +77,7 @@ export default function CreateSettingsStep({
 
       event.preventDefault();
       setIsParticipationMenuOpen(false);
-      participationToggleRef.current?.focus();
+      focusAfterCloseRef.current = isPasswordMode ? "password" : "toggle";
     };
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -80,12 +87,43 @@ export default function CreateSettingsStep({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isParticipationMenuOpen]);
+  }, [isPasswordMode, isParticipationMenuOpen]);
+
+  useEffect(() => {
+    if (isParticipationMenuOpen || focusAfterCloseRef.current === null) {
+      return;
+    }
+
+    if (focusAfterCloseRef.current === "password" && isPasswordMode) {
+      passwordInputRef.current?.focus();
+    } else {
+      participationToggleRef.current?.focus();
+    }
+    focusAfterCloseRef.current = null;
+  }, [isPasswordMode, isParticipationMenuOpen]);
 
   const selectParticipationMode = (mode: ParticipationMode) => {
+    focusAfterCloseRef.current = mode === "password" ? "password" : "toggle";
     onParticipationModeChange(mode);
     setIsParticipationMenuOpen(false);
-    participationToggleRef.current?.focus();
+  };
+
+  const handleParticipationControlClick = (
+    event: ReactMouseEvent<HTMLDivElement>,
+  ) => {
+    if (disabled) {
+      return;
+    }
+
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest(`.${styles.participationOption}`)
+    ) {
+      return;
+    }
+
+    setIsParticipationMenuOpen((isOpen) => !isOpen);
   };
 
   return (
@@ -111,7 +149,6 @@ export default function CreateSettingsStep({
             required
             aria-required="true"
           >
-            <option value="">최대 인원 선택</option>
             {maxParticipantOptions.map((participants) => (
               <option key={participants} value={String(participants)}>
                 {participants}명
@@ -157,9 +194,11 @@ export default function CreateSettingsStep({
           <div
             ref={participationControlRef}
             className={styles.participationControl}
+            onClick={handleParticipationControlClick}
           >
             {isPasswordMode ? (
               <input
+                ref={passwordInputRef}
                 id="create-room-participation"
                 className={styles.passwordInput}
                 data-invalid={showPasswordError}
@@ -189,9 +228,6 @@ export default function CreateSettingsStep({
               aria-label="참여 제한 옵션 열기"
               aria-expanded={isParticipationMenuOpen}
               aria-controls="create-room-participation-options"
-              onClick={() =>
-                setIsParticipationMenuOpen((isOpen) => !isOpen)
-              }
             >
               <span
                 className={styles.participationChevron}
