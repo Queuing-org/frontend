@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ci-pending — Draft PR #50, 프로필 2줄 최애곡과 통계 행 간격을 독립 배치하고 픽셀 변수 제공
+- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ci-pending — Draft PR #50, 프로필 통계 행 독립 배치와 방 편집 설정·하단 액션 정렬 후속 반영
 
 - [2026-08-14-backend-hotfix-260812-migration](./2026-08-14-backend-hotfix-260812-migration/plan.md): implementing — backend hotfix c91f8a 에러·REST·실시간·관계 cursor 계약 전환과 새 Draft PR 전달
 
