@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ci-pending — Draft PR #50, 공통 액션 피드백 스택과 소셜·프로필·방·큐·설정 결과 알림 통합 게시 완료
+- [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ready — Draft PR #50, 공통 액션 피드백 스택과 방 생성 필수값 다음 버튼 회귀 수정 검증 완료
 
 - [2026-08-14-backend-hotfix-260812-migration](./2026-08-14-backend-hotfix-260812-migration/plan.md): implementing — backend hotfix c91f8a 에러·REST·실시간·관계 cursor 계약 전환과 새 Draft PR 전달
 
