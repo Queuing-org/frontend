@@ -14,7 +14,7 @@ export default function SkipTrackButton({
   isVisible,
   slug,
 }: SkipTrackButtonProps) {
-  const { errorMessage, skipTrack } = useSkipTrackAction(slug);
+  const { skipTrack } = useSkipTrackAction(slug);
 
   if (!isVisible) {
     return null;
@@ -26,7 +26,7 @@ export default function SkipTrackButton({
       className={[styles.button, className].filter(Boolean).join(" ")}
       onClick={skipTrack}
       aria-label="다음 곡으로 넘기기"
-      title={errorMessage || "다음 곡으로 넘기기"}
+      title="다음 곡으로 넘기기"
     >
       SKIP
     </button>

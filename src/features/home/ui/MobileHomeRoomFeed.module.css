@@ -52,15 +52,6 @@
   stroke-width: 2.25;
 }
 
-.quickActionError {
-  margin: 0.125rem 0 0;
-  padding: 0 0.25rem;
-  color: #d24b4b;
-  font-size: 0.8125rem;
-  font-weight: var(--fw-semibold);
-  line-height: 1.4;
-}
-
 .filterSection {
   overflow: hidden;
   border: 0.0625rem solid #e5e5e8;

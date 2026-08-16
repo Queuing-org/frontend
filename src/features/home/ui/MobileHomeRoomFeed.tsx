@@ -20,7 +20,6 @@ import styles from "./MobileHomeRoomFeed.module.css";
 
 type Props = {
   activeFilters: HomeFilterState;
-  actionErrorMessage?: string | null;
   errorMessage?: string | null;
   genreOptions: HomeGenreFilterOptionDescriptor[];
   hasNextPage: boolean;
@@ -106,7 +105,6 @@ function MobileHomeRoomCard({
 
 export default function MobileHomeRoomFeed({
   activeFilters,
-  actionErrorMessage = null,
   errorMessage,
   genreOptions,
   hasNextPage,
@@ -179,12 +177,6 @@ export default function MobileHomeRoomFeed({
           <Settings className={styles.actionIcon} aria-hidden="true" />
         </button>
       </section>
-      {actionErrorMessage ? (
-        <p className={styles.quickActionError} role="alert">
-          {actionErrorMessage}
-        </p>
-      ) : null}
-
       <section className={styles.filterSection} aria-label="홈 필터">
         <button
           type="button"

@@ -20,7 +20,6 @@ type RoomQueuePanelViewProps = {
   allPendingCount: number;
   canDeleteEntry: (entry: PlaylistEntry) => boolean;
   canDeleteEntryAsOwner: (entry: PlaylistEntry) => boolean;
-  deleteErrorMessage: string;
   emptyMessage: string;
   hasNextAllQueuePage: boolean;
   hasNextMyQueuePage: boolean;
@@ -34,7 +33,6 @@ type RoomQueuePanelViewProps = {
   isRefetching: boolean;
   isFetchingNextAllQueuePage: boolean;
   isFetchingNextMyQueuePage: boolean;
-  moveErrorMessage: string;
   myEntries: PlaylistEntry[];
   myPendingCount: number;
   queueErrorMessage: string;
@@ -55,7 +53,6 @@ export default function RoomQueuePanelView({
   allPendingCount,
   canDeleteEntry,
   canDeleteEntryAsOwner,
-  deleteErrorMessage,
   emptyMessage,
   hasNextAllQueuePage,
   hasNextMyQueuePage,
@@ -69,7 +66,6 @@ export default function RoomQueuePanelView({
   isRefetching,
   isFetchingNextAllQueuePage,
   isFetchingNextMyQueuePage,
-  moveErrorMessage,
   myEntries,
   myPendingCount,
   queueErrorMessage,
@@ -119,12 +115,6 @@ export default function RoomQueuePanelView({
           onMoveRoomEntry={onMoveRoomEntry}
         />
       </div>
-      {moveErrorMessage ? (
-        <div className={styles.error}>{moveErrorMessage}</div>
-      ) : null}
-      {deleteErrorMessage ? (
-        <div className={styles.error}>{deleteErrorMessage}</div>
-      ) : null}
       {queueErrorMessage ? (
         <div className={styles.error}>{queueErrorMessage}</div>
       ) : null}

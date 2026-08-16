@@ -8,7 +8,8 @@ import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemp
 import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
 import RoomFormModal from "./RoomFormModal";
 
-const { push, roomTags } = vi.hoisted(() => ({
+const { notify, push, roomTags } = vi.hoisted(() => ({
+  notify: vi.fn(),
   push: vi.fn(),
   roomTags: [] as Array<{ name: string; slug: string }>,
 }));
@@ -27,6 +28,9 @@ vi.mock("@/src/features/room/api/updateRoomThumbnail", () => ({
 }));
 vi.mock("@/src/features/room/hooks/useRoomTags", () => ({
   useRoomTags: () => ({ data: roomTags }),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 
 function renderCreateRoomModal() {
@@ -126,7 +130,7 @@ describe("RoomFormModal room form flows", () => {
     });
   });
 
-  it("파일 선택 즉시 업로드하고 실패를 인라인 표시한다", async () => {
+  it("파일 선택 즉시 업로드하고 실패를 필드와 공통 알림으로 표시한다", async () => {
     const user = userEvent.setup();
     vi.mocked(uploadTemporaryRoomThumbnail).mockRejectedValue(
       new ApiError({
@@ -145,10 +149,19 @@ describe("RoomFormModal room form flows", () => {
         vi.mocked(uploadTemporaryRoomThumbnail).mock.calls[0]?.[0],
       ).toEqual({ file });
     });
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "썸네일 업로드 실패: 임시 이미지가 너무 많습니다.",
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-create:thumbnail",
+        message: "임시 이미지가 너무 많습니다.",
+        tone: "error",
+      });
+    });
+    expect(document.getElementById("create-room-thumbnail")).toHaveAttribute(
+      "aria-invalid",
+      "true",
     );
-    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
   });
 
   it("업로드 중에는 제목 입력을 유지하고 단계 이동만 막는다", async () => {
@@ -188,9 +201,13 @@ describe("RoomFormModal room form flows", () => {
     renderCreateRoomModal();
 
     await selectThumbnail("invalid.png");
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "지원하지 않는 이미지입니다.",
-    );
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-create:thumbnail",
+        message: "지원하지 않는 이미지입니다.",
+        tone: "error",
+      });
+    });
 
     const retryFile = await selectThumbnail("retry.png");
 
@@ -309,10 +326,13 @@ describe("RoomFormModal room form flows", () => {
     await selectRequiredMaxParticipants(user);
     await user.click(screen.getByRole("button", { name: "완료" }));
 
-    const error = await screen.findByText(
-      "생성 실패: 서버가 방을 만들지 못했습니다.",
-    );
-    expect(error).not.toHaveTextContent("500");
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-create:submit",
+        message: "서버가 방을 만들지 못했습니다.",
+        tone: "error",
+      });
+    });
   });
 
   it("태그를 고르기 전에는 다음을 비활성화하고 FREE를 고르면 진행한다", async () => {
@@ -328,13 +348,24 @@ describe("RoomFormModal room form flows", () => {
       .filter((button) => button.hasAttribute("aria-pressed"));
     expect(tagButtons[0]).toHaveAccessibleName("FREE");
 
-    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
     expect(screen.getByRole("heading", { name: "장르 선택" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    expect(screen.getByRole("group", { name: "방 장르" })).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-create:tags",
+      message: "장르를 하나 이상 선택해 주세요.",
+      tone: "error",
+    });
 
     await selectRequiredTag(user);
     expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
     await selectRequiredTag(user);
-    expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "다음" })).toBeEnabled();
     await selectRequiredTag(user);
     await user.click(screen.getByRole("button", { name: "다음" }));
     expect(screen.getByLabelText("최대 인원 수")).toBeInTheDocument();
@@ -417,6 +448,41 @@ describe("RoomFormModal room form flows", () => {
     expect(vi.mocked(createRoom).mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({ maxParticipants: 10 }),
     );
+  });
+
+  it("설정 단계는 수정한 필드의 검증 오류만 해제한다", async () => {
+    const user = userEvent.setup();
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "검증 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+
+    const maxParticipants = screen.getByLabelText("최대 인원 수");
+    fireEvent.change(maxParticipants, { target: { value: "" } });
+    await user.click(
+      screen.getByRole("button", { name: "참여 제한 옵션 열기" }),
+    );
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+    const password = screen.getByPlaceholderText("비밀번호 입력");
+    expect(maxParticipants).toHaveAttribute("aria-invalid", "true");
+    expect(password).toHaveAttribute("aria-invalid", "true");
+
+    await user.selectOptions(screen.getByLabelText("곡 당 제한 시간"), "5");
+    expect(maxParticipants).toHaveAttribute("aria-invalid", "true");
+    expect(password).toHaveAttribute("aria-invalid", "true");
+
+    await user.selectOptions(maxParticipants, "20");
+    expect(maxParticipants).toHaveAttribute("aria-invalid", "false");
+    expect(password).toHaveAttribute("aria-invalid", "true");
+
+    await user.selectOptions(screen.getByLabelText("곡 당 제한 시간"), "10");
+    expect(password).toHaveAttribute("aria-invalid", "true");
+
+    await user.type(password, "secret");
+    expect(password).toHaveAttribute("aria-invalid", "false");
   });
 
   it("참여 제한 메뉴는 화살표로 열고 Escape와 바깥 클릭으로 닫는다", async () => {

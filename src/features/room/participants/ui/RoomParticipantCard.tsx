@@ -20,7 +20,7 @@ type Props = {
   listRef: RefObject<HTMLDivElement | null>;
   onBlockParticipant: (participant: PlaylistParticipant) => void;
   onClose: () => void;
-  onKickParticipant: (target: ParticipantKickTarget) => void;
+  onKickParticipant: (participant: PlaylistParticipant) => void;
   onReportParticipant: (participant: PlaylistParticipant) => void;
   onToggle: (participantKey: string) => void;
   onTransferOwner: (participant: PlaylistParticipant) => void;
@@ -124,7 +124,7 @@ export default function RoomParticipantCard({
               onClose={onClose}
               onKick={() => {
                 if (kickTarget) {
-                  onKickParticipant(kickTarget);
+                  onKickParticipant(participant);
                 }
               }}
               onReport={() => onReportParticipant(participant)}
@@ -132,6 +132,7 @@ export default function RoomParticipantCard({
               positioning="viewport"
               anchorBoundaryRef={listRef}
               targetUserSlug={userSlug}
+              targetNickname={participant.nickname}
               triggerRef={triggerRef}
             />
           ) : null}

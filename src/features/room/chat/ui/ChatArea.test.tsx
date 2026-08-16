@@ -10,6 +10,8 @@ import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomPar
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import ChatArea from "./ChatArea";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 vi.mock("next/image", () => ({
   default: () => <span data-testid="chat-avatar" />,
 }));
@@ -34,6 +36,9 @@ vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
 }));
 vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
   useTransferRoomOwner: vi.fn(),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 vi.mock("@/src/features/follow/blocked/ui/BlockUserModal", () => ({
   default: ({
@@ -315,7 +320,7 @@ describe("ChatArea 관리 메뉴", () => {
       { slug: "room-slug", userSlug: "회원-slug" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
-    expect(transferOptions).not.toHaveProperty("onSuccess");
+    expect(transferOptions).toHaveProperty("onSuccess");
     expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
   });
 
@@ -357,14 +362,17 @@ describe("ChatArea 관리 메뉴", () => {
     await user.click(getMenuTrigger("회원"));
     await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
 
-    expect(
-      await screen.findByText("현재 참가 중인 회원을 찾지 못했습니다."),
-    ).toBeVisible();
+    await waitFor(() => {
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-member:transfer:room-slug:회원-slug",
+        message: "현재 참가 중인 회원을 찾지 못했습니다.",
+        tone: "error",
+      });
+    });
     expect(transferMutate).not.toHaveBeenCalled();
   });
 
-  it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {
-    vi.useFakeTimers();
+  it("방장 위임 실패를 공통 오류 알림으로 표시한다", () => {
     renderChat(messages, true);
 
     fireEvent.click(getMenuTrigger("회원"));
@@ -373,9 +381,11 @@ describe("ChatArea 관리 메뉴", () => {
       onError: (error: Error) => void;
     };
     act(() => transferOptions.onError(new Error("위임 실패")));
-    expect(screen.getByRole("alert")).toHaveTextContent("위임 실패");
-
-    act(() => vi.advanceTimersByTime(2_000));
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-member:transfer:room-slug:회원-slug",
+      message: "위임 실패",
+      tone: "error",
+    });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 

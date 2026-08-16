@@ -363,7 +363,6 @@ function SearchRoomsContent({
         onOpenFollow={onOpenFollow}
         onOpenSettings={onOpenSettings}
         isRandomEntryPending={randomEntry.isPending}
-        actionErrorMessage={randomEntry.errorMessage}
         isNavigationLocked={isDiscoveryModalOpen}
         onEnterSelectedRoom={() => {
           if (selectedRoom) {

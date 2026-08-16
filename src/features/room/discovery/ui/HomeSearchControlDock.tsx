@@ -31,7 +31,6 @@ type Props = {
   onOpenSettings: () => void;
   onEnterSelectedRoom: () => void;
   isRandomEntryPending?: boolean;
-  actionErrorMessage?: string | null;
   isNavigationLocked?: boolean;
 };
 
@@ -51,7 +50,6 @@ export default function HomeSearchControlDock({
   onOpenSettings,
   onEnterSelectedRoom,
   isRandomEntryPending = false,
-  actionErrorMessage = null,
   isNavigationLocked = false,
 }: Props) {
   const dockRef = useRef<HTMLDivElement | null>(null);
@@ -132,13 +130,8 @@ export default function HomeSearchControlDock({
       className={styles.dock}
       data-modal-active={isNavigationLocked || undefined}
     >
-      {visiblePanel || actionErrorMessage ? (
+      {visiblePanel ? (
         <div className={styles.floatStack}>
-          {actionErrorMessage ? (
-            <div className={styles.errorBubble} role="alert">
-              {actionErrorMessage}
-            </div>
-          ) : null}
           {visiblePanel ? (
             <div className={styles.panelAnchor}>
               {visiblePanel === "menu" ? (

@@ -22,6 +22,7 @@ type Props = {
   positioning?: "inline" | "viewport";
   anchorBoundaryRef?: RefObject<HTMLElement | null>;
   targetUserSlug: string | null;
+  targetNickname?: string | null;
   triggerRef: RefObject<HTMLButtonElement | null>;
 };
 
@@ -47,6 +48,7 @@ export default function RoomMemberManagementMenu({
   positioning = "inline",
   anchorBoundaryRef,
   targetUserSlug,
+  targetNickname,
   triggerRef,
 }: Props) {
   const canFollow = actions.includes("follow") && Boolean(targetUserSlug);
@@ -82,6 +84,7 @@ export default function RoomMemberManagementMenu({
             initialRelationship={relationshipQuery.data?.relationship ?? "NONE"}
             onSuccess={onClose}
             role="menuitem"
+            targetNickname={targetNickname ?? relationshipQuery.data?.nickname}
             targetSlug={targetUserSlug}
           />
         </div>

@@ -6,6 +6,7 @@ import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
 
 type CreateBasicInfoStepProps = {
   title: string;
+  titleInvalid?: boolean;
   maxTitleLength: number;
   disabled: boolean;
   thumbnailDisabled?: boolean;
@@ -23,6 +24,7 @@ type CreateBasicInfoStepProps = {
 
 export default function CreateBasicInfoStep({
   title,
+  titleInvalid = false,
   maxTitleLength,
   disabled,
   thumbnailDisabled = disabled,
@@ -82,13 +84,19 @@ export default function CreateBasicInfoStep({
         <span className={styles.label}>방 제목</span>
         <input
           id="create-room-title"
+          aria-label="방 제목"
           className={styles.input}
           value={title}
           onChange={(event) => onTitleChange(event.target.value)}
           maxLength={maxTitleLength}
           placeholder="방의 주제나 성격을 잘 나타내는 제목을 입력해주세요"
           disabled={disabled}
+          aria-invalid={titleInvalid}
+          aria-describedby={titleInvalid ? "create-room-title-error" : undefined}
         />
+        <span id="create-room-title-error" className={styles.visuallyHidden}>
+          방 제목을 입력해 주세요.
+        </span>
       </label>
     </div>
   );

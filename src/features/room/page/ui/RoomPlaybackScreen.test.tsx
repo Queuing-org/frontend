@@ -1,4 +1,5 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +8,7 @@ import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
+import { ApiError } from "@/src/shared/api/api-error";
 import RoomPlaybackScreen from "./RoomPlaybackScreen";
 
 const mocks = vi.hoisted(() => {
@@ -15,6 +17,7 @@ const mocks = vi.hoisted(() => {
   const ensureRoomSubscription = vi.fn();
   const leaveRoomSession = vi.fn();
   const replace = vi.fn();
+  const notify = vi.fn();
   const roomChat = {
     cleanupSubscriptions: vi.fn(),
     initializeFromJoinData: vi.fn(),
@@ -24,6 +27,7 @@ const mocks = vi.hoisted(() => {
   return {
     ensureRoomSubscription,
     leaveRoomSession,
+    notify,
     replace,
     refetchParticipants,
     refetchRoomPlayback,
@@ -76,6 +80,9 @@ vi.mock("../hooks/useRoomRealtimeEvents", () => ({
 }));
 vi.mock("@/src/features/room/floating/model/useFloatingWidgetsState", () => ({
   useFloatingWidgetsState: () => ({}),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify: mocks.notify }),
 }));
 
 describe("RoomPlaybackScreen join reads", () => {
@@ -181,5 +188,48 @@ describe("RoomPlaybackScreen join reads", () => {
     expect(sharedQuerySignal?.aborted).toBe(false);
 
     unmount();
+  });
+
+  it("상세 경로 비밀번호 실패를 필드와 공통 알림에 표시하고 입력 시 해제한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchRoomMeta).mockResolvedValue({
+      activeUsersCount: 1,
+      hasPassword: true,
+      isPublic: false,
+      slug: "room",
+      tags: [],
+      title: "비밀 방",
+    } as never);
+    vi.mocked(joinRoom).mockRejectedValue(
+      new ApiError({
+        code: "room.access-denied",
+        message: "비밀번호가 올바르지 않습니다.",
+        status: 401,
+      }),
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RoomPlaybackScreen />
+      </QueryClientProvider>,
+    );
+
+    const passwordInput = await screen.findByPlaceholderText("비밀번호 입력");
+    await user.type(passwordInput, "wrong");
+    await user.click(screen.getByRole("button", { name: "확인" }));
+
+    await waitFor(() =>
+      expect(passwordInput).toHaveAttribute("aria-invalid", "true"),
+    );
+    expect(mocks.notify).toHaveBeenCalledWith({
+      dedupeKey: "room-join:room:password",
+      message: "비밀번호가 올바르지 않습니다.",
+      tone: "error",
+    });
+
+    await user.type(passwordInput, "2");
+    expect(passwordInput).toHaveAttribute("aria-invalid", "false");
   });
 });

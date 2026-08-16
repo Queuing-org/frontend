@@ -10,6 +10,7 @@ import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./EditRoomFormModal.module.css";
 
 const EMPTY_TAG_SLUGS: string[] = [];
@@ -39,6 +40,7 @@ export default function EditRoomFormModal({
   onClose,
 }: EditRoomFormModalProps) {
   const router = useRouter();
+  const { notify } = useActionFeedback();
   const deleteRoomMutation = useDeleteRoom();
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -112,10 +114,22 @@ export default function EditRoomFormModal({
 
     try {
       await deleteRoomMutation.mutateAsync({ slug: roomSlug });
+      notify({
+        dedupeKey: `room-delete:${roomSlug}`,
+        message: `'${initialTitle}' 방을 삭제했습니다.`,
+        tone: "default",
+      });
       onClose();
       router.replace("/");
-    } catch {
-      // The confirmation dialog keeps the API error visible for retry.
+    } catch (error) {
+      notify({
+        dedupeKey: `room-delete:${roomSlug}`,
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "방을 삭제하지 못했습니다.",
+        tone: "error",
+      });
     }
   };
 
@@ -197,6 +211,10 @@ export default function EditRoomFormModal({
                   maxLength={form.maxRoomTitleLength}
                   placeholder="작업 효율 200% 높여주는 노래"
                   disabled={form.isSubmitting}
+                  aria-invalid={form.titleInvalid}
+                  aria-describedby={
+                    form.titleInvalid ? "edit-room-title-error" : undefined
+                  }
                 />
                 {form.title ? (
                   <button
@@ -210,11 +228,21 @@ export default function EditRoomFormModal({
                   </button>
                 ) : null}
               </span>
+              <span
+                id="edit-room-title-error"
+                className={styles.visuallyHidden}
+              >
+                방 제목을 입력해 주세요.
+              </span>
             </div>
 
-            <section
+            <fieldset
               className={styles.field}
               aria-labelledby="edit-room-tags-label"
+              aria-invalid={form.tagsInvalid}
+              aria-describedby={
+                form.tagsInvalid ? "edit-room-tags-error" : undefined
+              }
             >
               <div className={styles.labelRow}>
                 <span id="edit-room-tags-label" className={styles.label}>
@@ -240,7 +268,13 @@ export default function EditRoomFormModal({
                   onToggleTag={form.toggleTag}
                 />
               </QueryBoundary>
-            </section>
+              <span
+                id="edit-room-tags-error"
+                className={styles.visuallyHidden}
+              >
+                장르를 하나 이상 선택해 주세요.
+              </span>
+            </fieldset>
 
             <div className={styles.settingsStack}>
               <div className={styles.settingRow}>
@@ -317,7 +351,7 @@ export default function EditRoomFormModal({
                 <EditParticipationControl
                   disabled={form.isSubmitting}
                   errorMessage={
-                    form.isPasswordRequired
+                    form.passwordInvalid
                       ? "새 비밀번호를 입력해주세요."
                       : null
                   }
@@ -343,11 +377,6 @@ export default function EditRoomFormModal({
               </div>
             </div>
 
-            {form.submitError ? (
-              <p className={styles.submitError}>
-                {form.submitErrorPrefix}: {form.submitError.message}
-              </p>
-            ) : null}
             </div>
 
             <footer className={styles.formFooter}>
@@ -393,7 +422,6 @@ export default function EditRoomFormModal({
             다른 사용자들도 모두 내보내기 처리됩니다.
           </>
         }
-        errorMessage={deleteRoomMutation.error?.message}
         isPending={deleteRoomMutation.isPending}
         open={isDeleteDialogOpen}
         title={initialTitle}
@@ -545,7 +573,7 @@ function EditParticipationControl({
         ) : null}
       </div>
       {errorMessage ? (
-        <p id={errorId} className={styles.errorText}>
+        <p id={errorId} className={styles.visuallyHidden}>
           {errorMessage}
         </p>
       ) : helperText ? (

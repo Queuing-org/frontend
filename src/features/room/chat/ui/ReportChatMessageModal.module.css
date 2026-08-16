@@ -40,6 +40,12 @@
   border: 0;
 }
 
+.reasons[aria-invalid="true"] {
+  padding: 8px;
+  border: 1px solid #d94b4b;
+  border-radius: 10px;
+}
+
 .reasonItem {
   display: flex;
   min-height: 42px;

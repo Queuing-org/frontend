@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./RoomJoinPasswordModal.module.css";
 
 type Props = {
@@ -11,6 +12,7 @@ type Props = {
   open: boolean;
   submitting?: boolean;
   onClose: () => void;
+  onPasswordChange?: () => void;
   onSubmit: (password: string) => void | Promise<void>;
 };
 
@@ -19,6 +21,7 @@ export default function RoomPasswordDialog({
   open,
   submitting = false,
   onClose,
+  onPasswordChange,
   onSubmit,
 }: Props) {
   const [password, setPassword] = useState("");
@@ -30,6 +33,7 @@ export default function RoomPasswordDialog({
     onClose: submitting ? () => undefined : onClose,
     open,
   });
+  const { notify } = useActionFeedback();
   const visibleErrorMessage = validationMessage || errorMessage;
   const trimmedPassword = password.trim();
 
@@ -45,7 +49,13 @@ export default function RoomPasswordDialog({
     event.preventDefault();
 
     if (!trimmedPassword) {
-      setValidationMessage("비밀번호를 입력해주세요.");
+      const message = "비밀번호를 입력해주세요.";
+      setValidationMessage(message);
+      notify({
+        dedupeKey: "room-join:password:validation",
+        message,
+        tone: "error",
+      });
       return;
     }
 
@@ -95,17 +105,18 @@ export default function RoomPasswordDialog({
               onChange={(event) => {
                 setPassword(event.target.value);
                 setValidationMessage("");
+                onPasswordChange?.();
               }}
               placeholder="비밀번호 입력"
               disabled={submitting}
               aria-label="방 비밀번호"
+              aria-invalid={Boolean(visibleErrorMessage)}
+              aria-describedby={visibleErrorMessage ? errorId : undefined}
               autoComplete="current-password"
             />
-            {visibleErrorMessage ? (
-              <p id={errorId} className={styles.errorText} role="alert">
-                {visibleErrorMessage}
-              </p>
-            ) : null}
+            <span id={errorId} className={styles.visuallyHidden}>
+              {visibleErrorMessage}
+            </span>
           </div>
 
           <div className={styles.actions}>
@@ -120,7 +131,7 @@ export default function RoomPasswordDialog({
             <button
               type="submit"
               className={styles.confirmButton}
-              disabled={!trimmedPassword || submitting}
+              disabled={submitting}
             >
               {submitting ? (
                 <LoadingSpinner ariaLabel="방 비밀번호 확인 중" size={16} />

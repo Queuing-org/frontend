@@ -12,6 +12,7 @@ import {
   ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
   ROOM_TITLE_MAX_LENGTH,
 } from "../../model/roomFormLimits";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 type UseEditRoomFormParams = {
   initialHasPassword: boolean;
@@ -22,6 +23,8 @@ type UseEditRoomFormParams = {
   onClose: () => void;
   roomSlug?: string;
 };
+
+type EditRoomValidationField = "password" | "tags" | "title";
 
 function formatMaxParticipants(value: number | null) {
   return typeof value === "number" ? String(value) : "";
@@ -61,6 +64,7 @@ export function useEditRoomForm({
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
+  const { notify } = useActionFeedback();
   const updateRoomThumbnailMutation = useUpdateRoomThumbnail();
   const uploadTemporaryRoomThumbnailMutation =
     useUploadTemporaryRoomThumbnail();
@@ -99,6 +103,9 @@ export function useEditRoomForm({
     didSaveRoomInfoBeforeThumbnailError,
     setDidSaveRoomInfoBeforeThumbnailError,
   ] = useState(false);
+  const [invalidFields, setInvalidFields] = useState<
+    Partial<Record<EditRoomValidationField, true>>
+  >({});
 
   const isSubmitting =
     updateRoomMutation.isPending ||
@@ -110,19 +117,30 @@ export function useEditRoomForm({
   const parsedTrackLimitMinutes = parseTrackLimitMinutes(trackLimitMinutes);
   const isPasswordRequired =
     isPasswordChangeEnabled && trimmedPassword.length === 0;
-  const canSubmit =
-    trimmedTitle.length > 0 &&
-    !isPasswordRequired &&
-    !thumbnailSelection.errorMessage &&
-    !uploadTemporaryRoomThumbnailMutation.error &&
-    !(
-      thumbnailSelection.file &&
-      !uploadTemporaryRoomThumbnailMutation.data?.uploadToken
-    ) &&
-    !isSubmitting &&
-    !!roomSlug;
+  const thumbnailErrorMessage =
+    thumbnailSelection.errorMessage ??
+    (uploadTemporaryRoomThumbnailMutation.error
+      ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
+      : null);
+  const hasSelectedThumbnailWithoutToken = Boolean(
+    thumbnailSelection.file &&
+      !uploadTemporaryRoomThumbnailMutation.data?.uploadToken,
+  );
+  const canSubmit = !isSubmitting && !!roomSlug;
+  const clearValidationError = (field: EditRoomValidationField) => {
+    setInvalidFields((currentFields) => {
+      if (!currentFields[field]) {
+        return currentFields;
+      }
+
+      const nextFields = { ...currentFields };
+      delete nextFields[field];
+      return nextFields;
+    });
+  };
 
   const toggleTag = (slug: string) => {
+    clearValidationError("tags");
     setSelectedTagSlugs((previousSlugs) => {
       const exists = previousSlugs.includes(slug);
 
@@ -139,6 +157,7 @@ export function useEditRoomForm({
   };
 
   const updatePasswordChangeEnabled = (enabled: boolean) => {
+    clearValidationError("password");
     setIsPasswordChangeEnabled(enabled);
 
     if (enabled) {
@@ -151,6 +170,7 @@ export function useEditRoomForm({
   };
 
   const updatePasswordClearEnabled = (enabled: boolean) => {
+    clearValidationError("password");
     setIsPasswordClearEnabled(enabled);
 
     if (enabled) {
@@ -161,6 +181,7 @@ export function useEditRoomForm({
 
   const updateTitle = (value: string) => {
     setTitle(value.slice(0, ROOM_TITLE_MAX_LENGTH));
+    clearValidationError("title");
   };
 
   const updateMaxParticipants = (value: string) => {
@@ -171,6 +192,11 @@ export function useEditRoomForm({
     setTrackLimitMinutes(value);
   };
 
+  const updatePassword = (value: string) => {
+    setPassword(value);
+    clearValidationError("password");
+  };
+
   const handleThumbnailChange = (files: FileList | null) => {
     uploadTemporaryRoomThumbnailMutation.reset();
     updateRoomThumbnailMutation.reset();
@@ -178,7 +204,18 @@ export function useEditRoomForm({
     const selectedFile = thumbnailSelection.selectFile(files);
 
     if (selectedFile) {
-      uploadTemporaryRoomThumbnailMutation.mutate({ file: selectedFile });
+      uploadTemporaryRoomThumbnailMutation.mutate(
+        { file: selectedFile },
+        {
+          onError: (error) => {
+            notify({
+              dedupeKey: `room-update:${roomSlug ?? "unknown"}:thumbnail`,
+              message: error.message || "썸네일을 업로드하지 못했습니다.",
+              tone: "error",
+            });
+          },
+        },
+      );
     }
   };
 
@@ -192,11 +229,40 @@ export function useEditRoomForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (
-      !trimmedTitle ||
-      isPasswordRequired ||
-      !roomSlug
-    ) {
+    if (!roomSlug || isSubmitting) {
+      return;
+    }
+
+    const validationMessage = !trimmedTitle
+      ? "방 제목을 입력해 주세요."
+      : selectedTagSlugs.length === 0
+        ? "장르를 하나 이상 선택해 주세요."
+        : isPasswordRequired
+          ? "새 비밀번호를 입력해 주세요."
+          : thumbnailErrorMessage
+            ? thumbnailErrorMessage
+            : hasSelectedThumbnailWithoutToken
+              ? "썸네일 업로드가 끝날 때까지 기다려 주세요."
+              : null;
+
+    if (validationMessage) {
+      setInvalidFields((currentFields) => ({
+        ...currentFields,
+        ...(!trimmedTitle ? { title: true as const } : {}),
+        ...(selectedTagSlugs.length === 0 ? { tags: true as const } : {}),
+        ...(isPasswordRequired ? { password: true as const } : {}),
+      }));
+      notify({
+        dedupeKey: !trimmedTitle
+          ? `room-update:${roomSlug}:title`
+          : selectedTagSlugs.length === 0
+            ? `room-update:${roomSlug}:tags`
+            : isPasswordRequired
+              ? `room-update:${roomSlug}:password`
+              : `room-update:${roomSlug}:thumbnail`,
+        message: validationMessage,
+        tone: "error",
+      });
       return;
     }
 
@@ -220,6 +286,7 @@ export function useEditRoomForm({
       return;
     }
 
+    let didSaveRoomInfo = false;
     try {
       if (payload) {
         await updateRoomMutation.mutateAsync({
@@ -237,6 +304,7 @@ export function useEditRoomForm({
         setIsPasswordChangeEnabled(false);
         setIsPasswordClearEnabled(false);
         setPassword("");
+        didSaveRoomInfo = true;
       }
 
       if (thumbnailUploadToken) {
@@ -249,9 +317,23 @@ export function useEditRoomForm({
         });
       }
 
+      notify({
+        dedupeKey: `room-update:${roomSlug}`,
+        message: "방 설정을 변경했습니다.",
+        tone: "default",
+      });
       onClose();
-    } catch {
-      // Mutation hooks expose the actionable error state to the modal.
+    } catch (error) {
+      notify({
+        dedupeKey: `room-update:${roomSlug}`,
+        message:
+          didSaveRoomInfo && thumbnailUploadToken
+            ? "방 정보는 저장했지만 썸네일을 변경하지 못했습니다."
+            : error instanceof Error && error.message
+              ? error.message
+              : "방 설정을 변경하지 못했습니다.",
+        tone: "error",
+      });
     }
   };
 
@@ -263,6 +345,10 @@ export function useEditRoomForm({
     isPasswordClearEnabled,
     isPasswordChangeEnabled,
     isPasswordRequired,
+    passwordInvalid: Boolean(invalidFields.password && isPasswordRequired),
+    tagsInvalid: Boolean(
+      invalidFields.tags && selectedTagSlugs.length === 0,
+    ),
     isSubmitting,
     maxParticipants,
     maxParticipantOptions: ROOM_MAX_PARTICIPANT_OPTIONS,
@@ -270,18 +356,14 @@ export function useEditRoomForm({
     maxTags: ROOM_TAG_LIMIT,
     password,
     selectedTagSlugs,
-    setPassword,
+    setPassword: updatePassword,
     submitError:
       updateRoomMutation.error ?? updateRoomThumbnailMutation.error,
     submitErrorPrefix:
       updateRoomThumbnailMutation.error && didSaveRoomInfoBeforeThumbnailError
         ? "방 정보는 저장됐지만 썸네일 교체 실패"
         : "수정 실패",
-    thumbnailErrorMessage:
-      thumbnailSelection.errorMessage ??
-      (uploadTemporaryRoomThumbnailMutation.error
-        ? `썸네일 업로드 실패: ${uploadTemporaryRoomThumbnailMutation.error.message}`
-        : null),
+    thumbnailErrorMessage,
     thumbnailFileName: thumbnailSelection.fileName,
     thumbnailPreviewUrl: thumbnailSelection.previewUrl,
     thumbnailStatusMessage: uploadTemporaryRoomThumbnailMutation.isPending
@@ -292,6 +374,7 @@ export function useEditRoomForm({
     markThumbnailPreviewUnavailable:
       thumbnailSelection.markPreviewUnavailable,
     title,
+    titleInvalid: Boolean(invalidFields.title && !trimmedTitle),
     trackLimitMinutes,
     trackLimitMinuteOptions: ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
     toggleTag,

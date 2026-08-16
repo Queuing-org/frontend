@@ -10,6 +10,7 @@ const websocket = vi.hoisted(() => ({
   chatEventHandler: null as ((message: IMessage) => void) | null,
   onMessageDeleted: vi.fn(),
 }));
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
 
 vi.mock("@/src/features/room/api/websocket/publishChatMessage", () => ({
   publishChatMessage: vi.fn(),
@@ -28,6 +29,9 @@ vi.mock("@/src/features/room/api/websocket/subscribeUserRoomEvents", () => ({
     websocket.userEventHandler = handler;
     return createSubscription();
   }),
+}));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
 }));
 
 function createSubscription() {
@@ -134,7 +138,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     unmount();
   });
 
-  it("다른 전송 오류는 기존처럼 하단 문구로 노출한다", () => {
+  it("다른 전송 오류는 공통 오류 알림으로 노출한다", () => {
     const { result, unmount } = renderRealtimeChat();
 
     act(() => {
@@ -151,6 +155,11 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     expect(result.current.sendErrorMessage).toBe(
       "채팅을 전송하지 못했습니다.",
     );
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "chat-send:room",
+      message: "채팅을 전송하지 못했습니다.",
+      tone: "error",
+    });
     unmount();
   });
 
@@ -179,7 +188,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
     expect(backfill).toHaveBeenCalledTimes(1);
-    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.sendErrorMessage).toBe("채팅 전송을 확인하지 못했습니다.");
     expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     unmount();
@@ -215,7 +224,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(4_000);
     });
-    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.sendErrorMessage).toBe("채팅 전송을 확인하지 못했습니다.");
     expect(result.current.isSending).toBe(false);
     expect(backfill).toHaveBeenCalledTimes(2);
     expect(backfill).toHaveBeenLastCalledWith(["같은 내용"]);
@@ -226,7 +235,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
       await Promise.resolve();
     });
     expect(backfill).toHaveBeenCalledTimes(2);
-    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.sendErrorMessage).toBe("채팅 전송을 확인하지 못했습니다.");
     unmount();
   });
 
@@ -251,7 +260,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
-    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.sendErrorMessage).toBe("채팅 전송을 확인하지 못했습니다.");
     expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
 
@@ -276,7 +285,7 @@ describe("useRoomChatRealtime 전송 오류 표시", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(6_000);
     });
-    expect(result.current.sendErrorMessage).toBe("");
+    expect(result.current.sendErrorMessage).toBe("채팅 전송을 확인하지 못했습니다.");
     expect(result.current.isSending).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     unmount();

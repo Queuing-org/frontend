@@ -4,11 +4,13 @@ import { useMemo, useState } from "react";
 import { extractYouTubeVideoId } from "../model/extractYouTubeVideoId";
 
 export const ADD_TRACK_STORY_MAX_LENGTH = 30;
+export type AddTrackErrorField = "url" | "story" | "form" | null;
 
 export function useAddTrackForm() {
   const [inputValue, setInputValue] = useState("");
   const [storyValue, setStoryValue] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [errorField, setErrorField] = useState<AddTrackErrorField>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const videoId = useMemo(
     () => extractYouTubeVideoId(inputValue),
@@ -17,15 +19,17 @@ export function useAddTrackForm() {
 
   const updateInputValue = (value: string) => {
     setInputValue(value);
-    if (errorMessage) {
+    if (errorField === "url" || errorField === "form") {
       setErrorMessage("");
+      setErrorField(null);
     }
   };
 
   const updateStoryValue = (value: string) => {
-    setStoryValue(value.slice(0, ADD_TRACK_STORY_MAX_LENGTH));
-    if (errorMessage) {
+    setStoryValue(value);
+    if (errorField === "story" || errorField === "form") {
       setErrorMessage("");
+      setErrorField(null);
     }
   };
 
@@ -33,16 +37,22 @@ export function useAddTrackForm() {
     setInputValue("");
     setStoryValue("");
     setErrorMessage("");
+    setErrorField(null);
     setIsSubmitting(false);
   };
 
   return {
     canSubmit: Boolean(videoId),
     errorMessage,
+    errorField,
     inputValue,
     isSubmitting,
     reset,
     setErrorMessage,
+    setError: (field: AddTrackErrorField, message: string) => {
+      setErrorField(field);
+      setErrorMessage(message);
+    },
     setIsSubmitting,
     storyLength: storyValue.length,
     storyMaxLength: ADD_TRACK_STORY_MAX_LENGTH,

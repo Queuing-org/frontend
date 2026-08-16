@@ -144,6 +144,15 @@
   min-width: 0;
   flex-direction: column;
   gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field[aria-invalid="true"] {
+  padding: 10px;
+  border: 1px solid #ff2f2f;
+  border-radius: 10px;
 }
 
 .labelRow {
@@ -192,6 +201,10 @@
   padding: 0 54px 0 20px;
   border-color: transparent;
   background: #f7f7f9;
+}
+
+.titleInput[aria-invalid="true"] {
+  border-color: #ff2f2f;
 }
 
 .titleInput::placeholder,
@@ -443,9 +456,7 @@
   box-shadow: 0 0 0 3px rgba(255, 47, 47, 0.12);
 }
 
-.helperText,
-.errorText,
-.submitError {
+.helperText {
   margin: 0;
   font-size: 13px;
   font-weight: var(--fw-medium);
@@ -454,17 +465,6 @@
 
 .helperText {
   color: #8d8d8d;
-}
-
-.errorText,
-.submitError {
-  color: #ff2f2f;
-}
-
-.submitError {
-  padding: 12px 14px;
-  border-radius: 8px;
-  background: #fff4f4;
 }
 
 .formFooter {
@@ -768,9 +768,7 @@
     font-size: 12.8px;
   }
 
-  .helperText,
-  .errorText,
-  .submitError {
+  .helperText {
     font-size: 10.4px;
   }
 

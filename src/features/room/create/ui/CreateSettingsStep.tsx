@@ -158,7 +158,7 @@ export default function CreateSettingsStep({
           {maxParticipantsError ? (
             <p
               id="create-room-max-participants-error"
-              className={styles.errorText}
+              className={styles.visuallyHidden}
             >
               {maxParticipantsError}
             </p>
@@ -257,7 +257,7 @@ export default function CreateSettingsStep({
             ) : null}
           </div>
           {showPasswordError ? (
-            <p id={passwordErrorId} className={styles.errorText}>
+            <p id={passwordErrorId} className={styles.visuallyHidden}>
               입장할 때 입력할 비밀번호를 설정해주세요.
             </p>
           ) : null}

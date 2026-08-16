@@ -6,6 +6,8 @@ import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomPar
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import RoomParticipantsPanel from "./RoomParticipantsPanel";
 
+const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
+
 const kickMutate = vi.fn();
 const kickReset = vi.fn();
 const transferMutate = vi.fn();
@@ -27,6 +29,9 @@ vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
 vi.mock("@/src/features/room/hooks/useTransferRoomOwner", () => ({
   useTransferRoomOwner: vi.fn(),
 }));
+vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
+  useActionFeedback: () => ({ notify }),
+}));
 vi.mock("./RoomParticipantList", () => ({
   default: ({
     onBlockParticipant,
@@ -36,7 +41,7 @@ vi.mock("./RoomParticipantList", () => ({
     canModerateParticipants,
   }: {
     onBlockParticipant: (participant: PlaylistParticipant) => void;
-    onKickParticipant: (target: { userSlug: string }) => void;
+    onKickParticipant: (target: PlaylistParticipant) => void;
     onReportParticipant: (participant: PlaylistParticipant) => void;
     onTransferOwner: (participant: PlaylistParticipant) => void;
     canModerateParticipants: boolean;
@@ -53,7 +58,7 @@ vi.mock("./RoomParticipantList", () => ({
       </button>
       <button
         type="button"
-        onClick={() => onKickParticipant({ userSlug: "member" })}
+        onClick={() => onKickParticipant(member)}
       >
         회원 내보내기
       </button>
@@ -180,7 +185,7 @@ describe("RoomParticipantsPanel", () => {
     expect(onLoadMore).toHaveBeenCalledTimes(1);
   });
 
-  it("신고할 채팅이 없으면 panel 안내 없이 요청을 무시한다", async () => {
+  it("신고할 채팅이 없으면 공통 안내를 표시한다", async () => {
     const user = userEvent.setup();
     renderPanel([]);
 
@@ -191,6 +196,10 @@ describe("RoomParticipantsPanel", () => {
     expect(
       screen.queryByText("신고할 수 있는 채팅 메시지가 없습니다."),
     ).toBeNull();
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+      message: "신고할 수 있는 채팅 메시지가 없습니다.",
+      tone: "default",
+    }));
   });
 
   it("차단, 내보내기, 방장 위임을 기존 계약에 맞춰 연결한다", async () => {
@@ -202,11 +211,17 @@ describe("RoomParticipantsPanel", () => {
     expect(onUserBlocked).toHaveBeenCalledWith("member");
 
     await user.click(screen.getByRole("button", { name: "회원 내보내기" }));
-    expect(kickMutate).toHaveBeenCalledWith({
-      password: "secret",
-      slug: "room",
-      userSlug: "member",
-    });
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        password: "secret",
+        slug: "room",
+        userSlug: "member",
+      },
+      expect.objectContaining({
+        onError: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
+    );
 
     await user.click(screen.getByRole("button", { name: "회원 방장 위임" }));
     const transferOptions = transferMutate.mock.calls.at(-1)?.[1];
@@ -214,12 +229,11 @@ describe("RoomParticipantsPanel", () => {
       { slug: "room", userSlug: "member" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
-    expect(transferOptions).not.toHaveProperty("onSuccess");
+    expect(transferOptions).toHaveProperty("onSuccess");
     expect(screen.queryByText(/방장을 위임했습니다/)).not.toBeInTheDocument();
   });
 
-  it("방장 위임 실패 안내를 2초 뒤 제거한다", () => {
-    vi.useFakeTimers();
+  it("방장 위임 실패를 공통 오류 알림으로 표시한다", () => {
     renderPanel();
 
     fireEvent.click(screen.getByRole("button", { name: "회원 방장 위임" }));
@@ -227,9 +241,11 @@ describe("RoomParticipantsPanel", () => {
       onError: (error: Error) => void;
     };
     act(() => transferOptions.onError(new Error("위임 실패")));
-    expect(screen.getByRole("alert")).toHaveTextContent("위임 실패");
-
-    act(() => vi.advanceTimersByTime(2_000));
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-member:transfer:room:member",
+      message: "위임 실패",
+      tone: "error",
+    });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });

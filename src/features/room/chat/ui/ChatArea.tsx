@@ -4,7 +4,6 @@ import Image from "next/image";
 import { MoreVertical } from "lucide-react";
 import {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -20,7 +19,6 @@ import BlockUserModal, {
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomParticipant";
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
-import { useTransientManagementError } from "@/src/features/room/management/model/useTransientManagementError";
 import {
   getParticipantKickTarget,
   getParticipantKickTargetKey,
@@ -30,6 +28,12 @@ import {
 } from "@/src/features/room/participants/model/participantIdentity";
 import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
 import RoomMemberManagementMenu from "@/src/features/room/management/ui/RoomMemberManagementMenu";
+import {
+  getRoomMemberFailureMessage,
+  getRoomMemberFeedbackKey,
+  getRoomMemberSuccessMessage,
+} from "@/src/features/room/management/model/roomMemberFeedback";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import { useChatScrollRestoration } from "../hooks/useChatScrollRestoration";
 import {
   getChatMessageManagementActions,
@@ -203,6 +207,7 @@ function ChatMessageRow({
               placement={menuPlacement}
               positioning="viewport"
               targetUserSlug={message.senderSlug?.trim() || null}
+              targetNickname={message.senderNickname}
               triggerRef={triggerRef}
             />
           ) : null}
@@ -237,13 +242,6 @@ export default function ChatArea({
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
   const [reportTarget, setReportTarget] =
     useState<ReportChatMessageTarget | null>(null);
-  const [managementMessage, setManagementMessage] = useState<string | null>(
-    null,
-  );
-  const [participantResolutionError, setParticipantResolutionError] = useState<{
-    message: string;
-    roomSlug: string;
-  } | null>(null);
   const [participantResolutionAction, setParticipantResolutionAction] =
     useState<{
       action: "kick" | "transfer";
@@ -252,12 +250,7 @@ export default function ChatArea({
   const activeTriggerRef = useRef<HTMLButtonElement | null>(null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
-  const {
-    begin: beginTransferOwnerRequest,
-    clear: clearTransferOwnerError,
-    message: transferOwnerErrorMessage,
-    show: showTransferOwnerError,
-  } = useTransientManagementError();
+  const { notify } = useActionFeedback();
   const participantByUserSlug = useMemo(() => {
     const lookup = new Map<string, PlaylistParticipant>();
     participants.forEach((participant) => {
@@ -295,10 +288,6 @@ export default function ChatArea({
     scrollToLatestKey,
   });
 
-  useEffect(() => {
-    clearTransferOwnerError();
-  }, [clearTransferOwnerError, roomSlug]);
-
   const closeMenu = useCallback(() => {
     setOpenMenuKey(null);
   }, []);
@@ -320,7 +309,6 @@ export default function ChatArea({
           ? "up"
           : "down",
       );
-      setParticipantResolutionError(null);
       setOpenMenuKey((currentKey) =>
         currentKey === messageKey ? null : messageKey,
       );
@@ -424,16 +412,16 @@ export default function ChatArea({
       if (!userSlug) {
         return;
       }
-      setParticipantResolutionError(null);
       let participant = participantByUserSlug.get(userSlug) ?? null;
       if (!participant) {
         setParticipantResolutionAction({ action: "kick", userSlug });
         try {
           participant = await resolveModerationParticipant(message);
         } catch {
-          setParticipantResolutionError({
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, userSlug),
             message: "참가자 정보를 확인하지 못했습니다.",
-            roomSlug,
+            tone: "error",
           });
           return;
         } finally {
@@ -448,29 +436,40 @@ export default function ChatArea({
         ? getParticipantKickTarget(participant)
         : null;
       if (!kickTarget) {
-        setParticipantResolutionError({
+        notify({
+          dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, userSlug),
           message: "현재 참가 중인 회원을 찾지 못했습니다.",
-          roomSlug,
+          tone: "error",
         });
         return;
       }
-      clearTransferOwnerError();
-      setManagementMessage(null);
       kickParticipant.reset();
       kickParticipant.mutate(
         { ...kickTarget, password: roomPassword, slug: roomSlug },
         {
           onSuccess: () => {
-            setManagementMessage(
-              `${message.senderNickname}님을 내보냈습니다.`,
-            );
+            notify({
+              dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, userSlug),
+              message: getRoomMemberSuccessMessage(
+                "kick",
+                message.senderNickname,
+              ),
+              tone: "default",
+            });
+          },
+          onError: (error) => {
+            notify({
+              dedupeKey: getRoomMemberFeedbackKey("kick", roomSlug, userSlug),
+              message: getRoomMemberFailureMessage("kick", error.message),
+              tone: "error",
+            });
           },
         },
       );
     }, [
-      clearTransferOwnerError,
       getModerationUserSlug,
       kickParticipant,
+      notify,
       participantByUserSlug,
       resolveModerationParticipant,
       roomPassword,
@@ -482,7 +481,6 @@ export default function ChatArea({
       if (!moderationUserSlug) {
         return;
       }
-      setParticipantResolutionError(null);
       let participant =
         participantByUserSlug.get(moderationUserSlug) ?? null;
       if (!participant) {
@@ -493,9 +491,14 @@ export default function ChatArea({
         try {
           participant = await resolveModerationParticipant(message);
         } catch {
-          setParticipantResolutionError({
+          notify({
+            dedupeKey: getRoomMemberFeedbackKey(
+              "transfer",
+              roomSlug,
+              moderationUserSlug,
+            ),
             message: "참가자 정보를 확인하지 못했습니다.",
-            roomSlug,
+            tone: "error",
           });
           return;
         } finally {
@@ -509,33 +512,57 @@ export default function ChatArea({
       }
       const userSlug = getParticipantUserSlug(participant);
       if (participant?.participantType !== "USER" || !userSlug) {
-        setParticipantResolutionError({
+        notify({
+          dedupeKey: getRoomMemberFeedbackKey(
+            "transfer",
+            roomSlug,
+            moderationUserSlug,
+          ),
           message: "현재 참가 중인 회원을 찾지 못했습니다.",
-          roomSlug,
+          tone: "error",
         });
         return;
       }
-      const transferSequence = beginTransferOwnerRequest();
-      setManagementMessage(null);
       transferOwner.reset();
       transferOwner.mutate(
         { slug: roomSlug, userSlug },
         {
+          onSuccess: () => {
+            notify({
+              dedupeKey: getRoomMemberFeedbackKey(
+                "transfer",
+                roomSlug,
+                userSlug,
+              ),
+              message: getRoomMemberSuccessMessage(
+                "transfer",
+                message.senderNickname,
+              ),
+              tone: "default",
+            });
+          },
           onError: (error) => {
-            showTransferOwnerError(
-              transferSequence,
-              error.message || "방장을 위임하지 못했습니다.",
-            );
+            notify({
+              dedupeKey: getRoomMemberFeedbackKey(
+                "transfer",
+                roomSlug,
+                userSlug,
+              ),
+              message: getRoomMemberFailureMessage(
+                "transfer",
+                error.message,
+              ),
+              tone: "error",
+            });
           },
         },
       );
     }, [
-      beginTransferOwnerRequest,
       getModerationUserSlug,
+      notify,
       participantByUserSlug,
       resolveModerationParticipant,
       roomSlug,
-      showTransferOwnerError,
       transferOwner,
     ]);
   const restoreTriggerFocus = useCallback(() => {
@@ -565,27 +592,6 @@ export default function ChatArea({
             >
               {errorMessage}
             </button>
-          ) : null}
-          {managementMessage ? (
-            <div className={styles.managementMessage} role="status">
-              {managementMessage}
-            </div>
-          ) : null}
-          {kickParticipant.error ? (
-            <div className={styles.managementError} role="alert">
-              {kickParticipant.error?.message ||
-                "사용자 관리 요청을 처리하지 못했습니다."}
-            </div>
-          ) : null}
-          {participantResolutionError?.roomSlug === roomSlug ? (
-            <div className={styles.managementError} role="alert">
-              {participantResolutionError.message}
-            </div>
-          ) : null}
-          {transferOwnerErrorMessage ? (
-            <div className={styles.managementError} role="alert">
-              {transferOwnerErrorMessage}
-            </div>
           ) : null}
           {visibleMessages.length === 0 ? (
             <div className={styles.empty}>아직 채팅이 없습니다.</div>
