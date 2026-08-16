@@ -11,7 +11,7 @@ import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
 import type { UpdateMePayload } from "@/src/features/user/profile/model/types";
 
-export const STATUS_MESSAGE_MAX_LENGTH = 255;
+export const STATUS_MESSAGE_MAX_LENGTH = 20;
 export const NICKNAME_MIN_LENGTH = 2;
 export const NICKNAME_MAX_LENGTH = 20;
 export const PROFILE_FIELD_FEEDBACK_DURATION_MS = 2_000;
@@ -41,7 +41,9 @@ export function useProfileSettingsForm() {
   } = useUpdateMe();
 
   const currentNickname = me?.nickname ?? "";
-  const currentStatusMessage = me?.statusMessage ?? "";
+  const currentStatusMessage = (me?.statusMessage ?? "")
+    .replace(/[\r\n]+/g, " ")
+    .slice(0, STATUS_MESSAGE_MAX_LENGTH);
   const nickname = nicknameDraft ?? currentNickname;
   const statusMessage = statusMessageDraft ?? currentStatusMessage;
   const trimmedNickname = nickname.trim();
@@ -153,7 +155,7 @@ export function useProfileSettingsForm() {
             ? "프로필이 변경되었습니다."
             : submittedFields[0] === "nickname"
               ? "사용자 이름이 변경되었습니다."
-              : "한 줄 메시지가 변경되었습니다.",
+              : "최애곡이 변경되었습니다.",
         );
       },
       onError: () => {

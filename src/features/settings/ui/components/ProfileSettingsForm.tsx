@@ -1,7 +1,10 @@
 "use client";
 
 import type { FormEvent, KeyboardEvent } from "react";
-import type { ProfileFieldFeedback } from "../../hooks/useProfileSettingsForm";
+import {
+  STATUS_MESSAGE_MAX_LENGTH,
+  type ProfileFieldFeedback,
+} from "../../hooks/useProfileSettingsForm";
 import type { ApiError } from "@/src/shared/api/api-error";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "../ProfileSettingsTab.module.css";
@@ -113,22 +116,30 @@ export default function ProfileSettingsForm({
       </div>
       <div className={styles.formRow}>
         <label className={styles.fieldLabel} htmlFor="settings-status-message">
-          한 줄 메시지
+          최애곡
         </label>
-        <input
-          id="settings-status-message"
-          className={styles.textInput}
-          value={isMeLoading ? "" : statusMessage}
-          onChange={(event) => onStatusMessageChange(event.target.value)}
-          onKeyDown={preventSubmitWhileComposing}
-          placeholder="한 줄 메시지를 입력하세요"
-          maxLength={255}
-          disabled={!hasProfile || isUpdatingProfile || isMeLoading}
-          aria-describedby="settings-status-message-hint"
-          data-feedback={statusMessageFeedback ?? undefined}
-        />
+        <div className={styles.textInputControl}>
+          <input
+            id="settings-status-message"
+            className={`${styles.textInput} ${styles.textInputWithCounter}`}
+            value={isMeLoading ? "" : statusMessage}
+            onChange={(event) => onStatusMessageChange(event.target.value)}
+            onKeyDown={preventSubmitWhileComposing}
+            placeholder="최애곡을 입력하세요"
+            maxLength={STATUS_MESSAGE_MAX_LENGTH}
+            disabled={!hasProfile || isUpdatingProfile || isMeLoading}
+            aria-describedby="settings-status-message-count settings-status-message-hint"
+            data-feedback={statusMessageFeedback ?? undefined}
+          />
+          <span
+            id="settings-status-message-count"
+            className={styles.characterCount}
+          >
+            {statusMessage.length}/{STATUS_MESSAGE_MAX_LENGTH}
+          </span>
+        </div>
         <span id="settings-status-message-hint" className={styles.srOnly}>
-          최대 255자, 빈 문자열로 저장하면 삭제됩니다.
+          최대 20자, 빈 문자열로 저장하면 삭제됩니다.
         </span>
       </div>
       <div className={styles.formRow}>

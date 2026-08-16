@@ -21,6 +21,7 @@ vi.mock("@/src/features/badge/hooks/useSetRepresentativeBadge", () => ({
   useSetRepresentativeBadge: vi.fn(),
 }));
 vi.mock("../hooks/useProfileSettingsForm", () => ({
+  STATUS_MESSAGE_MAX_LENGTH: 20,
   useProfileSettingsForm: vi.fn(),
 }));
 vi.mock("./components/ProfileStats", () => ({
@@ -144,10 +145,15 @@ describe("설정 칭호 목록", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it("설정에서 최애 곡 항목을 표시하지 않는다", () => {
+  it("최애곡을 20자로 제한하고 현재 글자 수를 표시한다", () => {
+    mockProfileForm({ statusMessage: "재즈" });
     render(<ProfileSettingsTab />);
 
-    expect(screen.queryByText("최애 곡")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("최애곡")).toHaveAttribute(
+      "maxlength",
+      "20",
+    );
+    expect(screen.getByText("2/20")).toBeInTheDocument();
   });
 
   it("획득한 칭호를 선택하면 badgeCode만 대표 칭호 mutation에 전달한다", async () => {
@@ -236,7 +242,7 @@ describe("설정 칭호 목록", () => {
       "data-feedback",
       "success",
     );
-    expect(screen.getByLabelText("한 줄 메시지")).toHaveAttribute(
+    expect(screen.getByLabelText("최애곡")).toHaveAttribute(
       "data-feedback",
       "error",
     );
