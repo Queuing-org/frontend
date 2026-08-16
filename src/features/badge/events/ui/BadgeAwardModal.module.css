@@ -156,7 +156,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .backdrop { padding: 19.2px; }
   .modal { width: min(328px, 100%); padding: 24px 24px 22.4px; border-radius: 22.4px; }
   .glow { top: -67.2px; width: 192px; height: 144px; }

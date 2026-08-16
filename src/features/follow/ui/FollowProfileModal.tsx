@@ -30,6 +30,10 @@ const PROFILE_PANEL_SIZE = {
   compact: { height: 304, width: 240 },
   normal: { height: 380, width: 300 },
 } as const;
+const PROFILE_PANEL_SAFE_MARGIN = {
+  compact: 142.4,
+  normal: 178,
+} as const;
 
 function subscribeToViewport(callback: () => void) {
   window.addEventListener("resize", callback);
@@ -70,6 +74,14 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
     width: viewportWidth,
   });
   const panelSize = PROFILE_PANEL_SIZE[viewportDensity];
+  const availablePanelHeight = Math.max(
+    160,
+    viewportHeight - PROFILE_PANEL_SAFE_MARGIN[viewportDensity],
+  );
+  const panelHeight = viewportHeight
+    ? Math.min(panelSize.height, availablePanelHeight)
+    : panelSize.height;
+  const isHeightConstrained = panelHeight < panelSize.height;
   const profileQuery = useUserProfile(user.slug);
   const profile = profileQuery.data;
   const shouldLoadMusicPowerFallback =
@@ -128,6 +140,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
             <div
               ref={dialogRef}
               className={styles.dialog}
+              data-height-constrained={isHeightConstrained || undefined}
               role="dialog"
               aria-label={`${displayNickname} 프로필 상세`}
               inert={blockTarget ? true : undefined}
@@ -135,7 +148,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
             >
               <FloatingPanelShell
                 contentClassName={styles.profilePanelContent}
-                height={panelSize.height}
+                height={panelHeight}
                 width={panelSize.width}
               >
                 <div className={styles.content}>
@@ -163,6 +176,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                             initialRelationship={
                               profile?.relationship ?? "NONE"
                             }
+                            followingLabel="팔로잉"
                             targetSlug={user.slug}
                           />
                         </div>
@@ -231,6 +245,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                       profile?.musicPower ?? musicPowerQuery.data?.musicPower
                     }
                     nickname={displayNickname}
+                    online={profile?.online ?? user.online}
                     queuingCount={profile?.queuingCount}
                     statusMessage={profile?.statusMessage?.trim() ?? ""}
                   />

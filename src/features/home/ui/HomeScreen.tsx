@@ -37,6 +37,7 @@ import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
 import RoomDeletedNoticeBanner from "./RoomDeletedNoticeBanner";
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
 
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
@@ -48,7 +49,7 @@ const RoomJoinPasswordModal = dynamic(
 type DiscoveryModalKey = "create" | "follow" | "settings";
 
 export default function HomeScreen() {
-  const isMobileLayout = useMediaQuery("(max-width: 760px)");
+  const isMobileLayout = useMediaQuery(MOBILE_VIEWPORT_MEDIA_QUERY);
   const [roomListFilters, setRoomListFilters] =
     useState(DEFAULT_HOME_FILTERS);
   const [mobileSearchQuery, setMobileSearchQuery] = useState("");

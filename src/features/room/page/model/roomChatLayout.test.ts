@@ -73,10 +73,14 @@ describe("roomChatLayout", () => {
   });
 
   it("모바일 전용 레이아웃에는 desktop 6행 예약을 적용하지 않는다", () => {
-    expect(getRoomChatLayout({ height: 640, width: 760 }, true)).toMatchObject({
+    expect(getRoomChatLayout({ height: 640, width: 480 }, true)).toMatchObject({
       chatDensity: 1,
       chatMinHeight: 0,
       songStackWidth: 640,
     });
+  });
+
+  it.each([481, 600, 760])("%dpx는 desktop 채팅 레이아웃을 사용한다", (width) => {
+    expect(getRoomChatLayout({ height: 640, width }, true).chatMinHeight).toBeGreaterThan(0);
   });
 });

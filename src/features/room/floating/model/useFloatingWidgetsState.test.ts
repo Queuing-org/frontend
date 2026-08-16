@@ -40,7 +40,7 @@ beforeEach(() => {
       addEventListener: vi.fn(),
       addListener: vi.fn(),
       dispatchEvent: vi.fn(),
-      matches: query === "(max-width: 760px)" && window.innerWidth <= 760,
+      matches: query === "(max-width: 480px)" && window.innerWidth <= 480,
       media: query,
       onchange: null,
       removeEventListener: vi.fn(),
@@ -152,7 +152,7 @@ describe("floating widget laptop compact layout", () => {
   ])("%s viewport에서 위젯 geometry를 정확히 80%%로 줄인다", (_, viewport) => {
     const profile = getWidgetConfig("profile", viewport);
     expect(profile).toMatchObject({
-      height: 304,
+      height: 328.8,
       top: 64,
       width: 240,
     });
@@ -166,9 +166,9 @@ describe("floating widget laptop compact layout", () => {
     expect(queue.left).toBeCloseTo(19.2);
   });
 
-  it("FHD viewport에서는 기존 위젯 geometry를 유지한다", () => {
+  it("FHD viewport에서는 확장된 프로필 위젯 geometry를 사용한다", () => {
     expect(getWidgetConfig("profile", normalViewport)).toMatchObject({
-      height: 380,
+      height: 411,
       left: 24,
       top: 80,
       width: 300,
@@ -207,7 +207,7 @@ describe("floating widget laptop compact layout", () => {
     const { result } = renderHook(() => useFloatingWidgetsState());
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 380,
+      height: 411,
       offset: { x: 11, y: 12 },
       width: 300,
     });
@@ -218,7 +218,7 @@ describe("floating widget laptop compact layout", () => {
     });
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 304,
+      height: 328.8,
       offset: { x: 21, y: 22 },
       width: 240,
     });

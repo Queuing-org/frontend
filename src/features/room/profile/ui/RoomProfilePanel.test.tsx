@@ -554,6 +554,44 @@ describe("RoomProfilePanel", () => {
     expect(screen.queryByText("온라인")).not.toBeInTheDocument();
   });
 
+  it("프로필 online 필드가 있을 때만 접근성 상태 점을 표시한다", () => {
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        online: false,
+        profileImageUrl: null,
+        slug: "target-user",
+      },
+      isError: false,
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+
+    const { rerender } = renderPanel();
+    expect(screen.getByRole("img", { name: "오프라인" })).toBeInTheDocument();
+
+    vi.mocked(useUserProfile).mockReturnValue({
+      data: {
+        nickname: "대상",
+        profileImageUrl: null,
+        slug: "target-user",
+      },
+      isError: false,
+      isLoading: false,
+    } as ReturnType<typeof useUserProfile>);
+    rerender(
+      <RoomProfilePanel
+        currentUser={currentUser}
+        currentRequester={requester}
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
+        roomMeta={roomMeta}
+        roomSlug="room"
+      />,
+    );
+    expect(screen.queryByRole("img", { name: "오프라인" })).not.toBeInTheDocument();
+  });
+
   it("관리와 음악력 버튼에 지정된 8x8 SVG 아이콘을 사용한다", () => {
     renderPanel();
 

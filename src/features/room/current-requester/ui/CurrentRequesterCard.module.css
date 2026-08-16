@@ -98,7 +98,7 @@
   max-width: min(var(--room-requester-story-max-width, 600px), 36vw);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .card {
     padding: 0.875rem 1rem;
     border-bottom: 1px solid #eeeeef;

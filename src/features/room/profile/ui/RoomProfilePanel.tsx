@@ -607,6 +607,7 @@ export default function RoomProfilePanel({
               ) : null
             }
             nickname={displayNickname}
+            online={publicProfile?.online}
             primaryStatus={
               isSelf ? (
                 <div

@@ -85,7 +85,7 @@
   background: #f7f7f9;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .track {
     --room-card-height: 53.6px;
   }

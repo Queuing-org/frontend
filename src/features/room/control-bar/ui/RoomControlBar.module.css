@@ -106,7 +106,7 @@
   -webkit-mask-image: url("/icons/player_list.svg");
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .outerBar {
     width: 297.6px;
     height: 60.8px;

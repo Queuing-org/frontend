@@ -224,7 +224,7 @@
   z-index: 3;
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .page {
     --room-chat-list-padding-y: clamp(
       8.96px,
@@ -379,7 +379,7 @@
   }
 }
 
-@media (min-width: 761px) and (min-height: 901px) and (max-height: 1100px) {
+@media (min-width: 481px) and (min-height: 901px) and (max-height: 1100px) {
   .page {
     --room-chat-list-padding-y: clamp(
       11.2px,

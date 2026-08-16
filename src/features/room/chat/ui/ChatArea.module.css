@@ -285,7 +285,7 @@
   }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .root {
     --room-chat-avatar-size: 2rem;
 
@@ -315,7 +315,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .root {
     border-radius: 6.4px;
   }

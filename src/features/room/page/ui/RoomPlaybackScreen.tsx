@@ -71,6 +71,7 @@ import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
 import { getRoomChatLayout } from "../model/roomChatLayout";
+import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
 type MobileRoomTab = "playback" | "queue" | "participants";
@@ -94,7 +95,7 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const isMobileLayout = useMediaQuery("(max-width: 760px)");
+  const isMobileLayout = useMediaQuery(MOBILE_VIEWPORT_MEDIA_QUERY);
   const slug = normalizeRoomSlug(params.slug ?? "");
   const queryClient = useQueryClient();
   const activeJoinAbortControllerRef = useRef<AbortController | null>(null);

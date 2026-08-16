@@ -218,7 +218,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .list_container {
     --panel-horizontal-padding: 12.8px;
     --panel-content-width: 848px;

@@ -285,7 +285,7 @@
   opacity: 0.45;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 480px) {
   .overlay {
     bottom: 0;
     padding: 12px;
@@ -328,7 +328,7 @@
   }
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .overlay {
     padding: 19.2px 19.2px 123.2px;
   }

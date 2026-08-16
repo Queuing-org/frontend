@@ -10,7 +10,8 @@ export function applyPresenceToUser(
 ): FollowUser {
   if (
     user.slug !== event.data.userSlug ||
-    event.data.version <= user.presenceVersion
+    (user.presenceVersion !== undefined &&
+      event.data.version <= user.presenceVersion)
   ) {
     return user;
   }

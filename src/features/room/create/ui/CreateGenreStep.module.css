@@ -79,7 +79,7 @@
   line-height: 1.4;
 }
 
-@media (min-width: 761px) and (max-width: 1600px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
   .stepContent { gap: 9.6px; }
   .tagGrid { gap: 9.6px 8px; max-width: 608px; }
   .tagChip { min-height: 30.4px; padding: 6.4px 16px; font-size: 12.8px; }

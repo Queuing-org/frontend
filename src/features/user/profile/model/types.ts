@@ -17,6 +17,7 @@ export type UserProfile = {
   queuingCount?: number;
   listeningDurationSeconds?: number;
   relationship?: UserRelationship | null;
+  online?: boolean;
 };
 
 export type MusicPowerVote = "UPVOTE" | "DOWNVOTE";

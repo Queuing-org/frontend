@@ -18,6 +18,7 @@ type Props = {
   musicPowerActions?: ReactNode;
   musicPowerNotice?: ReactNode;
   nickname: string;
+  online?: boolean;
   primaryStatus?: ReactNode;
   queuingCount?: number;
   statusMessage: string;
@@ -37,6 +38,7 @@ export default function UserProfileContent({
   musicPowerActions,
   musicPowerNotice,
   nickname,
+  online,
   primaryStatus,
   queuingCount,
   statusMessage,
@@ -60,6 +62,14 @@ export default function UserProfileContent({
               {nickname.slice(0, 1)}
             </div>
           )}
+          {online !== undefined ? (
+            <span
+              className={styles.presenceDot}
+              data-online={online}
+              role="img"
+              aria-label={online ? "온라인" : "오프라인"}
+            />
+          ) : null}
         </div>
         <div className={styles.nameBlock}>
           <div className={styles.nameRow}>

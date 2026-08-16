@@ -3,12 +3,12 @@ export type FollowUser = {
   nickname: string;
   slug: string;
   profileImageUrl: string | null;
-  online: boolean;
-  room: {
+  online?: boolean;
+  room?: {
     slug: string;
     title: string;
   } | null;
-  presenceVersion: number;
+  presenceVersion?: number;
 };
 
 export type FollowListResponse = {

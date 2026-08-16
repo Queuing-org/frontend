@@ -9,9 +9,7 @@ type Props = {
   nickname: string;
   onSelect?: (trigger: HTMLButtonElement) => void;
   presence?: {
-    inRoom: boolean;
     online: boolean;
-    text: string;
   };
   profileImageUrl: string | null;
   roomLink?: {
@@ -46,22 +44,14 @@ export default function FollowUserCard({
           <span
             className={styles.presenceDot}
             data-online={presence.online}
-            aria-hidden="true"
+            role="img"
+            aria-label={presence.online ? "온라인" : "오프라인"}
           />
         ) : null}
       </span>
 
       <span className={styles.meta}>
         <span className={styles.nickname}>{nickname}</span>
-        {presence ? (
-          <span
-            className={styles.status}
-            data-in-room={presence.inRoom}
-            data-online={presence.online}
-          >
-            {presence.text}
-          </span>
-        ) : null}
       </span>
     </>
   );

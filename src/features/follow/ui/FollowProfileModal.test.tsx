@@ -47,6 +47,8 @@ const followUser = {
 
 describe("FollowProfileModal", () => {
   beforeEach(() => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 1024 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 768 });
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         listeningDurationSeconds: 3_660,
@@ -69,6 +71,38 @@ describe("FollowProfileModal", () => {
       data: undefined,
       isLoading: false,
     } as ReturnType<typeof usePublicUserBadges>);
+  });
+
+  it("기본 compact 높이에서는 내부 스크롤 모드를 켜지 않는다", () => {
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    expect(
+      screen.getByRole("dialog", { name: "공개 닉네임 프로필 상세" }),
+    ).not.toHaveAttribute("data-height-constrained");
+  });
+
+  it("안전 여백을 포함한 사용 가능 높이가 부족할 때만 패널을 줄여 스크롤 모드로 전환한다", () => {
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 300 });
+
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "공개 닉네임 프로필 상세",
+    });
+    expect(dialog).toHaveAttribute("data-height-constrained", "true");
+    expect(dialog.firstElementChild).toHaveStyle({ height: "160px" });
   });
 
   it("공개 프로필 통계와 음악력 값만 표시한다", () => {

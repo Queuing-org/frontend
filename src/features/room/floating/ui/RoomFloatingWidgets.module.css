@@ -34,7 +34,7 @@
   overflow: hidden;
 }
 
-@media (min-width: 761px) and (max-height: 900px) {
+@media (min-width: 481px) and (max-height: 900px) {
   .chatPanelContent {
     padding: 0 12.8px 11.2px;
   }
