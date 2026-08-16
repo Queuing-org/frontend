@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./WithdrawalDialog.module.css";
 
 const WITHDRAWAL_REASONS = [
@@ -17,14 +18,12 @@ type WithdrawalReason = (typeof WITHDRAWAL_REASONS)[number];
 type WithdrawalStep = "reasons" | "confirm";
 
 type Props = {
-  errorMessage?: string | null;
   isPending: boolean;
   onClose: () => void;
   onSubmit: (reason: string) => void;
 };
 
 export default function WithdrawalDialog({
-  errorMessage,
   isPending,
   onClose,
   onSubmit,
@@ -34,6 +33,8 @@ export default function WithdrawalDialog({
     Set<WithdrawalReason>
   >(new Set());
   const [isConfirmReady, setIsConfirmReady] = useState(false);
+  const [isReasonInvalid, setIsReasonInvalid] = useState(false);
+  const { notify } = useActionFeedback();
   const firstCheckboxRef = useRef<HTMLInputElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -87,6 +88,7 @@ export default function WithdrawalDialog({
       }
       return nextReasons;
     });
+    setIsReasonInvalid(false);
   }
 
   return (
@@ -113,7 +115,14 @@ export default function WithdrawalDialog({
               <h2 id={titleId} className={styles.title}>
                 탈퇴하시는 이유를 알려주세요
               </h2>
-              <fieldset className={styles.reasons} disabled={isPending}>
+              <fieldset
+                className={styles.reasons}
+                disabled={isPending}
+                aria-invalid={isReasonInvalid}
+                aria-describedby={
+                  isReasonInvalid ? `${titleId}-reason-error` : undefined
+                }
+              >
                 <legend className={styles.visuallyHidden}>탈퇴 사유</legend>
                 {WITHDRAWAL_REASONS.map((withdrawalReason, index) => (
                   <label key={withdrawalReason} className={styles.reasonItem}>
@@ -129,6 +138,12 @@ export default function WithdrawalDialog({
                   </label>
                 ))}
               </fieldset>
+              <span
+                id={`${titleId}-reason-error`}
+                className={styles.visuallyHidden}
+              >
+                탈퇴 사유를 하나 이상 선택해 주세요.
+              </span>
               <div className={styles.actions}>
                 <button
                   type="button"
@@ -140,11 +155,17 @@ export default function WithdrawalDialog({
                 <button
                   type="button"
                   className={styles.confirmButton}
-                  disabled={!reason}
                   onClick={() => {
                     if (reason) {
                       setIsConfirmReady(false);
                       setStep("confirm");
+                    } else {
+                      setIsReasonInvalid(true);
+                      notify({
+                        dedupeKey: "account:withdraw:reason",
+                        message: "탈퇴 사유를 하나 이상 선택해 주세요.",
+                        tone: "error",
+                      });
                     }
                   }}
                 >
@@ -164,11 +185,6 @@ export default function WithdrawalDialog({
                 <br />
                 서비스를 제공할 수 있도록 노력하겠습니다.
               </p>
-              {errorMessage ? (
-                <p className={styles.error} role="alert">
-                  회원탈퇴 실패: {errorMessage}
-                </p>
-              ) : null}
               <div className={styles.actions}>
                 <button
                   ref={cancelButtonRef}
