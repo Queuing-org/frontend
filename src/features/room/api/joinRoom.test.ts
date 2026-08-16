@@ -13,6 +13,7 @@ import {
   type JoinHandlers,
 } from "./websocket/subscribeUserJoinEvents";
 import { joinRoom } from "./joinRoom";
+import { ApiError } from "@/src/shared/api/api-error";
 
 vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
   acquireSocketSession: vi.fn(),
@@ -149,5 +150,25 @@ describe("joinRoom socket lifecycle", () => {
     await rejection;
     expect(publishLeaveRequest).toHaveBeenCalledWith("room");
     expect(publishLeaveRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it("이미 다른 방에 참가 중인 오류는 새 대상 방에 leave를 보내지 않는다", async () => {
+    client.connected = true;
+    const request = joinRoom("new-room");
+    await vi.advanceTimersByTimeAsync(0);
+
+    joinHandlers?.onError(
+      new ApiError({
+        status: 409,
+        code: "room.already-participating",
+        message: "이미 참가 중인 방이 있습니다.",
+      }),
+    );
+
+    await expect(request).rejects.toMatchObject({
+      code: "room.already-participating",
+    });
+    expect(publishLeaveRequest).not.toHaveBeenCalled();
+    expect(releaseSocketSession).toHaveBeenCalledTimes(1);
   });
 });

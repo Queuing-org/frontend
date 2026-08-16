@@ -16,6 +16,7 @@ import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { ApiError } from "@/src/shared/api/api-error";
+import { userKeys } from "@/src/features/user/model/queryKeys";
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
 
@@ -141,6 +142,10 @@ describe("useRoomRealtimeEvents", () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
+    queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
+    queryClient.setQueryData(roomKeys.meta("room"), { value: true });
     let userEventHandler: ((message: { body: string }) => void) | undefined;
     const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
     vi.mocked(getSocketClient).mockReturnValue({
@@ -213,6 +218,77 @@ describe("useRoomRealtimeEvents", () => {
       "현재 방은 다른 창에서 마지막으로 열렸습니다.",
     );
     expect(stopSocketAutoReconnect).toHaveBeenCalledTimes(1);
+    expect(publishLeaveRequest).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomParticipants("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomQueue("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
+  });
+
+  it("STOMP ERROR frame의 session-replaced도 동일한 terminal room cleanup을 수행한다", () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
+    queryClient.setQueryData(roomKeys.meta("room"), { value: true });
+    let socketListener: Parameters<typeof addSocketListener>[0] | undefined;
+    vi.mocked(addSocketListener).mockImplementation((listener) => {
+      socketListener = listener;
+      return vi.fn();
+    });
+    const roomSubscription = { id: "room-events", unsubscribe: vi.fn() };
+    const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
+    vi.mocked(subscribeRoomEvents).mockReturnValue(roomSubscription);
+    vi.mocked(getSocketClient).mockReturnValue({
+      subscribe: vi.fn(() => userSubscription),
+    } as never);
+    const cleanupChatSubscriptions = vi.fn();
+    const resetChatState = vi.fn();
+    const setJoinErrorMessage = vi.fn();
+    const setStatus = vi.fn();
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions,
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState,
+          setJoinErrorMessage,
+          setLivePlaybackStatus: vi.fn(),
+          setStatus,
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => {
+      socketListener?.onStompError?.({
+        body: JSON.stringify({
+          statusCode: 409,
+          code: "user.session-replaced",
+          message: "replaced",
+        }),
+      } as never);
+    });
+
+    expect(roomSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(userSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(cleanupChatSubscriptions).toHaveBeenCalledOnce();
+    expect(resetChatState).toHaveBeenCalledOnce();
+    expect(setStatus).toHaveBeenCalledWith("error");
+    expect(setJoinErrorMessage).toHaveBeenCalledWith(
+      "현재 방은 다른 창에서 마지막으로 열렸습니다.",
+    );
+    expect(stopSocketAutoReconnect).toHaveBeenCalledOnce();
+    expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomParticipants("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomQueue("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
     expect(publishLeaveRequest).not.toHaveBeenCalled();
   });
 
@@ -314,6 +390,70 @@ describe("useRoomRealtimeEvents", () => {
     });
 
     unmount();
+  });
+
+  it("음악력 변경 이벤트는 재생 건별 cache 점수만 갱신하고 myVote를 보존한다", () => {
+    const queryClient = new QueryClient();
+    const firstKey = userKeys.musicPower("target", "room", "entry-1");
+    const secondKey = userKeys.musicPower("target", "room", "entry-2");
+    queryClient.setQueryData(firstKey, {
+      musicPower: 2,
+      myVote: "UPVOTE",
+      targetUserSlug: "target",
+    });
+    queryClient.setQueryData(secondKey, {
+      musicPower: 2,
+      myVote: null,
+      targetUserSlug: "target",
+    });
+    let roomEventHandler:
+      | Parameters<typeof subscribeRoomEvents>[1]
+      | undefined;
+    vi.mocked(subscribeRoomEvents).mockImplementation((_slug, handler) => {
+      roomEventHandler = handler;
+      return { id: "room-events", unsubscribe: vi.fn() };
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions: vi.fn(),
+          initializeChatStateFromJoinData: vi.fn(),
+          resetChatState: vi.fn(),
+          setJoinErrorMessage: vi.fn(),
+          setLivePlaybackStatus: vi.fn(),
+          setStatus: vi.fn(),
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => {
+      roomEventHandler?.({
+        body: JSON.stringify({
+          type: "MUSIC_POWER_CHANGED",
+          roomSlug: "room",
+          timestamp: 1,
+          data: {
+            entryId: "entry-2",
+            targetUserSlug: "target",
+            musicPower: 3,
+          },
+        }),
+      } as never);
+    });
+
+    expect(queryClient.getQueryData(firstKey)).toMatchObject({
+      musicPower: 3,
+      myVote: "UPVOTE",
+    });
+    expect(queryClient.getQueryData(secondKey)).toMatchObject({
+      musicPower: 3,
+      myVote: null,
+    });
   });
 
   it("같은 room event 10회 burst를 query target별 1회로 제한한다", async () => {

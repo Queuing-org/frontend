@@ -42,6 +42,46 @@
   font-size: 13px;
 }
 
+.reasonLabel {
+  display: block;
+  margin-top: 18px;
+  color: #3c3c3c;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+}
+
+.reasonLabel span,
+.reasonCount {
+  color: #8d8d8d;
+  font-weight: var(--fw-regular);
+}
+
+.reasonInput {
+  width: 100%;
+  min-height: 96px;
+  box-sizing: border-box;
+  margin-top: 8px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  color: #3c3c3c;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reasonInput:focus-visible {
+  border-color: #2f86ed;
+  outline: 2px solid rgb(47 134 237 / 18%);
+}
+
+.reasonCount {
+  margin-top: 4px;
+  font-size: 12px;
+  text-align: right;
+}
+
 .error {
   color: #c73939;
   font-size: 13px;
@@ -103,6 +143,9 @@
   .description, .helpText, .error { margin-top: 9.6px; }
   .description { font-size: 12.8px; }
   .helpText, .error { font-size: 10.4px; }
+  .reasonLabel { margin-top: 14.4px; font-size: 10.4px; }
+  .reasonInput { min-height: 76.8px; margin-top: 6.4px; padding: 8px 9.6px; font-size: 10.4px; }
+  .reasonCount { margin-top: 3.2px; font-size: 9.6px; }
   .actions { gap: 6.4px; margin-top: 19.2px; }
   .primaryButton, .secondaryButton { min-width: 70.4px; height: 32px; padding: 0 14.4px; font-size: 11.2px; }
 }

@@ -14,6 +14,7 @@ import { useKickRoomParticipant } from "@/src/features/room/hooks/useKickRoomPar
 import { useTransferRoomOwner } from "@/src/features/room/hooks/useTransferRoomOwner";
 import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
 import RoomProfilePanel from "./RoomProfilePanel";
+import { ApiError } from "@/src/shared/api/api-error";
 
 vi.mock("next/image", () => ({
   default: ({
@@ -147,6 +148,7 @@ function renderPanel(
         options?.currentUser === undefined ? currentUser : options.currentUser
       }
       currentRequester={currentRequester}
+      currentEntryId="entry-1"
       hasUnloadedParticipants={options?.hasUnloadedParticipants}
       isCurrentUserLoading={false}
       kickTarget={
@@ -239,7 +241,7 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
   });
 
-  it("공개 프로필에 칭호와 음악력이 있으면 중복 fallback 조회를 비활성화한다", () => {
+  it("공개 프로필에 점수가 있어도 재생 건별 투표 상태 조회를 유지한다", () => {
     vi.mocked(useUserProfile).mockReturnValue({
       data: {
         musicPower: 42,
@@ -256,13 +258,16 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(useMusicPower).toHaveBeenLastCalledWith(null);
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      { entryId: "entry-1", roomSlug: "room" },
+    );
     expect(usePublicUserBadges).toHaveBeenLastCalledWith(null);
     expect(screen.getByText("방 팠음")).toBeInTheDocument();
-    expect(screen.getByText("42")).toBeInTheDocument();
+    expect(screen.getByText("55")).toBeInTheDocument();
   });
 
-  it("공개 프로필 조회가 실패하면 칭호와 음악력 fallback을 활성화한다", () => {
+  it("공개 프로필 조회가 실패해도 재생 건별 음악력과 칭호 fallback을 활성화한다", () => {
     vi.mocked(useUserProfile).mockReturnValue({
       data: undefined,
       isError: true,
@@ -271,17 +276,22 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(useMusicPower).toHaveBeenLastCalledWith("target-user");
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      { entryId: "entry-1", roomSlug: "room" },
+    );
     expect(usePublicUserBadges).toHaveBeenLastCalledWith("target-user");
   });
 
-  it("기존 투표 상태와 무관하게 클릭한 방향을 PUT mutation에 전달한다", async () => {
+  it("투표 전에는 방과 재생 항목을 포함해 PUT mutation에 전달한다", async () => {
     const user = userEvent.setup();
     const { rerender } = renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 올리기" }));
     expect(mutate).toHaveBeenLastCalledWith(
       {
+        entryId: "entry-1",
+        roomSlug: "room",
         targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
@@ -291,7 +301,7 @@ describe("RoomProfilePanel", () => {
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
         musicPower: 56,
-        myVote: "UPVOTE",
+        myVote: null,
         targetUserSlug: "target-user",
       },
       isLoading: false,
@@ -300,6 +310,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={currentUser}
         currentRequester={requester}
+        currentEntryId="entry-2"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -313,8 +324,11 @@ describe("RoomProfilePanel", () => {
     const upButton = screen.getByRole("button", { name: "음악력 올리기" });
     expect(upButton).not.toHaveAttribute("aria-pressed");
     await user.click(upButton);
+    expect(mutate).toHaveBeenCalledTimes(2);
     expect(mutate).toHaveBeenLastCalledWith(
       {
+        entryId: "entry-2",
+        roomSlug: "room",
         targetUserSlug: "target-user",
         vote: "UPVOTE",
       },
@@ -322,7 +336,7 @@ describe("RoomProfilePanel", () => {
     );
   });
 
-  it("반대 방향 클릭은 DOWNVOTE로 교체한다", async () => {
+  it("이미 투표한 재생 건의 반대 방향 클릭도 API 없이 안내한다", async () => {
     const user = userEvent.setup();
     vi.mocked(useMusicPower).mockReturnValue({
       data: {
@@ -335,12 +349,9 @@ describe("RoomProfilePanel", () => {
     renderPanel();
 
     await user.click(screen.getByRole("button", { name: "음악력 내리기" }));
-    expect(mutate).toHaveBeenCalledWith(
-      {
-        targetUserSlug: "target-user",
-        vote: "DOWNVOTE",
-      },
-      expect.objectContaining({ onError: expect.any(Function) }),
+    expect(mutate).not.toHaveBeenCalled();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "각 노래당 한번만 투표할 수 있어요",
     );
   });
 
@@ -379,6 +390,28 @@ describe("RoomProfilePanel", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("backend already-evaluated 오류를 동일한 1회 제한 문구로 정규화한다", () => {
+    renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: ApiError) => void;
+    };
+    act(() => {
+      mutationOptions.onError(
+        new ApiError({
+          status: 409,
+          code: "music-power.already-evaluated",
+          message: "이미 평가했습니다.",
+        }),
+      );
+    });
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "각 노래당 한번만 투표할 수 있어요",
+    );
+  });
+
   it("신청자가 바뀌면 이전 신청자의 음악력 안내를 표시하지 않는다", () => {
     const { rerender } = renderPanel();
 
@@ -395,6 +428,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={currentUser}
         currentRequester={{ ...requester, slug: "next-user" }}
+        currentEntryId="entry-2"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "next-user" }}
         onUserBlocked={onUserBlocked}
@@ -431,8 +465,54 @@ describe("RoomProfilePanel", () => {
 
     renderPanel();
 
-    expect(screen.getByRole("button", { name: "음악력 올리기" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "음악력 내리기" })).toBeEnabled();
+    const upButton = screen.getByRole("button", { name: "음악력 올리기" });
+    const downButton = screen.getByRole("button", { name: "음악력 내리기" });
+
+    expect(upButton).toBeEnabled();
+    expect(downButton).toBeEnabled();
+
+    fireEvent.click(upButton);
+    fireEvent.click(downButton);
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("처리 중 재클릭해도 기존 요청의 오류 안내를 무효화하지 않는다", () => {
+    const { rerender } = renderPanel();
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 올리기" }));
+    const mutationOptions = mutate.mock.calls.at(-1)?.[1] as {
+      onError: (error: Error) => void;
+    };
+    vi.mocked(useCurrentTrackMusicPowerVote).mockReturnValue({
+      error: null,
+      isPending: true,
+      mutate,
+    } as unknown as ReturnType<typeof useCurrentTrackMusicPowerVote>);
+
+    rerender(
+      <RoomProfilePanel
+        currentUser={currentUser}
+        currentRequester={requester}
+        currentEntryId="entry-1"
+        isCurrentUserLoading={false}
+        kickTarget={{ userSlug: "target-user" }}
+        onUserBlocked={onUserBlocked}
+        reportMessageKey="message-key"
+        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
+        roomMeta={roomMeta}
+        roomPassword="secret"
+        roomSlug="room"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "음악력 내리기" }));
+    expect(mutate).toHaveBeenCalledOnce();
+
+    act(() => {
+      mutationOptions.onError(new Error("음악력 투표 오류"));
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("음악력 투표 오류");
   });
 
   it("본인에게는 내 노래 상태만 표시하고 음악력·관계 액션을 숨긴다", () => {
@@ -469,6 +549,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={null}
         currentRequester={requester}
+        currentEntryId="entry-1"
         isCurrentUserLoading
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -490,6 +571,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={selfUser}
         currentRequester={requester}
+        currentEntryId="entry-1"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
@@ -582,6 +664,7 @@ describe("RoomProfilePanel", () => {
       <RoomProfilePanel
         currentUser={currentUser}
         currentRequester={requester}
+        currentEntryId="entry-1"
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}

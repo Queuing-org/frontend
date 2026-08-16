@@ -105,6 +105,25 @@ describe("FollowProfileModal", () => {
     expect(dialog.firstElementChild).toHaveStyle({ height: "160px" });
   });
 
+  it("모바일에서는 12px 상하 안전 여백을 제외하고 380px 기본 높이를 유지한다", () => {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 500 });
+
+    render(
+      <FollowProfileModal
+        onBlocked={vi.fn()}
+        onClose={vi.fn()}
+        user={followUser}
+      />,
+    );
+
+    const dialog = screen.getByRole("dialog", {
+      name: "공개 닉네임 프로필 상세",
+    });
+    expect(dialog).not.toHaveAttribute("data-height-constrained");
+    expect(dialog.firstElementChild).toHaveStyle({ height: "380px" });
+  });
+
   it("공개 프로필 통계와 음악력 값만 표시한다", () => {
     render(
       <FollowProfileModal

@@ -67,14 +67,14 @@
   font-weight: var(--fw-semibold);
 }
 
-.followButton {
+.followButton.followButton:not([data-following="true"]) {
   border-color: #3b82f6;
   background: #3b82f6;
   color: #ffffff;
 }
 
-.followButton[data-following="true"],
-.followButton[data-following="true"]:hover {
+.followButton.followButton[data-following="true"],
+.followButton.followButton[data-following="true"]:hover {
   border-color: #e9ebee;
   background: #f8f8fa;
   color: #3c3c3c;

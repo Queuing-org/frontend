@@ -23,7 +23,10 @@ import UserProfileContent from "@/src/features/user/profile/ui/UserProfileConten
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import ManagementMenuShell from "@/src/shared/ui/management-menu/ManagementMenuShell";
 import FloatingPanelShell from "@/src/shared/ui/floating-panel/FloatingPanelShell";
-import { getDesktopViewportDensity } from "@/src/shared/lib/viewportDensity";
+import {
+  getDesktopViewportDensity,
+  MOBILE_VIEWPORT_MAX_WIDTH,
+} from "@/src/shared/lib/viewportDensity";
 import styles from "./FollowProfileModal.module.css";
 
 const PROFILE_PANEL_SIZE = {
@@ -34,6 +37,7 @@ const PROFILE_PANEL_SAFE_MARGIN = {
   compact: 142.4,
   normal: 178,
 } as const;
+const MOBILE_PROFILE_PANEL_SAFE_MARGIN = 24;
 
 function subscribeToViewport(callback: () => void) {
   window.addEventListener("resize", callback);
@@ -74,9 +78,13 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
     width: viewportWidth,
   });
   const panelSize = PROFILE_PANEL_SIZE[viewportDensity];
+  const panelSafeMargin =
+    viewportWidth <= MOBILE_VIEWPORT_MAX_WIDTH
+      ? MOBILE_PROFILE_PANEL_SAFE_MARGIN
+      : PROFILE_PANEL_SAFE_MARGIN[viewportDensity];
   const availablePanelHeight = Math.max(
     160,
-    viewportHeight - PROFILE_PANEL_SAFE_MARGIN[viewportDensity],
+    viewportHeight - panelSafeMargin,
   );
   const panelHeight = viewportHeight
     ? Math.min(panelSize.height, availablePanelHeight)

@@ -19,7 +19,7 @@ function renderModal({
     defaultOptions: { mutations: { retry: false } },
   });
 
-  render(
+  const view = render(
     <QueryClientProvider client={queryClient}>
       <BlockUserModal
         target={{ nickname: "대상", slug: "target-user" }}
@@ -29,7 +29,7 @@ function renderModal({
     </QueryClientProvider>,
   );
 
-  return { onBlocked, onClose };
+  return { ...view, onBlocked, onClose, queryClient };
 }
 
 describe("BlockUserModal", () => {
@@ -42,7 +42,20 @@ describe("BlockUserModal", () => {
     const { onBlocked, onClose } = renderModal();
     vi.mocked(blockUser).mockResolvedValue();
 
+    await user.type(
+      screen.getByRole("textbox", { name: "차단 사유 (선택)" }),
+      "반복 메시지",
+    );
+    expect(screen.getByText("6/500")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "차단" }));
+
+    expect(blockUser).toHaveBeenCalledWith(
+      {
+        reason: "반복 메시지",
+        targetSlug: "target-user",
+      },
+      expect.anything(),
+    );
 
     expect(await screen.findByRole("heading", { name: "차단 완료" })).toBeInTheDocument();
     expect(onBlocked).toHaveBeenCalledWith({
@@ -51,6 +64,54 @@ describe("BlockUserModal", () => {
     });
     await user.click(screen.getByRole("button", { name: "닫기" }));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("취소하면 입력한 사유를 초기화한다", async () => {
+    const user = userEvent.setup();
+    const { onClose } = renderModal();
+    const reasonInput = screen.getByRole("textbox", {
+      name: "차단 사유 (선택)",
+    });
+
+    await user.type(reasonInput, "취소할 사유");
+    await user.click(screen.getByRole("button", { name: "취소" }));
+
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(reasonInput).toHaveValue("");
+  });
+
+  it("대상이 바뀌면 이전 대상의 사유를 다시 복원하지 않는다", async () => {
+    const user = userEvent.setup();
+    const { onBlocked, onClose, queryClient, rerender } = renderModal();
+    const renderTarget = (nickname: string, slug: string) => (
+      <QueryClientProvider client={queryClient}>
+        <BlockUserModal
+          target={{ nickname, slug }}
+          onBlocked={onBlocked}
+          onClose={onClose}
+        />
+      </QueryClientProvider>
+    );
+
+    await user.type(
+      screen.getByRole("textbox", { name: "차단 사유 (선택)" }),
+      "A 대상 사유",
+    );
+
+    rerender(renderTarget("B 대상", "target-b"));
+    expect(
+      screen.getByRole("textbox", { name: "차단 사유 (선택)" }),
+    ).toHaveValue("");
+
+    await user.type(
+      screen.getByRole("textbox", { name: "차단 사유 (선택)" }),
+      "B 대상 사유",
+    );
+    rerender(renderTarget("A 대상", "target-user"));
+
+    expect(
+      screen.getByRole("textbox", { name: "차단 사유 (선택)" }),
+    ).toHaveValue("");
   });
 
   it("실패하면 확인 화면을 유지하고 오류를 인라인 표시한다", async () => {

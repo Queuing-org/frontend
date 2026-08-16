@@ -1,14 +1,28 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { userKeys } from "@/src/features/user/model/queryKeys";
 import type { User } from "@/src/features/user/model/types";
-import type { MusicPowerResponse, UserProfile } from "./types";
+import type {
+  MusicPowerPlaybackScope,
+  MusicPowerResponse,
+  UserProfile,
+} from "./types";
 
 export function syncMusicPowerCaches(
   queryClient: QueryClient,
   musicPower: MusicPowerResponse,
+  playbackScope: MusicPowerPlaybackScope,
 ) {
+  queryClient.setQueriesData<MusicPowerResponse>(
+    { queryKey: userKeys.musicPowerUserRoot(musicPower.targetUserSlug) },
+    (current) =>
+      current ? { ...current, musicPower: musicPower.musicPower } : current,
+  );
   queryClient.setQueryData(
-    userKeys.musicPower(musicPower.targetUserSlug),
+    userKeys.musicPower(
+      musicPower.targetUserSlug,
+      playbackScope.roomSlug,
+      playbackScope.entryId,
+    ),
     musicPower,
   );
   queryClient.setQueryData<UserProfile>(

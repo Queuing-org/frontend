@@ -22,6 +22,11 @@ export type UserProfile = {
 
 export type MusicPowerVote = "UPVOTE" | "DOWNVOTE";
 
+export type MusicPowerPlaybackScope = {
+  entryId: string;
+  roomSlug: string;
+};
+
 export type MusicPowerResponse = {
   musicPower: number;
   myVote: MusicPowerVote | null;

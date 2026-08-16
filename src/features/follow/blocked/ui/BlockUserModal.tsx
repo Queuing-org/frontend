@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import { useBlockUser } from "../hooks/useBlockUser";
 import styles from "./BlockUserModal.module.css";
+
+const REASON_MAX_LENGTH = 500;
 
 export type BlockUserTarget = {
   nickname: string;
@@ -22,16 +24,31 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const [reasonState, setReasonState] = useState({
+    targetSlug: null as string | null,
+    value: "",
+  });
   const blockUser = useBlockUser();
   const resetBlockUser = blockUser.reset;
   const open = Boolean(target);
+  const targetSlug = target?.slug ?? null;
+
+  if (reasonState.targetSlug !== targetSlug) {
+    setReasonState({ targetSlug, value: "" });
+  }
+
   const handleClose = useCallback(() => {
     if (!blockUser.isPending) {
+      setReasonState({ targetSlug: null, value: "" });
       resetBlockUser();
       onClose();
     }
   }, [blockUser.isPending, onClose, resetBlockUser]);
   const { titleId } = useDialogA11y({ onClose: handleClose, open });
+
+  useEffect(() => {
+    resetBlockUser();
+  }, [resetBlockUser, target?.slug]);
 
   useEffect(() => {
     if (!open) {
@@ -65,14 +82,22 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
     return null;
   }
 
+  const reason = reasonState.value;
+
   const handleConfirm = () => {
-    if (blockUser.isPending) {
+    if (blockUser.isPending || reason.length > REASON_MAX_LENGTH) {
       return;
     }
 
-    blockUser.mutate(target.slug, {
-      onSuccess: () => onBlocked?.(target),
-    });
+    blockUser.mutate(
+      { targetSlug: target.slug, reason },
+      {
+        onSuccess: () => {
+          setReasonState({ targetSlug: null, value: "" });
+          onBlocked?.(target);
+        },
+      },
+    );
   };
 
   return (
@@ -121,6 +146,26 @@ export default function BlockUserModal({ onBlocked, onClose, target }: Props) {
               <p className={styles.helpText}>
                 차단하면 사용자 검색과 팔로우 관계에 반영됩니다.
               </p>
+              <label className={styles.reasonLabel} htmlFor="block-user-reason">
+                차단 사유 <span>(선택)</span>
+              </label>
+              <textarea
+                id="block-user-reason"
+                className={styles.reasonInput}
+                maxLength={REASON_MAX_LENGTH}
+                value={reason}
+                onChange={(event) =>
+                  setReasonState({
+                    targetSlug: target.slug,
+                    value: event.target.value,
+                  })
+                }
+                placeholder="차단하는 이유를 입력해 주세요."
+                disabled={blockUser.isPending}
+              />
+              <div className={styles.reasonCount} aria-live="polite">
+                {reason.length}/{REASON_MAX_LENGTH}
+              </div>
               {blockUser.error ? (
                 <p className={styles.error} role="alert">
                   {blockUser.error.message}

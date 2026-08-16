@@ -11,6 +11,7 @@ import styles from "./AccountSettingsTab.module.css";
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
 const PRIVACY_POLICY_URL =
   "https://acoustic-windscreen-091.notion.site/357c990b89728032a9fdcdcb97a9a915";
+const REASON_MAX_LENGTH = 500;
 
 type AccountSettingsTabProps = {
   onLoggedOut: () => void;
@@ -20,6 +21,7 @@ export default function AccountSettingsTab({
   onLoggedOut,
 }: AccountSettingsTabProps) {
   const [isConfirmingWithdraw, setIsConfirmingWithdraw] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState("");
   const { data: me } = useMe();
   const {
     mutate: logout,
@@ -36,6 +38,7 @@ export default function AccountSettingsTab({
 
   function handleLogout() {
     setIsConfirmingWithdraw(false);
+    setWithdrawReason("");
     logout(undefined, {
       onSuccess: onLoggedOut,
     });
@@ -48,8 +51,15 @@ export default function AccountSettingsTab({
       return;
     }
 
-    withdraw(undefined, {
-      onSuccess: onLoggedOut,
+    if (withdrawReason.length > REASON_MAX_LENGTH) {
+      return;
+    }
+
+    withdraw({ reason: withdrawReason }, {
+      onSuccess: () => {
+        setWithdrawReason("");
+        onLoggedOut();
+      },
     });
   }
 
@@ -136,7 +146,11 @@ export default function AccountSettingsTab({
           <button
             type="button"
             className={`${styles.actionButton} ${styles.cancelWithdrawButton}`}
-            onClick={() => setIsConfirmingWithdraw(false)}
+            onClick={() => {
+              setIsConfirmingWithdraw(false);
+              setWithdrawReason("");
+              resetWithdraw();
+            }}
           >
             취소
           </button>
@@ -144,7 +158,24 @@ export default function AccountSettingsTab({
       </div>
 
       {isConfirmingWithdraw ? (
-        <p className={styles.confirmText}>탈퇴하려면 한 번 더 눌러주세요.</p>
+        <div className={styles.withdrawReasonField}>
+          <label className={styles.withdrawReasonLabel} htmlFor="withdraw-reason">
+            탈퇴 사유 <span>(선택)</span>
+          </label>
+          <textarea
+            id="withdraw-reason"
+            className={styles.withdrawReasonInput}
+            maxLength={REASON_MAX_LENGTH}
+            value={withdrawReason}
+            onChange={(event) => setWithdrawReason(event.target.value)}
+            placeholder="서비스를 떠나는 이유를 알려주세요."
+            disabled={isWithdrawing}
+          />
+          <div className={styles.withdrawReasonMeta}>
+            <span>탈퇴하려면 한 번 더 눌러주세요.</span>
+            <span>{withdrawReason.length}/{REASON_MAX_LENGTH}</span>
+          </div>
+        </div>
       ) : null}
 
       {logoutError ? (

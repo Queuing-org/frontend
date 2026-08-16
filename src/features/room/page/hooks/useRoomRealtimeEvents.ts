@@ -311,8 +311,8 @@ export function useRoomRealtimeEvents({
         isMusicPowerChangedData(event.data)
       ) {
         const change = event.data;
-        queryClient.setQueryData<MusicPowerResponse>(
-          userKeys.musicPower(change.targetUserSlug),
+        queryClient.setQueriesData<MusicPowerResponse>(
+          { queryKey: userKeys.musicPowerUserRoot(change.targetUserSlug) },
           (current) => applyMusicPowerChange(current, change),
         );
         queryClient.setQueryData<UserProfile>(
@@ -510,6 +510,9 @@ export function useRoomRealtimeEvents({
       void queryClient.removeQueries({
         queryKey: playlistKeys.roomQueuePrefix(roomSlug),
       });
+      void queryClient.removeQueries({
+        queryKey: roomKeys.meta(roomSlug),
+      });
       stopSocketAutoReconnect();
     },
     [
@@ -692,6 +695,10 @@ export function useRoomRealtimeEvents({
           terminateDeletedRoom(slug);
           return;
         }
+        if (parsedError.code === SESSION_REPLACED_ERROR_CODE) {
+          handleSessionReplaced(slug);
+          return;
+        }
         if (parsedError.code !== PARTICIPANT_KICKED_ERROR_CODE) return;
 
         hasRedirectedAfterKickRef.current = true;
@@ -723,6 +730,7 @@ export function useRoomRealtimeEvents({
     cleanupBrokerSubscription,
     cleanupUserSubscription,
     initializeChatStateFromJoinData,
+    handleSessionReplaced,
     invalidateRoomReads,
     queryClient,
     resetChatState,

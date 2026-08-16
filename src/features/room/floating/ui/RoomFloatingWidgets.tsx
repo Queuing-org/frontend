@@ -115,6 +115,7 @@ export default function RoomFloatingWidgets({
                 <RoomProfilePanel
                   currentUser={currentUser}
                   currentRequester={currentRequester}
+                  currentEntryId={currentEntry?.entryId}
                   currentTrackTitle={currentTrackTitle}
                   isCurrentUserLoading={isCurrentUserLoading}
                   hasUnloadedParticipants={hasNextParticipantsPage}

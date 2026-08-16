@@ -7,17 +7,21 @@ import type {
 } from "@/src/features/user/profile/model/types";
 
 export type SetCurrentTrackMusicPowerVoteParams = {
+  entryId: string;
+  roomSlug: string;
   targetUserSlug: string;
   vote: MusicPowerVote;
 };
 
 export async function setCurrentTrackMusicPowerVote({
+  entryId,
+  roomSlug,
   targetUserSlug,
   vote,
 }: SetCurrentTrackMusicPowerVoteParams): Promise<MusicPowerResponse> {
   const { data } = await axiosInstance.put<ApiResponse<MusicPowerResponse>>(
     `/api/v1/user-profiles/${encodeURIComponent(targetUserSlug)}/music-power`,
-    { vote },
+    { entryId, roomSlug, vote },
   );
 
   return unwrapApiResponse(data);
