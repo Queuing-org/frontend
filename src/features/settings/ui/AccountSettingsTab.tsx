@@ -6,12 +6,12 @@ import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
+import WithdrawalDialog from "./WithdrawalDialog";
 import styles from "./AccountSettingsTab.module.css";
 
 const OPEN_KAKAO_URL = "https://open.kakao.com/o/s3wsw7zi";
 const PRIVACY_POLICY_URL =
   "https://acoustic-windscreen-091.notion.site/357c990b89728032a9fdcdcb97a9a915";
-const REASON_MAX_LENGTH = 500;
 
 type AccountSettingsTabProps = {
   onLoggedOut: () => void;
@@ -20,8 +20,7 @@ type AccountSettingsTabProps = {
 export default function AccountSettingsTab({
   onLoggedOut,
 }: AccountSettingsTabProps) {
-  const [isConfirmingWithdraw, setIsConfirmingWithdraw] = useState(false);
-  const [withdrawReason, setWithdrawReason] = useState("");
+  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const { data: me } = useMe();
   const {
     mutate: logout,
@@ -37,27 +36,16 @@ export default function AccountSettingsTab({
   const isAccountActionPending = isLoggingOut || isWithdrawing;
 
   function handleLogout() {
-    setIsConfirmingWithdraw(false);
-    setWithdrawReason("");
+    setIsWithdrawalDialogOpen(false);
     logout(undefined, {
       onSuccess: onLoggedOut,
     });
   }
 
-  function handleWithdraw() {
-    if (!isConfirmingWithdraw) {
-      resetWithdraw();
-      setIsConfirmingWithdraw(true);
-      return;
-    }
-
-    if (withdrawReason.length > REASON_MAX_LENGTH) {
-      return;
-    }
-
-    withdraw({ reason: withdrawReason }, {
+  function handleWithdraw(reason: string) {
+    withdraw({ reason }, {
       onSuccess: () => {
-        setWithdrawReason("");
+        setIsWithdrawalDialogOpen(false);
         onLoggedOut();
       },
     });
@@ -131,62 +119,31 @@ export default function AccountSettingsTab({
         <button
           type="button"
           className={`${styles.actionButton} ${styles.withdrawButton}`}
-          onClick={handleWithdraw}
+          onClick={() => {
+            resetWithdraw();
+            setIsWithdrawalDialogOpen(true);
+          }}
           disabled={!me || isAccountActionPending}
         >
-          {isWithdrawing ? (
-            <LoadingSpinner ariaLabel="회원 탈퇴 중" size={16} />
-          ) : isConfirmingWithdraw ? (
-            "탈퇴 확인"
-          ) : (
-            "회원탈퇴"
-          )}
+          회원탈퇴
         </button>
-        {isConfirmingWithdraw && !isWithdrawing ? (
-          <button
-            type="button"
-            className={`${styles.actionButton} ${styles.cancelWithdrawButton}`}
-            onClick={() => {
-              setIsConfirmingWithdraw(false);
-              setWithdrawReason("");
-              resetWithdraw();
-            }}
-          >
-            취소
-          </button>
-        ) : null}
       </div>
-
-      {isConfirmingWithdraw ? (
-        <div className={styles.withdrawReasonField}>
-          <label className={styles.withdrawReasonLabel} htmlFor="withdraw-reason">
-            탈퇴 사유 <span>(선택)</span>
-          </label>
-          <textarea
-            id="withdraw-reason"
-            className={styles.withdrawReasonInput}
-            maxLength={REASON_MAX_LENGTH}
-            value={withdrawReason}
-            onChange={(event) => setWithdrawReason(event.target.value)}
-            placeholder="서비스를 떠나는 이유를 알려주세요."
-            disabled={isWithdrawing}
-          />
-          <div className={styles.withdrawReasonMeta}>
-            <span>탈퇴하려면 한 번 더 눌러주세요.</span>
-            <span>{withdrawReason.length}/{REASON_MAX_LENGTH}</span>
-          </div>
-        </div>
-      ) : null}
 
       {logoutError ? (
         <p className={styles.errorText} role="alert">
           로그아웃 실패: {logoutError.message}
         </p>
       ) : null}
-      {withdrawError ? (
-        <p className={styles.errorText} role="alert">
-          회원탈퇴 실패: {withdrawError.message}
-        </p>
+      {isWithdrawalDialogOpen ? (
+        <WithdrawalDialog
+          errorMessage={withdrawError?.message}
+          isPending={isWithdrawing}
+          onClose={() => {
+            setIsWithdrawalDialogOpen(false);
+            resetWithdraw();
+          }}
+          onSubmit={handleWithdraw}
+        />
       ) : null}
     </div>
   );

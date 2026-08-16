@@ -218,72 +218,11 @@
 .withdrawButton,
 .withdrawButton:disabled {
   background: transparent;
-  color: #d24b4b;
-  opacity: 1;
-}
-
-.withdrawButton:hover:not(:disabled),
-.cancelWithdrawButton:hover:not(:disabled) {
-  color: #3c3c3c;
-}
-
-.cancelWithdrawButton {
   color: #8d8d8d;
 }
 
-.withdrawReasonField {
-  display: flex;
-  width: min(100%, 520px);
-  flex: 0 0 auto;
-  align-self: center;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.withdrawReasonLabel {
+.withdrawButton:hover:not(:disabled) {
   color: #3c3c3c;
-  font-size: 13px;
-  font-weight: var(--fw-semibold);
-}
-
-.withdrawReasonLabel span,
-.withdrawReasonMeta {
-  color: #8d8d8d;
-  font-weight: var(--fw-regular);
-}
-
-.withdrawReasonInput {
-  min-height: 84px;
-  box-sizing: border-box;
-  resize: vertical;
-  padding: 10px 12px;
-  border: 1px solid #dedee1;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #3c3c3c;
-  font: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.withdrawReasonInput:focus-visible {
-  border-color: #5b8cff;
-  outline: 2px solid rgb(91 140 255 / 20%);
-}
-
-.withdrawReasonInput:disabled {
-  background: #f8f8fa;
-  cursor: wait;
-}
-
-.withdrawReasonMeta {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  flex: 0 0 auto;
-  font-size: 13px;
-  font-weight: var(--fw-medium);
-  line-height: 1.5;
 }
 
 .errorText {
@@ -379,9 +318,6 @@
     text-align: left;
   }
 
-  .withdrawReasonField {
-    width: 100%;
-  }
 }
 
 @media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
@@ -411,10 +347,7 @@
 
   .contactDescription,
   .policyText,
-  .actionButton,
-  .withdrawReasonLabel,
-  .withdrawReasonInput,
-  .withdrawReasonMeta {
+  .actionButton {
     font-size: 12.8px;
   }
 

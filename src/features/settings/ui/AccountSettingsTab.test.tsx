@@ -1,13 +1,14 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useLogout } from "@/src/features/auth/logout/model/useLogout";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useWithdrawMe } from "@/src/features/user/profile/hooks/useWithdrawMe";
 import AccountSettingsTab from "./AccountSettingsTab";
 
 vi.mock("next/image", () => ({
-  default: ({ alt = "" }: { alt?: string }) => <span aria-label={alt || undefined} />,
+  default: ({ alt = "" }: { alt?: string }) => (
+    <span aria-label={alt || undefined} />
+  ),
 }));
 vi.mock("@/src/features/auth/logout/model/useLogout", () => ({
   useLogout: vi.fn(),
@@ -25,6 +26,7 @@ const resetWithdraw = vi.fn();
 
 describe("AccountSettingsTab 회원 탈퇴 사유", () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     vi.mocked(useMe).mockReturnValue({
       data: { nickname: "나", profileImageUrl: null, slug: "me", userId: 1 },
@@ -42,58 +44,74 @@ describe("AccountSettingsTab 회원 탈퇴 사유", () => {
     } as unknown as ReturnType<typeof useWithdrawMe>);
   });
 
-  it("확인 단계에서 선택 사유와 500자 카운터를 제공하고 제출한다", async () => {
-    const user = userEvent.setup();
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("사유를 하나 이상 선택하고 화면 순서대로 합쳐 제출한다", () => {
     const onLoggedOut = vi.fn();
     render(<AccountSettingsTab onLoggedOut={onLoggedOut} />);
 
-    await user.click(screen.getByRole("button", { name: "회원탈퇴" }));
-    const reasonInput = screen.getByRole("textbox", {
-      name: "탈퇴 사유 (선택)",
-    });
-    await user.type(reasonInput, "이용 빈도가 낮아요");
-    expect(screen.getByText("10/500")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "탈퇴 확인" }));
+    fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
+    const nextButton = screen.getByRole("button", { name: "탈퇴하기" });
+    expect(nextButton).toBeDisabled();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "기타" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "자주 사용하지 않아요" }),
+    );
+    fireEvent.click(
+      screen.getByRole("checkbox", {
+        name: "기능 오류 및 불편함이 있어요",
+      }),
+    );
+    expect(nextButton).toBeEnabled();
+    fireEvent.click(nextButton);
+
+    act(() => vi.advanceTimersByTime(2_000));
+    fireEvent.click(screen.getByRole("button", { name: "탈퇴하기" }));
 
     expect(withdraw).toHaveBeenCalledWith(
-      { reason: "이용 빈도가 낮아요" },
+      {
+        reason: "자주 사용하지 않아요\n기능 오류 및 불편함이 있어요\n기타",
+      },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
     const options = withdraw.mock.calls[0]?.[1] as { onSuccess: () => void };
     act(() => options.onSuccess());
-    expect(reasonInput).toHaveValue("");
     expect(onLoggedOut).toHaveBeenCalledOnce();
   });
 
-  it("취소하면 사유와 mutation 오류 상태를 초기화한다", async () => {
-    const user = userEvent.setup();
+  it("최종 탈퇴 버튼은 두 번째 단계 진입 2초 뒤 활성화된다", () => {
     render(<AccountSettingsTab onLoggedOut={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "회원탈퇴" }));
-    const reasonInput = screen.getByRole("textbox", {
-      name: "탈퇴 사유 (선택)",
-    });
-    await user.type(reasonInput, "취소할 사유");
-    await user.click(screen.getByRole("button", { name: "취소" }));
+    fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: "자주 사용하지 않아요" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "탈퇴하기" }));
 
-    expect(screen.queryByRole("textbox", { name: "탈퇴 사유 (선택)" })).not.toBeInTheDocument();
-    expect(resetWithdraw).toHaveBeenCalled();
-
-    await user.click(screen.getByRole("button", { name: "회원탈퇴" }));
-    expect(screen.getByRole("textbox", { name: "탈퇴 사유 (선택)" })).toHaveValue("");
+    const confirmButton = screen.getByRole("button", { name: "탈퇴하기" });
+    expect(confirmButton).toBeDisabled();
+    act(() => vi.advanceTimersByTime(1_999));
+    expect(confirmButton).toBeDisabled();
+    act(() => vi.advanceTimersByTime(1));
+    expect(confirmButton).toBeEnabled();
   });
 
-  it("500자를 초과한 값은 제출하지 않는다", async () => {
-    const user = userEvent.setup();
+  it("두 번째 단계에서 취소하면 흐름과 선택값, mutation 상태를 초기화한다", () => {
     render(<AccountSettingsTab onLoggedOut={vi.fn()} />);
 
-    await user.click(screen.getByRole("button", { name: "회원탈퇴" }));
-    fireEvent.change(
-      screen.getByRole("textbox", { name: "탈퇴 사유 (선택)" }),
-      { target: { value: "가".repeat(501) } },
-    );
-    await user.click(screen.getByRole("button", { name: "탈퇴 확인" }));
+    fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "기타" }));
+    fireEvent.click(screen.getByRole("button", { name: "탈퇴하기" }));
+    fireEvent.click(screen.getByRole("button", { name: "취소" }));
 
-    expect(withdraw).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(resetWithdraw).toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "회원탈퇴" }));
+    expect(screen.getByRole("checkbox", { name: "기타" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "탈퇴하기" })).toBeDisabled();
   });
 });
