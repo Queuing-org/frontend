@@ -7,6 +7,7 @@ import { ensureCsrf } from "../shared/api/csrf/ensureCsrf";
 import { shouldRetryQuery } from "../shared/api/queryRetry";
 import BadgeAwardProvider from "../features/badge/events/ui/BadgeAwardProvider";
 import FollowPresenceProvider from "../features/follow/presence/ui/FollowPresenceProvider";
+import ActionFeedbackProvider from "../shared/ui/action-feedback/ActionFeedbackProvider";
 
 export default function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -27,9 +28,11 @@ export default function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <FollowPresenceProvider>
-        <BadgeAwardProvider>{children}</BadgeAwardProvider>
-      </FollowPresenceProvider>
+      <ActionFeedbackProvider>
+        <FollowPresenceProvider>
+          <BadgeAwardProvider>{children}</BadgeAwardProvider>
+        </FollowPresenceProvider>
+      </ActionFeedbackProvider>
 
       {process.env.NODE_ENV === "development" && (
         <ReactQueryDevtools initialIsOpen={false} />
