@@ -30,8 +30,12 @@ describe("UserProfileContent", () => {
       screen.getByText("이용 시간").parentElement,
     );
     expect(badgeColumn).not.toBe(favoriteSongColumn);
-    expect(
-      screen.getByText("첫 번째 줄을 채우고 두 번째 줄까지 이어지는 최애곡"),
-    ).toHaveAttribute("data-line-clamp", "2");
+    const favoriteSongValue = screen.getByText(
+      "첫 번째 줄을 채우고 두 번째 줄까지 이어지는 최애곡",
+    );
+    expect(favoriteSongValue).toHaveAttribute("data-line-clamp", "2");
+    expect(favoriteSongValue.parentElement?.parentElement).toBe(
+      screen.getByText("최애곡").parentElement,
+    );
   });
 });

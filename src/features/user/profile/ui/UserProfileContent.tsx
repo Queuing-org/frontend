@@ -128,12 +128,14 @@ export default function UserProfileContent({
         <div className={styles.statsColumn}>
           <div className={styles.card}>
             <div className={styles.cardTitle}>최애곡</div>
-            <div
-              className={`${styles.cardValue} ${styles.statusCardValue}`}
-              data-line-clamp={textLineClamp}
-              title={statusMessage || undefined}
-            >
-              {statusMessage || "-"}
+            <div className={`${styles.cardValue} ${styles.favoriteSongValueSlot}`}>
+              <div
+                className={styles.statusCardValue}
+                data-line-clamp={textLineClamp}
+                title={statusMessage || undefined}
+              >
+                {statusMessage || "-"}
+              </div>
             </div>
           </div>
           <div className={styles.card}>
