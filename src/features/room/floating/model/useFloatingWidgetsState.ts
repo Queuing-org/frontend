@@ -79,11 +79,11 @@ const WIDGET_CONFIG: Record<WidgetId, WidgetConfig> = {
     width: 300,
   },
   profile: {
-    height: 411,
+    height: 431,
     left: 24,
     offsetStorageKey: "profileWidgetOffset",
     openStorageKey: "isProfileOpen",
-    top: 80,
+    top: 60,
     width: 300,
   },
   participants: {

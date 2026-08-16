@@ -515,7 +515,7 @@ describe("RoomProfilePanel", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("음악력 투표 오류");
   });
 
-  it("본인에게는 내 노래 상태만 표시하고 음악력·관계 액션을 숨긴다", () => {
+  it("본인에게는 공통 타이틀과 내 노래 상태를 표시하고 음악력·관계 액션을 숨긴다", () => {
     const selfUser = {
       nickname: "대상",
       profileImageUrl: null,
@@ -524,6 +524,7 @@ describe("RoomProfilePanel", () => {
     };
     renderPanel(requester, { currentUser: selfUser });
 
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
     expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );
@@ -582,6 +583,7 @@ describe("RoomProfilePanel", () => {
       />,
     );
 
+    expect(screen.getByText("현재 큐잉 중")).toBeInTheDocument();
     expect(screen.getByLabelText("내 노래 재생 상태")).toHaveTextContent(
       "내 노래가 나오고 있어요!",
     );

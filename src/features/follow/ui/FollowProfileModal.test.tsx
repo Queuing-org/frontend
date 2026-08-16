@@ -124,7 +124,7 @@ describe("FollowProfileModal", () => {
     expect(dialog.firstElementChild).toHaveStyle({ height: "380px" });
   });
 
-  it("공개 프로필 통계와 음악력 값만 표시한다", () => {
+  it("프로필 통계와 음악력 값을 2줄 텍스트로 표시한다", () => {
     render(
       <FollowProfileModal
         onBlocked={vi.fn()}
@@ -134,9 +134,17 @@ describe("FollowProfileModal", () => {
     );
 
     expect(screen.getByText("공개 닉네임")).toBeInTheDocument();
-    expect(screen.getByText("공개 프로필")).toBeInTheDocument();
+    expect(screen.queryByText("공개 프로필")).not.toBeInTheDocument();
     expect(screen.getByText("리듬 장인")).toBeInTheDocument();
     expect(screen.getByText("오늘도 큐잉")).toBeInTheDocument();
+    expect(screen.getByText("공개 닉네임")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
+    expect(screen.getByText("오늘도 큐잉")).toHaveAttribute(
+      "data-line-clamp",
+      "2",
+    );
     expect(screen.getByText("12")).toBeInTheDocument();
     expect(screen.getByText("77")).toBeInTheDocument();
     expect(screen.queryByText("PROFILE")).not.toBeInTheDocument();

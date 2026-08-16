@@ -161,6 +161,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
               >
                 <div className={styles.content}>
                   <UserProfileContent
+                    activityLabel={null}
                     actions={
                       <div
                         className={styles.actionRow}
@@ -256,6 +257,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
                     online={profile?.online ?? user.online}
                     queuingCount={profile?.queuingCount}
                     statusMessage={profile?.statusMessage?.trim() ?? ""}
+                    textLineClamp={2}
                   />
                 </div>
               </FloatingPanelShell>

@@ -102,8 +102,8 @@
 .desktopExitButton {
   position: absolute;
   z-index: 4;
-  top: 15px;
-  left: var(--panel-horizontal-padding);
+  top: 24px;
+  left: 24px;
   display: inline-flex;
   width: 97px;
   height: 30px;
@@ -362,7 +362,8 @@
   }
 
   .desktopExitButton {
-    top: 9px;
+    top: 19.2px;
+    left: 19.2px;
   }
 
   .mainArea {

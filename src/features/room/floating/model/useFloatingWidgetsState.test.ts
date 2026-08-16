@@ -152,8 +152,8 @@ describe("floating widget laptop compact layout", () => {
   ])("%s viewport에서 위젯 geometry를 정확히 80%%로 줄인다", (_, viewport) => {
     const profile = getWidgetConfig("profile", viewport);
     expect(profile).toMatchObject({
-      height: 328.8,
-      top: 64,
+      height: 344.8,
+      top: 48,
       width: 240,
     });
     expect(profile.left).toBeCloseTo(19.2);
@@ -168,9 +168,9 @@ describe("floating widget laptop compact layout", () => {
 
   it("FHD viewport에서는 확장된 프로필 위젯 geometry를 사용한다", () => {
     expect(getWidgetConfig("profile", normalViewport)).toMatchObject({
-      height: 411,
+      height: 431,
       left: 24,
-      top: 80,
+      top: 60,
       width: 300,
     });
   });
@@ -207,7 +207,7 @@ describe("floating widget laptop compact layout", () => {
     const { result } = renderHook(() => useFloatingWidgetsState());
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 411,
+      height: 431,
       offset: { x: 11, y: 12 },
       width: 300,
     });
@@ -218,7 +218,7 @@ describe("floating widget laptop compact layout", () => {
     });
 
     expect(result.current.widgets.profile).toMatchObject({
-      height: 328.8,
+      height: 344.8,
       offset: { x: 21, y: 22 },
       width: 240,
     });

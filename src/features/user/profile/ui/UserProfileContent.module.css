@@ -44,7 +44,9 @@
 .nameBlock { flex: 1; min-width: 0; }
 .nameRow { display: flex; min-width: 0; align-items: center; gap: 6px; }
 .name {
+  min-width: 0;
   overflow: hidden;
+  overflow-wrap: anywhere;
   color: #3c3c3c;
   font-size: 16px;
   font-weight: var(--fw-bold);
@@ -85,7 +87,12 @@
   font-weight: var(--fw-regular);
   line-height: 1.45;
 }
-.statusCardValue { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.statusCardValue {
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .musicPowerRow { margin-top: 20px; }
 .musicPowerHeading {
   display: flex;

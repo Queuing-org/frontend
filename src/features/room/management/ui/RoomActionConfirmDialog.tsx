@@ -12,6 +12,7 @@ type Props = {
   errorMessage?: string | null;
   isPending?: boolean;
   open: boolean;
+  showCancelButton?: boolean;
   title: string;
   onCancel: () => void;
   onConfirm: () => void;
@@ -23,11 +24,13 @@ export default function RoomActionConfirmDialog({
   errorMessage,
   isPending = false,
   open,
+  showCancelButton = true,
   title,
   onCancel,
   onConfirm,
 }: Props) {
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const descriptionId = useId();
   const errorId = useId();
   const { titleId } = useDialogA11y({
@@ -37,9 +40,13 @@ export default function RoomActionConfirmDialog({
 
   useEffect(() => {
     if (open) {
-      cancelButtonRef.current?.focus();
+      if (showCancelButton) {
+        cancelButtonRef.current?.focus();
+      } else {
+        confirmButtonRef.current?.focus();
+      }
     }
-  }, [open]);
+  }, [open, showCancelButton]);
 
   return (
     <DialogPortal open={open}>
@@ -73,16 +80,19 @@ export default function RoomActionConfirmDialog({
             </p>
           ) : null}
           <div className={styles.actions}>
+            {showCancelButton ? (
+              <button
+                ref={cancelButtonRef}
+                type="button"
+                className={styles.cancelButton}
+                disabled={isPending}
+                onClick={onCancel}
+              >
+                취소
+              </button>
+            ) : null}
             <button
-              ref={cancelButtonRef}
-              type="button"
-              className={styles.cancelButton}
-              disabled={isPending}
-              onClick={onCancel}
-            >
-              취소
-            </button>
-            <button
+              ref={confirmButtonRef}
               type="button"
               className={styles.confirmButton}
               disabled={isPending}

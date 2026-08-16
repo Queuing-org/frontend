@@ -48,7 +48,7 @@ export default function AddTrackModal({
           aria-labelledby={titleId}
         >
           <h2 id={titleId} className={styles.title}>
-            큐잉하기
+            노래신청
           </h2>
           <div className={styles.form}>
             <AddTrackFormFields
