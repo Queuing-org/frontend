@@ -71,6 +71,8 @@ describe("useRoomMusicPowerVote", () => {
     });
     expect(result.current.musicPower).toBe(55);
     expect(result.current.selectedVote).toBeNull();
+    act(() => result.current.onVote("UPVOTE"));
+    expect(mutate).toHaveBeenCalledOnce();
 
     mockMusicPower("UPVOTE");
     rerender({ entryId: "entry-1" });
@@ -83,6 +85,17 @@ describe("useRoomMusicPowerVote", () => {
       entryId: "entry-2",
       roomSlug: "room",
     });
+    act(() => result.current.onVote("DOWNVOTE"));
+    expect(mutate).toHaveBeenCalledTimes(2);
+    expect(mutate).toHaveBeenLastCalledWith(
+      {
+        entryId: "entry-2",
+        roomSlug: "room",
+        targetUserSlug: "target-user",
+        vote: "DOWNVOTE",
+      },
+      expect.any(Object),
+    );
   });
 
   it("같은 재생곡의 연속 클릭은 한 번의 mutation만 전송한다", () => {
