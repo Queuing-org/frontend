@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
   const ensureRoomSubscription = vi.fn();
   const leaveRoomSession = vi.fn();
   const replace = vi.fn();
+  const replaceDocumentLocation = vi.fn();
   const notify = vi.fn();
   const roomChat = {
     cleanupSubscriptions: vi.fn(),
@@ -34,6 +35,7 @@ const mocks = vi.hoisted(() => {
     leaveRoomSession,
     notify,
     replace,
+    replaceDocumentLocation,
     refetchParticipants,
     refetchRoomPlayback,
     roomChat,
@@ -46,6 +48,9 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/src/shared/lib/useMediaQuery", () => ({
   useMediaQuery: () => false,
+}));
+vi.mock("@/src/shared/lib/replaceDocumentLocation", () => ({
+  replaceDocumentLocation: mocks.replaceDocumentLocation,
 }));
 vi.mock("@/src/features/room/api/fetchRoomMeta", () => ({
   fetchRoomMeta: vi.fn(),
@@ -221,9 +226,12 @@ describe("RoomPlaybackScreen join reads", () => {
 
     renderRoomPlaybackScreen();
 
-    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/"));
+    await waitFor(() =>
+      expect(mocks.replaceDocumentLocation).toHaveBeenCalledWith("/"),
+    );
     expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
     expect(joinRoom).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
     expect(screen.queryByText("존재하지 않는 방입니다.")).not.toBeInTheDocument();
   });
 

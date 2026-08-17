@@ -9,6 +9,7 @@ import { roomMetaQueryOptions } from "@/src/features/room/hooks/useRoomMeta";
 import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useMediaQuery } from "@/src/shared/lib/useMediaQuery";
+import { replaceDocumentLocation } from "@/src/shared/lib/replaceDocumentLocation";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import {
   clearStoredRoomAccessToken,
@@ -209,8 +210,8 @@ export default function RoomPlaybackScreen() {
 
   const returnHomeFromMissingRoom = useCallback(() => {
     clearStoredRoomAccessToken(slug);
-    replace("/");
-  }, [replace, slug]);
+    replaceDocumentLocation("/");
+  }, [slug]);
 
   async function handlePasswordSubmit(password: string) {
     if (!slug) return;
