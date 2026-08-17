@@ -37,7 +37,7 @@
 - [x] 전체 QA·리뷰
 - [x] 커밋·push·PR 확인
 - [x] 최신 방 목록을 위한 전체 문서 교체 이동 보강
-- [ ] 후속 QA·commit·push·CI 확인
+- [x] 후속 QA·commit·push·CI 확인
 
 ## 검증
 
