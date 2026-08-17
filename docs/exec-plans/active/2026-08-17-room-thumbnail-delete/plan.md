@@ -35,7 +35,7 @@
 - [x] 공용 UI와 수정 폼 상태 구현
 - [x] targeted/full QA
 - [x] fresh QA와 로컬 커밋
-- [ ] push와 Draft PR #51 갱신
+- [x] push와 successor Draft PR #52 생성
 
 ## 검증
 
@@ -48,4 +48,4 @@
 ## 잔여 위험
 
 - 저장소 문서의 `thumbnailUrl(s)` 의미와 썸네일 교체 API가 혼재한다. 이번 작업은 사용자가 확정한 v2 DELETE 계약과 현재 수정 PUT 흐름을 기준으로 한다.
-- GitHub CLI 인증이 만료되어 로컬 완료 뒤 push와 PR 갱신은 인증 복구가 필요하다.
+- PR #51은 작업 중 이미 merge되어 successor Draft PR #52로 후속 커밋을 전달했다.
