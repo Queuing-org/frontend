@@ -30,7 +30,7 @@ const queueEntry = (entryId: string) => ({
     skipped: false,
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
   },
   addedBy: { nickname: "신청자", slug: "requester", avatarUrl: null },
   entryId,

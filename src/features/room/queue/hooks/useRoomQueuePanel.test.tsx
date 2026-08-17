@@ -43,7 +43,7 @@ const pendingEntry = {
   status: {
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
     skipped: false,
   },
   track: {
@@ -90,8 +90,17 @@ describe("useRoomQueuePanel query visibility", () => {
     } as unknown as ReturnType<typeof useMyRoomQueue>);
   });
 
-  it("전체 탭에서는 내 큐를 요청하지 않고 mine 탭 진입 때 활성화한다", () => {
-    const { result } = renderHook(() =>
+  it("전체 탭에서도 로그인 사용자의 내 큐를 조회해 새로고침 count를 복원한다", () => {
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: undefined,
+      error: null,
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: true,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    const { result, rerender } = renderHook(() =>
       useRoomQueuePanel({
         currentUser: {
           nickname: "사용자",
@@ -105,11 +114,45 @@ describe("useRoomQueuePanel query visibility", () => {
       }),
     );
 
-    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, false);
-
-    act(() => result.current.setActiveTab("mine"));
-
     expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, true);
+    expect(result.current.activeTab).toBe("all");
+    expect(result.current.myPendingCount).toBeNull();
+
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: {
+        pages: [
+          {
+            hasNext: false,
+            items: [pendingEntry],
+            nextCursor: null,
+            queueRevision: 1,
+            totalPendingCount: 1,
+          },
+        ],
+      },
+      error: null,
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    rerender();
+
+    expect(result.current.myPendingCount).toBe(1);
+
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: undefined,
+      error: new Error("개인 큐 조회 실패"),
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    rerender();
+
+    expect(result.current.myPendingCount).toBeNull();
   });
 
   it("곡 삭제 성공은 알림 없이 목록 갱신 결과만 사용한다", () => {
@@ -213,7 +256,7 @@ describe("useRoomQueuePanel query visibility", () => {
     });
   });
 
-  it("방장이 고정한 내 곡은 API 없이 변경 불가를 알린다", async () => {
+  it("ownerOrdered인 내 pending 곡도 전체 개인 순서로 이동한다", async () => {
     vi.mocked(useMyRoomQueue).mockReturnValue({
       data: {
         pages: [
@@ -222,12 +265,17 @@ describe("useRoomQueuePanel query visibility", () => {
             items: [
               {
                 ...pendingEntry,
-                status: { ...pendingEntry.status, ownerOrderLocked: true },
+                status: { ...pendingEntry.status, ownerOrdered: true },
+              },
+              {
+                ...pendingEntry,
+                entryId: "entry-2",
+                order: 2,
               },
             ],
             nextCursor: null,
             queueRevision: 1,
-            totalPendingCount: 1,
+            totalPendingCount: 2,
           },
         ],
       },
@@ -255,17 +303,19 @@ describe("useRoomQueuePanel query visibility", () => {
     act(() => result.current.setActiveTab("mine"));
     await act(() =>
       result.current.handleMoveMyEntry({
-        beforeEntryId: null,
+        beforeEntryId: "entry-2",
         movedEntryId: "entry-1",
-        orderedPendingEntryIds: ["entry-1"],
+        orderedPendingEntryIds: ["entry-1", "entry-2"],
       }),
     );
 
-    expect(mocks.moveMine).not.toHaveBeenCalled();
-    expect(mocks.notify).toHaveBeenCalledWith({
-      dedupeKey: "queue-move:room",
-      message: "방장이 순서를 지정한 곡은 변경할 수 없습니다.",
-      tone: "error",
+    expect(mocks.moveMine).toHaveBeenCalledWith({
+      beforeEntryId: "entry-2",
+      movedEntryId: "entry-1",
+      orderedPendingEntryIds: ["entry-1", "entry-2"],
+      password: undefined,
+      slug: "room",
     });
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 });

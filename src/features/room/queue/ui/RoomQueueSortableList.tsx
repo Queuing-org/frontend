@@ -40,7 +40,6 @@ type Props = {
   highlightEntry?: (entry: PlaylistEntry) => boolean;
   isDeletePending?: boolean;
   isMovePending?: boolean;
-  moveMode: "owner" | "self";
   onDelete?: (entryId: string) => void;
   onMove?: (payload: MovePayload) => Promise<void>;
 };
@@ -245,7 +244,6 @@ export default function RoomQueueSortableList({
   highlightEntry,
   isDeletePending = false,
   isMovePending = false,
-  moveMode,
   onDelete,
   onMove,
 }: Props) {
@@ -255,24 +253,9 @@ export default function RoomQueueSortableList({
   const fixedEntries = entries.filter(
     (entry) => !isPendingQueueEntry(entry) && !entry.status.isActive,
   );
-  const lockedPendingEntries = useMemo(
-    () =>
-      moveMode === "self"
-        ? entries.filter(
-            (entry) =>
-              isPendingQueueEntry(entry) && entry.status.ownerOrderLocked,
-          )
-        : [],
-    [entries, moveMode],
-  );
   const pendingEntriesFromProps = useMemo(
-    () =>
-      entries.filter(
-        (entry) =>
-          isPendingQueueEntry(entry) &&
-          (moveMode === "owner" || !entry.status.ownerOrderLocked),
-      ),
-    [entries, moveMode],
+    () => entries.filter(isPendingQueueEntry),
+    [entries],
   );
   const pendingEntryIdsKey = useMemo(
     () => pendingEntriesFromProps.map((entry) => entry.entryId).join("\u001f"),
@@ -369,16 +352,6 @@ export default function RoomQueueSortableList({
           className={styles.fixedTopList}
           entries={activeFixedEntries}
           highlightEntry={highlightEntry}
-        />
-      ) : null}
-      {lockedPendingEntries.length > 0 ? (
-        <StaticQueueList
-          canDeleteEntry={canDeleteEntry ?? (() => true)}
-          className={styles.fixedTopList}
-          entries={lockedPendingEntries}
-          highlightEntry={highlightEntry}
-          isDeletePending={isDeletePending}
-          onDelete={onDelete}
         />
       ) : null}
       {pendingEntries.length > 0 ? (

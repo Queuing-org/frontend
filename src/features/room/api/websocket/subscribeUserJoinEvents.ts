@@ -1,7 +1,7 @@
 import type { StompSubscription } from "@stomp/stompjs";
 import { ApiError } from "@/src/shared/api/api-error";
 import type { RoomJoinedData, WsErrorData } from "@/src/features/room/model/types";
-import type { JoinRoomResult } from "../joinRoom.types";
+import { RoomJoinError, type JoinRoomResult } from "../joinRoom.types";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
 
 export type RoomJoinEvent = {
@@ -26,12 +26,17 @@ function getRoomJoinedData(data: unknown): RoomJoinedData | null {
   return data as RoomJoinedData;
 }
 
-function getWsErrorData(data: unknown): WsErrorData | null {
+function getWsErrorData(
+  data: unknown,
+): (WsErrorData & { slug?: string; title?: string }) | null {
   if (!data || typeof data !== "object") {
     return null;
   }
 
-  const candidate = data as Partial<WsErrorData>;
+  const candidate = data as Partial<WsErrorData> & {
+    slug?: unknown;
+    title?: unknown;
+  };
   if (
     typeof candidate.statusCode !== "number" ||
     typeof candidate.code !== "string" ||
@@ -40,7 +45,13 @@ function getWsErrorData(data: unknown): WsErrorData | null {
     return null;
   }
 
-  return candidate as WsErrorData;
+  return {
+    statusCode: candidate.statusCode,
+    code: candidate.code,
+    message: candidate.message,
+    ...(typeof candidate.slug === "string" ? { slug: candidate.slug } : {}),
+    ...(typeof candidate.title === "string" ? { title: candidate.title } : {}),
+  };
 }
 
 export function parseRoomJoinEvent(body: string): RoomJoinEvent | null {
@@ -100,10 +111,21 @@ export function subscribeUserJoinEvents(
         return;
       }
       handlers.onError(
-        new ApiError({
+        new RoomJoinError({
           status: errorData.statusCode,
           code: errorData.code,
           message: errorData.message,
+          data:
+            errorData.slug !== undefined || errorData.title !== undefined
+              ? {
+                  ...(errorData.slug !== undefined
+                    ? { slug: errorData.slug }
+                    : {}),
+                  ...(errorData.title !== undefined
+                    ? { title: errorData.title }
+                    : {}),
+                }
+              : null,
         }),
       );
     }

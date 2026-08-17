@@ -44,6 +44,7 @@ import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFall
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import FollowModal from "@/src/features/follow/ui/FollowModal";
 import SettingsModal from "@/src/features/settings/ui/SettingsModal";
+import RoomJoinConflictDialog from "@/src/features/room/join/ui/RoomJoinConflictDialog";
 
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
@@ -255,7 +256,10 @@ function SearchRoomsContent({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
   });
-  const randomEntry = useRandomEntryNavigation();
+  const randomEntry = useRandomEntryNavigation({
+    isRoomEntryPending: roomEntry.isJoining,
+    requestRoomEntry: roomEntry.requestRoomEntryBySlug,
+  });
 
   useLoadMoreRoomsNearEnd({
     rooms: roomListRooms,
@@ -375,9 +379,15 @@ function SearchRoomsContent({
         <RoomJoinPasswordModal
           room={roomEntry.passwordRoom}
           onClose={roomEntry.closePasswordModal}
-          onJoined={roomEntry.completePasswordEntry}
+          onSubmit={roomEntry.submitPasswordEntry}
         />
       ) : null}
+      <RoomJoinConflictDialog
+        conflict={roomEntry.conflict}
+        isPending={roomEntry.isJoining}
+        onConfirm={() => void roomEntry.confirmConflict()}
+        onReturn={roomEntry.returnToCurrentRoom}
+      />
     </>
   );
 }

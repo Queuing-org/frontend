@@ -11,7 +11,7 @@ vi.mock("next/image", () => ({
   ),
 }));
 
-const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
+const entry = (entryId: string, ownerOrdered: boolean): PlaylistEntry => ({
   order: 1,
   track: {
     title: entryId,
@@ -24,7 +24,7 @@ const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
     skipped: false,
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked,
+    ownerOrdered,
   },
   addedBy: { slug: "me", nickname: "나", avatarUrl: null },
   entryId,
@@ -33,38 +33,40 @@ const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
 });
 
 describe("RoomQueueSortableList", () => {
-  it("개인 순서에서는 고정곡을 앞에 두고 이동 기능을 제공하지 않는다", () => {
+  it("ownerOrdered인 개인 pending 곡도 이동 기능을 제공한다", () => {
     const { container } = render(
       <RoomQueueSortableList
         emptyMessage="비었음"
-        entries={[entry("locked", true), entry("a", false), entry("b", false)]}
-        moveMode="self"
+        entries={[
+          entry("owner-ordered", true),
+          entry("a", false),
+          entry("b", false),
+        ]}
       />,
     );
 
     const rows = [...container.querySelectorAll("li")];
     expect(rows.map((row) => row.textContent)).toEqual([
-      expect.stringContaining("locked"),
+      expect.stringContaining("owner-ordered"),
       expect.stringContaining("a"),
       expect.stringContaining("b"),
     ]);
-    expect(rows[0]).toHaveAttribute("data-drag-disabled", "true");
-    expect(
-      screen.queryByLabelText("locked 순서 변경"),
-    ).not.toBeInTheDocument();
+    expect(rows[0]).toHaveAttribute("data-drag-disabled", "false");
+    expect(screen.getByLabelText("owner-ordered 순서 변경"))
+      .toBeInTheDocument();
     expect(screen.getByLabelText("a 순서 변경")).toBeInTheDocument();
   });
 
-  it("방장 순서에서는 고정곡도 이동 대상으로 포함한다", () => {
+  it("모든 pending 곡을 이동 대상으로 포함한다", () => {
     render(
       <RoomQueueSortableList
         emptyMessage="비었음"
-        entries={[entry("locked", true), entry("a", false)]}
-        moveMode="owner"
+        entries={[entry("owner-ordered", true), entry("a", false)]}
       />,
     );
 
-    expect(screen.getByLabelText("locked 순서 변경")).toBeInTheDocument();
+    expect(screen.getByLabelText("owner-ordered 순서 변경"))
+      .toBeInTheDocument();
   });
 
   it("현재 재생 곡은 목록 맨 위에 equalizer로 표시하고 이동 기능에서 제외한다", () => {
@@ -75,7 +77,6 @@ describe("RoomQueueSortableList", () => {
       <RoomQueueSortableList
         emptyMessage="비었음"
         entries={[entry("next", false), playingEntry]}
-        moveMode="owner"
       />,
     );
 

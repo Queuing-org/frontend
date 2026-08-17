@@ -12,7 +12,11 @@ import { publishJoinRequest } from "./websocket/publishJoinRequest";
 import { publishLeaveRequest } from "./websocket/publishLeaveRequest";
 import { subscribeUserJoinEvents } from "./websocket/subscribeUserJoinEvents";
 
-export type { JoinRoomPayload, JoinRoomResult } from "./joinRoom.types";
+export {
+  RoomJoinError,
+  type JoinRoomPayload,
+  type JoinRoomResult,
+} from "./joinRoom.types";
 
 type JoinRoomOptions = {
   leaveOnAbort?: boolean;

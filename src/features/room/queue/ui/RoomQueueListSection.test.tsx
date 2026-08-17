@@ -19,7 +19,7 @@ const entry = (entryId: string, isActive = false): PlaylistEntry => ({
   status: {
     isActive,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
     skipped: false,
   },
   track: {

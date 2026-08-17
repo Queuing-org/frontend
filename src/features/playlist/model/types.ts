@@ -50,7 +50,7 @@ export type PlaylistEntryStatus = {
   skipped: boolean;
   isActive: boolean;
   isPlayed: boolean;
-  ownerOrderLocked: boolean;
+  ownerOrdered: boolean;
 };
 
 export type PlaylistAddedBy = {

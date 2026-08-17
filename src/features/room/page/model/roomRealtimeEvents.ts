@@ -220,7 +220,7 @@ export function applyTrackStarted(
         skipped: false,
         isActive: true,
         isPlayed: false,
-        ownerOrderLocked: previousEntry?.status.ownerOrderLocked ?? false,
+        ownerOrdered: previousEntry?.status.ownerOrdered ?? false,
       },
       addedBy: data.addedBy,
       entryId: data.entryId,

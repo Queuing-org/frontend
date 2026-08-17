@@ -30,7 +30,7 @@ const entry = (entryId: string): PlaylistEntry => ({
   status: {
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
     skipped: false,
   },
   track: {
@@ -86,7 +86,6 @@ describe("RoomQueueSortableList pointer drag", () => {
       <RoomQueueSortableList
         emptyMessage="비었음"
         entries={[entry("a"), entry("b"), entry("c")]}
-        moveMode="owner"
         onMove={onMove}
       />,
     );

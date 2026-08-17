@@ -123,6 +123,15 @@ export default function RoomProfilePanel({
       : undefined,
   );
   const musicPowerVote = useCurrentTrackMusicPowerVote();
+  const pendingMusicPowerVote = musicPowerVote.variables;
+  const selectedMusicPowerVote =
+    musicPowerQuery.data?.myVote ??
+    (musicPowerVote.isPending &&
+      pendingMusicPowerVote?.roomSlug === roomSlug &&
+      pendingMusicPowerVote.entryId === currentEntryId &&
+      pendingMusicPowerVote.targetUserSlug === targetSlug
+      ? pendingMusicPowerVote.vote
+      : null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
   const shouldLoadBadgeFallback =
@@ -572,6 +581,7 @@ export default function RoomProfilePanel({
                   <button
                     type="button"
                     className={styles.musicPowerButton}
+                    aria-pressed={selectedMusicPowerVote === "UPVOTE"}
                     aria-label={
                       musicPowerVoteDisabledLabel ?? "음악력 올리기"
                     }
@@ -587,6 +597,7 @@ export default function RoomProfilePanel({
                       src="/icons/music-power-up.svg"
                       alt=""
                       aria-hidden="true"
+                      className={styles.musicPowerIcon}
                       width={8}
                       height={8}
                     />
@@ -594,6 +605,7 @@ export default function RoomProfilePanel({
                   <button
                     type="button"
                     className={styles.musicPowerButton}
+                    aria-pressed={selectedMusicPowerVote === "DOWNVOTE"}
                     aria-label={
                       musicPowerVoteDisabledLabel ?? "음악력 내리기"
                     }
@@ -609,6 +621,7 @@ export default function RoomProfilePanel({
                       src="/icons/music-power-down.svg"
                       alt=""
                       aria-hidden="true"
+                      className={styles.musicPowerIcon}
                       width={8}
                       height={8}
                     />

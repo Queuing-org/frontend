@@ -351,6 +351,62 @@ describe("RoomFormModal room form flows", () => {
     });
   });
 
+  it("방장 생성 충돌은 fallback 오류를 알리고 입력과 생성 모달을 유지한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockRejectedValue(
+      new ApiError({
+        code: "room.owner-creation-conflict",
+        message: "",
+        status: 409,
+      }),
+    );
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "유지할 방 제목");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-create:submit",
+        message: "이미 방장인 방이 있어 새 방을 만들 수 없어요.",
+        tone: "error",
+      }),
+    );
+    expect(screen.getByRole("heading", { name: "세부 설정" }))
+      .toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /기본 정보/ }));
+    expect(screen.getByLabelText("방 제목")).toHaveValue("유지할 방 제목");
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("방장 생성 충돌은 서버 문구를 fallback보다 우선한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockRejectedValue(
+      new ApiError({
+        code: "room.owner-creation-conflict",
+        message: "기존 방을 먼저 정리해 주세요.",
+        status: 409,
+      }),
+    );
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "충돌 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+        message: "기존 방을 먼저 정리해 주세요.",
+        tone: "error",
+      })),
+    );
+  });
+
   it("태그를 고르기 전에는 다음을 비활성화하고 FREE를 고르면 진행한다", async () => {
     const user = userEvent.setup();
     roomTags.push({ name: "록", slug: "rock" });

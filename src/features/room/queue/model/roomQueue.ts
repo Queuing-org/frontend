@@ -39,12 +39,9 @@ export function mergeCurrentEntryWithQueue(
   ];
 }
 
-export function getMovablePersonalQueueEntryIds(entries: PlaylistEntry[]) {
+export function getPendingPersonalQueueEntryIds(entries: PlaylistEntry[]) {
   return entries
-    .filter(
-      (entry) =>
-        isPendingQueueEntry(entry) && !entry.status.ownerOrderLocked,
-    )
+    .filter(isPendingQueueEntry)
     .map((entry) => entry.entryId);
 }
 

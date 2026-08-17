@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import {
-  getMovablePersonalQueueEntryIds,
+  getPendingPersonalQueueEntryIds,
   isEntryRequestedByUser,
   isValidPersonalQueueMove,
   mergeCurrentEntryWithQueue,
@@ -9,7 +9,7 @@ import {
 
 const entry = (
   entryId: string,
-  ownerOrderLocked: boolean,
+  ownerOrdered: boolean,
   slug: string | null = "me",
 ): PlaylistEntry => ({
   order: 1,
@@ -24,7 +24,7 @@ const entry = (
     skipped: false,
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked,
+    ownerOrdered,
   },
   addedBy: { slug, nickname: "같은닉네임", avatarUrl: null },
   entryId,
@@ -33,16 +33,20 @@ const entry = (
 });
 
 describe("개인 큐 순서와 공개 식별", () => {
-  it("고정되지 않은 대기곡만 개인 순서 payload 후보에 포함한다", () => {
-    const ids = getMovablePersonalQueueEntryIds([
-      entry("locked", true),
+  it("ownerOrdered 여부와 무관하게 모든 대기곡을 개인 순서 payload에 포함한다", () => {
+    const ids = getPendingPersonalQueueEntryIds([
+      entry("owner-ordered", true),
       entry("a", false),
       entry("b", false),
     ]);
-    expect(ids).toEqual(["a", "b"]);
+    expect(ids).toEqual(["owner-ordered", "a", "b"]);
     expect(isValidPersonalQueueMove(new Set(ids), "a", "b")).toBe(true);
-    expect(isValidPersonalQueueMove(new Set(ids), "locked", "b")).toBe(false);
-    expect(isValidPersonalQueueMove(new Set(ids), "a", "locked")).toBe(false);
+    expect(
+      isValidPersonalQueueMove(new Set(ids), "owner-ordered", "b"),
+    ).toBe(true);
+    expect(
+      isValidPersonalQueueMove(new Set(ids), "a", "owner-ordered"),
+    ).toBe(true);
   });
 
   it("닉네임이 같아도 addedBy.slug가 없으면 본인 곡으로 보지 않는다", () => {

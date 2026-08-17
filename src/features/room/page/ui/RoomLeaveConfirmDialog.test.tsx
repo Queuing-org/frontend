@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RoomLeaveConfirmDialog from "./RoomLeaveConfirmDialog";
@@ -46,8 +46,8 @@ describe("RoomLeaveConfirmDialog", () => {
     });
   });
 
-  it("publish 성공 시 모달 상태를 닫고 성공 알림 후 홈으로 이동한다", async () => {
-    const user = userEvent.setup();
+  it("publish 성공 시 500ms 동안 pending을 유지한 뒤 홈으로 이동한다", () => {
+    vi.useFakeTimers();
     const onSuccess = vi.fn();
     render(
       <RoomLeaveConfirmDialog
@@ -60,14 +60,24 @@ describe("RoomLeaveConfirmDialog", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "나가기" }));
+    fireEvent.click(screen.getByRole("button", { name: "나가기" }));
 
-    expect(onSuccess).toHaveBeenCalledOnce();
+    expect(onSuccess).not.toHaveBeenCalled();
     expect(mocks.notify).toHaveBeenCalledWith({
       dedupeKey: "room-leave:room",
       message: "'테스트 방' 방에서 나갔습니다.",
       tone: "default",
     });
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(screen.getByRole("status", { name: "나가기 처리 중" }))
+      .toBeInTheDocument();
+
+    act(() => vi.advanceTimersByTime(499));
+    expect(mocks.replace).not.toHaveBeenCalled();
+    act(() => vi.advanceTimersByTime(1));
+
+    expect(onSuccess).toHaveBeenCalledOnce();
     expect(mocks.replace).toHaveBeenCalledWith("/");
+    vi.useRealTimers();
   });
 });

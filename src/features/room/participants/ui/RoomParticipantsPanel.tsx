@@ -151,8 +151,8 @@ export default function RoomParticipantsPanel({
           onBlockParticipant={handleBlockParticipant}
           onKickParticipant={(participant) => {
             const target = getParticipantKickTarget(participant);
-            const userSlug = getParticipantUserSlug(participant);
-            if (!target || !userSlug) {
+            const feedbackTarget = target?.userSlug ?? target?.participantId;
+            if (!target || !feedbackTarget) {
               return;
             }
             kickParticipant.reset();
@@ -168,7 +168,7 @@ export default function RoomParticipantsPanel({
                     dedupeKey: getRoomMemberFeedbackKey(
                       "kick",
                       roomSlug,
-                      userSlug,
+                      feedbackTarget,
                     ),
                     message: getRoomMemberSuccessMessage(
                       "kick",
@@ -182,7 +182,7 @@ export default function RoomParticipantsPanel({
                     dedupeKey: getRoomMemberFeedbackKey(
                       "kick",
                       roomSlug,
-                      userSlug,
+                      feedbackTarget,
                     ),
                     message: getRoomMemberFailureMessage(
                       "kick",

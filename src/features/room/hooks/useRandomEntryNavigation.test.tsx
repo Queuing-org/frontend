@@ -1,18 +1,15 @@
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRandomEntryRoom } from "./useRandomEntryRoom";
 import { useRandomEntryNavigation } from "./useRandomEntryNavigation";
 
-const { mutate, notify, push } = vi.hoisted(() => ({
+const { mutate, notify, requestRoomEntry } = vi.hoisted(() => ({
   mutate: vi.fn(),
   notify: vi.fn(),
-  push: vi.fn(),
+  requestRoomEntry: vi.fn(),
 }));
 
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
-}));
 vi.mock("./useRandomEntryRoom", () => ({
   useRandomEntryRoom: vi.fn(),
 }));
@@ -32,21 +29,27 @@ function getMutationOptions(callIndex = -1) {
 describe("useRandomEntryNavigation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    requestRoomEntry.mockResolvedValue(undefined);
     vi.mocked(useRandomEntryRoom).mockReturnValue({
       isPending: false,
       mutate,
     } as unknown as ReturnType<typeof useRandomEntryRoom>);
   });
 
-  it("입장 가능한 방이 없으면 기본 공통 알림을 표시한다", () => {
-    const { result } = renderHook(() => useRandomEntryNavigation());
+  it("후보 없음 404는 서버 문구를 우선한 파란 공통 안내로 표시한다", () => {
+    const { result } = renderHook(() =>
+      useRandomEntryNavigation({
+        isRoomEntryPending: false,
+        requestRoomEntry,
+      }),
+    );
 
     act(() => result.current.requestRandomEntry());
     act(() =>
       getMutationOptions().onError(
         new ApiError({
           code: "room.random-join-unavailable",
-          message: "unavailable",
+          message: "지금 입장 가능한 방이 없습니다.",
           status: 404,
         }),
       ),
@@ -54,27 +57,62 @@ describe("useRandomEntryNavigation", () => {
 
     expect(notify).toHaveBeenCalledWith({
       dedupeKey: "room:random-entry",
-      message: "입장 가능한 공개방이 없어요",
+      message: "지금 입장 가능한 방이 없습니다.",
       tone: "default",
     });
   });
 
-  it("일반 실패는 오류 알림을 표시하고 성공하면 방으로 이동한다", () => {
-    const { result } = renderHook(() => useRandomEntryNavigation());
+  it("랜덤 후보를 받은 뒤 이동 전 join을 요청한다", async () => {
+    const { result } = renderHook(() =>
+      useRandomEntryNavigation({
+        isRoomEntryPending: false,
+        requestRoomEntry,
+      }),
+    );
 
     act(() => result.current.requestRandomEntry());
-    act(() =>
-      getMutationOptions().onError(
-        new ApiError({ message: "실패", status: 500 }),
-      ),
-    );
-    expect(notify).toHaveBeenCalledWith({
-      dedupeKey: "room:random-entry",
-      message: "실패",
-      tone: "error",
-    });
+    act(() => getMutationOptions().onSuccess({ slug: " next-room " }));
 
+    await waitFor(() =>
+      expect(requestRoomEntry).toHaveBeenCalledWith("next-room"),
+    );
+  });
+
+  it("랜덤 후보 join 실패를 빨간 알림으로 표시한다", async () => {
+    requestRoomEntry.mockRejectedValue(
+      new ApiError({ message: "입장 실패", status: 500 }),
+    );
+    const { result } = renderHook(() =>
+      useRandomEntryNavigation({
+        isRoomEntryPending: false,
+        requestRoomEntry,
+      }),
+    );
+
+    act(() => result.current.requestRandomEntry());
     act(() => getMutationOptions().onSuccess({ slug: "next-room" }));
-    expect(push).toHaveBeenCalledWith("/room/next-room");
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room:random-entry",
+        message: "입장 실패",
+        tone: "error",
+      }),
+    );
+  });
+
+  it("랜덤 조회나 join 중이면 중복 요청 방지 pending을 유지한다", () => {
+    vi.mocked(useRandomEntryRoom).mockReturnValue({
+      isPending: false,
+      mutate,
+    } as unknown as ReturnType<typeof useRandomEntryRoom>);
+    const { result } = renderHook(() =>
+      useRandomEntryNavigation({
+        isRoomEntryPending: true,
+        requestRoomEntry,
+      }),
+    );
+
+    expect(result.current.isPending).toBe(true);
   });
 });

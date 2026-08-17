@@ -184,6 +184,9 @@ it("일반 정보 저장 후 썸네일 교체가 실패하면 재시도에서 PA
     .mockRejectedValueOnce(
       new ApiError({ message: "교체 실패", status: 409 }),
     )
+    .mockRejectedValueOnce(
+      new ApiError({ message: "교체 재시도 실패", status: 409 }),
+    )
     .mockResolvedValueOnce({ success: true });
   const { result } = renderHook(
     () =>
@@ -236,5 +239,20 @@ it("일반 정보 저장 후 썸네일 교체가 실패하면 재시도에서 PA
 
   expect(updateRoom).toHaveBeenCalledOnce();
   expect(updateRoomThumbnail).toHaveBeenCalledTimes(2);
+  expect(onClose).not.toHaveBeenCalled();
+  expect(notify).toHaveBeenLastCalledWith({
+    dedupeKey: "room-update:existing-room",
+    message: "방 정보는 저장했지만 썸네일을 변경하지 못했습니다.",
+    tone: "error",
+  });
+
+  await act(async () => {
+    await result.current.handleSubmit({
+      preventDefault: vi.fn(),
+    } as unknown as FormEvent<HTMLFormElement>);
+  });
+
+  expect(updateRoom).toHaveBeenCalledOnce();
+  expect(updateRoomThumbnail).toHaveBeenCalledTimes(3);
   expect(onClose).toHaveBeenCalledOnce();
 });

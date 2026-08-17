@@ -76,18 +76,21 @@ export default function ActionFeedbackProvider({
       );
 
       if (existingIndex >= 0) {
-        return currentItems.map((item, index) =>
-          index === existingIndex
-            ? {
-                ...item,
-                message: feedback.message,
-                tone: feedback.tone,
-                expiresAt: notifiedAt + DISPLAY_DURATION_MS,
-                removeAt: undefined,
-                phase: "visible" as const,
-              }
-            : item,
-        );
+        const existingItem = currentItems[existingIndex];
+        const updatedItem: ActionFeedbackItem = {
+          ...existingItem,
+          message: feedback.message,
+          tone: feedback.tone,
+          createdAt: notifiedAt,
+          expiresAt: notifiedAt + DISPLAY_DURATION_MS,
+          removeAt: undefined,
+          phase: "visible",
+        };
+
+        return [
+          updatedItem,
+          ...currentItems.filter((_, index) => index !== existingIndex),
+        ].slice(0, MAX_FEEDBACK_ITEMS);
       }
 
       return [

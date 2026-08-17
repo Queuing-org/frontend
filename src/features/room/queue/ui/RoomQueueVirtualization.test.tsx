@@ -28,7 +28,7 @@ function createEntries(count: number): PlaylistEntry[] {
     status: {
       isActive: false,
       isPlayed: false,
-      ownerOrderLocked: false,
+      ownerOrdered: false,
       skipped: false,
     },
     track: {
@@ -78,7 +78,6 @@ describe("queue render window", () => {
         <RoomQueueSortableList
           emptyMessage="비어 있음"
           entries={createEntries(500)}
-          moveMode="owner"
         />
       </div>,
     );
@@ -94,7 +93,6 @@ describe("queue render window", () => {
         <RoomQueueSortableList
           emptyMessage="비어 있음"
           entries={createEntries(100)}
-          moveMode="owner"
         />
       </div>,
     );

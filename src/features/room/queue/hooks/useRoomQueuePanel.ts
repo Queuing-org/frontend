@@ -14,7 +14,7 @@ import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import {
   isEntryRequestedByUser,
-  getMovablePersonalQueueEntryIds,
+  getPendingPersonalQueueEntryIds,
   isPendingQueueEntry,
   isValidPersonalQueueMove,
   mergeCurrentEntryWithQueue,
@@ -70,7 +70,7 @@ export function useRoomQueuePanel({
   } = useMyRoomQueue(
     roomSlug,
     roomPassword,
-    Boolean(currentUser) && activeTab === "mine",
+    Boolean(currentUser),
   );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
@@ -97,7 +97,10 @@ export function useRoomQueuePanel({
     () => myQueueData?.pages.flatMap((page) => page.items) ?? [],
     [myQueueData?.pages],
   );
-  const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
+  const myPendingCount =
+    isCurrentUserLoading || (Boolean(currentUser) && !myQueueData)
+      ? null
+      : (myQueueData?.pages[0]?.totalPendingCount ?? 0);
   const isCurrentUserEntry = useCallback(
     (entry: PlaylistEntry) => isEntryRequestedByUser(entry, currentUser),
     [currentUser],
@@ -190,18 +193,13 @@ export function useRoomQueuePanel({
     movedEntryId,
     orderedPendingEntryIds,
   }: MovePayload) => {
-    const movableEntryIds = getMovablePersonalQueueEntryIds(myEntries);
-    const movableEntryIdSet = new Set(movableEntryIds);
+    const pendingEntryIds = getPendingPersonalQueueEntryIds(myEntries);
+    const pendingEntryIdSet = new Set(pendingEntryIds);
     if (!isValidPersonalQueueMove(
-      movableEntryIdSet,
+      pendingEntryIdSet,
       movedEntryId,
       beforeEntryId,
     )) {
-      notify({
-        dedupeKey: `queue-move:${roomSlug}`,
-        message: "방장이 순서를 지정한 곡은 변경할 수 없습니다.",
-        tone: "error",
-      });
       return;
     }
 
@@ -210,7 +208,7 @@ export function useRoomQueuePanel({
         beforeEntryId,
         movedEntryId,
         orderedPendingEntryIds: orderedPendingEntryIds.filter((entryId) =>
-          movableEntryIdSet.has(entryId),
+          pendingEntryIdSet.has(entryId),
         ),
         password: roomPassword,
         slug: roomSlug,

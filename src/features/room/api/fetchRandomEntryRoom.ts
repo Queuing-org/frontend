@@ -5,8 +5,10 @@ import type { RandomEntryRoomResult } from "./types";
 
 export async function fetchRandomEntryRoom(): Promise<RandomEntryRoomResult> {
   const res = await axiosInstance.get<ApiResponse<RandomEntryRoomResult>>(
-    "/api/v1/rooms/random-selection",
+    "/api/v1/rooms/random",
   );
 
-  return unwrapApiResponse(res.data);
+  const result = unwrapApiResponse(res.data);
+
+  return { slug: result.slug };
 }

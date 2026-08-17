@@ -41,7 +41,7 @@ const entry = (entryId: string): PlaylistEntry => ({
   status: {
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
     skipped: false,
   },
   track: {
@@ -60,7 +60,6 @@ describe("RoomQueueSortableList drag overlay", () => {
       <RoomQueueSortableList
         emptyMessage="비었음"
         entries={[entry("a"), entry("b")]}
-        moveMode="owner"
       />,
     );
 

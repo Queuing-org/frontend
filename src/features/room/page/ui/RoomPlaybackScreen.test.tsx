@@ -9,6 +9,8 @@ import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
 import { ApiError } from "@/src/shared/api/api-error";
+import { RoomJoinError } from "@/src/features/room/api/joinRoom.types";
+import { storeRoomJoinHandoff } from "@/src/features/room/join/model/roomJoinHandoff";
 import RoomPlaybackScreen from "./RoomPlaybackScreen";
 
 const mocks = vi.hoisted(() => {
@@ -231,5 +233,83 @@ describe("RoomPlaybackScreen join reads", () => {
 
     await user.type(passwordInput, "2");
     expect(passwordInput).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("직접 URL join 충돌도 확인 모달에서 동일 target으로 재요청한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchRoomMeta).mockResolvedValue({
+      activeUsersCount: 1,
+      hasPassword: false,
+      isPublic: true,
+      slug: "room",
+      tags: [],
+      title: "새 방",
+    } as never);
+    vi.mocked(joinRoom)
+      .mockRejectedValueOnce(
+        new RoomJoinError({
+          code: "room.already-participating",
+          data: { slug: "current-room", title: "현재 방" },
+          message: "이미 참여 중입니다.",
+          status: 409,
+        }),
+      )
+      .mockResolvedValueOnce({ roomSlug: "room", timestamp: 1, data: null });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RoomPlaybackScreen />
+      </QueryClientProvider>,
+    );
+
+    const dialog = await screen.findByRole("dialog", {
+      name: "이미 참여중인 방이 있습니다",
+    });
+    expect(dialog).toHaveTextContent("현재 ‘현재 방’ 방에 참여 중입니다.");
+    await user.click(screen.getByRole("button", { name: "참여하기" }));
+
+    await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(2));
+    expect(joinRoom).toHaveBeenNthCalledWith(
+      1,
+      "room",
+      {},
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(joinRoom).toHaveBeenNthCalledWith(
+      2,
+      "room",
+      {},
+      { signal: expect.any(AbortSignal) },
+    );
+    await waitFor(() =>
+      expect(useRoomPlayback).toHaveBeenCalledWith("room", null, true),
+    );
+  });
+
+  it("이동 전 join handoff가 있으면 방 화면에서 중복 join하지 않는다", async () => {
+    const releaseHandoff = vi.fn();
+    storeRoomJoinHandoff({
+      releaseSocketSession: releaseHandoff,
+      result: { roomSlug: "room", timestamp: 1, data: null },
+      target: { password: "secret", slug: "room" },
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <RoomPlaybackScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => expect(releaseHandoff).toHaveBeenCalledOnce());
+    expect(joinRoom).not.toHaveBeenCalled();
+    expect(mocks.roomChat.initializeFromJoinData).toHaveBeenCalledWith(null);
+    expect(mocks.ensureRoomSubscription).toHaveBeenCalledWith(
+      "room",
+      "secret",
+    );
   });
 });
