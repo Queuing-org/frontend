@@ -32,9 +32,9 @@
 - [x] 요청·현재 경계 조사
 - [x] 구현·최소 회귀 테스트
 - [x] 전체 QA·리뷰
-- [ ] 커밋·push·PR 확인
+- [x] 커밋·push·PR 확인
 
-## 검증 예정
+## 검증
 
 - targeted Vitest
 - `npm run lint`
