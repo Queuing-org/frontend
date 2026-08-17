@@ -18,6 +18,7 @@ import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
+import { ApiError } from "@/src/shared/api/api-error";
 import CreateBasicInfoStep from "./CreateBasicInfoStep";
 import CreateGenreStep from "./CreateGenreStep";
 import CreateSettingsStep, {
@@ -349,12 +350,17 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
       navigateToRoom(result.slug, createdRoomPassword);
     } catch (error) {
       setIsNavigatingToCreatedRoom(false);
+      const message =
+        error instanceof ApiError &&
+        error.code === "room.owner-creation-conflict"
+          ? error.message.trim() ||
+            "이미 방장인 방이 있어 새 방을 만들 수 없어요."
+          : error instanceof Error && error.message
+            ? error.message
+            : "방을 만들지 못했습니다.";
       notify({
         dedupeKey: "room-create:submit",
-        message:
-          error instanceof Error && error.message
-            ? error.message
-            : "방을 만들지 못했습니다.",
+        message,
         tone: "error",
       });
     }

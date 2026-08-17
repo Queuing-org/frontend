@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import type { Room } from "@/src/features/room/model/types";
-import { joinRoom } from "@/src/features/room/api/joinRoom";
-import { writeStoredRoomJoinPassword } from "../lib/roomJoinPasswordStorage";
 import RoomPasswordDialog from "./RoomPasswordDialog";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 
 type Props = {
   room: Room | null;
   onClose: () => void;
-  onJoined: (room: Room) => void;
+  onSubmit: (room: Room, password: string) => Promise<void>;
 };
 
 type RoomJoinPasswordModalContentProps = Omit<Props, "room"> & {
@@ -20,7 +18,7 @@ type RoomJoinPasswordModalContentProps = Omit<Props, "room"> & {
 export default function RoomJoinPasswordModal({
   room,
   onClose,
-  onJoined,
+  onSubmit,
 }: Props) {
   if (!room) {
     return null;
@@ -31,7 +29,7 @@ export default function RoomJoinPasswordModal({
       key={room.slug}
       room={room}
       onClose={onClose}
-      onJoined={onJoined}
+      onSubmit={onSubmit}
     />
   );
 }
@@ -39,7 +37,7 @@ export default function RoomJoinPasswordModal({
 function RoomJoinPasswordModalContent({
   room,
   onClose,
-  onJoined,
+  onSubmit,
 }: RoomJoinPasswordModalContentProps) {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,9 +48,7 @@ function RoomJoinPasswordModalContent({
     setErrorMessage("");
 
     try {
-      await joinRoom(room.slug, { password });
-      writeStoredRoomJoinPassword(room.slug, password);
-      onJoined(room);
+      await onSubmit(room, password);
     } catch (error) {
       const message =
         error instanceof Error && error.message

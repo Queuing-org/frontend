@@ -37,6 +37,7 @@ import { mergeRoomMeta } from "@/src/features/room/model/mergeRoomMeta";
 import styles from "./HomeScreen.module.css";
 import LazyModalFallback from "@/src/shared/ui/lazy-modal-fallback/LazyModalFallback";
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
+import RoomJoinConflictDialog from "@/src/features/room/join/ui/RoomJoinConflictDialog";
 
 const RoomJoinPasswordModal = dynamic(
   () => import("@/src/features/room/join/ui/RoomJoinPasswordModal"),
@@ -202,8 +203,14 @@ function HomeRoomsContent({
     selectedRoomSlug,
     onSelectRoom: setCurrentRoomSlug,
   });
-  const randomEntry = useRandomEntryNavigation();
-  const isChromeReduced = hasPageModalOpen || Boolean(roomEntry.passwordRoom);
+  const randomEntry = useRandomEntryNavigation({
+    isRoomEntryPending: roomEntry.isJoining,
+    requestRoomEntry: roomEntry.requestRoomEntryBySlug,
+  });
+  const isChromeReduced =
+    hasPageModalOpen ||
+    Boolean(roomEntry.passwordRoom) ||
+    Boolean(roomEntry.conflict);
   const roomMetaQuery = useRoomMetaQuery(
     !isChromeReduced ? selectedRoomSlug : null,
   );
@@ -307,9 +314,15 @@ function HomeRoomsContent({
         <RoomJoinPasswordModal
           room={roomEntry.passwordRoom}
           onClose={roomEntry.closePasswordModal}
-          onJoined={roomEntry.completePasswordEntry}
+          onSubmit={roomEntry.submitPasswordEntry}
         />
       ) : null}
+      <RoomJoinConflictDialog
+        conflict={roomEntry.conflict}
+        isPending={roomEntry.isJoining}
+        onConfirm={() => void roomEntry.confirmConflict()}
+        onReturn={roomEntry.returnToCurrentRoom}
+      />
     </>
   );
 }
