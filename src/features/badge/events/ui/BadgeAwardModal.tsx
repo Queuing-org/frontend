@@ -1,35 +1,80 @@
 "use client";
 
-import { useEffect, useId, useRef, type MouseEvent } from "react";
-import { Award, Sparkles } from "lucide-react";
-import type { BadgeAward } from "../model/badgeAwardEvents";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
+import {
+  getBadgeAchievementCopy,
+  type BadgeAward,
+} from "../model/badgeAwardEvents";
+import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
+import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
+import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { launchBadgeAwardConfetti } from "./badgeAwardConfetti";
 import styles from "./BadgeAwardModal.module.css";
 
 type Props = {
+  applyErrorMessage?: string | null;
   badge: BadgeAward | null;
+  isApplying?: boolean;
+  onApply: () => void;
   onClose: () => void;
 };
 
-export default function BadgeAwardModal({ badge, onClose }: Props) {
-  const titleId = useId();
+export default function BadgeAwardModal({
+  applyErrorMessage = null,
+  badge,
+  isApplying = false,
+  onApply,
+  onClose,
+}: Props) {
+  const modalRef = useRef<HTMLElement>(null);
+  const applyButtonRef = useRef<HTMLButtonElement>(null);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const open = Boolean(badge);
+  const handleClose = useCallback(() => {
+    if (!isApplying) {
+      onClose();
+    }
+  }, [isApplying, onClose]);
+  const { titleId } = useDialogA11y({
+    onClose: handleClose,
+    open,
+  });
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    return () => {
+      previousFocusRef.current?.focus();
+      previousFocusRef.current = null;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!badge) {
       return;
     }
 
-    confirmButtonRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
+    if (isApplying) {
+      modalRef.current?.focus();
+      return;
+    }
 
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [badge, onClose]);
+    applyButtonRef.current?.focus();
+  }, [badge, isApplying]);
 
   useEffect(() => {
     if (!badge) {
@@ -49,49 +94,104 @@ export default function BadgeAwardModal({ badge, onClose }: Props) {
     return null;
   }
 
+  const copy = getBadgeAchievementCopy(badge);
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
-      onClose();
+      handleClose();
+    }
+  };
+  const handleDialogKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    if (isApplying) {
+      event.preventDefault();
+      modalRef.current?.focus();
+      return;
+    }
+
+    const firstFocusable = applyButtonRef.current;
+    const lastFocusable = confirmButtonRef.current;
+    if (!firstFocusable || !lastFocusable) {
+      return;
+    }
+
+    if (event.shiftKey && document.activeElement === firstFocusable) {
+      event.preventDefault();
+      lastFocusable.focus();
+      return;
+    }
+
+    if (!event.shiftKey && document.activeElement === lastFocusable) {
+      event.preventDefault();
+      firstFocusable.focus();
     }
   };
 
   return (
-    <div
-      className={styles.backdrop}
-      role="presentation"
-      onMouseDown={handleBackdropClick}
-    >
-      <section
-        className={styles.modal}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
+    <DialogPortal open>
+      <div
+        className={styles.backdrop}
+        role="presentation"
+        onMouseDown={handleBackdropClick}
       >
-        <div className={styles.glow} aria-hidden="true" />
-        <div className={styles.eyebrow}>
-          <Sparkles aria-hidden="true" size={14} />
-          NEW BADGE
-        </div>
-        <div className={styles.emblem} aria-hidden="true">
-          <span className={styles.emblemRing} />
-          <Award size={42} strokeWidth={1.8} />
-        </div>
-        <h2 id={titleId} className={styles.title}>
-          <span className={styles.badgeName}>{badge.name}</span>
-          <span className={styles.titleSuffix}>칭호 획득하셨습니다!</span>
-        </h2>
-        <p className={styles.description}>
-          프로필에서 대표 칭호로 설정할 수 있어요.
-        </p>
-        <button
-          ref={confirmButtonRef}
-          type="button"
-          className={styles.confirmButton}
-          onClick={onClose}
+        <section
+          ref={modalRef}
+          className={styles.modal}
+          role="dialog"
+          tabIndex={-1}
+          aria-modal="true"
+          aria-labelledby={titleId}
+          aria-busy={isApplying}
+          onKeyDown={handleDialogKeyDown}
         >
-          멋진데요!
-        </button>
-      </section>
-    </div>
+          <div className={styles.badgeName} title={badge.name}>
+            {badge.name}
+          </div>
+          <h2 id={titleId} className={styles.title}>
+            새로운 칭호 획득
+          </h2>
+          <p className={styles.description}>
+            <span>{copy.achievement}</span>
+            <span>{copy.award}</span>
+            <span>{copy.encouragement}</span>
+          </p>
+          {applyErrorMessage ? (
+            <p className={styles.error} role="alert">
+              {applyErrorMessage}
+            </p>
+          ) : null}
+          <div className={styles.actions}>
+            <button
+              ref={applyButtonRef}
+              type="button"
+              className={styles.applyButton}
+              disabled={isApplying}
+              onClick={onApply}
+            >
+              {isApplying ? (
+                <LoadingSpinner
+                  ariaLabel="대표 칭호 적용 중"
+                  color="#ffffff"
+                  size={16}
+                />
+              ) : (
+                "적용하기"
+              )}
+            </button>
+            <button
+              ref={confirmButtonRef}
+              type="button"
+              className={styles.confirmButton}
+              disabled={isApplying}
+              onClick={handleClose}
+            >
+              확인
+            </button>
+          </div>
+        </section>
+      </div>
+    </DialogPortal>
   );
 }
