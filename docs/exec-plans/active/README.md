@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-17-room-thumbnail-delete](./2026-08-17-room-thumbnail-delete/plan.md): publishing-blocked — 방 생성·수정 썸네일 선택 UI 통일과 수정 썸네일 삭제 검증 완료, GitHub CLI 재인증 대기
+
 - [2026-08-17-settings-counter-test-structure](./2026-08-17-settings-counter-test-structure/plan.md): publishing-blocked — 닉네임 19자 카운터와 테스트/운영 구조 최적화 검증 완료, GitHub CLI 재인증 대기
 
 - [2026-08-17-my-queue-count-music-power-state](./2026-08-17-my-queue-count-music-power-state/plan.md): ci-pending — 새로고침 내 신청곡 수 복원과 음악력 버튼 hover·선택 상태 개선, 로컬 QA·fresh review 통과
