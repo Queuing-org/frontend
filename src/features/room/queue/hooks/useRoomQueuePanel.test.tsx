@@ -90,7 +90,26 @@ describe("useRoomQueuePanel query visibility", () => {
     } as unknown as ReturnType<typeof useMyRoomQueue>);
   });
 
-  it("전체 탭에서는 내 큐를 요청하지 않고 mine 탭 진입 때 활성화한다", () => {
+  it("전체 탭에서도 로그인 사용자의 내 큐를 조회해 새로고침 count를 복원한다", () => {
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: {
+        pages: [
+          {
+            hasNext: false,
+            items: [pendingEntry],
+            nextCursor: null,
+            queueRevision: 1,
+            totalPendingCount: 1,
+          },
+        ],
+      },
+      error: null,
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
     const { result } = renderHook(() =>
       useRoomQueuePanel({
         currentUser: {
@@ -105,11 +124,9 @@ describe("useRoomQueuePanel query visibility", () => {
       }),
     );
 
-    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, false);
-
-    act(() => result.current.setActiveTab("mine"));
-
     expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, true);
+    expect(result.current.activeTab).toBe("all");
+    expect(result.current.myPendingCount).toBe(1);
   });
 
   it("곡 삭제 성공은 알림 없이 목록 갱신 결과만 사용한다", () => {

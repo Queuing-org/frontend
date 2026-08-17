@@ -70,7 +70,7 @@ export function useRoomQueuePanel({
   } = useMyRoomQueue(
     roomSlug,
     roomPassword,
-    Boolean(currentUser) && activeTab === "mine",
+    Boolean(currentUser),
   );
   const moveMyQueueEntry = useMoveMyQueueEntry();
   const moveRoomQueueEntry = useMoveRoomQueueEntry();
