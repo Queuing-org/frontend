@@ -149,7 +149,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("명시적 나가기는 publish 실패 시 구독을 유지하고 재시도할 수 있다", () => {
-    const { queryClient, wrapper } = createRealtimeTestContext();
+    const { wrapper } = createRealtimeTestContext();
     const unsubscribe = vi.fn();
     vi.mocked(subscribeRoomEvents).mockReturnValue({
       id: "room",
@@ -779,7 +779,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("재입장 진행 중 방을 나가면 요청을 취소하고 leave를 한 번만 보낸다", async () => {
-    const { queryClient, wrapper } = createRealtimeTestContext();
+    const { wrapper } = createRealtimeTestContext();
     let socketListener:
       | Parameters<typeof addSocketListener>[0]
       | undefined;
@@ -829,7 +829,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("재접속 join이 room.not-found면 삭제 종료 흐름으로 홈 이동한다", async () => {
-    const { queryClient, wrapper } = createRealtimeTestContext();
+    const { wrapper } = createRealtimeTestContext();
     let socketListener: Parameters<typeof addSocketListener>[0] | undefined;
     vi.mocked(addSocketListener).mockImplementation((listener) => {
       socketListener = listener;
