@@ -43,7 +43,7 @@ const pendingEntry = {
   status: {
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked: false,
+    ownerOrdered: false,
     skipped: false,
   },
   track: {
@@ -213,7 +213,7 @@ describe("useRoomQueuePanel query visibility", () => {
     });
   });
 
-  it("방장이 고정한 내 곡은 API 없이 변경 불가를 알린다", async () => {
+  it("ownerOrdered인 내 pending 곡도 전체 개인 순서로 이동한다", async () => {
     vi.mocked(useMyRoomQueue).mockReturnValue({
       data: {
         pages: [
@@ -222,12 +222,17 @@ describe("useRoomQueuePanel query visibility", () => {
             items: [
               {
                 ...pendingEntry,
-                status: { ...pendingEntry.status, ownerOrderLocked: true },
+                status: { ...pendingEntry.status, ownerOrdered: true },
+              },
+              {
+                ...pendingEntry,
+                entryId: "entry-2",
+                order: 2,
               },
             ],
             nextCursor: null,
             queueRevision: 1,
-            totalPendingCount: 1,
+            totalPendingCount: 2,
           },
         ],
       },
@@ -255,17 +260,19 @@ describe("useRoomQueuePanel query visibility", () => {
     act(() => result.current.setActiveTab("mine"));
     await act(() =>
       result.current.handleMoveMyEntry({
-        beforeEntryId: null,
+        beforeEntryId: "entry-2",
         movedEntryId: "entry-1",
-        orderedPendingEntryIds: ["entry-1"],
+        orderedPendingEntryIds: ["entry-1", "entry-2"],
       }),
     );
 
-    expect(mocks.moveMine).not.toHaveBeenCalled();
-    expect(mocks.notify).toHaveBeenCalledWith({
-      dedupeKey: "queue-move:room",
-      message: "방장이 순서를 지정한 곡은 변경할 수 없습니다.",
-      tone: "error",
+    expect(mocks.moveMine).toHaveBeenCalledWith({
+      beforeEntryId: "entry-2",
+      movedEntryId: "entry-1",
+      orderedPendingEntryIds: ["entry-1", "entry-2"],
+      password: undefined,
+      slug: "room",
     });
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 });

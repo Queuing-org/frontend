@@ -71,7 +71,6 @@ export default function RoomQueueListSection({
         isDeletePending={isDeleteMyPending}
         isMovePending={isAnyMovePending}
         hasUnloadedEntries={hasNextMyQueuePage}
-        moveMode="self"
         onDelete={onDeleteMyEntry}
         onMove={onMoveMyEntry}
       />
@@ -88,7 +87,6 @@ export default function RoomQueueListSection({
         isMovePending={isAnyMovePending}
         hasUnloadedEntries={hasNextAllQueuePage}
         highlightEntry={isCurrentUserEntry}
-        moveMode="owner"
         onDelete={onDeleteRoomEntry}
         onMove={onMoveRoomEntry}
       />

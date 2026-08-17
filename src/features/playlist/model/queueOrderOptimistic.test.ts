@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { PlaylistEntry } from "./types";
 import { applyPendingEntryOrder, type RoomQueueData } from "./queueOrderOptimistic";
 
-const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
+const entry = (entryId: string, ownerOrdered: boolean): PlaylistEntry => ({
   order: 1,
   track: {
     title: entryId,
@@ -15,7 +15,7 @@ const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
     skipped: false,
     isActive: false,
     isPlayed: false,
-    ownerOrderLocked,
+    ownerOrdered,
   },
   addedBy: { slug: "me", nickname: "나", avatarUrl: null },
   entryId,
@@ -24,11 +24,11 @@ const entry = (entryId: string, ownerOrderLocked: boolean): PlaylistEntry => ({
 });
 
 describe("queueOrderOptimistic", () => {
-  it("개인 자유 구간만 재정렬하면 고정곡 위치와 페이지 구조를 보존한다", () => {
+  it("ownerOrdered 곡을 포함한 개인 pending 전체를 낙관적으로 재정렬한다", () => {
     const data: RoomQueueData = {
       pages: [
         {
-          items: [entry("locked", true), entry("a", false)],
+          items: [entry("owner-ordered", true), entry("a", false)],
           hasNext: true,
           nextCursor: "a",
           queueRevision: 1,
@@ -45,9 +45,9 @@ describe("queueOrderOptimistic", () => {
       pageParams: [null, "a"],
     };
 
-    const result = applyPendingEntryOrder(data, ["b", "a"]);
+    const result = applyPendingEntryOrder(data, ["b", "owner-ordered", "a"]);
     expect(result?.pages.map((page) => page.items.map((item) => item.entryId)))
-      .toEqual([["locked", "b"], ["a"]]);
-    expect(result?.pages[0]?.items[0]?.status.ownerOrderLocked).toBe(true);
+      .toEqual([["b", "owner-ordered"], ["a"]]);
+    expect(result?.pages[0]?.items[1]?.status.ownerOrdered).toBe(true);
   });
 });

@@ -33,7 +33,7 @@ const page = (entryId: string, hasNext: boolean, revision: number) => ({
         skipped: false,
         isActive: false,
         isPlayed: false,
-        ownerOrderLocked: false,
+        ownerOrdered: false,
       },
       addedBy: { slug: "me", nickname: "나", avatarUrl: null },
       entryId,

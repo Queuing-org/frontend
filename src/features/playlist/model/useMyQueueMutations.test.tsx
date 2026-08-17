@@ -38,7 +38,7 @@ function queueEntry(entryId: string): PlaylistEntry {
     status: {
       isActive: false,
       isPlayed: false,
-      ownerOrderLocked: false,
+      ownerOrdered: false,
       skipped: false,
     },
     track: {

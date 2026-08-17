@@ -50,6 +50,7 @@ Do not use it for purely visual CSS changes with no data flow.
 - App-wide `/user/queue/follow-presence` and room membership use dedicated clients because their ownership and reconnect lifecycles differ. Do not claim this separation fixes a room join failure unless the same authenticated account and backend state are controlled in the comparison.
 - Room route exit and a cancelled in-flight join must publish `/app/room/{slug}/leave` while the socket is connected. Do not rely on component subscription cleanup to remove the backend participant session.
 - Queue reads are infinite pages. Fetch the first page with `size`, send only the opaque `cursor` for later pages, retain response `queueRevision` and `totalPendingCount`, and reset to the first page on `room.queue-update-conflict`.
+- Playlist entry status uses `ownerOrdered` as display-only server state. Personal reorder PATCH targets and optimistic order must include every pending personal entry regardless of that value; do not restore the removed `ownerOrderLocked` or `room.queue-entry-order-locked` contract.
 - `user.session-replaced` permanently stops reconnect for that room client instance without stopping the app-wide follow presence client.
 - Playlist item operations use `entryId`, not track video id.
 - Public identity is slug-based: chat uses nullable `senderSlug`, requesters use nullable `addedBy.slug`, owners use `owner.slug`, and participants use `userSlug` plus `participantId`. Do not fall back to numeric IDs or nicknames.
