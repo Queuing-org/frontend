@@ -239,7 +239,6 @@ export function useRoomRealtimeEvents({
       reconnectPendingRef.current = false;
       if (config) {
         clearStoredRoomAccessToken(config.slug);
-        onRoomAccessTokenChanged(null);
       }
 
       return didPublish;
@@ -250,7 +249,6 @@ export function useRoomRealtimeEvents({
       cleanupBrokerSubscription,
       cleanupUserSubscription,
       clearScheduledRoomInvalidations,
-      onRoomAccessTokenChanged,
     ],
   );
 

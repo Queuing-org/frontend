@@ -156,6 +156,8 @@ describe("useRoomRealtimeEvents", () => {
   it("명시적 나가기는 publish 실패 시 구독을 유지하고 재시도할 수 있다", () => {
     const { wrapper } = createRealtimeTestContext();
     const unsubscribe = vi.fn();
+    const onRoomAccessTokenChanged = vi.fn();
+    sessionStorage.setItem("room-access-token:room", "access-token");
     vi.mocked(subscribeRoomEvents).mockReturnValue({
       id: "room",
       unsubscribe,
@@ -166,6 +168,7 @@ describe("useRoomRealtimeEvents", () => {
         useRoomRealtimeEvents({
           cleanupChatSubscriptions: vi.fn(),
           initializeChatStateFromJoinData: vi.fn(),
+          onRoomAccessTokenChanged,
           resetChatState: vi.fn(),
           setJoinErrorMessage: vi.fn(),
           setLivePlaybackStatus: vi.fn(),
@@ -185,6 +188,9 @@ describe("useRoomRealtimeEvents", () => {
     });
     expect(didLeave).toBe(false);
     expect(unsubscribe).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("room-access-token:room")).toBe(
+      "access-token",
+    );
 
     vi.mocked(publishLeaveRequest).mockReturnValue(true);
     act(() => {
@@ -194,6 +200,8 @@ describe("useRoomRealtimeEvents", () => {
     });
     expect(didLeave).toBe(true);
     expect(unsubscribe).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
+    expect(onRoomAccessTokenChanged).not.toHaveBeenCalled();
   });
 
   afterEach(() => {

@@ -454,6 +454,48 @@ describe("RoomFormModal room form flows", () => {
     );
   });
 
+  it("방 생성 후 입장만 실패하면 생성 POST 없이 같은 방 입장만 재시도한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockResolvedValue({ slug: "created-before-join" });
+    requestJoin.mockRejectedValueOnce(new Error("입장 연결이 끊겼습니다."));
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "입장 재시도 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
+    await user.click(
+      screen.getByRole("button", { name: "참여 제한 옵션 열기" }),
+    );
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.type(screen.getByLabelText("참여 제한"), "secret");
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-join:created-before-join",
+        message: "입장 연결이 끊겼습니다.",
+        tone: "error",
+      }),
+    );
+    expect(createRoom).toHaveBeenCalledOnce();
+    expect(requestJoin).toHaveBeenCalledOnce();
+    expect(push).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "입장 재시도" }));
+
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/room/created-before-join"),
+    );
+    expect(createRoom).toHaveBeenCalledOnce();
+    expect(requestJoin).toHaveBeenCalledTimes(2);
+    expect(requestJoin).toHaveBeenLastCalledWith({
+      password: "secret",
+      slug: "created-before-join",
+    });
+  });
+
   it("태그를 고르기 전에는 다음을 비활성화하고 FREE를 고르면 진행한다", async () => {
     const user = userEvent.setup();
     roomTags.push({ name: "록", slug: "rock" });
