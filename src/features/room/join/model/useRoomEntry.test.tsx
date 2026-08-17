@@ -49,7 +49,17 @@ describe("useRoomEntry", () => {
     vi.mocked(joinRoom).mockImplementation(async (slug) => ({
       roomSlug: slug,
       timestamp: 1,
-      data: null,
+      data: {
+        participant: {
+          participantType: "USER",
+          participantId: "participant",
+          userSlug: "user",
+          nickname: "사용자",
+          profileImageUrl: null,
+        },
+        recentChatMessages: [],
+        roomAccessToken: "access-token",
+      },
     }));
   });
 

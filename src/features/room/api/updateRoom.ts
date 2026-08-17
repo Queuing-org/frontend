@@ -4,12 +4,14 @@ import {
   unwrapApiResponse,
 } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { UpdateRoomParams, UpdateRoomResult } from "./types";
 
 type UpdateRoomResponse = ApiResponse<boolean>;
 
 export async function updateRoom({
+  accessToken,
   slug,
   payload,
 }: UpdateRoomParams): Promise<UpdateRoomResult> {
@@ -17,6 +19,7 @@ export async function updateRoom({
   const res = await axiosInstance.patch<UpdateRoomResponse>(
     `/api/v1/rooms/${encodeURIComponent(normalizedSlug)}`,
     payload,
+    { headers: buildRoomAccessTokenHeaders(accessToken) },
   );
 
   return {

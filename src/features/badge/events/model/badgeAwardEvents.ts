@@ -1,5 +1,6 @@
 export type BadgeAward = {
   badgeCode: string;
+  description: string | null;
   name: string;
 };
 
@@ -33,7 +34,8 @@ export function parseBadgeAwardEvent(data: string): BadgeAwardEventData | null {
         badge &&
         typeof badge === "object" &&
         typeof badge.badgeCode === "string" &&
-        typeof badge.name === "string",
+        typeof badge.name === "string" &&
+        (badge.description === null || typeof badge.description === "string"),
     )
   ) {
     return null;
@@ -64,4 +66,15 @@ export function enqueueUnseenBadgeAwards({
   }
 
   return unseen;
+}
+
+export function formatBadgeAwardCopy(description: BadgeAward["description"]) {
+  const normalizedDescription = description?.trim();
+
+  return {
+    achievement: normalizedDescription
+      ? `${normalizedDescription}하여 새로운 칭호를 획득했습니다!`
+      : "새로운 칭호를 획득했습니다!",
+    encouragement: "더 열심히 참여해서 다음 칭호도 획득해보세요.",
+  };
 }

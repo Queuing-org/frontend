@@ -1,6 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
@@ -11,6 +10,10 @@ import { useRoomParticipants } from "@/src/features/playlist/model/useRoomPartic
 import { ApiError } from "@/src/shared/api/api-error";
 import { RoomJoinError } from "@/src/features/room/api/joinRoom.types";
 import { storeRoomJoinHandoff } from "@/src/features/room/join/model/roomJoinHandoff";
+import {
+  createTestQueryClient,
+  createTestQueryClientWrapper,
+} from "@/src/shared/test/queryClient";
 import RoomPlaybackScreen from "./RoomPlaybackScreen";
 
 const mocks = vi.hoisted(() => {
@@ -87,10 +90,43 @@ vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
   useActionFeedback: () => ({ notify: mocks.notify }),
 }));
 
+function renderRoomPlaybackScreen({ strict = false } = {}) {
+  const queryClient = createTestQueryClient();
+  const wrapper = createTestQueryClientWrapper(queryClient);
+  const screen = strict ? (
+    <StrictMode>
+      <RoomPlaybackScreen />
+    </StrictMode>
+  ) : (
+    <RoomPlaybackScreen />
+  );
+
+  return { queryClient, ...render(screen, { wrapper }) };
+}
+
+function createJoinedResult(roomAccessToken = "access-token") {
+  return {
+    roomSlug: "room",
+    timestamp: 1,
+    data: {
+      participant: {
+        participantType: "USER" as const,
+        participantId: "participant",
+        userSlug: "user",
+        nickname: "사용자",
+        profileImageUrl: null,
+      },
+      recentChatMessages: [],
+      roomAccessToken,
+    },
+  };
+}
+
 describe("RoomPlaybackScreen join reads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   it("pre-join meta를 저장하고 joined 전환 시 최신 인원 meta를 재조회한다", async () => {
@@ -106,26 +142,22 @@ describe("RoomPlaybackScreen join reads", () => {
     vi.mocked(fetchRoomMeta)
       .mockResolvedValueOnce(preJoinRoomMeta)
       .mockResolvedValueOnce(joinedRoomMeta);
-    vi.mocked(joinRoom).mockResolvedValue({
-      roomSlug: "room",
-      timestamp: 1,
-      data: null,
-    });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { unmount } = render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    vi.mocked(joinRoom).mockResolvedValue(createJoinedResult());
+    const { queryClient, unmount } = renderRoomPlaybackScreen();
 
     await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(1));
     await waitFor(() =>
-      expect(useRoomPlayback).toHaveBeenCalledWith("room", null, true),
+      expect(useRoomPlayback).toHaveBeenCalledWith(
+        "room",
+        "access-token",
+        true,
+      ),
     );
-    expect(useRoomParticipants).toHaveBeenCalledWith("room", null, true);
+    expect(useRoomParticipants).toHaveBeenCalledWith(
+      "room",
+      "access-token",
+      true,
+    );
     await waitFor(() => expect(fetchRoomMeta).toHaveBeenCalledTimes(2));
     expect(fetchRoomMeta).toHaveBeenNthCalledWith(
       1,
@@ -162,22 +194,8 @@ describe("RoomPlaybackScreen join reads", () => {
         resolveRoomMeta = resolve;
       }),
     );
-    vi.mocked(joinRoom).mockResolvedValue({
-      roomSlug: "room",
-      timestamp: 1,
-      data: null,
-    });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { unmount } = render(
-      <StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <RoomPlaybackScreen />
-        </QueryClientProvider>
-      </StrictMode>,
-    );
+    vi.mocked(joinRoom).mockResolvedValue(createJoinedResult());
+    const { unmount } = renderRoomPlaybackScreen({ strict: true });
 
     await waitFor(() => expect(fetchRoomMeta).toHaveBeenCalledTimes(1));
     const sharedQuerySignal = vi.mocked(fetchRoomMeta).mock.calls[0]?.[1];
@@ -209,14 +227,7 @@ describe("RoomPlaybackScreen join reads", () => {
         status: 401,
       }),
     );
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    renderRoomPlaybackScreen();
 
     const passwordInput = await screen.findByPlaceholderText("비밀번호 입력");
     await user.type(passwordInput, "wrong");
@@ -233,6 +244,35 @@ describe("RoomPlaybackScreen join reads", () => {
 
     await user.type(passwordInput, "2");
     expect(passwordInput).toHaveAttribute("aria-invalid", "false");
+  });
+
+  it("비공개 방의 저장 토큰이 거부되면 토큰을 지우고 비밀번호 입력으로 돌아간다", async () => {
+    sessionStorage.setItem("room-access-token:room", "expired-token");
+    vi.mocked(fetchRoomMeta).mockResolvedValue({
+      activeUsersCount: 1,
+      hasPassword: true,
+      isPublic: false,
+      slug: "room",
+      tags: [],
+      title: "비밀 방",
+    } as never);
+    vi.mocked(joinRoom).mockRejectedValue(
+      new ApiError({
+        code: "room.access-denied",
+        message: "방 접근 정보가 만료되었습니다.",
+        status: 403,
+      }),
+    );
+
+    renderRoomPlaybackScreen();
+
+    expect(await screen.findByPlaceholderText("비밀번호 입력")).toBeInTheDocument();
+    expect(joinRoom).toHaveBeenCalledWith(
+      "room",
+      { accessToken: "expired-token" },
+      { signal: expect.any(AbortSignal) },
+    );
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
   });
 
   it("직접 URL join 충돌도 확인 모달에서 동일 target으로 재요청한다", async () => {
@@ -254,15 +294,8 @@ describe("RoomPlaybackScreen join reads", () => {
           status: 409,
         }),
       )
-      .mockResolvedValueOnce({ roomSlug: "room", timestamp: 1, data: null });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+      .mockResolvedValueOnce(createJoinedResult());
+    renderRoomPlaybackScreen();
 
     const dialog = await screen.findByRole("dialog", {
       name: "이미 참여중인 방이 있습니다",
@@ -284,7 +317,43 @@ describe("RoomPlaybackScreen join reads", () => {
       { signal: expect.any(AbortSignal) },
     );
     await waitFor(() =>
-      expect(useRoomPlayback).toHaveBeenCalledWith("room", null, true),
+      expect(useRoomPlayback).toHaveBeenCalledWith(
+        "room",
+        "access-token",
+        true,
+      ),
+    );
+  });
+
+  it("비밀번호가 바뀐 비공개 방도 저장 토큰으로 재입장한다", async () => {
+    sessionStorage.setItem("room-access-token:room", "stored-token");
+    vi.mocked(fetchRoomMeta).mockResolvedValue({
+      activeUsersCount: 1,
+      hasPassword: true,
+      isPublic: false,
+      slug: "room",
+      tags: [],
+      title: "비밀번호 변경 방",
+    } as never);
+    vi.mocked(joinRoom).mockResolvedValue(createJoinedResult("renewed-token"));
+
+    renderRoomPlaybackScreen();
+
+    await waitFor(() =>
+      expect(joinRoom).toHaveBeenCalledWith(
+        "room",
+        { accessToken: "stored-token" },
+        { signal: expect.any(AbortSignal) },
+      ),
+    );
+    await waitFor(() =>
+      expect(mocks.ensureRoomSubscription).toHaveBeenCalledWith(
+        "room",
+        "renewed-token",
+      ),
+    );
+    expect(sessionStorage.getItem("room-access-token:room")).toBe(
+      "renewed-token",
     );
   });
 
@@ -292,24 +361,19 @@ describe("RoomPlaybackScreen join reads", () => {
     const releaseHandoff = vi.fn();
     storeRoomJoinHandoff({
       releaseSocketSession: releaseHandoff,
-      result: { roomSlug: "room", timestamp: 1, data: null },
+      result: createJoinedResult("handoff-token"),
       target: { password: "secret", slug: "room" },
     });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    renderRoomPlaybackScreen();
 
     await waitFor(() => expect(releaseHandoff).toHaveBeenCalledOnce());
     expect(joinRoom).not.toHaveBeenCalled();
-    expect(mocks.roomChat.initializeFromJoinData).toHaveBeenCalledWith(null);
+    expect(mocks.roomChat.initializeFromJoinData).toHaveBeenCalledWith(
+      createJoinedResult("handoff-token").data,
+    );
     expect(mocks.ensureRoomSubscription).toHaveBeenCalledWith(
       "room",
-      "secret",
+      "handoff-token",
     );
   });
 });

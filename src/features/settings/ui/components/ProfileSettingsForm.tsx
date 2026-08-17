@@ -2,9 +2,10 @@
 
 import type { FormEvent, KeyboardEvent } from "react";
 import {
+  NICKNAME_MAX_LENGTH,
   STATUS_MESSAGE_MAX_LENGTH,
-  type ProfileFieldFeedback,
-} from "../../hooks/useProfileSettingsForm";
+} from "../../model/profileSettingsLimits";
+import type { ProfileFieldFeedback } from "../../hooks/useProfileSettingsForm";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import styles from "../ProfileSettingsTab.module.css";
 
@@ -93,25 +94,31 @@ export default function ProfileSettingsForm({
         <label className={styles.fieldLabel} htmlFor="settings-nickname">
           사용자 이름
         </label>
-        <input
-          id="settings-nickname"
-          className={styles.textInput}
-          value={nicknameInputValue}
-          onChange={(event) => onNicknameChange(event.target.value)}
-          onKeyDown={preventSubmitWhileComposing}
-          placeholder="사용자 이름"
-          minLength={2}
-          maxLength={20}
-          disabled={!hasProfile || isUpdatingProfile || isMeLoading}
-          autoComplete="nickname"
-          data-feedback={nicknameFeedback ?? undefined}
-          aria-invalid={nicknameFeedback === "error"}
-          aria-describedby={
-            nicknameFeedback === "error"
-              ? "settings-nickname-error"
-              : undefined
-          }
-        />
+        <div className={styles.textInputControl}>
+          <input
+            id="settings-nickname"
+            className={`${styles.textInput} ${styles.textInputWithCounter}`}
+            value={nicknameInputValue}
+            onChange={(event) => onNicknameChange(event.target.value)}
+            onKeyDown={preventSubmitWhileComposing}
+            placeholder="사용자 이름"
+            minLength={2}
+            maxLength={NICKNAME_MAX_LENGTH}
+            disabled={!hasProfile || isUpdatingProfile || isMeLoading}
+            autoComplete="nickname"
+            data-feedback={nicknameFeedback ?? undefined}
+            aria-invalid={nicknameFeedback === "error"}
+            aria-describedby={`settings-nickname-count settings-nickname-hint${
+              nicknameFeedback === "error" ? " settings-nickname-error" : ""
+            }`}
+          />
+          <span id="settings-nickname-count" className={styles.characterCount}>
+            {hasProfile ? nickname.length : 0}/{NICKNAME_MAX_LENGTH}
+          </span>
+        </div>
+        <span id="settings-nickname-hint" className={styles.srOnly}>
+          최대 {NICKNAME_MAX_LENGTH}자입니다.
+        </span>
         <span id="settings-nickname-error" className={styles.srOnly}>
           사용자 이름 입력을 확인해 주세요.
         </span>

@@ -11,13 +11,11 @@ import {
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
-import { useMusicPower } from "@/src/features/user/profile/hooks/useMusicPower";
 import UserProfileContent from "@/src/features/user/profile/ui/UserProfileContent";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
 import BlockUserModal, {
   type BlockUserTarget,
 } from "@/src/features/follow/blocked/ui/BlockUserModal";
-import type { MusicPowerVote } from "@/src/features/user/profile/model/types";
 import type { User } from "@/src/features/user/model/types";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
@@ -41,8 +39,9 @@ import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/parti
 import ReportChatMessageModal, {
   type ReportChatMessageTarget,
 } from "@/src/features/room/chat/ui/ReportChatMessageModal";
-import { useCurrentTrackMusicPowerVote } from "../hooks/useCurrentTrackMusicPowerVote";
+import { useRoomMusicPowerVote } from "../hooks/useRoomMusicPowerVote";
 import type { CurrentRequesterProfile } from "../model/types";
+import RoomMusicPowerActions from "./RoomMusicPowerActions";
 import styles from "./RoomProfilePanel.module.css";
 
 type Props = {
@@ -57,14 +56,9 @@ type Props = {
   reportMessageKey?: string | null;
   resolveParticipantByUserSlug?: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
 };
-
-const MUSIC_POWER_LOGIN_NOTICE =
-  "로그인 후 음악력을 평가할 수 있습니다.";
-const MUSIC_POWER_ALREADY_EVALUATED_NOTICE =
-  "같은 곡에는 한 번만 음악력을 평가할 수 있습니다.";
 
 function isCurrentUserProfile(
   currentRequester: CurrentRequesterProfile | null,
@@ -90,7 +84,7 @@ export default function RoomProfilePanel({
   reportMessageKey,
   resolveParticipantByUserSlug,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: Props) {
   const [isManagementOpen, setIsManagementOpen] = useState(false);
@@ -104,7 +98,6 @@ export default function RoomProfilePanel({
     } | null>(null);
   const manageButtonRef = useRef<HTMLButtonElement>(null);
   const managementMenuId = useId();
-  const musicPowerRequestKeyRef = useRef<string | null>(null);
   const { notify } = useActionFeedback();
   const targetSlug = currentRequester?.slug ?? null;
   const isSelf = isCurrentUserProfile(currentRequester, currentUser);
@@ -113,25 +106,6 @@ export default function RoomProfilePanel({
     isError: isPublicProfileError,
     isLoading: isPublicProfileLoading,
   } = useUserProfile(targetSlug);
-  const shouldLoadCurrentTrackMusicPower = Boolean(
-    currentUser && targetSlug && currentEntryId && !isSelf,
-  );
-  const musicPowerQuery = useMusicPower(
-    shouldLoadCurrentTrackMusicPower ? targetSlug : null,
-    shouldLoadCurrentTrackMusicPower
-      ? { entryId: currentEntryId!, roomSlug }
-      : undefined,
-  );
-  const musicPowerVote = useCurrentTrackMusicPowerVote();
-  const pendingMusicPowerVote = musicPowerVote.variables;
-  const selectedMusicPowerVote =
-    musicPowerQuery.data?.myVote ??
-    (musicPowerVote.isPending &&
-      pendingMusicPowerVote?.roomSlug === roomSlug &&
-      pendingMusicPowerVote.entryId === currentEntryId &&
-      pendingMusicPowerVote.targetUserSlug === targetSlug
-      ? pendingMusicPowerVote.vote
-      : null);
   const kickParticipant = useKickRoomParticipant();
   const transferOwner = useTransferRoomOwner();
   const shouldLoadBadgeFallback =
@@ -187,113 +161,25 @@ export default function RoomProfilePanel({
     publicProfile?.nickname ?? currentRequester?.nickname ?? "";
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
+  const musicPowerVote = useRoomMusicPowerVote({
+    currentEntryId,
+    displayNickname,
+    hasCurrentUser: Boolean(currentUser),
+    isCurrentUserLoading,
+    isSelf,
+    roomAccessToken,
+    roomSlug,
+    targetSlug,
+  });
   const statusMessage = publicProfile?.statusMessage?.trim() ?? "";
   const isBadgeLoading =
     isPublicProfileLoading ||
     (shouldLoadBadgeFallback && isPublicBadgesLoading);
   const badgeValue = representativeBadge?.name ?? "대표 칭호 없음";
-  const musicPower =
-    musicPowerQuery.data?.musicPower ?? publicProfile?.musicPower;
+  const musicPower = musicPowerVote.musicPower ?? publicProfile?.musicPower;
   const listeningDurationSeconds =
     publicProfile?.listeningDurationSeconds ??
     (isSelf ? currentUser?.listeningDurationSeconds : undefined);
-  const isMusicPowerVoteDisabled =
-    isCurrentUserLoading ||
-    isSelf ||
-    !targetSlug ||
-    !currentEntryId;
-  const musicPowerVoteDisabledLabel = (() => {
-    if (isCurrentUserLoading) {
-      return "로그인 상태를 확인하고 있습니다";
-    }
-    if (isSelf) {
-      return "본인의 음악력에는 투표할 수 없습니다";
-    }
-    if (!targetSlug) {
-      return "투표 대상은 회원 신청자만 가능합니다";
-    }
-    if (!currentEntryId) {
-      return "현재 재생 곡을 확인할 수 없습니다";
-    }
-    return null;
-  })();
-
-  const handleMusicPowerVote = (vote: MusicPowerVote) => {
-    if (!targetSlug || !currentEntryId || isCurrentUserLoading) {
-      return;
-    }
-
-    if (!currentUser) {
-      notify({
-        dedupeKey: `music-power:${roomSlug}:${currentEntryId}:${targetSlug}`,
-        message: MUSIC_POWER_LOGIN_NOTICE,
-        tone: "default",
-      });
-      return;
-    }
-
-    if (isMusicPowerVoteDisabled) {
-      return;
-    }
-
-    if (musicPowerVote.isPending) {
-      return;
-    }
-
-    const requestKey = `${roomSlug}:${currentEntryId}:${targetSlug}`;
-    if (musicPowerRequestKeyRef.current === requestKey) {
-      return;
-    }
-
-    if (musicPowerQuery.data?.myVote) {
-      notify({
-        dedupeKey: `music-power:${requestKey}`,
-        message: MUSIC_POWER_ALREADY_EVALUATED_NOTICE,
-        tone: "default",
-      });
-      return;
-    }
-
-    musicPowerRequestKeyRef.current = requestKey;
-    musicPowerVote.mutate(
-      {
-        entryId: currentEntryId,
-        roomSlug,
-        targetUserSlug: targetSlug,
-        vote,
-      },
-      {
-        onSuccess: () => {
-          if (musicPowerRequestKeyRef.current === requestKey) {
-            musicPowerRequestKeyRef.current = null;
-          }
-          notify({
-            dedupeKey: `music-power:${requestKey}`,
-            message:
-              vote === "UPVOTE"
-                ? `'${displayNickname}'님의 음악력을 올렸습니다!`
-                : `'${displayNickname}'님의 음악력을 내렸습니다.`,
-            tone: "default",
-          });
-        },
-        onError: (error) => {
-          if (musicPowerRequestKeyRef.current === requestKey) {
-            musicPowerRequestKeyRef.current = null;
-          }
-          const isAlreadyEvaluated =
-            error.code === "music-power.already-evaluated";
-          notify({
-            dedupeKey: `music-power:${requestKey}`,
-            message: isAlreadyEvaluated
-              ? MUSIC_POWER_ALREADY_EVALUATED_NOTICE
-              : error.message || "음악력을 변경하지 못했습니다.",
-            tone: isAlreadyEvaluated ? "default" : "error",
-          });
-        },
-      },
-    );
-  };
-
   const handleReport = () => {
     if (!reportMessageKey) {
       notify({
@@ -306,7 +192,7 @@ export default function RoomProfilePanel({
 
     setReportTarget({
       messageKey: reportMessageKey,
-      password: roomPassword,
+      accessToken: roomAccessToken,
       slug: roomSlug,
     });
   };
@@ -376,7 +262,7 @@ export default function RoomProfilePanel({
     kickParticipant.mutate(
       {
         ...resolvedKickTarget,
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       },
       {
@@ -444,7 +330,7 @@ export default function RoomProfilePanel({
 
     transferOwner.reset();
     transferOwner.mutate(
-      { slug: roomSlug, userSlug: targetSlug },
+      { accessToken: roomAccessToken, slug: roomSlug, userSlug: targetSlug },
       {
         onSuccess: () => {
           notify({
@@ -577,56 +463,13 @@ export default function RoomProfilePanel({
             musicPower={musicPower}
             musicPowerActions={
               !isSelf && !isCurrentUserLoading ? (
-                <div className={styles.musicPowerActions}>
-                  <button
-                    type="button"
-                    className={styles.musicPowerButton}
-                    aria-pressed={selectedMusicPowerVote === "UPVOTE"}
-                    aria-label={
-                      musicPowerVoteDisabledLabel ?? "음악력 올리기"
-                    }
-                    title={
-                      !currentUser && !isCurrentUserLoading
-                        ? MUSIC_POWER_LOGIN_NOTICE
-                        : (musicPowerVoteDisabledLabel ?? "음악력 올리기")
-                    }
-                    disabled={isMusicPowerVoteDisabled}
-                    onClick={() => handleMusicPowerVote("UPVOTE")}
-                  >
-                    <Image
-                      src="/icons/music-power-up.svg"
-                      alt=""
-                      aria-hidden="true"
-                      className={styles.musicPowerIcon}
-                      width={8}
-                      height={8}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.musicPowerButton}
-                    aria-pressed={selectedMusicPowerVote === "DOWNVOTE"}
-                    aria-label={
-                      musicPowerVoteDisabledLabel ?? "음악력 내리기"
-                    }
-                    title={
-                      !currentUser && !isCurrentUserLoading
-                        ? MUSIC_POWER_LOGIN_NOTICE
-                        : (musicPowerVoteDisabledLabel ?? "음악력 내리기")
-                    }
-                    disabled={isMusicPowerVoteDisabled}
-                    onClick={() => handleMusicPowerVote("DOWNVOTE")}
-                  >
-                    <Image
-                      src="/icons/music-power-down.svg"
-                      alt=""
-                      aria-hidden="true"
-                      className={styles.musicPowerIcon}
-                      width={8}
-                      height={8}
-                    />
-                  </button>
-                </div>
+                <RoomMusicPowerActions
+                  disabled={musicPowerVote.disabled}
+                  disabledLabel={musicPowerVote.disabledLabel}
+                  loginNotice={musicPowerVote.loginNotice}
+                  onVote={musicPowerVote.onVote}
+                  selectedVote={musicPowerVote.selectedVote}
+                />
               ) : null
             }
             nickname={displayNickname}

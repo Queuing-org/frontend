@@ -32,6 +32,17 @@ vi.mock("./websocket/subscribeUserJoinEvents", () => ({
 }));
 
 describe("joinRoom socket lifecycle", () => {
+  const joinedData = {
+    participant: {
+      participantType: "USER" as const,
+      participantId: "participant",
+      userSlug: "user",
+      nickname: "사용자",
+      profileImageUrl: null,
+    },
+    recentChatMessages: [],
+    roomAccessToken: "access-token",
+  };
   const client = {
     active: true,
     connected: false,
@@ -90,11 +101,28 @@ describe("joinRoom socket lifecycle", () => {
     joinHandlers?.onJoined({
       roomSlug: "room",
       timestamp: 1,
-      data: null,
+      data: joinedData,
     });
 
     await expect(request).resolves.toMatchObject({ roomSlug: "room" });
     expect(releaseSocketSession).toHaveBeenCalledTimes(1);
+  });
+
+  it("재접속 join은 비밀번호 대신 접근 토큰 payload를 그대로 보낸다", async () => {
+    client.connected = true;
+    const request = joinRoom("room", { accessToken: "access-token" });
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(publishJoinRequest).toHaveBeenCalledWith("room", {
+      accessToken: "access-token",
+    });
+    joinHandlers?.onJoined({
+      roomSlug: "room",
+      timestamp: 1,
+      data: joinedData,
+    });
+
+    await expect(request).resolves.toMatchObject({ data: joinedData });
   });
 
   it("join publish 뒤 취소되면 같은 socket session에 leave를 보낸다", async () => {

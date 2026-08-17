@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useUpdateRoom } from "../model/useUpdateRoom";
 import { useUpdateRoomThumbnail } from "../model/useUpdateRoomThumbnail";
+import { useDeleteRoomThumbnail } from "../model/useDeleteRoomThumbnail";
 import { buildUpdateRoomPayload } from "../model/buildUpdateRoomPayload";
 import { useUploadTemporaryRoomThumbnail } from "../../hooks/useUploadTemporaryRoomThumbnail";
 import { useRoomThumbnailSelection } from "../../hooks/useRoomThumbnailSelection";
@@ -20,7 +21,9 @@ type UseEditRoomFormParams = {
   initialTagSlugs: string[];
   initialTrackLimitMinutes: number | null;
   initialTitle: string;
+  initialHasThumbnail: boolean;
   onClose: () => void;
+  roomAccessToken?: string;
   roomSlug?: string;
 };
 
@@ -60,12 +63,15 @@ export function useEditRoomForm({
   initialTagSlugs,
   initialTrackLimitMinutes,
   initialTitle,
+  initialHasThumbnail,
   onClose,
+  roomAccessToken,
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
   const { notify } = useActionFeedback();
   const updateRoomThumbnailMutation = useUpdateRoomThumbnail();
+  const deleteRoomThumbnailMutation = useDeleteRoomThumbnail();
   const uploadTemporaryRoomThumbnailMutation =
     useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
@@ -99,9 +105,12 @@ export function useEditRoomForm({
   const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>(() =>
     initialTagSlugs.slice(0, ROOM_TAG_LIMIT),
   );
+  const [thumbnailOption, setThumbnailOption] = useState<
+    "upload" | "default"
+  >(() => (initialHasThumbnail ? "upload" : "default"));
   const [
-    didSaveRoomInfoBeforeThumbnailError,
-    setDidSaveRoomInfoBeforeThumbnailError,
+    didSaveRoomInfoBeforeThumbnailMutationError,
+    setDidSaveRoomInfoBeforeThumbnailMutationError,
   ] = useState(false);
   const [invalidFields, setInvalidFields] = useState<
     Partial<Record<EditRoomValidationField, true>>
@@ -110,6 +119,7 @@ export function useEditRoomForm({
   const isSubmitting =
     updateRoomMutation.isPending ||
     updateRoomThumbnailMutation.isPending ||
+    deleteRoomThumbnailMutation.isPending ||
     uploadTemporaryRoomThumbnailMutation.isPending;
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
@@ -126,7 +136,7 @@ export function useEditRoomForm({
     thumbnailSelection.file &&
       !uploadTemporaryRoomThumbnailMutation.data?.uploadToken,
   );
-  const canSubmit = !isSubmitting && !!roomSlug;
+  const canSubmit = !isSubmitting && !!roomSlug && !!roomAccessToken;
   const clearValidationError = (field: EditRoomValidationField) => {
     setInvalidFields((currentFields) => {
       if (!currentFields[field]) {
@@ -200,10 +210,12 @@ export function useEditRoomForm({
   const handleThumbnailChange = (files: FileList | null) => {
     uploadTemporaryRoomThumbnailMutation.reset();
     updateRoomThumbnailMutation.reset();
-    setDidSaveRoomInfoBeforeThumbnailError(false);
+    deleteRoomThumbnailMutation.reset();
+    setDidSaveRoomInfoBeforeThumbnailMutationError(false);
     const selectedFile = thumbnailSelection.selectFile(files);
 
     if (selectedFile) {
+      setThumbnailOption("upload");
       uploadTemporaryRoomThumbnailMutation.mutate(
         { file: selectedFile },
         {
@@ -219,17 +231,19 @@ export function useEditRoomForm({
     }
   };
 
-  const clearThumbnailSelection = () => {
+  const selectDefaultThumbnail = () => {
     uploadTemporaryRoomThumbnailMutation.reset();
     updateRoomThumbnailMutation.reset();
-    setDidSaveRoomInfoBeforeThumbnailError(false);
+    deleteRoomThumbnailMutation.reset();
+    setDidSaveRoomInfoBeforeThumbnailMutationError(false);
     thumbnailSelection.clearSelection();
+    setThumbnailOption("default");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!roomSlug || isSubmitting) {
+    if (!roomSlug || !roomAccessToken || isSubmitting) {
       return;
     }
 
@@ -281,7 +295,11 @@ export function useEditRoomForm({
     });
     const thumbnailUploadToken =
       uploadTemporaryRoomThumbnailMutation.data?.uploadToken;
-    if (!payload && !thumbnailUploadToken) {
+    const shouldDeleteThumbnail =
+      initialHasThumbnail &&
+      thumbnailOption === "default" &&
+      !thumbnailUploadToken;
+    if (!payload && !thumbnailUploadToken && !shouldDeleteThumbnail) {
       onClose();
       return;
     }
@@ -290,6 +308,7 @@ export function useEditRoomForm({
     try {
       if (payload) {
         await updateRoomMutation.mutateAsync({
+          accessToken: roomAccessToken,
           slug: roomSlug,
           payload,
         });
@@ -308,18 +327,27 @@ export function useEditRoomForm({
       }
 
       if (thumbnailUploadToken) {
-        setDidSaveRoomInfoBeforeThumbnailError(
+        setDidSaveRoomInfoBeforeThumbnailMutationError(
           (didSave) => didSave || Boolean(payload),
         );
         await updateRoomThumbnailMutation.mutateAsync({
+          accessToken: roomAccessToken,
           slug: roomSlug,
           thumbnailUploadToken,
+        });
+      } else if (shouldDeleteThumbnail) {
+        setDidSaveRoomInfoBeforeThumbnailMutationError(
+          (didSave) => didSave || Boolean(payload),
+        );
+        await deleteRoomThumbnailMutation.mutateAsync({
+          accessToken: roomAccessToken,
+          slug: roomSlug,
         });
       }
 
       notify({
         dedupeKey: `room-update:${roomSlug}`,
-        message: "방 설정을 변경했습니다.",
+        message: "방 정보가 변경되었어요",
         tone: "default",
       });
       onClose();
@@ -327,9 +355,12 @@ export function useEditRoomForm({
       notify({
         dedupeKey: `room-update:${roomSlug}`,
         message:
-          (didSaveRoomInfo || didSaveRoomInfoBeforeThumbnailError) &&
-          thumbnailUploadToken
-            ? "방 정보는 저장했지만 썸네일을 변경하지 못했습니다."
+          (didSaveRoomInfo ||
+            didSaveRoomInfoBeforeThumbnailMutationError) &&
+          (thumbnailUploadToken || shouldDeleteThumbnail)
+            ? shouldDeleteThumbnail
+              ? "방 정보는 저장했지만 썸네일을 삭제하지 못했습니다."
+              : "방 정보는 저장했지만 썸네일을 변경하지 못했습니다."
             : error instanceof Error && error.message
               ? error.message
               : "방 설정을 변경하지 못했습니다.",
@@ -340,7 +371,6 @@ export function useEditRoomForm({
 
   return {
     canSubmit,
-    clearThumbnailSelection,
     handleSubmit,
     handleThumbnailChange,
     isPasswordClearEnabled,
@@ -359,14 +389,21 @@ export function useEditRoomForm({
     selectedTagSlugs,
     setPassword: updatePassword,
     submitError:
-      updateRoomMutation.error ?? updateRoomThumbnailMutation.error,
+      updateRoomMutation.error ??
+      updateRoomThumbnailMutation.error ??
+      deleteRoomThumbnailMutation.error,
     submitErrorPrefix:
-      updateRoomThumbnailMutation.error && didSaveRoomInfoBeforeThumbnailError
-        ? "방 정보는 저장됐지만 썸네일 교체 실패"
+      didSaveRoomInfoBeforeThumbnailMutationError
+        ? deleteRoomThumbnailMutation.error
+          ? "방 정보는 저장됐지만 썸네일 삭제 실패"
+          : updateRoomThumbnailMutation.error
+            ? "방 정보는 저장됐지만 썸네일 교체 실패"
+            : "수정 실패"
         : "수정 실패",
     thumbnailErrorMessage,
     thumbnailFileName: thumbnailSelection.fileName,
     thumbnailPreviewUrl: thumbnailSelection.previewUrl,
+    thumbnailOption,
     thumbnailStatusMessage: uploadTemporaryRoomThumbnailMutation.isPending
       ? "썸네일 업로드 중"
       : null,
@@ -374,6 +411,7 @@ export function useEditRoomForm({
       thumbnailSelection.isPreviewUnavailable,
     markThumbnailPreviewUnavailable:
       thumbnailSelection.markPreviewUnavailable,
+    selectDefaultThumbnail,
     title,
     titleInvalid: Boolean(invalidFields.title && !trimmedTitle),
     trackLimitMinutes,

@@ -57,7 +57,7 @@ function renderAddTrackAction() {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useAddTrackAction("room"), { wrapper });
+  return renderHook(() => useAddTrackAction("room", "secret"), { wrapper });
 }
 
 describe("useAddTrackAction", () => {

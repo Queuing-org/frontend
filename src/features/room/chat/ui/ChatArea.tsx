@@ -61,7 +61,7 @@ type Props = {
   participants: PlaylistParticipant[];
   resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
   scrollToLatestKey: number;
   timestampMaxSeconds?: number | null;
@@ -231,7 +231,7 @@ export default function ChatArea({
   participants,
   resolveParticipantByUserSlug,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
   scrollToLatestKey,
   timestampMaxSeconds,
@@ -400,11 +400,11 @@ export default function ChatArea({
       setOpenMenuKey(null);
       setReportTarget({
         messageKey: message.messageKey,
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       });
     },
-    [currentUser, roomPassword, roomSlug],
+    [currentUser, roomAccessToken, roomSlug],
   );
   const handleKick = useCallback(
     async (message: ChatMessage) => {
@@ -445,7 +445,7 @@ export default function ChatArea({
       }
       kickParticipant.reset();
       kickParticipant.mutate(
-        { ...kickTarget, password: roomPassword, slug: roomSlug },
+        { ...kickTarget, accessToken: roomAccessToken, slug: roomSlug },
         {
           onSuccess: () => {
             notify({
@@ -472,7 +472,7 @@ export default function ChatArea({
       notify,
       participantByUserSlug,
       resolveModerationParticipant,
-      roomPassword,
+      roomAccessToken,
       roomSlug,
     ]);
   const handleTransfer = useCallback(
@@ -525,7 +525,7 @@ export default function ChatArea({
       }
       transferOwner.reset();
       transferOwner.mutate(
-        { slug: roomSlug, userSlug },
+        { accessToken: roomAccessToken, slug: roomSlug, userSlug },
         {
           onSuccess: () => {
             notify({
@@ -562,6 +562,7 @@ export default function ChatArea({
       notify,
       participantByUserSlug,
       resolveModerationParticipant,
+      roomAccessToken,
       roomSlug,
       transferOwner,
     ]);

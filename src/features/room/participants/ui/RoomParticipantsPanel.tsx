@@ -39,7 +39,7 @@ type Props = {
   onUserBlocked: (userSlug: string) => void;
   participants: PlaylistParticipant[];
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
 };
 
@@ -53,7 +53,7 @@ export default function RoomParticipantsPanel({
   onUserBlocked,
   participants,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: Props) {
   const [blockTarget, setBlockTarget] = useState<BlockUserTarget | null>(null);
@@ -85,7 +85,11 @@ export default function RoomParticipantsPanel({
       });
       return;
     }
-    setReportTarget({ messageKey, password: roomPassword, slug: roomSlug });
+    setReportTarget({
+      accessToken: roomAccessToken,
+      messageKey,
+      slug: roomSlug,
+    });
   };
 
   const handleBlockParticipant = (participant: PlaylistParticipant) => {
@@ -103,7 +107,7 @@ export default function RoomParticipantsPanel({
     }
     transferOwner.reset();
     transferOwner.mutate(
-      { slug: roomSlug, userSlug },
+      { accessToken: roomAccessToken, slug: roomSlug, userSlug },
       {
         onSuccess: () => {
           notify({
@@ -159,7 +163,7 @@ export default function RoomParticipantsPanel({
             kickParticipant.mutate(
               {
                 ...target,
-                password: roomPassword,
+                accessToken: roomAccessToken,
                 slug: roomSlug,
               },
               {

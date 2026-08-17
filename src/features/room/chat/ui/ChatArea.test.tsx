@@ -165,7 +165,7 @@ function ChatAreaHarness({
         tags: [],
         title: "방",
       }}
-      roomPassword="secret"
+      roomAccessToken="secret"
       roomSlug="room-slug"
       scrollToLatestKey={0}
       timestampMaxSeconds={timestampMaxSeconds}
@@ -306,7 +306,7 @@ describe("ChatArea 관리 메뉴", () => {
     await user.click(screen.getByRole("menuitem", { name: "내보내기" }));
     expect(kickMutate).toHaveBeenCalledWith(
       {
-        password: "secret",
+        accessToken: "secret",
         slug: "room-slug",
         userSlug: "회원-slug",
       },
@@ -317,7 +317,7 @@ describe("ChatArea 관리 메뉴", () => {
     await user.click(screen.getByRole("menuitem", { name: "방장 위임" }));
     const transferOptions = transferMutate.mock.calls.at(-1)?.[1];
     expect(transferMutate).toHaveBeenCalledWith(
-      { slug: "room-slug", userSlug: "회원-slug" },
+      { accessToken: "secret", slug: "room-slug", userSlug: "회원-slug" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
     expect(transferOptions).toHaveProperty("onSuccess");
@@ -344,7 +344,7 @@ describe("ChatArea 관리 메뉴", () => {
     );
     expect(kickMutate).toHaveBeenCalledWith(
       {
-        password: "secret",
+        accessToken: "secret",
         slug: "room-slug",
         userSlug: "회원-slug",
       },

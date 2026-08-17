@@ -2,17 +2,19 @@ import type { JoinRoomPayload } from "../joinRoom.types";
 import { getSocketClient } from "@/src/shared/api/websocket/stompConnection";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 
-// 방 참가 destination으로 비밀번호를 포함한 join 요청을 보낸다.
+// 최초 입장은 비밀번호, 재접속은 접근 토큰 중 하나만 보낸다.
 export function publishJoinRequest(
   safeSlug: string,
   payload: JoinRoomPayload,
 ) {
   const client = getSocketClient();
   const normalizedSlug = normalizeRoomSlug(safeSlug);
-  const password = payload.password?.trim();
+  const body = typeof payload.accessToken === "string"
+    ? { accessToken: payload.accessToken.trim() }
+    : { password: payload.password?.trim() || null };
 
   client.publish({
     destination: `/app/room/${encodeURIComponent(normalizedSlug)}/join`,
-    body: JSON.stringify({ password: password || null }),
+    body: JSON.stringify(body),
   });
 }

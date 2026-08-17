@@ -4,17 +4,20 @@ import {
   unwrapApiResponse,
 } from "@/src/shared/api/api-response";
 import type { ApiResponse } from "@/src/shared/api/types";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { DeleteRoomParams, DeleteRoomResult } from "./types";
 
 type DeleteRoomResponse = ApiResponse<boolean>;
 
 export async function deleteRoom({
+  accessToken,
   slug,
 }: DeleteRoomParams): Promise<DeleteRoomResult> {
   const normalizedSlug = normalizeRoomSlug(slug);
   const response = await axiosInstance.delete<DeleteRoomResponse>(
     `/api/v1/rooms/${encodeURIComponent(normalizedSlug)}`,
+    { headers: buildRoomAccessTokenHeaders(accessToken) },
   );
 
   return {

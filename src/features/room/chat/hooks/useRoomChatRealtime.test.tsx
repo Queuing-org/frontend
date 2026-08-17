@@ -78,6 +78,7 @@ function renderRealtimeChat(
       onMessage,
       onMessageDeleted: websocket.onMessageDeleted,
       onPendingMessageBackfill,
+      roomAccessToken: "access-token",
       slug: "room",
     }),
   );

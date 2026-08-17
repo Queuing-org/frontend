@@ -45,6 +45,7 @@ function createJoinData(recentChatMessages: ChatMessage[]): RoomJoinedData {
       userSlug: "me",
     },
     recentChatMessages,
+    roomAccessToken: "access-token",
   };
 }
 
@@ -53,6 +54,7 @@ function renderChatHistory() {
     useRoomChatHistory({
       currentUser,
       isEnabled: false,
+      roomAccessToken: "access-token",
       slug: "room",
     }),
   );

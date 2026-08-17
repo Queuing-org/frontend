@@ -5,14 +5,17 @@ import {
 } from "@/src/shared/api/api-response";
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import type { ApiResponse } from "@/src/shared/api/types";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 
 export type TransferRoomOwnerParams = {
+  accessToken: string;
   slug: string;
   userSlug: string;
 };
 
 export async function transferRoomOwner({
+  accessToken,
   slug,
   userSlug,
 }: TransferRoomOwnerParams): Promise<boolean> {
@@ -27,6 +30,7 @@ export async function transferRoomOwner({
   const response = await axiosInstance.patch<ApiResponse<boolean>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/owner`,
     { userSlug: normalizedUserSlug },
+    { headers: buildRoomAccessTokenHeaders(accessToken) },
   );
 
   return assertApiBooleanResult(

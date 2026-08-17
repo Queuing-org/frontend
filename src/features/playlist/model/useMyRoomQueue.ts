@@ -13,20 +13,20 @@ import { playlistKeys } from "./queryKeys";
 
 export function useMyRoomQueue(
   slug: string,
-  password?: string | null,
+  accessToken: string,
   enabled = true,
 ) {
   const queryClient = useQueryClient();
   const queryKey = useMemo(
-    () => playlistKeys.roomQueue(slug, password, true),
-    [password, slug],
+    () => playlistKeys.roomQueue(slug, true),
+    [slug],
   );
   const query = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam, signal }) =>
       fetchRoomQueuePage({
         slug,
-        password,
+        accessToken,
         cursor: pageParam,
         mine: true,
         signal,

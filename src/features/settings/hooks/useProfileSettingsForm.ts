@@ -5,10 +5,17 @@ import { useMe } from "@/src/features/user/session/hooks/useMe";
 import { useUpdateMe } from "@/src/features/user/profile/hooks/useUpdateMe";
 import type { UpdateMePayload } from "@/src/features/user/profile/model/types";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
+import {
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  STATUS_MESSAGE_MAX_LENGTH,
+} from "../model/profileSettingsLimits";
 
-export const STATUS_MESSAGE_MAX_LENGTH = 20;
-export const NICKNAME_MIN_LENGTH = 2;
-export const NICKNAME_MAX_LENGTH = 20;
+export {
+  NICKNAME_MAX_LENGTH,
+  NICKNAME_MIN_LENGTH,
+  STATUS_MESSAGE_MAX_LENGTH,
+} from "../model/profileSettingsLimits";
 
 export type ProfileFieldFeedback = "error" | null;
 

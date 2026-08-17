@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { FormEvent, PropsWithChildren } from "react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
+import { deleteRoomThumbnail } from "@/src/features/room/api/deleteRoomThumbnail";
 import { updateRoom } from "@/src/features/room/api/updateRoom";
 import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
@@ -12,6 +13,9 @@ const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
 
 vi.mock("@/src/features/room/api/updateRoom", () => ({
   updateRoom: vi.fn(),
+}));
+vi.mock("@/src/features/room/api/deleteRoomThumbnail", () => ({
+  deleteRoomThumbnail: vi.fn(),
 }));
 vi.mock("@/src/features/room/api/updateRoomThumbnail", () => ({
   updateRoomThumbnail: vi.fn(),
@@ -51,14 +55,17 @@ it("수정 폼의 초기 태그와 추가 선택을 최대 3개로 제한한다"
         initialHasPassword: false,
         initialMaxParticipants: null,
         initialTagSlugs: ["rock", "jazz", "pop", "hip-hop"],
+        initialHasThumbnail: false,
         initialTitle: "기존 방",
         onClose: vi.fn(),
+        roomAccessToken: "secret",
         roomSlug: "existing-room",
       }),
     { wrapper: createWrapper() },
   );
 
   expect(result.current.maxTags).toBe(3);
+  expect(result.current.thumbnailOption).toBe("default");
   expect(result.current.selectedTagSlugs).toEqual(["rock", "jazz", "pop"]);
 
   act(() => {
@@ -80,8 +87,10 @@ it("장르 없이 제출하면 fieldset 오류와 빨간 공통 알림을 함께
         initialHasPassword: false,
         initialMaxParticipants: null,
         initialTagSlugs: [],
+        initialHasThumbnail: false,
         initialTitle: "기존 방",
         onClose: vi.fn(),
+        roomAccessToken: "secret",
         roomSlug: "existing-room",
       }),
     { wrapper: createWrapper() },
@@ -112,8 +121,10 @@ it("수정한 필드의 검증 오류만 해제한다", async () => {
         initialHasPassword: false,
         initialMaxParticipants: null,
         initialTagSlugs: [],
+        initialHasThumbnail: false,
         initialTitle: "",
         onClose: vi.fn(),
+        roomAccessToken: "secret",
         roomSlug: "existing-room",
       }),
     { wrapper: createWrapper() },
@@ -142,8 +153,10 @@ it("잘못된 썸네일은 필드 오류와 빨간 공통 알림을 함께 표�
         initialHasPassword: false,
         initialMaxParticipants: null,
         initialTagSlugs: ["rock"],
+        initialHasThumbnail: false,
         initialTitle: "기존 방",
         onClose: vi.fn(),
+        roomAccessToken: "secret",
         roomSlug: "existing-room",
       }),
     { wrapper: createWrapper() },
@@ -194,8 +207,10 @@ it("일반 정보 저장 후 썸네일 교체가 실패하면 재시도에서 PA
         initialHasPassword: false,
         initialMaxParticipants: 10,
         initialTagSlugs: ["rock"],
+        initialHasThumbnail: true,
         initialTitle: "기존 방",
         onClose,
+        roomAccessToken: "secret",
         roomSlug: "existing-room",
       }),
     { wrapper: createWrapper() },
@@ -254,5 +269,60 @@ it("일반 정보 저장 후 썸네일 교체가 실패하면 재시도에서 PA
 
   expect(updateRoom).toHaveBeenCalledOnce();
   expect(updateRoomThumbnail).toHaveBeenCalledTimes(3);
+  expect(deleteRoomThumbnail).not.toHaveBeenCalled();
+  expect(onClose).toHaveBeenCalledOnce();
+});
+
+it("정보 저장 후 썸네일 삭제가 실패하면 재시도에서 DELETE만 반복한다", async () => {
+  const onClose = vi.fn();
+  vi.mocked(updateRoom).mockResolvedValue({ success: true });
+  vi.mocked(deleteRoomThumbnail)
+    .mockRejectedValueOnce(new ApiError({ message: "삭제 실패", status: 409 }))
+    .mockResolvedValueOnce({ success: true });
+  const { result } = renderHook(
+    () =>
+      useEditRoomForm({
+        initialHasPassword: false,
+        initialHasThumbnail: true,
+        initialMaxParticipants: 10,
+        initialTagSlugs: ["rock"],
+        initialTitle: "기존 방",
+        onClose,
+        roomAccessToken: "secret",
+        roomSlug: "existing-room",
+      }),
+    { wrapper: createWrapper() },
+  );
+
+  act(() => {
+    result.current.updateTitle("수정된 방");
+    result.current.selectDefaultThumbnail();
+  });
+  await act(async () => {
+    await result.current.handleSubmit({
+      preventDefault: vi.fn(),
+    } as unknown as FormEvent<HTMLFormElement>);
+  });
+
+  expect(updateRoom).toHaveBeenCalledOnce();
+  expect(deleteRoomThumbnail).toHaveBeenCalledOnce();
+  expect(updateRoomThumbnail).not.toHaveBeenCalled();
+  expect(result.current.submitErrorPrefix).toBe(
+    "방 정보는 저장됐지만 썸네일 삭제 실패",
+  );
+  expect(notify).toHaveBeenLastCalledWith({
+    dedupeKey: "room-update:existing-room",
+    message: "방 정보는 저장했지만 썸네일을 삭제하지 못했습니다.",
+    tone: "error",
+  });
+
+  await act(async () => {
+    await result.current.handleSubmit({
+      preventDefault: vi.fn(),
+    } as unknown as FormEvent<HTMLFormElement>);
+  });
+
+  expect(updateRoom).toHaveBeenCalledOnce();
+  expect(deleteRoomThumbnail).toHaveBeenCalledTimes(2);
   expect(onClose).toHaveBeenCalledOnce();
 });

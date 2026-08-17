@@ -48,7 +48,7 @@ describe("useRoomParticipants", () => {
     expect(fetchRoomParticipantsPage).toHaveBeenCalledTimes(1);
     expect(fetchRoomParticipantsPage).toHaveBeenNthCalledWith(1, {
       cursor: undefined,
-      password: "secret",
+      accessToken: "secret",
       signal: expect.any(AbortSignal),
       slug: "room",
     });
@@ -61,7 +61,7 @@ describe("useRoomParticipants", () => {
     expect(fetchRoomParticipantsPage).toHaveBeenCalledTimes(2);
     expect(fetchRoomParticipantsPage).toHaveBeenNthCalledWith(2, {
       cursor: "cursor-1",
-      password: "secret",
+      accessToken: "secret",
       signal: expect.any(AbortSignal),
       slug: "room",
     });
@@ -88,7 +88,7 @@ describe("useRoomParticipants", () => {
       </QueryClientProvider>
     );
     const { result } = renderHook(
-      () => useRoomParticipants("room", null, true),
+      () => useRoomParticipants("room", "secret", true),
       { wrapper },
     );
 

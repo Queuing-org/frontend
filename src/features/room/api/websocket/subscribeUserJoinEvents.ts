@@ -23,7 +23,27 @@ function getRoomJoinedData(data: unknown): RoomJoinedData | null {
     return null;
   }
 
-  return data as RoomJoinedData;
+  const candidate = data as Partial<RoomJoinedData>;
+  const participant = candidate.participant;
+  if (
+    !participant ||
+    typeof participant !== "object" ||
+    (participant.participantType !== "USER" &&
+      participant.participantType !== "GUEST") ||
+    typeof participant.participantId !== "string" ||
+    (participant.userSlug !== null &&
+      typeof participant.userSlug !== "string") ||
+    typeof participant.nickname !== "string" ||
+    (participant.profileImageUrl !== null &&
+      typeof participant.profileImageUrl !== "string") ||
+    !Array.isArray(candidate.recentChatMessages) ||
+    typeof candidate.roomAccessToken !== "string" ||
+    !candidate.roomAccessToken.trim()
+  ) {
+    return null;
+  }
+
+  return candidate as RoomJoinedData;
 }
 
 function getWsErrorData(
@@ -97,10 +117,21 @@ export function subscribeUserJoinEvents(
     }
 
     if (event.type === "ROOM_JOINED") {
+      const data = getRoomJoinedData(event.data);
+      if (!data) {
+        handlers.onError(
+          new ApiError({
+            status: 502,
+            code: "room.invalid-join-response",
+            message: "방 참가 응답이 올바르지 않습니다.",
+          }),
+        );
+        return;
+      }
       handlers.onJoined({
         roomSlug: event.roomSlug,
         timestamp: event.timestamp,
-        data: getRoomJoinedData(event.data),
+        data,
       });
       return;
     }

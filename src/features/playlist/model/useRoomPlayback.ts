@@ -8,13 +8,13 @@ import { playlistKeys } from "./queryKeys";
 
 export function useRoomPlayback(
   slug: string | null,
-  password?: string | null,
+  accessToken: string | null,
   enabled = true,
 ) {
   return useQuery<RoomPlayback, ApiError>({
-    queryKey: playlistKeys.roomPlayback(slug, password),
+    queryKey: playlistKeys.roomPlayback(slug),
     queryFn: ({ signal }) =>
-      fetchRoomPlayback({ slug: slug!, password, signal }),
-    enabled: enabled && !!slug,
+      fetchRoomPlayback({ slug: slug!, accessToken: accessToken!, signal }),
+    enabled: enabled && !!slug && !!accessToken,
   });
 }

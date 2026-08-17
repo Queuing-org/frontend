@@ -24,6 +24,7 @@ export type UpdateRoomPayload = {
 };
 
 export type UpdateRoomParams = {
+  accessToken: string;
   slug: string;
   payload: UpdateRoomPayload;
 };
@@ -33,6 +34,7 @@ export type UpdateRoomResult = {
 };
 
 export type UpdateRoomThumbnailParams = {
+  accessToken: string;
   slug: string;
   thumbnailUploadToken: string;
 };
@@ -41,7 +43,17 @@ export type UpdateRoomThumbnailResult = {
   success: boolean;
 };
 
+export type DeleteRoomThumbnailParams = {
+  accessToken: string;
+  slug: string;
+};
+
+export type DeleteRoomThumbnailResult = {
+  success: boolean;
+};
+
 export type DeleteRoomParams = {
+  accessToken: string;
   slug: string;
 };
 

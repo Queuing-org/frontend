@@ -13,7 +13,9 @@ import {
   ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
   ROOM_TITLE_MAX_LENGTH,
 } from "@/src/features/room/model/roomFormLimits";
-import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
+import { useRoomJoinTransition } from "@/src/features/room/join/model/useRoomJoinTransition";
+import type { RoomJoinTarget } from "@/src/features/room/join/model/roomJoinHandoff";
+import RoomJoinConflictDialog from "@/src/features/room/join/ui/RoomJoinConflictDialog";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
@@ -35,6 +37,7 @@ type RoomFormModalMode = "create" | "edit";
 type RoomFormModalProps = {
   open: boolean;
   mode: RoomFormModalMode;
+  roomAccessToken?: string;
   roomSlug?: string;
   initialTitle?: string;
   initialTagSlugs?: string[];
@@ -70,6 +73,7 @@ function parseOptionalTrackLimitMinutes(value: string) {
 export default function RoomFormModal({
   open,
   mode,
+  roomAccessToken,
   roomSlug,
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
@@ -89,6 +93,7 @@ export default function RoomFormModal({
     return createPortal(
       <EditRoomFormModal
         open={open}
+        roomAccessToken={roomAccessToken}
         roomSlug={roomSlug}
         initialTitle={initialTitle}
         initialTagSlugs={initialTagSlugs}
@@ -116,6 +121,13 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const uploadTemporaryRoomThumbnailMutation =
     useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
+  const joinTransition = useRoomJoinTransition({
+    handoffOnSuccess: true,
+    onJoined: (_result, target) => {
+      setIsNavigatingToCreatedRoom(true);
+      router.push(`/room/${encodeURIComponent(target.slug)}`);
+    },
+  });
   const [currentStep, setCurrentStep] = useState(0);
   const [furthestVisitedStep, setFurthestVisitedStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -132,13 +144,19 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     useState(false);
   const [isNavigatingToCreatedRoom, setIsNavigatingToCreatedRoom] =
     useState(false);
+  const [createdRoomJoinTarget, setCreatedRoomJoinTarget] =
+    useState<RoomJoinTarget | null>(null);
 
   const trimmedTitle = title.trim();
   const trimmedPassword = password.trim();
   const isSubmitting =
     createRoomMutation.isPending ||
     uploadTemporaryRoomThumbnailMutation.isPending ||
+    joinTransition.isPending ||
     isNavigatingToCreatedRoom;
+  const isCreatedRoomAwaitingJoin = createdRoomJoinTarget !== null;
+  const areFormControlsDisabled =
+    isSubmitting || isCreatedRoomAwaitingJoin;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
   const parsedMaxParticipants = ROOM_MAX_PARTICIPANT_OPTIONS.find(
@@ -253,18 +271,27 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
   };
 
-  const navigateToRoom = (slug: string, roomPassword?: string) => {
-    const normalizedSlug = normalizeRoomSlug(slug);
-
-    if (roomPassword) {
-      writeStoredRoomJoinPassword(normalizedSlug, roomPassword);
+  const requestCreatedRoomJoin = async (target: RoomJoinTarget) => {
+    try {
+      await joinTransition.requestJoin(target);
+    } catch (joinError) {
+      notify({
+        dedupeKey: `room-join:${normalizeRoomSlug(target.slug)}`,
+        message:
+          joinError instanceof Error && joinError.message
+            ? joinError.message
+            : "생성한 방에 입장하지 못했습니다.",
+        tone: "error",
+      });
     }
-
-    setIsNavigatingToCreatedRoom(true);
-    router.push(`/room/${encodeURIComponent(normalizedSlug)}`);
   };
 
   const finishCreateRoom = async () => {
+    if (createdRoomJoinTarget) {
+      await requestCreatedRoomJoin(createdRoomJoinTarget);
+      return;
+    }
+
     if (!trimmedTitle) {
       setShowTitleError(true);
       notify({
@@ -347,7 +374,11 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         message: `'${trimmedTitle}' 방을 만들었습니다!`,
         tone: "default",
       });
-      navigateToRoom(result.slug, createdRoomPassword);
+      const joinTarget: RoomJoinTarget = createdRoomPassword
+        ? { password: createdRoomPassword, slug: result.slug }
+        : { slug: result.slug };
+      setCreatedRoomJoinTarget(joinTarget);
+      await requestCreatedRoomJoin(joinTarget);
     } catch (error) {
       setIsNavigatingToCreatedRoom(false);
       const message =
@@ -398,8 +429,12 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           title={title}
           titleInvalid={showTitleError}
           maxTitleLength={ROOM_TITLE_MAX_LENGTH}
-          disabled={createRoomMutation.isPending || isNavigatingToCreatedRoom}
-          thumbnailDisabled={isSubmitting}
+          disabled={
+            createRoomMutation.isPending ||
+            isNavigatingToCreatedRoom ||
+            isCreatedRoomAwaitingJoin
+          }
+          thumbnailDisabled={areFormControlsDisabled}
           thumbnailErrorMessage={
             thumbnailSelection.errorMessage ?? thumbnailUploadErrorMessage
           }
@@ -447,7 +482,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           <CreateGenreStepContent
             selectedTagSlugs={selectedTagSlugs}
             maxTags={ROOM_TAG_LIMIT}
-            disabled={isSubmitting}
+            disabled={areFormControlsDisabled}
             errorMessage={
               showTagSelectionError ? REQUIRED_TAG_ERROR_MESSAGE : null
             }
@@ -463,7 +498,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         password={password}
         maxParticipants={maxParticipants}
         trackLimitMinutes={trackLimitMinutes}
-        disabled={isSubmitting}
+        disabled={areFormControlsDisabled}
         maxParticipantsError={
           showMaxParticipantsError ? maxParticipantsError : null
         }
@@ -490,14 +525,19 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
-      <section
-        className={styles.modal}
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="room-create-modal-title"
+    <>
+      <div
+        className={styles.overlay}
+        onClick={createdRoomJoinTarget ? undefined : onClose}
+        role="presentation"
       >
+        <section
+          className={styles.modal}
+          onClick={(event) => event.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="room-create-modal-title"
+        >
         <header className={styles.header}>
           <h2 id="room-create-modal-title" className={styles.modalTitle}>
             CREATE
@@ -528,10 +568,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                     <button
                       type="button"
                       className={styles.stepButton}
-                      disabled={
-                        !isReachable ||
-                        isSubmitting
-                      }
+                      disabled={!isReachable || areFormControlsDisabled}
                       onClick={() => requestStep(index)}
                       aria-current={isCurrent ? "step" : undefined}
                     >
@@ -562,7 +599,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                   type="button"
                   className={styles.secondaryButton}
                   onClick={goToPreviousStep}
-                  disabled={isSubmitting}
+                  disabled={areFormControlsDisabled}
                 >
                   이전
                 </button>
@@ -587,12 +624,14 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
                 >
                   {isSubmitting ? (
                     <LoadingSpinner
-                      ariaLabel="방 생성 중"
+                      ariaLabel={
+                        createdRoomJoinTarget ? "방 입장 중" : "방 생성 중"
+                      }
                       color="#ffffff"
                       size={18}
                     />
                   ) : (
-                    "완료"
+                    createdRoomJoinTarget ? "입장 재시도" : "완료"
                   )}
                 </button>
               )}
@@ -600,7 +639,14 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           </main>
         </form>
       </section>
-    </div>
+      </div>
+      <RoomJoinConflictDialog
+        conflict={joinTransition.conflict}
+        isPending={joinTransition.isPending}
+        onConfirm={() => void joinTransition.confirmJoin()}
+        onReturn={joinTransition.returnToCurrentRoom}
+      />
+    </>
   );
 }
 

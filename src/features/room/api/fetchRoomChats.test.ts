@@ -6,9 +6,9 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: { get: vi.fn() },
 }));
 
-vi.mock("@/src/shared/api/roomPasswordHeaders", () => ({
-  buildRoomPasswordHeaders: vi.fn((password?: string | null) =>
-    password ? { "X-Room-Password": password } : undefined,
+vi.mock("@/src/shared/api/roomAccessTokenHeaders", () => ({
+  buildRoomAccessTokenHeaders: vi.fn((accessToken?: string | null) =>
+    accessToken ? { "X-Room-Access-Token": accessToken } : undefined,
   ),
 }));
 
@@ -25,7 +25,7 @@ describe("fetchRoomChats", () => {
     await expect(
       fetchRoomChats({
         cursorId: 42,
-        password: "secret",
+        accessToken: "secret",
         signal: abortController.signal,
         size: 100,
         slug: "room slug",
@@ -35,7 +35,7 @@ describe("fetchRoomChats", () => {
     expect(axiosInstance.get).toHaveBeenCalledWith(
       "/api/v1/rooms/room%20slug/chat-messages",
       {
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         params: { cursorId: 42, size: 100 },
         signal: abortController.signal,
       },

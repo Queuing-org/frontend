@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
@@ -14,13 +14,13 @@ type FetchRoomPlaybackParams = PlaylistProtectedRequestParams & {
 
 export async function fetchRoomPlayback({
   slug,
-  password,
+  accessToken,
   signal,
 }: FetchRoomPlaybackParams): Promise<RoomPlayback> {
   const res = await axiosInstance.get<ApiResponse<RoomPlayback>>(
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/playback`,
     {
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
       signal,
     },
   );

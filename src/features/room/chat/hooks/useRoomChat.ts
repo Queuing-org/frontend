@@ -8,14 +8,14 @@ import { useRoomChatRealtime } from "./useRoomChatRealtime";
 type UseRoomChatParams = {
   currentUser: User | null;
   isEnabled: boolean;
-  roomPassword?: string | null;
+  roomAccessToken: string | null;
   slug: string;
 };
 
 export function useRoomChat({
   currentUser,
   isEnabled,
-  roomPassword,
+  roomAccessToken,
   slug,
 }: UseRoomChatParams) {
   const {
@@ -33,7 +33,7 @@ export function useRoomChat({
   } = useRoomChatHistory({
     currentUser,
     isEnabled,
-    roomPassword,
+    roomAccessToken,
     slug,
   });
   const {
@@ -49,7 +49,7 @@ export function useRoomChat({
     onMessageDeleted: ({ messageKey, content }) =>
       markMessageDeleted(messageKey, content),
     onPendingMessageBackfill: backfillLatestMessages,
-    roomPassword,
+    roomAccessToken,
     slug,
   });
 

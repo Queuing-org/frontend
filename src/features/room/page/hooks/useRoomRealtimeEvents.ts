@@ -21,7 +21,10 @@ import type {
 } from "@/src/features/room/model/types";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
-import { clearStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
+import {
+  clearStoredRoomAccessToken,
+  writeStoredRoomAccessToken,
+} from "@/src/features/room/join/lib/roomAccessTokenStorage";
 import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 import { userKeys } from "@/src/features/user/model/queryKeys";
 import type { User } from "@/src/features/user/model/types";
@@ -34,10 +37,7 @@ import {
   type JoinRoomResult,
 } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
-import {
-  isRoomAccessDeniedError,
-  shouldKeepPasswordFormAfterSubmit,
-} from "@/src/features/room/join/model/roomJoinErrors";
+import { isRoomAccessDeniedError } from "@/src/features/room/join/model/roomJoinErrors";
 import { ApiError } from "@/src/shared/api/api-error";
 import {
   acquireSocketSession,
@@ -129,6 +129,7 @@ type UseRoomRealtimeEventsParams = {
   initializeChatStateFromJoinData: (
     data: JoinRoomResult["data"],
   ) => void;
+  onRoomAccessTokenChanged?: (accessToken: string | null) => void;
   resetChatState: () => void;
   setJoinErrorMessage: (message: string) => void;
   setLivePlaybackStatus: Dispatch<SetStateAction<LivePlaybackState | null>>;
@@ -137,13 +138,14 @@ type UseRoomRealtimeEventsParams = {
 };
 
 type RoomSubscriptionConfig = {
-  password: string | null;
+  accessToken: string;
   slug: string;
 };
 
 export function useRoomRealtimeEvents({
   cleanupChatSubscriptions,
   initializeChatStateFromJoinData,
+  onRoomAccessTokenChanged = () => undefined,
   resetChatState,
   setJoinErrorMessage,
   setLivePlaybackStatus,
@@ -235,6 +237,9 @@ export function useRoomRealtimeEvents({
       cleanupUserSubscription();
       roomSubscriptionConfigRef.current = null;
       reconnectPendingRef.current = false;
+      if (config) {
+        clearStoredRoomAccessToken(config.slug);
+      }
 
       return didPublish;
     },
@@ -379,6 +384,11 @@ export function useRoomRealtimeEvents({
             }
           });
         void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
+        notify({
+          dedupeKey: `room-update:${roomSlug}`,
+          message: "방 정보가 변경되었어요",
+          tone: "default",
+        });
         return;
       }
 
@@ -417,7 +427,7 @@ export function useRoomRealtimeEvents({
         void queryClient.invalidateQueries({ queryKey: badgeKeys.me() });
       }
     },
-    [queryClient, scheduleRoomInvalidation, setLivePlaybackStatus],
+    [notify, queryClient, scheduleRoomInvalidation, setLivePlaybackStatus],
   );
 
   const terminateDeletedRoom = useCallback((roomSlug: string) => {
@@ -433,7 +443,8 @@ export function useRoomRealtimeEvents({
     cleanupChatSubscriptions();
     resetChatState();
     setLivePlaybackStatus(null);
-    clearStoredRoomJoinPassword(roomSlug);
+    clearStoredRoomAccessToken(roomSlug);
+    onRoomAccessTokenChanged(null);
     queryClient.removeQueries({ queryKey: playlistKeys.roomPlaybackPrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: playlistKeys.roomParticipantsPrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: playlistKeys.roomQueuePrefix(roomSlug) });
@@ -454,6 +465,7 @@ export function useRoomRealtimeEvents({
     cleanupChatSubscriptions,
     cleanupUserSubscription,
     notify,
+    onRoomAccessTokenChanged,
     queryClient,
     resetChatState,
     router,
@@ -491,7 +503,7 @@ export function useRoomRealtimeEvents({
 
           handleRoomEvent(config.slug, event);
         },
-        config.password,
+        config.accessToken,
       );
     },
     [cleanupBrokerSubscription, handleRoomEvent],
@@ -514,6 +526,8 @@ export function useRoomRealtimeEvents({
       cleanupChatSubscriptions();
       resetChatState();
       setLivePlaybackStatus(null);
+      clearStoredRoomAccessToken(roomSlug);
+      onRoomAccessTokenChanged(null);
       setJoinErrorMessage(SESSION_REPLACED_MESSAGE);
       setStatus("error");
       void queryClient.removeQueries({
@@ -538,9 +552,48 @@ export function useRoomRealtimeEvents({
       cleanupChatSubscriptions,
       cleanupUserSubscription,
       queryClient,
+      onRoomAccessTokenChanged,
       resetChatState,
       setJoinErrorMessage,
       setLivePlaybackStatus,
+      setStatus,
+    ],
+  );
+
+  const handleParticipantKicked = useCallback(
+    (roomSlug: string, message: string) => {
+      if (hasRedirectedAfterKickRef.current) {
+        return;
+      }
+
+      hasRedirectedAfterKickRef.current = true;
+      cleanupRoomSubscription();
+      cleanupChatSubscriptions();
+      clearStoredRoomAccessToken(roomSlug);
+      onRoomAccessTokenChanged(null);
+      resetChatState();
+      setStatus("error");
+      setJoinErrorMessage(message);
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomPlaybackPrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomParticipantsPrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+      });
+      void queryClient.invalidateQueries({ queryKey: roomKeys.meta(roomSlug) });
+      router.replace("/");
+    },
+    [
+      cleanupChatSubscriptions,
+      cleanupRoomSubscription,
+      onRoomAccessTokenChanged,
+      queryClient,
+      resetChatState,
+      router,
+      setJoinErrorMessage,
       setStatus,
     ],
   );
@@ -559,17 +612,55 @@ export function useRoomRealtimeEvents({
           if (
             !event ||
             event.roomSlug !== config.slug ||
-            event.type !== "ERROR" ||
-            !isSessionReplacedData(event.data)
+            event.type !== "ERROR"
           ) {
             return;
           }
 
-          handleSessionReplaced(config.slug);
+          if (isSessionReplacedData(event.data)) {
+            handleSessionReplaced(config.slug);
+            return;
+          }
+
+          if (
+            isWsErrorData(event.data) &&
+            event.data.code === PARTICIPANT_KICKED_ERROR_CODE
+          ) {
+            handleParticipantKicked(config.slug, event.data.message);
+          }
         },
       );
     },
-    [cleanupUserSubscription, handleSessionReplaced],
+    [
+      cleanupUserSubscription,
+      handleParticipantKicked,
+      handleSessionReplaced,
+    ],
+  );
+
+  const activateJoinedConfig = useCallback(
+    (config: RoomSubscriptionConfig, joinResult: JoinRoomResult) => {
+      const accessToken = joinResult.data.roomAccessToken.trim();
+      const nextConfig = { accessToken, slug: config.slug };
+      writeStoredRoomAccessToken(config.slug, accessToken);
+      roomSubscriptionConfigRef.current = nextConfig;
+      onRoomAccessTokenChanged(accessToken);
+      initializeChatStateFromJoinData(joinResult.data);
+      subscribeWithConfig(nextConfig, true);
+      subscribeUserEvents(nextConfig);
+      invalidateRoomReads(config.slug);
+      setJoinErrorMessage("");
+      setStatus("joined");
+    },
+    [
+      initializeChatStateFromJoinData,
+      invalidateRoomReads,
+      onRoomAccessTokenChanged,
+      setJoinErrorMessage,
+      setStatus,
+      subscribeUserEvents,
+      subscribeWithConfig,
+    ],
   );
 
   useEffect(() => {
@@ -607,14 +698,42 @@ export function useRoomRealtimeEvents({
         const abortController = new AbortController();
         rejoinAbortControllerRef.current = abortController;
 
-        void joinRoom(
-          config.slug,
-          config.password ? { password: config.password } : {},
-          {
-            leaveOnAbort: false,
-            signal: abortController.signal,
-          },
-        )
+        void (async () => {
+          try {
+            return await joinRoom(
+              config.slug,
+              { accessToken: config.accessToken },
+              {
+                leaveOnAbort: false,
+                signal: abortController.signal,
+              },
+            );
+          } catch (error) {
+            if (!isRoomAccessDeniedError(error)) {
+              throw error;
+            }
+
+            clearStoredRoomAccessToken(config.slug);
+            onRoomAccessTokenChanged(null);
+            const roomMeta = await fetchRoomMeta(
+              config.slug,
+              abortController.signal,
+            );
+            queryClient.setQueryData(roomKeys.meta(config.slug), roomMeta);
+            if (!roomMeta.isPublic) {
+              throw error;
+            }
+
+            return joinRoom(
+              config.slug,
+              {},
+              {
+                leaveOnAbort: false,
+                signal: abortController.signal,
+              },
+            );
+          }
+        })()
           .then((joinResult) => {
             if (
               abortController.signal.aborted ||
@@ -623,12 +742,7 @@ export function useRoomRealtimeEvents({
               return;
             }
 
-            initializeChatStateFromJoinData(joinResult.data);
-            subscribeWithConfig(config, true);
-            subscribeUserEvents(config);
-            invalidateRoomReads(config.slug);
-            setJoinErrorMessage("");
-            setStatus("joined");
+            activateJoinedConfig(config, joinResult);
           })
           .catch((error: unknown) => {
             if (
@@ -650,13 +764,15 @@ export function useRoomRealtimeEvents({
               terminateDeletedRoom(config.slug);
               return;
             }
+            const roomMeta = queryClient.getQueryData<RoomMeta>(
+              roomKeys.meta(config.slug),
+            );
             const shouldRequestPassword =
-              isRoomAccessDeniedError(joinError) ||
-              (config.password !== null &&
-                shouldKeepPasswordFormAfterSubmit(joinError));
+              isRoomAccessDeniedError(joinError) && roomMeta?.isPublic !== true;
 
             if (shouldRequestPassword) {
-              clearStoredRoomJoinPassword(config.slug);
+              clearStoredRoomAccessToken(config.slug);
+              onRoomAccessTokenChanged(null);
               cleanupRoomSubscription();
             }
 
@@ -714,26 +830,9 @@ export function useRoomRealtimeEvents({
           handleSessionReplaced(slug);
           return;
         }
-        if (parsedError.code !== PARTICIPANT_KICKED_ERROR_CODE) return;
-
-        hasRedirectedAfterKickRef.current = true;
-        cleanupRoomSubscription();
-        cleanupChatSubscriptions();
-        clearStoredRoomJoinPassword(slug);
-        resetChatState();
-        setStatus("error");
-        setJoinErrorMessage(parsedError.message);
-        void queryClient.removeQueries({
-          queryKey: playlistKeys.roomPlaybackPrefix(slug),
-        });
-        void queryClient.removeQueries({
-          queryKey: playlistKeys.roomParticipantsPrefix(slug),
-        });
-        void queryClient.removeQueries({
-          queryKey: playlistKeys.roomQueuePrefix(slug),
-        });
-        void queryClient.invalidateQueries({ queryKey: roomKeys.meta(slug) });
-        router.replace("/");
+        if (parsedError.code === PARTICIPANT_KICKED_ERROR_CODE) {
+          handleParticipantKicked(slug, parsedError.message);
+        }
       },
     });
   }, [
@@ -744,30 +843,27 @@ export function useRoomRealtimeEvents({
     clearScheduledRoomInvalidations,
     cleanupBrokerSubscription,
     cleanupUserSubscription,
-    initializeChatStateFromJoinData,
+    activateJoinedConfig,
     handleSessionReplaced,
-    invalidateRoomReads,
+    handleParticipantKicked,
+    onRoomAccessTokenChanged,
     queryClient,
-    resetChatState,
-    router,
     setJoinErrorMessage,
     setStatus,
     slug,
-    subscribeWithConfig,
-    subscribeUserEvents,
     terminateDeletedRoom,
   ]);
 
   const ensureRoomSubscription = useCallback(
-    (roomSlug: string, password?: string | null) => {
+    (roomSlug: string, accessToken: string) => {
       const config = {
-        password: password ?? null,
+        accessToken,
         slug: roomSlug,
       };
       const currentConfig = roomSubscriptionConfigRef.current;
       if (
         currentConfig?.slug === config.slug &&
-        currentConfig.password === config.password &&
+        currentConfig.accessToken === config.accessToken &&
         roomSubscriptionRef.current
       ) {
         return;

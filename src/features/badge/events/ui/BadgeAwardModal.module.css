@@ -6,135 +6,141 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(21, 23, 32, 0.58);
+  background: rgba(21, 23, 32, 0.7);
   backdrop-filter: blur(5px);
 }
 
 .modal {
-  position: relative;
   display: flex;
-  width: min(410px, 100%);
+  width: min(640px, 100%);
+  height: 370px;
   max-height: calc(100dvh - 48px);
   flex-direction: column;
-  align-items: center;
-  gap: 0;
+  box-sizing: border-box;
   overflow-x: hidden;
   overflow-y: auto;
-  box-sizing: border-box;
-  padding: 30px 30px 28px;
-  border: 1px solid rgba(124, 92, 255, 0.2);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at 50% 0%, rgba(124, 92, 255, 0.12), transparent 44%),
-    #ffffff;
+  padding: 40px;
+  border-radius: 20px;
+  background: #ffffff;
   box-shadow: 0 24px 80px rgba(18, 24, 46, 0.32);
-  animation: modal-enter 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.glow {
-  position: absolute;
-  top: -84px;
-  left: 50%;
-  width: 240px;
-  height: 180px;
-  border-radius: 999px;
-  background: rgba(124, 92, 255, 0.16);
-  filter: blur(36px);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.eyebrow {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #6d52df;
-  font-size: 11px;
-  font-weight: var(--fw-extrabold);
-  letter-spacing: 0.14em;
-}
-
-.emblem {
-  position: relative;
-  display: grid;
-  width: 88px;
-  height: 88px;
-  place-items: center;
-  margin-top: 18px;
-  border-radius: 999px;
-  background: linear-gradient(145deg, #8067f1, #2f86ed);
-  color: #ffffff;
-  box-shadow: 0 14px 34px rgba(76, 100, 221, 0.32);
-}
-
-.emblemRing {
-  position: absolute;
-  inset: -8px;
-  border: 1px solid rgba(124, 92, 255, 0.28);
-  border-radius: inherit;
-  animation: ring-pulse 2s ease-in-out infinite;
-}
-
-.title {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  margin: 22px 0 0;
-  color: #3c3c3c;
-  font-size: 18px;
-  font-weight: var(--fw-bold);
-  line-height: 1.35;
-  text-align: center;
+  animation: modal-enter 240ms ease-out;
 }
 
 .badgeName {
-  color: #282833;
-  font-size: 26px;
-  font-weight: var(--fw-extrabold);
-  overflow-wrap: anywhere;
+  display: flex;
+  width: 164px;
+  height: 36px;
+  flex: 0 0 auto;
+  align-items: center;
+  align-self: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 4px 16px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(59, 130, 246, 0.06);
+  color: #3b82f6;
+  font-size: 20px;
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.titleSuffix {
-  display: block;
+.title {
+  margin: 28px 0 0;
+  color: #242424;
+  font-size: 24px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
 }
 
 .description {
-  margin: 10px 0 0;
-  color: #62626f;
+  display: flex;
+  flex-direction: column;
+  margin: 24px 0 0;
+  color: #242424;
+  font-size: 20px;
+  font-weight: var(--fw-regular);
+  line-height: 1.45;
+}
+
+.description > span {
+  white-space: nowrap;
+}
+
+.error {
+  margin: 8px 0 0;
+  color: #c73939;
   font-size: 13px;
-  font-weight: var(--fw-medium);
-  line-height: 1.5;
-  text-align: center;
+  font-weight: var(--fw-semibold);
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.applyButton,
+.confirmButton {
+  display: inline-flex;
+  min-width: 88px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: var(--fw-bold);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.applyButton {
+  background: #3b82f6;
+  color: #ffffff;
 }
 
 .confirmButton {
-  width: 100%;
-  min-height: 46px;
-  margin-top: 24px;
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #6e55de, #2f86ed);
-  color: #ffffff;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: var(--fw-bold);
-  cursor: pointer;
+  background: transparent;
+  color: #3b82f6;
 }
 
-.confirmButton:hover {
-  filter: brightness(0.96);
+.applyButton:hover:not(:disabled) {
+  background: #2f73e6;
 }
 
+.confirmButton:hover:not(:disabled),
 .confirmButton:focus-visible {
-  outline: 2px solid #1f72d0;
-  outline-offset: 3px;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.applyButton:focus-visible,
+.confirmButton:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.applyButton:disabled,
+.confirmButton:disabled {
+  cursor: wait;
+  opacity: 0.58;
 }
 
 @keyframes modal-enter {
   from {
     opacity: 0;
-    transform: translateY(14px) scale(0.96);
+    transform: translateY(10px) scale(0.98);
   }
 
   to {
@@ -143,28 +149,46 @@
   }
 }
 
-@keyframes ring-pulse {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: scale(0.96);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.04);
+@media (max-width: 687px) {
+  .description > span {
+    white-space: normal;
   }
 }
 
-@media (min-width: 481px) and (max-width: 1600px) and (max-height: 900px) {
-  .backdrop { padding: 19.2px; }
-  .modal { width: min(328px, 100%); padding: 24px 24px 22.4px; border-radius: 22.4px; }
-  .glow { top: -67.2px; width: 192px; height: 144px; }
-  .eyebrow { gap: 4.8px; font-size: 8.8px; }
-  .emblem { width: 70.4px; height: 70.4px; margin-top: 14.4px; }
-  .emblemRing { inset: -6.4px; }
-  .title { gap: 5.6px; margin-top: 17.6px; font-size: 14.4px; }
-  .badgeName { font-size: 20.8px; }
-  .description { margin-top: 8px; font-size: 10.4px; }
-  .confirmButton { min-height: 36.8px; margin-top: 19.2px; border-radius: 9.6px; font-size: 12px; }
+@media (max-width: 480px) {
+  .backdrop {
+    padding: 16px;
+  }
+
+  .modal {
+    width: 100%;
+    height: min(370px, calc(100dvh - 32px));
+    min-height: 0;
+    max-height: calc(100dvh - 32px);
+    padding: 32px 24px;
+    border-radius: 20px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .description {
+    font-size: 17px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .applyButton,
+  .confirmButton {
+    flex: 1 1 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    animation: none;
+  }
 }

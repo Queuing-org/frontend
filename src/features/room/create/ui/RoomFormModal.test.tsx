@@ -4,13 +4,18 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { createRoom } from "@/src/features/room/api/createRoom";
+import { deleteRoomThumbnail } from "@/src/features/room/api/deleteRoomThumbnail";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
 import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
+import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
+import type { useRoomJoinTransition } from "@/src/features/room/join/model/useRoomJoinTransition";
+import type { RoomJoinTarget } from "@/src/features/room/join/model/roomJoinHandoff";
 import RoomFormModal from "./RoomFormModal";
 
-const { notify, push, roomTags } = vi.hoisted(() => ({
+const { notify, push, requestJoin, roomTags } = vi.hoisted(() => ({
   notify: vi.fn(),
   push: vi.fn(),
+  requestJoin: vi.fn(),
   roomTags: [] as Array<{ name: string; slug: string }>,
 }));
 
@@ -19,6 +24,38 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/src/features/room/api/createRoom", () => ({
   createRoom: vi.fn(),
+}));
+vi.mock("@/src/features/room/join/model/useRoomJoinTransition", () => ({
+  useRoomJoinTransition: ({
+    onJoined,
+  }: Parameters<typeof useRoomJoinTransition>[0]) => ({
+    conflict: null,
+    confirmJoin: vi.fn(),
+    isPending: false,
+    requestJoin: requestJoin.mockImplementation(async (target: RoomJoinTarget) => {
+      const result: JoinRoomResult = {
+        roomSlug: target.slug,
+        timestamp: 1,
+        data: {
+          participant: {
+            participantType: "USER",
+            participantId: "participant",
+            userSlug: "user",
+            nickname: "사용자",
+            profileImageUrl: null,
+          },
+          recentChatMessages: [],
+          roomAccessToken: "access-token",
+        },
+      };
+      onJoined(result, target);
+      return { status: "joined", result };
+    }),
+    returnToCurrentRoom: vi.fn(),
+  }),
+}));
+vi.mock("@/src/features/room/api/deleteRoomThumbnail", () => ({
+  deleteRoomThumbnail: vi.fn(),
 }));
 vi.mock("@/src/features/room/api/uploadTemporaryRoomThumbnail", () => ({
   uploadTemporaryRoomThumbnail: vi.fn(),
@@ -74,6 +111,7 @@ function renderEditRoomModal(initialTagSlugs: string[]) {
         mode="edit"
         onClose={vi.fn()}
         open
+        roomAccessToken="access-token"
         roomSlug="existing-room"
       />
     </QueryClientProvider>,
@@ -198,7 +236,7 @@ describe("RoomFormModal room form flows", () => {
     expect(titleInput).toHaveValue("업로드 중 입력");
     expect(document.getElementById("create-room-thumbnail")).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
   });
@@ -231,9 +269,10 @@ describe("RoomFormModal room form flows", () => {
       vi.mocked(uploadTemporaryRoomThumbnail).mock.lastCall?.[0],
     ).toEqual({ file: retryFile });
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
     expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -250,9 +289,10 @@ describe("RoomFormModal room form flows", () => {
 
     await selectThumbnail();
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
     expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("방 제목"), "토큰 방");
@@ -282,14 +322,21 @@ describe("RoomFormModal room form flows", () => {
     renderCreateRoomModal();
 
     await selectThumbnail();
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
-    });
-    await user.click(
-      screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      ),
     );
+    expect(
+      screen.queryByRole("button", { name: "선택한 썸네일 제거" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText("방 제목"), "선택 제거 방");
@@ -405,6 +452,48 @@ describe("RoomFormModal room form flows", () => {
         tone: "error",
       })),
     );
+  });
+
+  it("방 생성 후 입장만 실패하면 생성 POST 없이 같은 방 입장만 재시도한다", async () => {
+    const user = userEvent.setup();
+    vi.mocked(createRoom).mockResolvedValue({ slug: "created-before-join" });
+    requestJoin.mockRejectedValueOnce(new Error("입장 연결이 끊겼습니다."));
+    renderCreateRoomModal();
+
+    await user.type(screen.getByLabelText("방 제목"), "입장 재시도 방");
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredTag(user);
+    await user.click(screen.getByRole("button", { name: "다음" }));
+    await selectRequiredMaxParticipants(user);
+    await user.click(
+      screen.getByRole("button", { name: "참여 제한 옵션 열기" }),
+    );
+    await user.click(screen.getByRole("button", { name: "비밀번호 입력" }));
+    await user.type(screen.getByLabelText("참여 제한"), "secret");
+    await user.click(screen.getByRole("button", { name: "완료" }));
+
+    await waitFor(() =>
+      expect(notify).toHaveBeenCalledWith({
+        dedupeKey: "room-join:created-before-join",
+        message: "입장 연결이 끊겼습니다.",
+        tone: "error",
+      }),
+    );
+    expect(createRoom).toHaveBeenCalledOnce();
+    expect(requestJoin).toHaveBeenCalledOnce();
+    expect(push).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "입장 재시도" }));
+
+    await waitFor(() =>
+      expect(push).toHaveBeenCalledWith("/room/created-before-join"),
+    );
+    expect(createRoom).toHaveBeenCalledOnce();
+    expect(requestJoin).toHaveBeenCalledTimes(2);
+    expect(requestJoin).toHaveBeenLastCalledWith({
+      password: "secret",
+      slug: "created-before-join",
+    });
   });
 
   it("태그를 고르기 전에는 다음을 비활성화하고 FREE를 고르면 진행한다", async () => {
@@ -697,7 +786,10 @@ describe("RoomFormModal room form flows", () => {
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "힙합" })).toBeEnabled();
     expect(document.getElementById("edit-room-thumbnail")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "썸네일 교체" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "UPLOAD" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    ).toBeVisible();
     expect(screen.getByLabelText("최대 인원 수")).toBeVisible();
   });
 
@@ -723,9 +815,35 @@ describe("RoomFormModal room form flows", () => {
 
     await waitFor(() => {
       expect(vi.mocked(updateRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        accessToken: "access-token",
         slug: "existing-room",
         thumbnailUploadToken: "rtu_edit",
       });
     });
+    expect(deleteRoomThumbnail).not.toHaveBeenCalled();
+  });
+
+  it("수정에서 기본 이미지를 선택하면 기존 썸네일을 삭제한다", async () => {
+    roomTags.push({ name: "록", slug: "rock" });
+    vi.mocked(deleteRoomThumbnail).mockResolvedValue({ success: true });
+    renderEditRoomModal(["rock"]);
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    );
+    await user.click(screen.getByRole("button", { name: "편집 완료" }));
+
+    await waitFor(() => {
+      expect(vi.mocked(deleteRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        accessToken: "access-token",
+        slug: "existing-room",
+      });
+    });
+    expect(updateRoomThumbnail).not.toHaveBeenCalled();
   });
 });

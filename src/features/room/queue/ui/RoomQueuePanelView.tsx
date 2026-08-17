@@ -36,7 +36,7 @@ type RoomQueuePanelViewProps = {
   myEntries: PlaylistEntry[];
   myPendingCount: number | null;
   queueErrorMessage: string;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
   onChangeTab: (tab: QueueTab) => void;
   onDeleteMyEntry: (entryId: string) => void;
@@ -69,7 +69,7 @@ export default function RoomQueuePanelView({
   myEntries,
   myPendingCount,
   queueErrorMessage,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
   onChangeTab,
   onDeleteMyEntry,
@@ -163,7 +163,7 @@ export default function RoomQueuePanelView({
       ) : null}
       <div className={styles.addTrackDock}>
         <AddTrackAction
-          roomPassword={roomPassword}
+          roomAccessToken={roomAccessToken}
           slug={roomSlug}
           variant="queueDock"
         />

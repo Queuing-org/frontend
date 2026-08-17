@@ -90,3 +90,54 @@ it("join ERROR의 기존 방 slug와 title을 전용 오류에 보존한다", ()
     data: { slug: "current-room", title: "현재 방" },
   });
 });
+
+it("ROOM_JOINED의 participant와 접근 토큰을 검증해 보존한다", () => {
+  let onMessage: ((message: { body: string }) => void) | undefined;
+  vi.mocked(getSocketClient).mockReturnValue({
+    subscribe: vi.fn((_destination, callback) => {
+      onMessage = callback;
+      return { unsubscribe: vi.fn() };
+    }),
+  } as never);
+  const onError = vi.fn();
+  const onJoined = vi.fn();
+
+  subscribeUserJoinEvents("room", { onError, onJoined });
+  onMessage?.({
+    body: JSON.stringify({
+      type: "ROOM_JOINED",
+      roomSlug: "room",
+      timestamp: 1,
+      data: {
+        participant: {
+          participantType: "USER",
+          participantId: "participant",
+          userSlug: "user",
+          nickname: "사용자",
+          profileImageUrl: null,
+        },
+        recentChatMessages: [],
+        roomAccessToken: "access-token",
+      },
+    }),
+  });
+
+  expect(onJoined).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({ roomAccessToken: "access-token" }),
+    }),
+  );
+  expect(onError).not.toHaveBeenCalled();
+
+  onMessage?.({
+    body: JSON.stringify({
+      type: "ROOM_JOINED",
+      roomSlug: "room",
+      timestamp: 2,
+      data: { recentChatMessages: [] },
+    }),
+  });
+  expect(onError).toHaveBeenCalledWith(
+    expect.objectContaining({ code: "room.invalid-join-response" }),
+  );
+});

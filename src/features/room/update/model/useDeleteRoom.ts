@@ -10,6 +10,7 @@ import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
+import { clearStoredRoomAccessToken } from "@/src/features/room/join/lib/roomAccessTokenStorage";
 
 export function useDeleteRoom() {
   const queryClient = useQueryClient();
@@ -19,6 +20,7 @@ export function useDeleteRoom() {
     mutationFn: deleteRoom,
     onSuccess: async (_result, variables) => {
       const slug = normalizeRoomSlug(variables.slug);
+      clearStoredRoomAccessToken(slug);
       const roomQueryKeys = [
         roomKeys.meta(slug),
         playlistKeys.roomPlaybackPrefix(slug),

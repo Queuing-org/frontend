@@ -27,7 +27,7 @@ type UseRoomQueuePanelParams = {
   currentUser: User | null;
   isCurrentUserLoading: boolean;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
 };
 
@@ -53,12 +53,12 @@ export function useRoomQueuePanel({
   currentUser,
   isCurrentUserLoading,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: UseRoomQueuePanelParams) {
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const { notify } = useActionFeedback();
-  const allQueueQuery = useRoomQueue(roomSlug, roomPassword);
+  const allQueueQuery = useRoomQueue(roomSlug, roomAccessToken);
   const {
     data: myQueueData,
     error: myQueueError,
@@ -69,7 +69,7 @@ export function useRoomQueuePanel({
     isRefetching: isMyRefetching,
   } = useMyRoomQueue(
     roomSlug,
-    roomPassword,
+    roomAccessToken,
     Boolean(currentUser),
   );
   const moveMyQueueEntry = useMoveMyQueueEntry();
@@ -125,7 +125,7 @@ export function useRoomQueuePanel({
     deleteRoomQueueEntries.mutate(
       {
         entryIds: [entryId],
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       },
       {
@@ -144,7 +144,7 @@ export function useRoomQueuePanel({
     deleteMyQueueEntry.mutate(
       {
         entryId,
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       },
       {
@@ -169,7 +169,7 @@ export function useRoomQueuePanel({
         beforeEntryId,
         movedEntryId,
         orderedPendingEntryIds,
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       });
     } catch (moveError) {
@@ -210,7 +210,7 @@ export function useRoomQueuePanel({
         orderedPendingEntryIds: orderedPendingEntryIds.filter((entryId) =>
           pendingEntryIdSet.has(entryId),
         ),
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       });
     } catch (moveError) {

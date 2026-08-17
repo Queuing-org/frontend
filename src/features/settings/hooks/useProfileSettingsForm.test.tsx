@@ -117,8 +117,21 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.nicknameFeedback).toBe("error");
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ tone: "error" }));
 
-    act(() => result.current.updateNicknameDraft("한글"));
+    act(() => result.current.updateNicknameDraft("가".repeat(20)));
+    submit(result);
+    expect(mutate).not.toHaveBeenCalled();
+    expect(result.current.nicknameFeedback).toBe("error");
+
+    act(() => result.current.updateNicknameDraft("가".repeat(19)));
     expect(result.current.canUpdateProfile).toBe(true);
+    submit(result);
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        nickname: "가".repeat(19),
+        statusMessage: "새 메시지",
+      },
+      expect.any(Object),
+    );
   });
 
   it("저장 성공 후 변경 상태를 초기화해 완료 버튼을 숨길 수 있게 한다", () => {

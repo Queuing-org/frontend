@@ -14,7 +14,7 @@ type Props = {
   currentUser: User | null;
   isCurrentUserLoading: boolean;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
 };
 
@@ -23,7 +23,7 @@ export default function RoomQueuePanel({
   currentUser,
   isCurrentUserLoading,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: Props) {
   return (
@@ -38,14 +38,14 @@ export default function RoomQueuePanel({
         </div>
       }
       errorTitle="플레이리스트를 불러오지 못했습니다."
-      resetKeys={[roomSlug, roomPassword ?? null]}
+      resetKeys={[roomSlug]}
     >
       <RoomQueuePanelContent
         currentEntry={currentEntry}
         currentUser={currentUser}
         isCurrentUserLoading={isCurrentUserLoading}
         roomMeta={roomMeta}
-        roomPassword={roomPassword}
+        roomAccessToken={roomAccessToken}
         roomSlug={roomSlug}
       />
     </QueryBoundary>
@@ -57,7 +57,7 @@ function RoomQueuePanelContent({
   currentUser,
   isCurrentUserLoading,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: Props) {
   const queuePanel = useRoomQueuePanel({
@@ -65,7 +65,7 @@ function RoomQueuePanelContent({
     currentUser,
     isCurrentUserLoading,
     roomMeta,
-    roomPassword,
+    roomAccessToken,
     roomSlug,
   });
 
@@ -92,7 +92,7 @@ function RoomQueuePanelContent({
       myEntries={queuePanel.myEntries}
       myPendingCount={queuePanel.myPendingCount}
       queueErrorMessage={queuePanel.queueErrorMessage}
-      roomPassword={roomPassword}
+      roomAccessToken={roomAccessToken}
       roomSlug={roomSlug}
       onChangeTab={queuePanel.setActiveTab}
       onDeleteMyEntry={queuePanel.handleDeleteMyEntry}

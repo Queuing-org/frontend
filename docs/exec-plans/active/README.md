@@ -1,5 +1,13 @@
 # Active Execution Plans
 
+- [2026-08-18-badge-award-modal](./2026-08-18-badge-award-modal/plan.md): ci-pending — PR #52의 칭호 획득 모달을 최신 640px·두 문장·텍스트 확인 버튼 시안으로 후속 교정하고 로컬 QA 통과
+
+- [2026-08-17-room-access-token](./2026-08-17-room-access-token/plan.md): blocked — PR #52 Codex 리뷰 중 leave 이동과 생성 후 join 재시도 수정·CI 통과, 썸네일 source 신호는 backend 계약 대기
+
+- [2026-08-17-room-thumbnail-delete](./2026-08-17-room-thumbnail-delete/plan.md): ci-pending — 방 생성·수정 썸네일 선택 UI 통일과 수정 썸네일 삭제를 successor Draft PR #52로 전달
+
+- [2026-08-17-settings-counter-test-structure](./2026-08-17-settings-counter-test-structure/plan.md): ci-pending — 닉네임 19자 카운터와 테스트/운영 구조 최적화를 successor Draft PR #52로 전달
+
 - [2026-08-17-my-queue-count-music-power-state](./2026-08-17-my-queue-count-music-power-state/plan.md): ci-pending — 새로고침 내 신청곡 수 복원과 음악력 버튼 hover·선택 상태 개선, 로컬 QA·fresh review 통과
 
 - [2026-08-17-backend-hotfix-260816](./2026-08-17-backend-hotfix-260816/plan.md): ci-pending — Draft PR #51, backend hotfix/260816 방 입장 전환·랜덤·leave·대기열 계약과 PR #50 리뷰 3건 반영

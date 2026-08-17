@@ -1,14 +1,14 @@
 import { ApiError } from "@/src/shared/api/api-error";
 import type { RoomJoinedData } from "../model/types";
 
-export type JoinRoomPayload = {
-  password?: string | null;
-};
+export type JoinRoomPayload =
+  | { password?: string | null; accessToken?: never }
+  | { accessToken: string; password?: never };
 
 export type JoinRoomResult = {
   roomSlug: string;
   timestamp: number;
-  data: RoomJoinedData | null;
+  data: RoomJoinedData;
 };
 
 export type RoomJoinErrorRoom = {

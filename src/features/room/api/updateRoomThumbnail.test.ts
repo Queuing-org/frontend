@@ -16,6 +16,7 @@ it("정규화한 방 slug와 임시 업로드 token으로 썸네일을 교체한
 
   await expect(
     updateRoomThumbnail({
+      accessToken: "secret",
       slug: " room/one ",
       thumbnailUploadToken: " rtu_test ",
     }),
@@ -24,12 +25,14 @@ it("정규화한 방 slug와 임시 업로드 token으로 썸네일을 교체한
   expect(axiosInstance.put).toHaveBeenCalledWith(
     "/api/v2/rooms/room%2Fone/thumbnail",
     { thumbnailUploadToken: "rtu_test" },
+    { headers: { "X-Room-Access-Token": "secret" } },
   );
 });
 
 it("빈 임시 업로드 token은 요청 전에 거부한다", async () => {
   await expect(
     updateRoomThumbnail({
+      accessToken: "secret",
       slug: "room-one",
       thumbnailUploadToken: "   ",
     }),
@@ -47,6 +50,7 @@ it("result false는 성공으로 처리하지 않는다", async () => {
 
   await expect(
     updateRoomThumbnail({
+      accessToken: "secret",
       slug: "room-one",
       thumbnailUploadToken: "rtu_test",
     }),

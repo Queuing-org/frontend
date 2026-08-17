@@ -1,6 +1,4 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
@@ -17,6 +15,10 @@ import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { ApiError } from "@/src/shared/api/api-error";
 import { userKeys } from "@/src/features/user/model/queryKeys";
+import {
+  createTestQueryClient,
+  createTestQueryClientWrapper,
+} from "@/src/shared/test/queryClient";
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
 const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
@@ -47,6 +49,15 @@ vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
   stopSocketAutoReconnect: vi.fn(),
 }));
 
+function createRealtimeTestContext() {
+  const queryClient = createTestQueryClient();
+
+  return {
+    queryClient,
+    wrapper: createTestQueryClientWrapper(queryClient),
+  };
+}
+
 describe("useRoomRealtimeEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,7 +69,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("ROOM_INFO_UPDATED는 trackLimitMinutes를 검증하고 REST 메타의 썸네일로 동기화한다", async () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const authoritativeMeta = {
       title: "새 제목", slug: "room", thumbnailUrl: "https://img/new.jpg",
       hasPassword: false, maxParticipants: null, trackLimitMinutes: 30, tags: [], owner: null,
@@ -69,30 +80,32 @@ describe("useRoomRealtimeEvents", () => {
       handler = next;
       return { id: "room", unsubscribe: vi.fn() };
     });
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions: vi.fn(), initializeChatStateFromJoinData: vi.fn(),
       resetChatState: vi.fn(), setJoinErrorMessage: vi.fn(),
       setLivePlaybackStatus: vi.fn(), setStatus: vi.fn(), slug: "room",
     }), { wrapper });
-    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => handler?.({ body: JSON.stringify({
       type: "ROOM_INFO_UPDATED", roomSlug: "room", timestamp: 1,
       data: { title: "새 제목", hasPassword: false, maxParticipants: null, trackLimitMinutes: 30, tags: [] },
     }) } as never));
     await waitFor(() => expect(queryClient.getQueryData(roomKeys.meta("room"))).toEqual(authoritativeMeta));
     expect(fetchRoomMeta).toHaveBeenCalledWith("room", expect.any(AbortSignal));
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-update:room",
+      message: "방 정보가 변경되었어요",
+      tone: "default",
+    });
   });
 
-  it("ROOM_DELETED는 진행 중인 메타 재조회를 폐기하고 방 상태·비밀번호를 정리한다", async () => {
-    const queryClient = new QueryClient();
+  it("ROOM_DELETED는 진행 중인 메타 재조회를 폐기하고 방 상태·접근 토큰를 정리한다", async () => {
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
     queryClient.setQueryData(roomKeys.meta("room"), { value: true });
-    sessionStorage.setItem("room-password:room", "secret");
+    sessionStorage.setItem("room-access-token:room", "secret");
     let resolveMeta!: (value: never) => void;
     vi.mocked(fetchRoomMeta).mockReturnValue(new Promise((resolve) => {
       resolveMeta = resolve;
@@ -106,9 +119,6 @@ describe("useRoomRealtimeEvents", () => {
     const cleanupChatSubscriptions = vi.fn();
     const resetChatState = vi.fn();
     const setLivePlaybackStatus = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions, initializeChatStateFromJoinData: vi.fn(), resetChatState,
       setJoinErrorMessage: vi.fn(), setLivePlaybackStatus, setStatus: vi.fn(), slug: "room",
@@ -125,7 +135,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(cleanupChatSubscriptions).toHaveBeenCalledOnce();
     expect(resetChatState).toHaveBeenCalledOnce();
     expect(setLivePlaybackStatus).toHaveBeenCalledWith(null);
-    expect(sessionStorage.getItem("room-password:room")).toBeNull();
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
     expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
     expect(metaSignal?.aborted).toBe(true);
@@ -144,21 +154,21 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("명시적 나가기는 publish 실패 시 구독을 유지하고 재시도할 수 있다", () => {
-    const queryClient = new QueryClient();
+    const { wrapper } = createRealtimeTestContext();
     const unsubscribe = vi.fn();
+    const onRoomAccessTokenChanged = vi.fn();
+    sessionStorage.setItem("room-access-token:room", "access-token");
     vi.mocked(subscribeRoomEvents).mockReturnValue({
       id: "room",
       unsubscribe,
     });
     vi.mocked(publishLeaveRequest).mockReturnValue(false);
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
           cleanupChatSubscriptions: vi.fn(),
           initializeChatStateFromJoinData: vi.fn(),
+          onRoomAccessTokenChanged,
           resetChatState: vi.fn(),
           setJoinErrorMessage: vi.fn(),
           setLivePlaybackStatus: vi.fn(),
@@ -168,7 +178,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
 
     let didLeave = true;
     act(() => {
@@ -178,6 +188,9 @@ describe("useRoomRealtimeEvents", () => {
     });
     expect(didLeave).toBe(false);
     expect(unsubscribe).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem("room-access-token:room")).toBe(
+      "access-token",
+    );
 
     vi.mocked(publishLeaveRequest).mockReturnValue(true);
     act(() => {
@@ -187,6 +200,8 @@ describe("useRoomRealtimeEvents", () => {
     });
     expect(didLeave).toBe(true);
     expect(unsubscribe).toHaveBeenCalledOnce();
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
+    expect(onRoomAccessTokenChanged).not.toHaveBeenCalled();
   });
 
   afterEach(() => {
@@ -194,9 +209,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("같은 방 session-replaced를 받으면 방 연결만 정리하고 재접속을 중단한다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
@@ -216,9 +229,6 @@ describe("useRoomRealtimeEvents", () => {
     const setStatus = vi.fn();
     const resetChatState = vi.fn();
     const cleanupChatSubscriptions = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -233,7 +243,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       userEventHandler?.({
         body: JSON.stringify({
@@ -280,10 +290,66 @@ describe("useRoomRealtimeEvents", () => {
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
   });
 
-  it("STOMP ERROR frame의 session-replaced도 동일한 terminal room cleanup을 수행한다", () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
+  it("유저 이벤트로 강제 퇴장되면 저장 토큰과 방 연결을 정리한다", () => {
+    const { wrapper } = createRealtimeTestContext();
+    sessionStorage.setItem("room-access-token:room", "secret");
+    let userEventHandler: ((message: { body: string }) => void) | undefined;
+    const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
+    vi.mocked(getSocketClient).mockReturnValue({
+      subscribe: vi.fn((_destination, handler) => {
+        userEventHandler = handler as typeof userEventHandler;
+        return userSubscription;
+      }),
+    } as never);
+    const roomSubscription = { id: "room-events", unsubscribe: vi.fn() };
+    vi.mocked(subscribeRoomEvents).mockReturnValue(roomSubscription);
+    const onRoomAccessTokenChanged = vi.fn();
+    const setJoinErrorMessage = vi.fn();
+    const setStatus = vi.fn();
+    const { result } = renderHook(
+      () =>
+        useRoomRealtimeEvents({
+          cleanupChatSubscriptions: vi.fn(),
+          initializeChatStateFromJoinData: vi.fn(),
+          onRoomAccessTokenChanged,
+          resetChatState: vi.fn(),
+          setJoinErrorMessage,
+          setLivePlaybackStatus: vi.fn(),
+          setStatus,
+          slug: "room",
+        }),
+      { wrapper },
+    );
+
+    act(() => result.current.ensureRoomSubscription("room", "secret"));
+    act(() => {
+      userEventHandler?.({
+        body: JSON.stringify({
+          type: "ERROR",
+          roomSlug: "room",
+          timestamp: 1,
+          data: {
+            statusCode: 403,
+            code: "room.participant-kicked",
+            message: "방장에 의해 활동이 제한되었어요.",
+          },
+        }),
+      });
     });
+
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
+    expect(roomSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(userSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(onRoomAccessTokenChanged).toHaveBeenCalledWith(null);
+    expect(setJoinErrorMessage).toHaveBeenCalledWith(
+      "방장에 의해 활동이 제한되었어요.",
+    );
+    expect(setStatus).toHaveBeenCalledWith("error");
+    expect(navigation.replace).toHaveBeenCalledWith("/");
+  });
+
+  it("STOMP ERROR frame의 session-replaced도 동일한 terminal room cleanup을 수행한다", () => {
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
@@ -303,9 +369,6 @@ describe("useRoomRealtimeEvents", () => {
     const resetChatState = vi.fn();
     const setJoinErrorMessage = vi.fn();
     const setStatus = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -320,7 +383,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       socketListener?.onStompError?.({
         body: JSON.stringify({
@@ -349,9 +412,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("곡 시작 cache update는 즉시 적용하고 관련 invalidation만 합친다", async () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const setQueriesData = vi.spyOn(queryClient, "setQueriesData");
     let roomEventHandler:
@@ -364,9 +425,6 @@ describe("useRoomRealtimeEvents", () => {
     });
     vi.mocked(addSocketListener).mockReturnValue(vi.fn());
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -381,7 +439,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       roomEventHandler?.({
         body: JSON.stringify({
@@ -448,7 +506,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("음악력 변경 이벤트는 재생 건별 cache 점수만 갱신하고 myVote를 보존한다", () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const firstKey = userKeys.musicPower("target", "room", "entry-1");
     const secondKey = userKeys.musicPower("target", "room", "entry-2");
     queryClient.setQueryData(firstKey, {
@@ -468,9 +526,6 @@ describe("useRoomRealtimeEvents", () => {
       roomEventHandler = handler;
       return { id: "room-events", unsubscribe: vi.fn() };
     });
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -485,7 +540,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room"));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       roomEventHandler?.({
         body: JSON.stringify({
@@ -513,9 +568,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("같은 room event 10회 burst를 query target별 1회로 제한한다", async () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const cancelQueries = vi.spyOn(queryClient, "cancelQueries");
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     let roomEventHandler:
@@ -526,9 +579,6 @@ describe("useRoomRealtimeEvents", () => {
       return { id: "room-events", unsubscribe: vi.fn() };
     });
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -543,7 +593,7 @@ describe("useRoomRealtimeEvents", () => {
       { wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       for (let index = 0; index < 10; index += 1) {
         roomEventHandler?.({
@@ -602,9 +652,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("slug 전환과 unmount에서 예약한 invalidation을 폐기한다", () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const roomEventHandlers = new Map<
       string,
@@ -621,9 +669,6 @@ describe("useRoomRealtimeEvents", () => {
     const setLivePlaybackStatus = vi.fn();
     const setStatus = vi.fn();
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, rerender, unmount } = renderHook(
       ({ roomSlug }: { roomSlug: string }) =>
         useRoomRealtimeEvents({
@@ -638,7 +683,7 @@ describe("useRoomRealtimeEvents", () => {
       { initialProps: { roomSlug: "room" }, wrapper },
     );
 
-    act(() => result.current.ensureRoomSubscription("room", null));
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
     act(() => {
       roomEventHandlers.get("room")?.({
         body: JSON.stringify({
@@ -653,7 +698,9 @@ describe("useRoomRealtimeEvents", () => {
     act(() => vi.advanceTimersByTime(75));
     expect(invalidateQueries).not.toHaveBeenCalled();
 
-    act(() => result.current.ensureRoomSubscription("other-room", null));
+    act(() =>
+      result.current.ensureRoomSubscription("other-room", "other-access-token"),
+    );
     act(() => {
       roomEventHandlers.get("other-room")?.({
         body: JSON.stringify({
@@ -669,14 +716,12 @@ describe("useRoomRealtimeEvents", () => {
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
 
-  it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+  it("비밀번호가 바뀐 방도 접근 토큰 join으로 복구하고 중복 없이 다시 구독한다", async () => {
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const fetchReconnectedMeta = vi.fn().mockResolvedValue({
       activeUsersCount: 2,
-      hasPassword: false,
-      isPublic: true,
+      hasPassword: true,
+      isPublic: false,
       slug: "room",
       tags: [],
       title: "복구된 방",
@@ -707,19 +752,28 @@ describe("useRoomRealtimeEvents", () => {
       .mockReturnValueOnce(subscriptions[1])
       .mockReturnValueOnce(subscriptions[2]);
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const cleanupChatSubscriptions = vi.fn();
     const initializeChatStateFromJoinData = vi.fn();
     const resetChatState = vi.fn();
     const setJoinErrorMessage = vi.fn();
     const setLivePlaybackStatus = vi.fn();
     const setStatus = vi.fn();
+    const onRoomAccessTokenChanged = vi.fn();
+    const joinedData = {
+      participant: {
+        participantType: "USER" as const,
+        participantId: "participant",
+        userSlug: "user",
+        nickname: "사용자",
+        profileImageUrl: null,
+      },
+      recentChatMessages: [],
+      roomAccessToken: "rotated-token",
+    };
     vi.mocked(joinRoom).mockResolvedValue({
       roomSlug: "room",
       timestamp: 1,
-      data: null,
+      data: joinedData,
     });
 
     const { result, unmount } = renderHook(
@@ -727,6 +781,7 @@ describe("useRoomRealtimeEvents", () => {
         useRoomRealtimeEvents({
           cleanupChatSubscriptions,
           initializeChatStateFromJoinData,
+          onRoomAccessTokenChanged,
           resetChatState,
           setJoinErrorMessage,
           setLivePlaybackStatus,
@@ -739,6 +794,7 @@ describe("useRoomRealtimeEvents", () => {
     await waitFor(() => expect(socketListener).toBeDefined());
 
     act(() => {
+      sessionStorage.setItem("room-access-token:room", "secret");
       result.current.ensureRoomSubscription("room", "secret");
     });
     expect(subscribeRoomEvents).toHaveBeenCalledTimes(1);
@@ -749,6 +805,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(subscriptions[0].unsubscribe).toHaveBeenCalledTimes(1);
     expect(cleanupChatSubscriptions).toHaveBeenCalledTimes(1);
     expect(setStatus).toHaveBeenCalledWith("joining");
+    expect(sessionStorage.getItem("room-access-token:room")).toBe("secret");
 
     act(() => {
       socketListener?.onConnect?.({} as never);
@@ -756,7 +813,7 @@ describe("useRoomRealtimeEvents", () => {
     await waitFor(() =>
       expect(joinRoom).toHaveBeenCalledWith(
         "room",
-        { password: "secret" },
+        { accessToken: "secret" },
         {
           leaveOnAbort: false,
           signal: expect.any(AbortSignal),
@@ -766,7 +823,17 @@ describe("useRoomRealtimeEvents", () => {
     await waitFor(() =>
       expect(subscribeRoomEvents).toHaveBeenCalledTimes(2),
     );
-    expect(initializeChatStateFromJoinData).toHaveBeenCalledWith(null);
+    expect(initializeChatStateFromJoinData).toHaveBeenCalledWith(joinedData);
+    expect(onRoomAccessTokenChanged).toHaveBeenCalledWith("rotated-token");
+    expect(sessionStorage.getItem("room-access-token:room")).toBe(
+      "rotated-token",
+    );
+    expect(subscribeRoomEvents).toHaveBeenNthCalledWith(
+      2,
+      "room",
+      expect.any(Function),
+      "rotated-token",
+    );
     expect(setStatus).toHaveBeenCalledWith("joined");
 
     expect(invalidateQueries).toHaveBeenCalledWith({
@@ -810,9 +877,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("재입장 진행 중 방을 나가면 요청을 취소하고 leave를 한 번만 보낸다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { wrapper } = createRealtimeTestContext();
     let socketListener:
       | Parameters<typeof addSocketListener>[0]
       | undefined;
@@ -826,9 +891,6 @@ describe("useRoomRealtimeEvents", () => {
     });
     vi.mocked(joinRoom).mockReturnValue(new Promise<never>(() => {}));
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -852,20 +914,20 @@ describe("useRoomRealtimeEvents", () => {
     await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(1));
 
     const rejoinOptions = vi.mocked(joinRoom).mock.calls[0]?.[2];
-    expect(rejoinOptions?.signal.aborted).toBe(false);
+    expect(rejoinOptions?.signal?.aborted).toBe(false);
 
     act(() => {
       result.current.leaveRoomSession();
     });
 
-    expect(rejoinOptions?.signal.aborted).toBe(true);
+    expect(rejoinOptions?.signal?.aborted).toBe(true);
     expect(publishLeaveRequest).toHaveBeenCalledWith("room");
     expect(publishLeaveRequest).toHaveBeenCalledTimes(1);
     unmount();
   });
 
   it("재접속 join이 room.not-found면 삭제 종료 흐름으로 홈 이동한다", async () => {
-    const queryClient = new QueryClient();
+    const { wrapper } = createRealtimeTestContext();
     let socketListener: Parameters<typeof addSocketListener>[0] | undefined;
     vi.mocked(addSocketListener).mockImplementation((listener) => {
       socketListener = listener;
@@ -876,9 +938,6 @@ describe("useRoomRealtimeEvents", () => {
       status: 404, code: "room.not-found", message: "없는 방",
     }));
     const cleanupChatSubscriptions = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions, initializeChatStateFromJoinData: vi.fn(),
       resetChatState: vi.fn(), setJoinErrorMessage: vi.fn(),
@@ -886,7 +945,7 @@ describe("useRoomRealtimeEvents", () => {
     }), { wrapper });
     await waitFor(() => expect(socketListener).toBeDefined());
     act(() => {
-      result.current.ensureRoomSubscription("room");
+      result.current.ensureRoomSubscription("room", "access-token");
       socketListener?.onWebSocketClose?.({} as CloseEvent);
       socketListener?.onConnect?.({} as never);
     });
