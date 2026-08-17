@@ -2,7 +2,7 @@
 
 - [2026-08-18-badge-award-modal](./2026-08-18-badge-award-modal/plan.md): ci-pending — PR #52의 칭호 획득 모달을 최신 640px·두 문장·텍스트 확인 버튼 시안으로 후속 교정하고 로컬 QA 통과
 
-- [2026-08-17-room-access-token](./2026-08-17-room-access-token/plan.md): ci-pending — PR #52 Codex 리뷰 중 leave 이동과 생성 후 join 재시도를 수정했고, 썸네일 source 신호는 backend 계약 대기
+- [2026-08-17-room-access-token](./2026-08-17-room-access-token/plan.md): blocked — PR #52 Codex 리뷰 중 leave 이동과 생성 후 join 재시도 수정·CI 통과, 썸네일 source 신호는 backend 계약 대기
 
 - [2026-08-17-room-thumbnail-delete](./2026-08-17-room-thumbnail-delete/plan.md): ci-pending — 방 생성·수정 썸네일 선택 UI 통일과 수정 썸네일 삭제를 successor Draft PR #52로 전달
 
