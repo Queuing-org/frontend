@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-18-badge-award-modal](./2026-08-18-badge-award-modal/plan.md): ci-pending — 칭호 SSE description 계약과 대표 칭호 즉시 적용이 가능한 획득 모달 개편을 Draft PR #52로 전달
+
 - [2026-08-17-room-access-token](./2026-08-17-room-access-token/plan.md): ready — roomAccessToken 기반 join·재접속·REST/토픽 인증과 방 정보 변경 알림을 Draft PR #52로 전달, CI 통과
 
 - [2026-08-17-room-thumbnail-delete](./2026-08-17-room-thumbnail-delete/plan.md): ci-pending — 방 생성·수정 썸네일 선택 UI 통일과 수정 썸네일 삭제를 successor Draft PR #52로 전달
