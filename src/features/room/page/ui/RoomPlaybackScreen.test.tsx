@@ -210,6 +210,23 @@ describe("RoomPlaybackScreen join reads", () => {
     unmount();
   });
 
+  it("존재하지 않는 방은 저장 토큰을 지우고 루트로 교체 이동한다", async () => {
+    sessionStorage.setItem("room-access-token:room", "stale-token");
+    vi.mocked(fetchRoomMeta).mockRejectedValue(
+      new ApiError({
+        message: "존재하지 않는 방입니다.",
+        status: 404,
+      }),
+    );
+
+    renderRoomPlaybackScreen();
+
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith("/"));
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
+    expect(joinRoom).not.toHaveBeenCalled();
+    expect(screen.queryByText("존재하지 않는 방입니다.")).not.toBeInTheDocument();
+  });
+
   it("상세 경로 비밀번호 실패를 필드와 공통 알림에 표시하고 입력 시 해제한다", async () => {
     const user = userEvent.setup();
     vi.mocked(fetchRoomMeta).mockResolvedValue({

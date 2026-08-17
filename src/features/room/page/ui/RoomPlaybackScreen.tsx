@@ -17,6 +17,7 @@ import {
 } from "@/src/features/room/join/lib/roomAccessTokenStorage";
 import {
   isRoomAccessDeniedError,
+  isRoomNotFoundError,
   shouldKeepPasswordFormAfterSubmit,
 } from "@/src/features/room/join/model/roomJoinErrors";
 import {
@@ -50,7 +51,7 @@ function roomRequiresPassword(roomMeta: RoomMeta) {
 
 export default function RoomPlaybackScreen() {
   const params = useParams<{ slug: string }>();
-  const router = useRouter();
+  const { replace } = useRouter();
   const { notify } = useActionFeedback();
   const isMobileLayout = useMediaQuery(MOBILE_VIEWPORT_MEDIA_QUERY);
   const slug = normalizeRoomSlug(params.slug ?? "");
@@ -206,6 +207,11 @@ export default function RoomPlaybackScreen() {
     returnToCurrentRoom,
   } = useRoomJoinTransition({ onJoined: completeJoin });
 
+  const returnHomeFromMissingRoom = useCallback(() => {
+    clearStoredRoomAccessToken(slug);
+    replace("/");
+  }, [replace, slug]);
+
   async function handlePasswordSubmit(password: string) {
     if (!slug) return;
 
@@ -216,6 +222,11 @@ export default function RoomPlaybackScreen() {
     try {
       await requestJoin({ password, slug });
     } catch (error) {
+      if (isRoomNotFoundError(error)) {
+        returnHomeFromMissingRoom();
+        return;
+      }
+
       const err = error as ApiError;
       const message = err.message ?? "방에 입장할 수 없습니다.";
       setJoinErrorMessage(message);
@@ -305,6 +316,11 @@ export default function RoomPlaybackScreen() {
       } catch (error) {
         if (abortController.signal.aborted) return;
 
+        if (isRoomNotFoundError(error)) {
+          returnHomeFromMissingRoom();
+          return;
+        }
+
         const err = error as ApiError;
 
         if (requiresPassword && isRoomAccessDeniedError(err)) {
@@ -340,6 +356,7 @@ export default function RoomPlaybackScreen() {
     queryClient,
     requestJoin,
     resetChatState,
+    returnHomeFromMissingRoom,
     slug,
   ]);
 
@@ -360,7 +377,7 @@ export default function RoomPlaybackScreen() {
           key={slug}
           errorMessage={currentJoinErrorMessage}
           open
-          onClose={() => router.replace("/")}
+          onClose={() => replace("/")}
           onPasswordChange={() => setJoinErrorMessage("")}
           onSubmit={handlePasswordSubmit}
           submitting={isSubmittingPassword}
