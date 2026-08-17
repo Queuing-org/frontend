@@ -33,10 +33,11 @@ vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
   useActionFeedback: () => ({ notify: mocks.notify }),
 }));
 
-function mockEditForm() {
+function mockEditForm(
+  overrides: Partial<ReturnType<typeof useEditRoomForm>> = {},
+) {
   vi.mocked(useEditRoomForm).mockReturnValue({
     canSubmit: true,
-    clearThumbnailSelection: vi.fn(),
     handleSubmit: vi.fn(),
     handleThumbnailChange: vi.fn(),
     isPasswordChangeEnabled: false,
@@ -51,12 +52,14 @@ function mockEditForm() {
     password: "",
     passwordInvalid: false,
     selectedTagSlugs: [],
+    selectDefaultThumbnail: vi.fn(),
     setPassword: vi.fn(),
     submitError: null,
     submitErrorPrefix: "수정 실패",
     tagsInvalid: false,
     thumbnailErrorMessage: null,
     thumbnailFileName: null,
+    thumbnailOption: "default",
     thumbnailPreviewUrl: null,
     thumbnailStatusMessage: null,
     title: "기존 방",
@@ -70,6 +73,7 @@ function mockEditForm() {
     updatePasswordClearEnabled: vi.fn(),
     updateTrackLimitMinutes: vi.fn(),
     updateTitle: vi.fn(),
+    ...overrides,
   });
 }
 
@@ -81,45 +85,11 @@ describe("EditRoomFormModal feedback", () => {
   });
 
   it("방 수정 오류를 인라인에 중복 노출하지 않는다", () => {
-    vi.mocked(useEditRoomForm).mockReturnValue({
-      canSubmit: true,
-      clearThumbnailSelection: vi.fn(),
-      handleSubmit: vi.fn(),
-      handleThumbnailChange: vi.fn(),
-      isPasswordChangeEnabled: false,
-      isPasswordClearEnabled: false,
-      isPasswordRequired: false,
-      isSubmitting: false,
-      isThumbnailPreviewUnavailable: false,
-      maxParticipants: "",
-      maxParticipantOptions: [2, 3, 4] as const,
-      maxRoomTitleLength: 18,
-      maxTags: 3,
-      password: "",
-      passwordInvalid: false,
-      selectedTagSlugs: [],
-      setPassword: vi.fn(),
+    mockEditForm({
       submitError: new ApiError({
         message: "방 정보를 저장하지 못했습니다.",
         status: 400,
       }),
-      submitErrorPrefix: "수정 실패",
-      tagsInvalid: false,
-      thumbnailErrorMessage: null,
-      thumbnailFileName: null,
-      thumbnailPreviewUrl: null,
-      thumbnailStatusMessage: null,
-      title: "기존 방",
-      titleInvalid: false,
-      trackLimitMinutes: "",
-      trackLimitMinuteOptions: [5, 10, 15] as const,
-      toggleTag: vi.fn(),
-      markThumbnailPreviewUnavailable: vi.fn(),
-      updateMaxParticipants: vi.fn(),
-      updatePasswordChangeEnabled: vi.fn(),
-      updatePasswordClearEnabled: vi.fn(),
-      updateTrackLimitMinutes: vi.fn(),
-      updateTitle: vi.fn(),
     });
 
     render(

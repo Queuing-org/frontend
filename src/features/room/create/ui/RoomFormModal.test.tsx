@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/src/shared/api/api-error";
 import { createRoom } from "@/src/features/room/api/createRoom";
+import { deleteRoomThumbnail } from "@/src/features/room/api/deleteRoomThumbnail";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
 import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
 import RoomFormModal from "./RoomFormModal";
@@ -19,6 +20,9 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/src/features/room/api/createRoom", () => ({
   createRoom: vi.fn(),
+}));
+vi.mock("@/src/features/room/api/deleteRoomThumbnail", () => ({
+  deleteRoomThumbnail: vi.fn(),
 }));
 vi.mock("@/src/features/room/api/uploadTemporaryRoomThumbnail", () => ({
   uploadTemporaryRoomThumbnail: vi.fn(),
@@ -198,7 +202,7 @@ describe("RoomFormModal room form flows", () => {
     expect(titleInput).toHaveValue("업로드 중 입력");
     expect(document.getElementById("create-room-thumbnail")).toBeDisabled();
     expect(
-      screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
     ).toBeDisabled();
     expect(screen.getByRole("button", { name: "다음" })).toBeDisabled();
   });
@@ -231,9 +235,10 @@ describe("RoomFormModal room form flows", () => {
       vi.mocked(uploadTemporaryRoomThumbnail).mock.lastCall?.[0],
     ).toEqual({ file: retryFile });
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
     expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
@@ -250,9 +255,10 @@ describe("RoomFormModal room form flows", () => {
 
     await selectThumbnail();
     await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
     });
     expect(screen.queryByText("썸네일 업로드 완료")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("방 제목"), "토큰 방");
@@ -282,14 +288,21 @@ describe("RoomFormModal room form flows", () => {
     renderCreateRoomModal();
 
     await selectThumbnail();
-    await waitFor(() => {
-      expect(
-        screen.getByRole("button", { name: "선택한 썸네일 제거" }),
-      ).toBeEnabled();
-    });
-    await user.click(
-      screen.getByRole("button", { name: "선택한 썸네일 제거" }),
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      ),
     );
+    expect(
+      screen.queryByRole("button", { name: "선택한 썸네일 제거" }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    );
+    expect(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    ).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText("방 제목"), "선택 제거 방");
@@ -697,7 +710,10 @@ describe("RoomFormModal room form flows", () => {
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "힙합" })).toBeEnabled();
     expect(document.getElementById("edit-room-thumbnail")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "썸네일 교체" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "UPLOAD" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    ).toBeVisible();
     expect(screen.getByLabelText("최대 인원 수")).toBeVisible();
   });
 
@@ -727,5 +743,29 @@ describe("RoomFormModal room form flows", () => {
         thumbnailUploadToken: "rtu_edit",
       });
     });
+    expect(deleteRoomThumbnail).not.toHaveBeenCalled();
+  });
+
+  it("수정에서 기본 이미지를 선택하면 기존 썸네일을 삭제한다", async () => {
+    roomTags.push({ name: "록", slug: "rock" });
+    vi.mocked(deleteRoomThumbnail).mockResolvedValue({ success: true });
+    renderEditRoomModal(["rock"]);
+    const user = userEvent.setup();
+
+    expect(screen.getByRole("button", { name: "UPLOAD" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "큐잉 기본 이미지 사용" }),
+    );
+    await user.click(screen.getByRole("button", { name: "편집 완료" }));
+
+    await waitFor(() => {
+      expect(vi.mocked(deleteRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        slug: "existing-room",
+      });
+    });
+    expect(updateRoomThumbnail).not.toHaveBeenCalled();
   });
 });

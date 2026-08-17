@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import styles from "./CreateBasicInfoStep.module.css";
-import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
+import RoomThumbnailSettingField from "./RoomThumbnailSettingField";
 
 type CreateBasicInfoStepProps = {
   title: string;
@@ -41,44 +41,21 @@ export default function CreateBasicInfoStep({
 }: CreateBasicInfoStepProps) {
   return (
     <div className={styles.stack}>
-      <div className={styles.row}>
-        <div className={styles.labelGroup}>
-          <span className={styles.label}>썸네일</span>
-          <span className={styles.tooltipAnchor}>
-            <button
-              type="button"
-              className={styles.infoButton}
-              aria-label="썸네일 기본 동작 안내"
-              aria-describedby="create-room-thumbnail-help"
-            >
-              !
-            </button>
-            <span
-              id="create-room-thumbnail-help"
-              className={styles.tooltip}
-              role="tooltip"
-            >
-              사진을 업로드하지 않으면 현재 재생중인 노래의 썸네일이
-              자동으로 나갑니다
-            </span>
-          </span>
-        </div>
-        <RoomThumbnailUploadField
-          actionLabel="UPLOAD"
-          disabled={thumbnailDisabled}
-          errorMessage={thumbnailErrorMessage}
-          fileName={thumbnailFileName}
-          inputId="create-room-thumbnail"
-          isPreviewUnavailable={isThumbnailPreviewUnavailable}
-          previewUrl={thumbnailPreviewUrl}
-          statusMessage={thumbnailStatusMessage}
-          statusAriaLabel={thumbnailStatusAriaLabel}
-          variant="create"
-          onClearSelection={onThumbnailClear}
-          onFileChange={onThumbnailChange}
-          onPreviewError={onThumbnailPreviewError}
-        />
-      </div>
+      <RoomThumbnailSettingField
+        actionLabel="UPLOAD"
+        disabled={thumbnailDisabled}
+        errorMessage={thumbnailErrorMessage}
+        fileName={thumbnailFileName}
+        inputId="create-room-thumbnail"
+        isPreviewUnavailable={isThumbnailPreviewUnavailable}
+        previewUrl={thumbnailPreviewUrl}
+        selectedOption={thumbnailFileName ? "upload" : "default"}
+        statusMessage={thumbnailStatusMessage}
+        statusAriaLabel={thumbnailStatusAriaLabel}
+        onFileChange={onThumbnailChange}
+        onPreviewError={onThumbnailPreviewError}
+        onSelectDefault={onThumbnailClear}
+      />
 
       <label className={styles.row} htmlFor="create-room-title">
         <span className={styles.label}>방 제목</span>

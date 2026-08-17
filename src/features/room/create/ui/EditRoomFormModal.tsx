@@ -14,7 +14,7 @@ import { useRoomTags } from "@/src/features/room/hooks/useRoomTags";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import RoomActionConfirmDialog from "@/src/features/room/management/ui/RoomActionConfirmDialog";
-import RoomThumbnailUploadField from "./RoomThumbnailUploadField";
+import RoomThumbnailSettingField from "./RoomThumbnailSettingField";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import styles from "./EditRoomFormModal.module.css";
 
@@ -55,6 +55,7 @@ export default function EditRoomFormModal({
     initialTagSlugs,
     initialTrackLimitMinutes,
     initialTitle,
+    initialHasThumbnail: Boolean(initialThumbnailUrl),
     onClose,
     roomSlug,
   });
@@ -171,10 +172,8 @@ export default function EditRoomFormModal({
             </header>
 
             <div className={styles.formBody}>
-            <section className={styles.thumbnailSection}>
-              <span className={styles.visuallyHidden}>썸네일</span>
-              <RoomThumbnailUploadField
-                actionLabel="썸네일 교체"
+              <RoomThumbnailSettingField
+                actionLabel="UPLOAD"
                 currentImageUrl={initialThumbnailUrl}
                 disabled={form.isSubmitting}
                 errorMessage={form.thumbnailErrorMessage}
@@ -182,6 +181,7 @@ export default function EditRoomFormModal({
                 inputId="edit-room-thumbnail"
                 isPreviewUnavailable={form.isThumbnailPreviewUnavailable}
                 previewUrl={form.thumbnailPreviewUrl}
+                selectedOption={form.thumbnailOption}
                 statusMessage={
                   form.thumbnailStatusMessage ? (
                     <LoadingSpinner
@@ -196,14 +196,12 @@ export default function EditRoomFormModal({
                     ? "썸네일 업로드 중"
                     : undefined
                 }
-                variant="edit"
-                onClearSelection={form.clearThumbnailSelection}
                 onFileChange={form.handleThumbnailChange}
                 onPreviewError={form.markThumbnailPreviewUnavailable}
+                onSelectDefault={form.selectDefaultThumbnail}
               />
-            </section>
 
-            <div className={styles.field}>
+              <div className={styles.field}>
               <label className={styles.label} htmlFor="edit-room-title">
                 큐 이름
               </label>

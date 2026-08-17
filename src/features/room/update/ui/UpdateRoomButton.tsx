@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { isRoomOwner } from "@/src/features/room/lib/isRoomOwner";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
-import { getRoomImageSrc } from "@/src/features/room/lib/getDefaultRoomImage";
+import { getRoomThumbnailSrc } from "@/src/features/room/lib/getDefaultRoomImage";
 import RoomFormModal from "@/src/features/room/create/ui/RoomFormModal";
 import styles from "./UpdateRoomButton.module.css";
 
@@ -43,7 +43,7 @@ export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
           initialHasPassword={roomMeta.hasPassword}
           initialMaxParticipants={roomMeta.maxParticipants ?? null}
           initialTrackLimitMinutes={roomMeta.trackLimitMinutes ?? null}
-          initialThumbnailUrl={getRoomImageSrc({
+          initialThumbnailUrl={getRoomThumbnailSrc({
             thumbnailUrl: roomMeta.thumbnailUrl,
             thumbnailUrls: roomMeta.thumbnailUrls,
           })}

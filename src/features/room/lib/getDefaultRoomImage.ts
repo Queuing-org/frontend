@@ -76,15 +76,25 @@ export function getRoomImageSrc({
   thumbnailUrl,
   thumbnailUrls,
 }: GetRoomImageSrcParams) {
+  return (
+    getRoomThumbnailSrc({
+      preferredVariants,
+      thumbnailUrl,
+      thumbnailUrls,
+    }) ?? getDefaultRoomImage()
+  );
+}
+
+export function getRoomThumbnailSrc({
+  preferredVariants = DEFAULT_ROOM_IMAGE_VARIANTS,
+  thumbnailUrl,
+  thumbnailUrls,
+}: GetRoomImageSrcParams) {
   const variantImageUrl = getRoomThumbnailVariantUrl(
     thumbnailUrls,
     preferredVariants,
   );
   const normalizedThumbnailUrl = normalizeImageUrl(thumbnailUrl);
 
-  return (
-    variantImageUrl ??
-    normalizedThumbnailUrl ??
-    getDefaultRoomImage()
-  );
+  return variantImageUrl ?? normalizedThumbnailUrl;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getDefaultRoomImage,
   getRoomImageSrc,
+  getRoomThumbnailSrc,
   ROOM_CARD_IMAGE_VARIANTS,
   ROOM_HERO_IMAGE_VARIANTS,
 } from "./getDefaultRoomImage";
@@ -21,6 +22,9 @@ describe("getDefaultRoomImage", () => {
         thumbnailUrls: null,
       }),
     ).toBe(DEFAULT_ROOM_IMAGE);
+    expect(
+      getRoomThumbnailSrc({ thumbnailUrl: null, thumbnailUrls: null }),
+    ).toBeNull();
   });
 
   it("목록과 방 내부에서 같은 빈 방 기본 썸네일을 사용한다", () => {

@@ -41,6 +41,14 @@ export type UpdateRoomThumbnailResult = {
   success: boolean;
 };
 
+export type DeleteRoomThumbnailParams = {
+  slug: string;
+};
+
+export type DeleteRoomThumbnailResult = {
+  success: boolean;
+};
+
 export type DeleteRoomParams = {
   slug: string;
 };
