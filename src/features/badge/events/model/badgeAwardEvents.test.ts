@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   enqueueUnseenBadgeAwards,
-  getBadgeAchievementCopy,
+  formatBadgeAwardCopy,
   parseBadgeAwardEvent,
 } from "./badgeAwardEvents";
 
@@ -70,31 +70,20 @@ describe("칭호 획득 이벤트 큐", () => {
     ).toBeNull();
   });
 
-  it("description 원문을 보존하고 비어 있으면 칭호 조건으로 대체한다", () => {
-    expect(
-      getBadgeAchievementCopy({
-        badgeCode: "A",
-        description: "누적 큐잉 5회 달성",
-        name: "첫 신청곡",
-      }),
-    ).toEqual({
-      achievement: "누적 큐잉 5회 달성",
-      award: "새로운 칭호를 획득했습니다!",
+  it("description을 trim한 뒤 정확한 두 문장으로 조합한다", () => {
+    expect(formatBadgeAwardCopy("  5회 채팅을 달성  ")).toEqual({
+      achievement: "5회 채팅을 달성하여 새로운 칭호를 획득했습니다!",
       encouragement: "더 열심히 참여해서 다음 칭호도 획득해보세요.",
     });
-    expect(
-      getBadgeAchievementCopy({
-        badgeCode: "B",
-        description: null,
-        name: "첫 신청곡",
-      }).achievement,
-    ).toBe("'첫 신청곡' 칭호 조건을 달성했습니다.");
-    expect(
-      getBadgeAchievementCopy({
-        badgeCode: "C",
-        description: "첫 신청곡을 등록했어요.",
-        name: "첫 신청곡",
-      }).achievement,
-    ).toBe("첫 신청곡을 등록했어요.");
   });
+
+  it.each([null, "   "])(
+    "description이 %j이면 획득 문장만 표시한다",
+    (description) => {
+      expect(formatBadgeAwardCopy(description)).toEqual({
+        achievement: "새로운 칭호를 획득했습니다!",
+        encouragement: "더 열심히 참여해서 다음 칭호도 획득해보세요.",
+      });
+    },
+  );
 });

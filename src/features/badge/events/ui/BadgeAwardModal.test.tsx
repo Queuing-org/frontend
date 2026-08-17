@@ -13,7 +13,7 @@ describe("BadgeAwardModal", () => {
     vi.clearAllMocks();
   });
 
-  it("접근 가능한 dialog와 포커스된 적용 버튼을 제공한다", () => {
+  it("접근 가능한 dialog와 정확히 분리된 두 문장 및 포커스된 적용 버튼을 제공한다", () => {
     render(
       <BadgeAwardModal
         badge={{
@@ -30,12 +30,33 @@ describe("BadgeAwardModal", () => {
       screen.getByRole("dialog", { name: "새로운 칭호 획득" }),
     ).toBeInTheDocument();
     expect(screen.getByText("방 팠음")).toBeInTheDocument();
-    expect(screen.getByText("누적 방 생성 1회 달성")).toBeInTheDocument();
-    expect(
-      screen.getByText("새로운 칭호를 획득했습니다!"),
-    ).toBeInTheDocument();
+    const achievement = screen.getByText(
+      "누적 방 생성 1회 달성하여 새로운 칭호를 획득했습니다!",
+    );
+    const encouragement = screen.getByText(
+      "더 열심히 참여해서 다음 칭호도 획득해보세요.",
+    );
+    expect(achievement.parentElement).toBe(encouragement.parentElement);
+    expect(achievement.parentElement?.children).toHaveLength(2);
     expect(screen.getByRole("button", { name: "적용하기" })).toHaveFocus();
     expect(launchBadgeAwardConfetti).toHaveBeenCalledOnce();
+  });
+
+  it("description이 비면 대체 획득 문장과 안내 문장만 표시한다", () => {
+    render(
+      <BadgeAwardModal
+        badge={{ badgeCode: "A", description: "   ", name: "방 팠음" }}
+        onApply={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    const achievement = screen.getByText("새로운 칭호를 획득했습니다!");
+    const encouragement = screen.getByText(
+      "더 열심히 참여해서 다음 칭호도 획득해보세요.",
+    );
+    expect(achievement.parentElement).toBe(encouragement.parentElement);
+    expect(achievement.parentElement?.children).toHaveLength(2);
   });
 
   it("적용하기를 실행하고 확인, Escape, 배경 클릭으로 닫는다", async () => {

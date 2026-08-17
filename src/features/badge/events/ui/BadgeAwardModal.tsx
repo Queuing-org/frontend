@@ -8,7 +8,7 @@ import {
   type MouseEvent,
 } from "react";
 import {
-  getBadgeAchievementCopy,
+  formatBadgeAwardCopy,
   type BadgeAward,
 } from "../model/badgeAwardEvents";
 import DialogPortal from "@/src/shared/ui/dialog/DialogPortal";
@@ -94,7 +94,7 @@ export default function BadgeAwardModal({
     return null;
   }
 
-  const copy = getBadgeAchievementCopy(badge);
+  const copy = formatBadgeAwardCopy(badge.description);
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       handleClose();
@@ -154,7 +154,6 @@ export default function BadgeAwardModal({
           </h2>
           <p className={styles.description}>
             <span>{copy.achievement}</span>
-            <span>{copy.award}</span>
             <span>{copy.encouragement}</span>
           </p>
           {applyErrorMessage ? (
