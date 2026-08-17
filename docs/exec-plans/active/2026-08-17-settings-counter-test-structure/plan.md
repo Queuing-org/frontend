@@ -2,7 +2,7 @@
 
 ## 상태
 
-- ci-pending
+- publishing-blocked
 - 실행일: 2026-08-17
 - 브랜치: `dev`
 - 전달 대상: 기존 Draft PR #51
@@ -78,7 +78,7 @@
 - [x] targeted verification
 - [x] 전체 검증
 - [x] fresh read-only QA
-- [ ] 커밋·push·PR #51 갱신
+- [ ] GitHub CLI 재인증 후 push·PR #51 갱신
 
 ## 잔여 위험
 
