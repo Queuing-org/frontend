@@ -150,10 +150,15 @@ describe("설정 칭호 목록", () => {
     expect(mutate).not.toHaveBeenCalled();
   });
 
-  it("최애곡을 20자로 제한하고 현재 글자 수를 표시한다", () => {
-    mockProfileForm({ statusMessage: "재즈" });
+  it("닉네임과 최애곡의 최대 길이와 현재 글자 수를 표시한다", () => {
+    mockProfileForm({ nickname: "민지", statusMessage: "재즈" });
     render(<ProfileSettingsTab />);
 
+    expect(screen.getByLabelText("사용자 이름")).toHaveAttribute(
+      "maxlength",
+      "19",
+    );
+    expect(screen.getByText("2/19")).toBeInTheDocument();
     expect(screen.getByLabelText("최애곡")).toHaveAttribute(
       "maxlength",
       "20",
