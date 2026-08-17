@@ -40,7 +40,7 @@
 - [x] 종료·토스트 구현
 - [x] targeted/full QA
 - [x] fresh review
-- [ ] commit, push, PR #52 갱신
+- [x] commit, push, PR #52 갱신
 
 ## 검증
 
