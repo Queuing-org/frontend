@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-17-backend-hotfix-260816](./2026-08-17-backend-hotfix-260816/plan.md): ci-pending — Draft PR #51, backend hotfix/260816 방 입장 전환·랜덤·leave·대기열 계약과 PR #50 리뷰 3건 반영
+
 - [2026-08-17-action-feedback-stack](./2026-08-17-action-feedback-stack/plan.md): ready — Draft PR #50, 프로필 통계 행 독립 배치와 방 편집 설정·하단 액션 정렬 후속 반영 및 CI 통과
 
 - [2026-08-14-backend-hotfix-260812-migration](./2026-08-14-backend-hotfix-260812-migration/plan.md): implementing — backend hotfix c91f8a 에러·REST·실시간·관계 cursor 계약 전환과 새 Draft PR 전달
