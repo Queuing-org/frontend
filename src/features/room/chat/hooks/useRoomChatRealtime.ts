@@ -26,7 +26,7 @@ type UseRoomChatRealtimeParams = {
   onPendingMessageBackfill: (
     contents: readonly string[],
   ) => Promise<readonly string[]>;
-  roomPassword?: string | null;
+  roomAccessToken: string | null;
   slug: string;
 };
 
@@ -53,12 +53,12 @@ export function useRoomChatRealtime({
   onMessage,
   onMessageDeleted,
   onPendingMessageBackfill,
-  roomPassword,
+  roomAccessToken,
   slug,
 }: UseRoomChatRealtimeParams) {
   const { notify } = useActionFeedback();
   const chatSubscriptionRef = useRef<{
-    password: string | null;
+    accessToken: string;
     slug: string;
     subscription: StompSubscription;
   } | null>(null);
@@ -422,12 +422,10 @@ export function useRoomChatRealtime({
   );
 
   const ensureChatSubscription = useCallback(
-    (roomSlug: string, password?: string | null) => {
-      const subscriptionPassword = password ?? null;
-
+    (roomSlug: string, accessToken: string) => {
       if (
         chatSubscriptionRef.current?.slug === roomSlug &&
-        chatSubscriptionRef.current.password === subscriptionPassword
+        chatSubscriptionRef.current.accessToken === accessToken
       ) {
         return;
       }
@@ -435,7 +433,7 @@ export function useRoomChatRealtime({
       cleanupChatSubscription();
 
       chatSubscriptionRef.current = {
-        password: subscriptionPassword,
+        accessToken,
         slug: roomSlug,
         subscription: subscribeRoomChatEvents(
           roomSlug,
@@ -444,7 +442,7 @@ export function useRoomChatRealtime({
 
             handleChatMessageBody(roomSlug, body);
           },
-          subscriptionPassword,
+          accessToken,
         ),
       };
     },
@@ -552,12 +550,12 @@ export function useRoomChatRealtime({
   );
 
   useEffect(() => {
-    if (!isEnabled || !slug) {
+    if (!isEnabled || !slug || !roomAccessToken) {
       cleanupSubscriptions();
       return;
     }
 
-    ensureChatSubscription(slug, roomPassword);
+    ensureChatSubscription(slug, roomAccessToken);
 
     if (currentUser) {
       ensureUserEventSubscription(slug);
@@ -573,7 +571,7 @@ export function useRoomChatRealtime({
     ensureChatSubscription,
     ensureUserEventSubscription,
     isEnabled,
-    roomPassword,
+    roomAccessToken,
     slug,
   ]);
 

@@ -14,8 +14,8 @@ import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbac
 import styles from "./ReportChatMessageModal.module.css";
 
 export type ReportChatMessageTarget = {
+  accessToken: string;
   messageKey: string;
-  password?: string | null;
   slug: string;
 };
 
@@ -95,8 +95,8 @@ export default function ReportChatMessageModal({ onClose, target }: Props) {
 
     reportMessage.mutate(
       {
+        accessToken: target.accessToken,
         messageKey: target.messageKey,
-        password: target.password,
         reason,
         slug: target.slug,
       },

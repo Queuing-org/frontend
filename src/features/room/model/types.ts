@@ -104,6 +104,7 @@ export type RoomJoinedData = {
     profileImageUrl: string | null;
   };
   recentChatMessages: ChatMessage[];
+  roomAccessToken: string;
 };
 
 export type ChatMessageEventData = ChatMessage;

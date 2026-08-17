@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
@@ -34,7 +34,7 @@ export function getNextRoomQueuePageParam(page: RoomQueuePage) {
 
 export async function fetchRoomQueuePage({
   slug,
-  password,
+  accessToken,
   cursor,
   signal,
   size = QUEUE_PAGE_SIZE,
@@ -48,7 +48,7 @@ export async function fetchRoomQueuePage({
         ...(cursor ? { cursor } : {}),
         size,
       },
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
       signal,
     },
   );

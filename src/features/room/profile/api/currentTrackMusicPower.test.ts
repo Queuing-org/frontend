@@ -8,9 +8,9 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
   },
 }));
 
-vi.mock("@/src/shared/api/roomPasswordHeaders", () => ({
-  buildRoomPasswordHeaders: vi.fn(() => ({
-    "X-Room-Password": "secret",
+vi.mock("@/src/shared/api/roomAccessTokenHeaders", () => ({
+  buildRoomAccessTokenHeaders: vi.fn(() => ({
+    "X-Room-Access-Token": "secret",
   })),
 }));
 
@@ -32,6 +32,7 @@ describe("현재 곡 신청자 음악력 API", () => {
 
     await expect(
       setCurrentTrackMusicPowerVote({
+        accessToken: "secret",
         entryId: "entry-1",
         roomSlug: "room-a",
         targetUserSlug: "requester/user",
@@ -42,6 +43,7 @@ describe("현재 곡 신청자 음악력 API", () => {
     expect(axiosInstance.put).toHaveBeenCalledWith(
       "/api/v1/user-profiles/requester%2Fuser/music-power",
       { entryId: "entry-1", roomSlug: "room-a", vote: "UPVOTE" },
+      { headers: { "X-Room-Access-Token": "secret" } },
     );
   });
 });

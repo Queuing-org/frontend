@@ -45,7 +45,7 @@ type Props = {
   reportMessageKey?: string | null;
   resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
   widgets: FloatingWidgetsView;
 };
@@ -72,7 +72,7 @@ export default function RoomFloatingWidgets({
   reportMessageKey,
   resolveParticipantByUserSlug,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
   widgets,
 }: Props) {
@@ -121,7 +121,7 @@ export default function RoomFloatingWidgets({
                   onUserBlocked={onUserBlocked}
                   reportMessageKey={reportMessageKey}
                   roomMeta={roomMeta}
-                  roomPassword={roomPassword}
+                  roomAccessToken={roomAccessToken}
                   roomSlug={roomSlug}
                   resolveParticipantByUserSlug={
                     resolveParticipantByUserSlug
@@ -166,7 +166,7 @@ export default function RoomFloatingWidgets({
                   onUserBlocked={onUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
-                  roomPassword={roomPassword}
+                  roomAccessToken={roomAccessToken}
                   roomSlug={roomSlug}
                 />
               </FloatingPanelShell>
@@ -202,7 +202,7 @@ export default function RoomFloatingWidgets({
                   currentUser={currentUser}
                   isCurrentUserLoading={isCurrentUserLoading}
                   roomMeta={roomMeta}
-                  roomPassword={roomPassword}
+                  roomAccessToken={roomAccessToken}
                   roomSlug={roomSlug}
                 />
               </FloatingPanelShell>

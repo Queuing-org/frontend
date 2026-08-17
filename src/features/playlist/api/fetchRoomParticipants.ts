@@ -1,6 +1,6 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type {
@@ -32,7 +32,7 @@ export function getNextRoomParticipantsPageParam(
 
 export async function fetchRoomParticipantsPage({
   slug,
-  password,
+  accessToken,
   cursor,
   signal,
   size = PARTICIPANT_PAGE_SIZE,
@@ -41,7 +41,7 @@ export async function fetchRoomParticipantsPage({
     `/api/v1/rooms/${encodeURIComponent(normalizeRoomSlug(slug))}/participants`,
     {
       params: { ...(cursor ? { cursor } : {}), size },
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
       signal,
     },
   );

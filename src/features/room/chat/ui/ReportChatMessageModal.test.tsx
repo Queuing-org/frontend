@@ -19,7 +19,7 @@ function renderModal(onClose = vi.fn()) {
         <ReportChatMessageModal
           target={{
             messageKey: "message-key",
-            password: "secret",
+            accessToken: "secret",
             slug: "room-slug",
           }}
           onClose={onClose}
@@ -61,7 +61,7 @@ describe("ReportChatMessageModal", () => {
 
     expect(vi.mocked(reportChatMessage).mock.calls[0]?.[0]).toEqual({
       messageKey: "message-key",
-      password: "secret",
+      accessToken: "secret",
       reason: "욕설 및 비방\n기타 부적절한 내용",
       slug: "room-slug",
     });

@@ -28,11 +28,13 @@ describe("room read query hooks", () => {
     const options = useQuery.mock.calls[0]?.[0];
     const signal = new AbortController().signal;
 
+    expect(options.queryKey).toEqual(["roomPlayback", "room"]);
+    expect(options.queryKey).not.toContain("secret");
     await options.queryFn({ signal });
 
     expect(fetchRoomPlayback).toHaveBeenCalledWith({
       slug: "room",
-      password: "secret",
+      accessToken: "secret",
       signal,
     });
   });
@@ -42,12 +44,14 @@ describe("room read query hooks", () => {
     const options = useInfiniteQuery.mock.calls[0]?.[0];
     const signal = new AbortController().signal;
 
+    expect(options.queryKey).toEqual(["roomParticipants", "room"]);
+    expect(options.queryKey).not.toContain("secret");
     await options.queryFn({ pageParam: "next", signal });
 
     expect(fetchRoomParticipantsPage).toHaveBeenCalledWith({
       cursor: "next",
       slug: "room",
-      password: "secret",
+      accessToken: "secret",
       signal,
     });
     expect(options.initialPageParam).toBeNull();

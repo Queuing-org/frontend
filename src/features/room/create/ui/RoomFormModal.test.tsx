@@ -7,11 +7,15 @@ import { createRoom } from "@/src/features/room/api/createRoom";
 import { deleteRoomThumbnail } from "@/src/features/room/api/deleteRoomThumbnail";
 import { uploadTemporaryRoomThumbnail } from "@/src/features/room/api/uploadTemporaryRoomThumbnail";
 import { updateRoomThumbnail } from "@/src/features/room/api/updateRoomThumbnail";
+import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
+import type { useRoomJoinTransition } from "@/src/features/room/join/model/useRoomJoinTransition";
+import type { RoomJoinTarget } from "@/src/features/room/join/model/roomJoinHandoff";
 import RoomFormModal from "./RoomFormModal";
 
-const { notify, push, roomTags } = vi.hoisted(() => ({
+const { notify, push, requestJoin, roomTags } = vi.hoisted(() => ({
   notify: vi.fn(),
   push: vi.fn(),
+  requestJoin: vi.fn(),
   roomTags: [] as Array<{ name: string; slug: string }>,
 }));
 
@@ -20,6 +24,35 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/src/features/room/api/createRoom", () => ({
   createRoom: vi.fn(),
+}));
+vi.mock("@/src/features/room/join/model/useRoomJoinTransition", () => ({
+  useRoomJoinTransition: ({
+    onJoined,
+  }: Parameters<typeof useRoomJoinTransition>[0]) => ({
+    conflict: null,
+    confirmJoin: vi.fn(),
+    isPending: false,
+    requestJoin: requestJoin.mockImplementation(async (target: RoomJoinTarget) => {
+      const result: JoinRoomResult = {
+        roomSlug: target.slug,
+        timestamp: 1,
+        data: {
+          participant: {
+            participantType: "USER",
+            participantId: "participant",
+            userSlug: "user",
+            nickname: "사용자",
+            profileImageUrl: null,
+          },
+          recentChatMessages: [],
+          roomAccessToken: "access-token",
+        },
+      };
+      onJoined(result, target);
+      return { status: "joined", result };
+    }),
+    returnToCurrentRoom: vi.fn(),
+  }),
 }));
 vi.mock("@/src/features/room/api/deleteRoomThumbnail", () => ({
   deleteRoomThumbnail: vi.fn(),
@@ -78,6 +111,7 @@ function renderEditRoomModal(initialTagSlugs: string[]) {
         mode="edit"
         onClose={vi.fn()}
         open
+        roomAccessToken="access-token"
         roomSlug="existing-room"
       />
     </QueryClientProvider>,
@@ -739,6 +773,7 @@ describe("RoomFormModal room form flows", () => {
 
     await waitFor(() => {
       expect(vi.mocked(updateRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        accessToken: "access-token",
         slug: "existing-room",
         thumbnailUploadToken: "rtu_edit",
       });
@@ -763,6 +798,7 @@ describe("RoomFormModal room form flows", () => {
 
     await waitFor(() => {
       expect(vi.mocked(deleteRoomThumbnail).mock.calls[0]?.[0]).toEqual({
+        accessToken: "access-token",
         slug: "existing-room",
       });
     });

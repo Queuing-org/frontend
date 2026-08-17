@@ -16,10 +16,11 @@ it("정규화한 방 slug의 썸네일을 삭제한다", async () => {
   });
 
   await expect(
-    deleteRoomThumbnail({ slug: " room/one " }),
+    deleteRoomThumbnail({ accessToken: "secret", slug: " room/one " }),
   ).resolves.toEqual({ success: true });
   expect(axiosInstance.delete).toHaveBeenCalledWith(
     "/api/v2/rooms/room%2Fone/thumbnail",
+    { headers: { "X-Room-Access-Token": "secret" } },
   );
 });
 
@@ -29,6 +30,6 @@ it("result false는 삭제 성공으로 처리하지 않는다", async () => {
   });
 
   await expect(
-    deleteRoomThumbnail({ slug: "room-one" }),
+    deleteRoomThumbnail({ accessToken: "secret", slug: "room-one" }),
   ).rejects.toThrow("방 썸네일을 삭제하지 못했습니다.");
 });

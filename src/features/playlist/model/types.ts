@@ -2,7 +2,7 @@ import type { PlaybackStatus } from "@/src/features/room/model/types";
 
 export type PlaylistProtectedRequestParams = {
   slug: string;
-  password?: string | null;
+  accessToken: string;
 };
 
 export type RoomQueueRequestParams = PlaylistProtectedRequestParams & {

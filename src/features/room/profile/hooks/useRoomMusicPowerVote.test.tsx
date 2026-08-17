@@ -24,6 +24,7 @@ const defaultParams = {
   hasCurrentUser: true,
   isCurrentUserLoading: false,
   isSelf: false,
+  roomAccessToken: "secret",
   roomSlug: "room",
   targetSlug: "target-user",
 };
@@ -65,10 +66,14 @@ describe("useRoomMusicPowerVote", () => {
       { initialProps: { entryId: "entry-1" } },
     );
 
-    expect(useMusicPower).toHaveBeenLastCalledWith("target-user", {
-      entryId: "entry-1",
-      roomSlug: "room",
-    });
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      {
+        entryId: "entry-1",
+        roomSlug: "room",
+      },
+      "secret",
+    );
     expect(result.current.musicPower).toBe(55);
     expect(result.current.selectedVote).toBeNull();
     act(() => result.current.onVote("UPVOTE"));
@@ -81,14 +86,19 @@ describe("useRoomMusicPowerVote", () => {
     mockMusicPower();
     rerender({ entryId: "entry-2" });
     expect(result.current.selectedVote).toBeNull();
-    expect(useMusicPower).toHaveBeenLastCalledWith("target-user", {
-      entryId: "entry-2",
-      roomSlug: "room",
-    });
+    expect(useMusicPower).toHaveBeenLastCalledWith(
+      "target-user",
+      {
+        entryId: "entry-2",
+        roomSlug: "room",
+      },
+      "secret",
+    );
     act(() => result.current.onVote("DOWNVOTE"));
     expect(mutate).toHaveBeenCalledTimes(2);
     expect(mutate).toHaveBeenLastCalledWith(
       {
+        accessToken: "secret",
         entryId: "entry-2",
         roomSlug: "room",
         targetUserSlug: "target-user",
@@ -112,6 +122,7 @@ describe("useRoomMusicPowerVote", () => {
     expect(mutate).toHaveBeenCalledOnce();
     expect(mutate).toHaveBeenCalledWith(
       {
+        accessToken: "secret",
         entryId: "entry-1",
         roomSlug: "room",
         targetUserSlug: "target-user",
@@ -205,7 +216,7 @@ describe("useRoomMusicPowerVote", () => {
       useRoomMusicPowerVote({ ...defaultParams, hasCurrentUser: false }),
     );
 
-    expect(useMusicPower).toHaveBeenLastCalledWith(null, undefined);
+    expect(useMusicPower).toHaveBeenLastCalledWith(null, undefined, undefined);
     expect(result.current.disabled).toBe(false);
     expect(result.current.loginNotice).toBe(
       "로그인 후 음악력을 평가할 수 있습니다.",
@@ -223,6 +234,7 @@ describe("useRoomMusicPowerVote", () => {
     mockMutation({
       isPending: true,
       variables: {
+        accessToken: "secret",
         entryId: "entry-1",
         roomSlug: "room",
         targetUserSlug: "target-user",

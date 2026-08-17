@@ -23,6 +23,7 @@ type UseEditRoomFormParams = {
   initialTitle: string;
   initialHasThumbnail: boolean;
   onClose: () => void;
+  roomAccessToken?: string;
   roomSlug?: string;
 };
 
@@ -64,6 +65,7 @@ export function useEditRoomForm({
   initialTitle,
   initialHasThumbnail,
   onClose,
+  roomAccessToken,
   roomSlug,
 }: UseEditRoomFormParams) {
   const updateRoomMutation = useUpdateRoom();
@@ -134,7 +136,7 @@ export function useEditRoomForm({
     thumbnailSelection.file &&
       !uploadTemporaryRoomThumbnailMutation.data?.uploadToken,
   );
-  const canSubmit = !isSubmitting && !!roomSlug;
+  const canSubmit = !isSubmitting && !!roomSlug && !!roomAccessToken;
   const clearValidationError = (field: EditRoomValidationField) => {
     setInvalidFields((currentFields) => {
       if (!currentFields[field]) {
@@ -241,7 +243,7 @@ export function useEditRoomForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!roomSlug || isSubmitting) {
+    if (!roomSlug || !roomAccessToken || isSubmitting) {
       return;
     }
 
@@ -306,6 +308,7 @@ export function useEditRoomForm({
     try {
       if (payload) {
         await updateRoomMutation.mutateAsync({
+          accessToken: roomAccessToken,
           slug: roomSlug,
           payload,
         });
@@ -328,6 +331,7 @@ export function useEditRoomForm({
           (didSave) => didSave || Boolean(payload),
         );
         await updateRoomThumbnailMutation.mutateAsync({
+          accessToken: roomAccessToken,
           slug: roomSlug,
           thumbnailUploadToken,
         });
@@ -335,12 +339,15 @@ export function useEditRoomForm({
         setDidSaveRoomInfoBeforeThumbnailMutationError(
           (didSave) => didSave || Boolean(payload),
         );
-        await deleteRoomThumbnailMutation.mutateAsync({ slug: roomSlug });
+        await deleteRoomThumbnailMutation.mutateAsync({
+          accessToken: roomAccessToken,
+          slug: roomSlug,
+        });
       }
 
       notify({
         dedupeKey: `room-update:${roomSlug}`,
-        message: "방 설정을 변경했습니다.",
+        message: "방 정보가 변경되었어요",
         tone: "default",
       });
       onClose();

@@ -23,7 +23,10 @@ it("삭제 성공 시 방 목록과 정규화한 상세 cache를 무효화한다
   });
 
   await act(async () => {
-    await result.current.mutateAsync({ slug: " room-one " });
+    await result.current.mutateAsync({
+      accessToken: "secret",
+      slug: " room-one ",
+    });
   });
 
   expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: roomKeys.all() });

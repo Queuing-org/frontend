@@ -18,6 +18,7 @@ describe("transferRoomOwner", () => {
 
     await expect(
       transferRoomOwner({
+        accessToken: "secret",
         slug: " rooms/sample ",
         userSlug: " new-owner ",
       }),
@@ -26,12 +27,17 @@ describe("transferRoomOwner", () => {
     expect(axiosInstance.patch).toHaveBeenCalledWith(
       "/api/v1/rooms/rooms%2Fsample/owner",
       { userSlug: "new-owner" },
+      { headers: { "X-Room-Access-Token": "secret" } },
     );
   });
 
   it("빈 회원 slug는 네트워크 요청 전에 거부한다", async () => {
     await expect(
-      transferRoomOwner({ slug: "room", userSlug: "   " }),
+      transferRoomOwner({
+        accessToken: "secret",
+        slug: "room",
+        userSlug: "   ",
+      }),
     ).rejects.toMatchObject({
       message: "새 방장 식별자가 올바르지 않습니다.",
       status: 400,
@@ -45,7 +51,11 @@ describe("transferRoomOwner", () => {
     });
 
     await expect(
-      transferRoomOwner({ slug: "room", userSlug: "new-owner" }),
+      transferRoomOwner({
+        accessToken: "secret",
+        slug: "room",
+        userSlug: "new-owner",
+      }),
     ).rejects.toMatchObject({ message: "방장을 위임하지 못했습니다." });
   });
 });

@@ -1,11 +1,11 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { MoveRoomQueueEntryParams } from "../model/types";
 
 export async function moveRoomQueueEntry({
   slug,
-  password,
+  accessToken,
   movedEntryId,
   beforeEntryId,
 }: MoveRoomQueueEntryParams): Promise<void> {
@@ -17,7 +17,7 @@ export async function moveRoomQueueEntry({
       beforeEntryId,
     },
     {
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
     },
   );
 

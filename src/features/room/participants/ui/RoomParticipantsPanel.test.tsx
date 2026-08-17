@@ -147,7 +147,7 @@ function renderPanel(messages = [
         tags: [],
         title: "방",
       }}
-      roomPassword="secret"
+      roomAccessToken="secret"
       roomSlug="room"
     />,
   );
@@ -227,7 +227,7 @@ describe("RoomParticipantsPanel", () => {
     await user.click(screen.getByRole("button", { name: "회원 내보내기" }));
     expect(kickMutate).toHaveBeenCalledWith(
       {
-        password: "secret",
+        accessToken: "secret",
         slug: "room",
         userSlug: "member",
       },
@@ -240,7 +240,7 @@ describe("RoomParticipantsPanel", () => {
     await user.click(screen.getByRole("button", { name: "회원 방장 위임" }));
     const transferOptions = transferMutate.mock.calls.at(-1)?.[1];
     expect(transferMutate).toHaveBeenCalledWith(
-      { slug: "room", userSlug: "member" },
+      { accessToken: "secret", slug: "room", userSlug: "member" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
     expect(transferOptions).toHaveProperty("onSuccess");
@@ -272,7 +272,7 @@ describe("RoomParticipantsPanel", () => {
     expect(kickMutate).toHaveBeenCalledWith(
       {
         participantId: "participant-guest",
-        password: "secret",
+        accessToken: "secret",
         slug: "room",
       },
       expect.objectContaining({

@@ -1,11 +1,11 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { DeleteMyQueueEntryParams } from "../model/types";
 
 export async function deleteMyQueueEntry({
   slug,
-  password,
+  accessToken,
   entryId,
 }: DeleteMyQueueEntryParams): Promise<void> {
   await axiosInstance.delete(
@@ -13,7 +13,7 @@ export async function deleteMyQueueEntry({
       normalizeRoomSlug(slug),
     )}/queue-entries/${encodeURIComponent(entryId)}`,
     {
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
     },
   );
 

@@ -24,7 +24,7 @@ import {
 type UseRoomChatHistoryParams = {
   currentUser: User | null;
   isEnabled: boolean;
-  roomPassword?: string | null;
+  roomAccessToken: string | null;
   slug: string;
 };
 
@@ -81,7 +81,7 @@ function selectPendingBackfillMessages({
 export function useRoomChatHistory({
   currentUser,
   isEnabled,
-  roomPassword,
+  roomAccessToken,
   slug,
 }: UseRoomChatHistoryParams) {
   const initialChatHistorySlugRef = useRef<string | null>(null);
@@ -199,7 +199,7 @@ export function useRoomChatHistory({
   }, [replaceChatMessages]);
 
   const loadInitialChatHistory = useCallback(() => {
-    if (!slug || chatMessagesRef.current.length > 0) {
+    if (!slug || !roomAccessToken || chatMessagesRef.current.length > 0) {
       return;
     }
 
@@ -212,7 +212,7 @@ export function useRoomChatHistory({
     void (async () => {
       try {
         const result = await loadRoomChats({
-          password: roomPassword,
+          accessToken: roomAccessToken,
           signal: abortController.signal,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
@@ -246,11 +246,12 @@ export function useRoomChatHistory({
         }
       }
     })();
-  }, [loadRoomChats, mergeChatMessages, roomPassword, slug]);
+  }, [loadRoomChats, mergeChatMessages, roomAccessToken, slug]);
 
   const loadOlderMessages = useCallback(() => {
     if (
       !slug ||
+      !roomAccessToken ||
       !isEnabled ||
       !hasOlderChatMessages ||
       isLoadingOlderChatMessages ||
@@ -279,8 +280,8 @@ export function useRoomChatHistory({
     void (async () => {
       try {
         const result = await loadRoomChats({
+          accessToken: roomAccessToken,
           cursorId: chatHistoryCursor,
-          password: roomPassword,
           signal: abortController.signal,
           size: Math.min(CHAT_HISTORY_PAGE_SIZE, remainingCapacity),
           slug,
@@ -322,13 +323,18 @@ export function useRoomChatHistory({
     isLoadingOlderChatMessages,
     loadRoomChats,
     mergeChatMessages,
-    roomPassword,
+    roomAccessToken,
     slug,
   ]);
 
   const backfillLatestMessages = useCallback(
     async (expectedContents: readonly string[]) => {
-      if (!slug || !currentUser || expectedContents.length === 0) {
+      if (
+        !slug ||
+        !roomAccessToken ||
+        !currentUser ||
+        expectedContents.length === 0
+      ) {
         return [];
       }
 
@@ -338,7 +344,7 @@ export function useRoomChatHistory({
 
       try {
         const result = await backfillRoomChats({
-          password: roomPassword,
+          accessToken: roomAccessToken,
           signal: abortController.signal,
           size: CHAT_HISTORY_PAGE_SIZE,
           slug,
@@ -399,23 +405,22 @@ export function useRoomChatHistory({
         }
       }
     },
-    [backfillRoomChats, currentUser, replaceChatMessages, roomPassword, slug],
+    [backfillRoomChats, currentUser, replaceChatMessages, roomAccessToken, slug],
   );
 
   useEffect(() => {
-    const historyKey = `${slug}:${roomPassword ?? ""}`;
-
     if (
       !isEnabled ||
       !slug ||
-      initialChatHistorySlugRef.current === historyKey
+      !roomAccessToken ||
+      initialChatHistorySlugRef.current === slug
     ) {
       return;
     }
 
-    initialChatHistorySlugRef.current = historyKey;
+    initialChatHistorySlugRef.current = slug;
     loadInitialChatHistory();
-  }, [isEnabled, loadInitialChatHistory, roomPassword, slug]);
+  }, [isEnabled, loadInitialChatHistory, roomAccessToken, slug]);
 
   useEffect(() => abortRequests, [abortRequests]);
 

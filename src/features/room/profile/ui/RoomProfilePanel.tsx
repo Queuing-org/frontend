@@ -56,7 +56,7 @@ type Props = {
   reportMessageKey?: string | null;
   resolveParticipantByUserSlug?: ResolveRoomParticipantByUserSlug;
   roomMeta: RoomMeta | null;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   roomSlug: string;
 };
 
@@ -84,7 +84,7 @@ export default function RoomProfilePanel({
   reportMessageKey,
   resolveParticipantByUserSlug,
   roomMeta,
-  roomPassword,
+  roomAccessToken,
   roomSlug,
 }: Props) {
   const [isManagementOpen, setIsManagementOpen] = useState(false);
@@ -167,6 +167,7 @@ export default function RoomProfilePanel({
     hasCurrentUser: Boolean(currentUser),
     isCurrentUserLoading,
     isSelf,
+    roomAccessToken,
     roomSlug,
     targetSlug,
   });
@@ -191,7 +192,7 @@ export default function RoomProfilePanel({
 
     setReportTarget({
       messageKey: reportMessageKey,
-      password: roomPassword,
+      accessToken: roomAccessToken,
       slug: roomSlug,
     });
   };
@@ -261,7 +262,7 @@ export default function RoomProfilePanel({
     kickParticipant.mutate(
       {
         ...resolvedKickTarget,
-        password: roomPassword,
+        accessToken: roomAccessToken,
         slug: roomSlug,
       },
       {
@@ -329,7 +330,7 @@ export default function RoomProfilePanel({
 
     transferOwner.reset();
     transferOwner.mutate(
-      { slug: roomSlug, userSlug: targetSlug },
+      { accessToken: roomAccessToken, slug: roomSlug, userSlug: targetSlug },
       {
         onSuccess: () => {
           notify({

@@ -10,6 +10,7 @@ import type { MusicPowerPlaybackScope } from "../model/types";
 export function useMusicPower(
   userSlug: string | null | undefined,
   playbackScope?: MusicPowerPlaybackScope,
+  roomAccessToken?: string,
 ) {
   return useQuery<MusicPowerResponse, ApiError>({
     queryKey: userKeys.musicPower(
@@ -18,7 +19,7 @@ export function useMusicPower(
       playbackScope?.entryId,
     ),
     queryFn: ({ signal }) =>
-      fetchMusicPower(userSlug!, playbackScope, signal),
+      fetchMusicPower(userSlug!, playbackScope, signal, roomAccessToken),
     enabled: Boolean(userSlug),
   });
 }

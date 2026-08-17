@@ -23,6 +23,7 @@ type EditParticipationMode = "public" | "password";
 
 type EditRoomFormModalProps = {
   open: boolean;
+  roomAccessToken?: string;
   roomSlug?: string;
   initialTitle?: string;
   initialTagSlugs?: string[];
@@ -35,6 +36,7 @@ type EditRoomFormModalProps = {
 
 export default function EditRoomFormModal({
   open,
+  roomAccessToken,
   roomSlug,
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
@@ -57,6 +59,7 @@ export default function EditRoomFormModal({
     initialTitle,
     initialHasThumbnail: Boolean(initialThumbnailUrl),
     onClose,
+    roomAccessToken,
     roomSlug,
   });
 
@@ -114,12 +117,15 @@ export default function EditRoomFormModal({
   };
 
   const handleDeleteRoom = async () => {
-    if (!roomSlug || deleteRoomMutation.isPending) {
+    if (!roomSlug || !roomAccessToken || deleteRoomMutation.isPending) {
       return;
     }
 
     try {
-      await deleteRoomMutation.mutateAsync({ slug: roomSlug });
+      await deleteRoomMutation.mutateAsync({
+        accessToken: roomAccessToken,
+        slug: roomSlug,
+      });
       notify({
         dedupeKey: `room-delete:${roomSlug}`,
         message: `'${initialTitle}' 방을 삭제했습니다.`,
@@ -387,7 +393,7 @@ export default function EditRoomFormModal({
                 ref={deleteButtonRef}
                 type="button"
                 className={`${styles.footerButton} ${styles.deleteRoomButton}`}
-                disabled={!roomSlug || form.isSubmitting}
+                disabled={!roomSlug || !roomAccessToken || form.isSubmitting}
                 onClick={() => {
                   deleteRoomMutation.reset();
                   setIsDeleteDialogOpen(true);

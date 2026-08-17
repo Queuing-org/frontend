@@ -4,6 +4,7 @@ import {
   joinRoom,
   RoomJoinError,
 } from "@/src/features/room/api/joinRoom";
+import type { RoomJoinErrorRoom } from "@/src/features/room/api/joinRoom.types";
 import { acquireSocketSession } from "@/src/shared/api/websocket/stompConnection";
 import { useRoomJoinTransition } from "./useRoomJoinTransition";
 
@@ -30,10 +31,22 @@ vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
 const joinedResult = {
   roomSlug: "next-room",
   timestamp: 1,
-  data: null,
+  data: {
+    participant: {
+      participantType: "USER" as const,
+      participantId: "participant",
+      userSlug: "user",
+      nickname: "사용자",
+      profileImageUrl: null,
+    },
+    recentChatMessages: [],
+    roomAccessToken: "access-token",
+  },
 };
 
-function conflictError(data = { slug: "current-room", title: "현재 방" }) {
+function conflictError(
+  data: RoomJoinErrorRoom = { slug: "current-room", title: "현재 방" },
+) {
   return new RoomJoinError({
     status: 409,
     code: "room.already-participating",
@@ -45,6 +58,7 @@ function conflictError(data = { slug: "current-room", title: "현재 방" }) {
 describe("useRoomJoinTransition", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     vi.mocked(acquireSocketSession).mockReturnValue(releaseSocketSession);
   });
 
@@ -91,6 +105,9 @@ describe("useRoomJoinTransition", () => {
       password: "secret",
       slug: "next-room",
     });
+    expect(sessionStorage.getItem("room-access-token:next-room")).toBe(
+      "access-token",
+    );
     expect(releaseSocketSession).toHaveBeenCalledOnce();
     vi.useRealTimers();
   });

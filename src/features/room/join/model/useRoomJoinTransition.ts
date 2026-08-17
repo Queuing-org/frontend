@@ -10,6 +10,7 @@ import { acquireSocketSession } from "@/src/shared/api/websocket/stompConnection
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
 import { getAlreadyParticipatingRoom } from "./roomJoinErrors";
+import { writeStoredRoomAccessToken } from "../lib/roomAccessTokenStorage";
 import {
   storeRoomJoinHandoff,
   type RoomJoinTarget,
@@ -59,12 +60,17 @@ export function useRoomJoinTransition({
 
       const target: RoomJoinTarget = {
         slug: normalizeRoomSlug(rawTarget.slug),
-        ...(Object.prototype.hasOwnProperty.call(rawTarget, "password")
-          ? { password: rawTarget.password }
-          : {}),
+        ...(typeof rawTarget.accessToken === "string"
+          ? { accessToken: rawTarget.accessToken.trim() }
+          : Object.prototype.hasOwnProperty.call(rawTarget, "password")
+            ? { password: rawTarget.password }
+            : {}),
       };
       if (!target.slug) {
         return Promise.reject(new Error("방 slug가 비어 있습니다."));
+      }
+      if ("accessToken" in target && !target.accessToken) {
+        return Promise.reject(new Error("방 접근 토큰이 비어 있습니다."));
       }
 
       releaseSocketSessionRef.current ??= acquireSocketSession();
@@ -74,13 +80,19 @@ export function useRoomJoinTransition({
 
       const request = joinRoom(
         target.slug,
-        target.password !== undefined
-          ? { password: target.password }
-          : {},
+        "accessToken" in target
+          ? { accessToken: target.accessToken }
+          : target.password !== undefined
+            ? { password: target.password }
+            : {},
         { signal: abortController.signal },
       )
         .then((result): RoomJoinOutcome => {
           setConflict(null);
+          writeStoredRoomAccessToken(
+            target.slug,
+            result.data.roomAccessToken,
+          );
           const release = releaseSocketSessionRef.current;
           releaseSocketSessionRef.current = null;
 

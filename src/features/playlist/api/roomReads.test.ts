@@ -11,9 +11,9 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: { get: vi.fn() },
 }));
 
-vi.mock("@/src/shared/api/roomPasswordHeaders", () => ({
-  buildRoomPasswordHeaders: vi.fn((password?: string | null) =>
-    password ? { "X-Room-Password": password } : undefined,
+vi.mock("@/src/shared/api/roomAccessTokenHeaders", () => ({
+  buildRoomAccessTokenHeaders: vi.fn((accessToken?: string | null) =>
+    accessToken ? { "X-Room-Access-Token": accessToken } : undefined,
   ),
 }));
 
@@ -72,13 +72,13 @@ describe("v26.8.0 방 조회 API", () => {
     await expect(
       fetchRoomQueuePage({
         slug: "room",
-        password: "secret",
+        accessToken: "secret",
         signal: abortController.signal,
       }),
     ).resolves.toMatchObject({ totalPendingCount: 2 });
     await fetchRoomQueuePage({
       slug: "room",
-      password: "secret",
+      accessToken: "secret",
       cursor: "entry-1",
     });
 
@@ -87,7 +87,7 @@ describe("v26.8.0 방 조회 API", () => {
       "/api/v1/rooms/room/queue-entries",
       {
         params: { size: 30 },
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         signal: abortController.signal,
       },
     );
@@ -99,7 +99,7 @@ describe("v26.8.0 방 조회 API", () => {
           cursor: "entry-1",
           size: 30,
         },
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         signal: undefined,
       },
     );
@@ -121,9 +121,9 @@ describe("v26.8.0 방 조회 API", () => {
       data: { result: playback },
     });
 
-    await expect(fetchRoomPlayback({ slug: "room" })).resolves.toEqual(
-      playback,
-    );
+    await expect(
+      fetchRoomPlayback({ accessToken: "secret", slug: "room" }),
+    ).resolves.toEqual(playback);
   });
 
   it("participant 첫 페이지와 명시적으로 요청한 cursor 페이지만 조회한다", async () => {
@@ -163,7 +163,7 @@ describe("v26.8.0 방 조회 API", () => {
     await expect(
       fetchRoomParticipantsPage({
         slug: "room",
-        password: "secret",
+        accessToken: "secret",
         signal,
       }),
     ).resolves.toMatchObject({ hasNext: true, nextCursor: "a" });
@@ -173,12 +173,16 @@ describe("v26.8.0 방 조회 API", () => {
       "/api/v1/rooms/room/participants",
       {
         params: { size: 100 },
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         signal,
       },
     );
 
-    await fetchRoomParticipantsPage({ slug: "room", cursor: "a" });
+    await fetchRoomParticipantsPage({
+      accessToken: "secret",
+      slug: "room",
+      cursor: "a",
+    });
 
     expect(axiosInstance.get).toHaveBeenCalledTimes(2);
     expect(axiosInstance.get).toHaveBeenNthCalledWith(
@@ -186,7 +190,7 @@ describe("v26.8.0 방 조회 API", () => {
       "/api/v1/rooms/room/participants",
       {
         params: { cursor: "a", size: 100 },
-        headers: undefined,
+        headers: { "X-Room-Access-Token": "secret" },
         signal: undefined,
       },
     );

@@ -11,7 +11,7 @@ type AddTrackActionProps = {
   className?: string;
   label?: string;
   loginLabel?: string;
-  roomPassword?: string | null;
+  roomAccessToken: string;
   slug: string;
   variant?: "default" | "queueDock";
 };
@@ -20,11 +20,11 @@ export default function AddTrackAction({
   className,
   label: labelOverride,
   loginLabel,
-  roomPassword,
+  roomAccessToken,
   slug,
   variant = "default",
 }: AddTrackActionProps) {
-  const action = useAddTrackAction(slug, roomPassword);
+  const action = useAddTrackAction(slug, roomAccessToken);
   const isQueueDock = variant === "queueDock";
   const form = action.form;
   let appearance: "loading" | "login" | "primary" = "primary";

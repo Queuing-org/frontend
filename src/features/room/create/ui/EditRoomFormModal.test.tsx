@@ -97,6 +97,7 @@ describe("EditRoomFormModal feedback", () => {
         initialTitle="기존 방"
         onClose={vi.fn()}
         open
+        roomAccessToken="secret"
         roomSlug="existing-room"
       />,
     );
@@ -114,6 +115,7 @@ describe("EditRoomFormModal feedback", () => {
         initialTitle="기존 방"
         onClose={vi.fn()}
         open
+        roomAccessToken="secret"
         roomSlug="existing-room"
       />,
     );
@@ -155,6 +157,7 @@ describe("EditRoomFormModal feedback", () => {
         initialTitle="기존 방"
         onClose={onClose}
         open
+        roomAccessToken="secret"
         roomSlug="existing-room"
       />,
     );
@@ -180,6 +183,7 @@ describe("EditRoomFormModal feedback", () => {
         initialTitle="기존 방"
         onClose={vi.fn()}
         open
+        roomAccessToken="secret"
         roomSlug="existing-room"
       />,
     );

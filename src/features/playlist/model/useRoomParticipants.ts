@@ -14,10 +14,10 @@ import { playlistKeys } from "./queryKeys";
 
 export function useRoomParticipants(
   slug: string | null,
-  password?: string | null,
+  accessToken: string | null,
   enabled = true,
 ) {
-  const queryKey = playlistKeys.roomParticipants(slug, password);
+  const queryKey = playlistKeys.roomParticipants(slug);
 
   return useInfiniteQuery<
     RoomParticipantsPage,
@@ -30,12 +30,12 @@ export function useRoomParticipants(
     queryFn: ({ pageParam, signal }) =>
       fetchRoomParticipantsPage({
         slug: slug!,
-        password,
+        accessToken: accessToken!,
         cursor: pageParam ?? undefined,
         signal,
       }),
     initialPageParam: null as string | null,
     getNextPageParam: getNextRoomParticipantsPageParam,
-    enabled: enabled && Boolean(slug),
+    enabled: enabled && Boolean(slug) && Boolean(accessToken),
   });
 }

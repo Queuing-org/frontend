@@ -4,13 +4,13 @@ import {
   assertApiBooleanResult,
   unwrapApiResponse,
 } from "@/src/shared/api/api-response";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 
 export type KickRoomParticipantParams = {
+  accessToken: string;
   participantId?: string | null;
-  password?: string | null;
   slug: string;
   userSlug?: string | null;
 };
@@ -22,8 +22,8 @@ function normalizeIdentifier(value: string | null | undefined) {
 }
 
 export async function kickRoomParticipant({
+  accessToken,
   participantId,
-  password,
   slug,
   userSlug,
 }: KickRoomParticipantParams): Promise<boolean> {
@@ -49,7 +49,7 @@ export async function kickRoomParticipant({
       normalizeRoomSlug(slug),
     )}/${participantPath}`,
     {
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
     },
   );
 

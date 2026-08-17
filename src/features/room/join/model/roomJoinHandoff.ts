@@ -2,10 +2,9 @@ import type {
   JoinRoomResult,
 } from "@/src/features/room/api/joinRoom";
 
-export type RoomJoinTarget = {
-  slug: string;
-  password?: string | null;
-};
+export type RoomJoinTarget =
+  | { slug: string; password?: string | null; accessToken?: never }
+  | { slug: string; accessToken: string; password?: never };
 
 export type RoomJoinHandoff = {
   releaseSocketSession: () => void;

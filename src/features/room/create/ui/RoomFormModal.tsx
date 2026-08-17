@@ -13,7 +13,8 @@ import {
   ROOM_TRACK_LIMIT_MINUTE_OPTIONS,
   ROOM_TITLE_MAX_LENGTH,
 } from "@/src/features/room/model/roomFormLimits";
-import { writeStoredRoomJoinPassword } from "@/src/features/room/join/lib/roomJoinPasswordStorage";
+import { useRoomJoinTransition } from "@/src/features/room/join/model/useRoomJoinTransition";
+import RoomJoinConflictDialog from "@/src/features/room/join/ui/RoomJoinConflictDialog";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
@@ -35,6 +36,7 @@ type RoomFormModalMode = "create" | "edit";
 type RoomFormModalProps = {
   open: boolean;
   mode: RoomFormModalMode;
+  roomAccessToken?: string;
   roomSlug?: string;
   initialTitle?: string;
   initialTagSlugs?: string[];
@@ -70,6 +72,7 @@ function parseOptionalTrackLimitMinutes(value: string) {
 export default function RoomFormModal({
   open,
   mode,
+  roomAccessToken,
   roomSlug,
   initialTitle = "",
   initialTagSlugs = EMPTY_TAG_SLUGS,
@@ -89,6 +92,7 @@ export default function RoomFormModal({
     return createPortal(
       <EditRoomFormModal
         open={open}
+        roomAccessToken={roomAccessToken}
         roomSlug={roomSlug}
         initialTitle={initialTitle}
         initialTagSlugs={initialTagSlugs}
@@ -116,6 +120,13 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const uploadTemporaryRoomThumbnailMutation =
     useUploadTemporaryRoomThumbnail();
   const thumbnailSelection = useRoomThumbnailSelection();
+  const joinTransition = useRoomJoinTransition({
+    handoffOnSuccess: true,
+    onJoined: (_result, target) => {
+      setIsNavigatingToCreatedRoom(true);
+      router.push(`/room/${encodeURIComponent(target.slug)}`);
+    },
+  });
   const [currentStep, setCurrentStep] = useState(0);
   const [furthestVisitedStep, setFurthestVisitedStep] = useState(0);
   const [title, setTitle] = useState("");
@@ -138,6 +149,7 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   const isSubmitting =
     createRoomMutation.isPending ||
     uploadTemporaryRoomThumbnailMutation.isPending ||
+    joinTransition.isPending ||
     isNavigatingToCreatedRoom;
   const needsPassword =
     participationMode === "password" && trimmedPassword.length === 0;
@@ -253,17 +265,6 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
     }
   };
 
-  const navigateToRoom = (slug: string, roomPassword?: string) => {
-    const normalizedSlug = normalizeRoomSlug(slug);
-
-    if (roomPassword) {
-      writeStoredRoomJoinPassword(normalizedSlug, roomPassword);
-    }
-
-    setIsNavigatingToCreatedRoom(true);
-    router.push(`/room/${encodeURIComponent(normalizedSlug)}`);
-  };
-
   const finishCreateRoom = async () => {
     if (!trimmedTitle) {
       setShowTitleError(true);
@@ -347,7 +348,22 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
         message: `'${trimmedTitle}' 방을 만들었습니다!`,
         tone: "default",
       });
-      navigateToRoom(result.slug, createdRoomPassword);
+      try {
+        await joinTransition.requestJoin(
+          createdRoomPassword
+            ? { password: createdRoomPassword, slug: result.slug }
+            : { slug: result.slug },
+        );
+      } catch (joinError) {
+        notify({
+          dedupeKey: `room-join:${normalizeRoomSlug(result.slug)}`,
+          message:
+            joinError instanceof Error && joinError.message
+              ? joinError.message
+              : "생성한 방에 입장하지 못했습니다.",
+          tone: "error",
+        });
+      }
     } catch (error) {
       setIsNavigatingToCreatedRoom(false);
       const message =
@@ -490,7 +506,8 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
   };
 
   return (
-    <div className={styles.overlay} onClick={onClose} role="presentation">
+    <>
+      <div className={styles.overlay} onClick={onClose} role="presentation">
       <section
         className={styles.modal}
         onClick={(event) => event.stopPropagation()}
@@ -600,7 +617,14 @@ function CreateRoomFormModal({ onClose }: CreateRoomFormModalProps) {
           </main>
         </form>
       </section>
-    </div>
+      </div>
+      <RoomJoinConflictDialog
+        conflict={joinTransition.conflict}
+        isPending={joinTransition.isPending}
+        onConfirm={() => void joinTransition.confirmJoin()}
+        onReturn={joinTransition.returnToCurrentRoom}
+      />
+    </>
   );
 }
 

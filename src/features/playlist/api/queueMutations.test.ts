@@ -13,27 +13,45 @@ describe("queue-entries mutation 계약", () => {
 
   it("단건 삭제는 DELETE 204 body를 파싱하지 않는다", async () => {
     vi.mocked(axiosInstance.delete).mockResolvedValue({ data: { result: false } });
-    await expect(deleteMyQueueEntry({ slug: "room", entryId: "entry/1" })).resolves.toBeUndefined();
+    await expect(
+      deleteMyQueueEntry({
+        accessToken: "access-token",
+        slug: "room",
+        entryId: "entry/1",
+      }),
+    ).resolves.toBeUndefined();
     expect(axiosInstance.delete).toHaveBeenCalledWith(
       "/api/v1/rooms/room/queue-entries/entry%2F1",
-      { headers: undefined },
+      { headers: { "X-Room-Access-Token": "access-token" } },
     );
   });
 
   it("다건 삭제는 DELETE config.data로 entryIds를 보낸다", async () => {
-    await deleteRoomQueueEntries({ slug: "room", entryIds: ["a", "b"] });
+    await deleteRoomQueueEntries({
+      accessToken: "access-token",
+      slug: "room",
+      entryIds: ["a", "b"],
+    });
     expect(axiosInstance.delete).toHaveBeenCalledWith(
       "/api/v1/rooms/room/queue-entries",
-      { data: { entryIds: ["a", "b"] }, headers: undefined },
+      {
+        data: { entryIds: ["a", "b"] },
+        headers: { "X-Room-Access-Token": "access-token" },
+      },
     );
   });
 
   it("이동은 entry 경로 PATCH body에 beforeEntryId만 보낸다", async () => {
-    await moveRoomQueueEntry({ slug: "room", movedEntryId: "a", beforeEntryId: null });
+    await moveRoomQueueEntry({
+      accessToken: "access-token",
+      slug: "room",
+      movedEntryId: "a",
+      beforeEntryId: null,
+    });
     expect(axiosInstance.patch).toHaveBeenCalledWith(
       "/api/v1/rooms/room/queue-entries/a",
       { beforeEntryId: null },
-      { headers: undefined },
+      { headers: { "X-Room-Access-Token": "access-token" } },
     );
   });
 });

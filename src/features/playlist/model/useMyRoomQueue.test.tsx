@@ -67,7 +67,7 @@ describe("useMyRoomQueue", () => {
     const wrapper = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
-    const { result } = renderHook(() => useMyRoomQueue("room", null), {
+    const { result } = renderHook(() => useMyRoomQueue("room", "secret"), {
       wrapper,
     });
 

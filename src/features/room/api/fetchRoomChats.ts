@@ -1,21 +1,21 @@
 import { axiosInstance } from "@/src/shared/api/axiosInstance";
 import { unwrapApiResponse } from "@/src/shared/api/api-response";
-import { buildRoomPasswordHeaders } from "@/src/shared/api/roomPasswordHeaders";
+import { buildRoomAccessTokenHeaders } from "@/src/shared/api/roomAccessTokenHeaders";
 import type { ApiResponse } from "@/src/shared/api/types";
 import { normalizeRoomSlug } from "@/src/shared/lib/normalizeRoomSlug";
 import type { ChatHistoryResponse } from "../model/types";
 
 export type FetchRoomChatsParams = {
+  accessToken: string;
   cursorId?: number | null;
-  password?: string | null;
   signal?: AbortSignal;
   size?: number;
   slug: string;
 };
 
 export async function fetchRoomChats({
+  accessToken,
   cursorId,
-  password,
   signal,
   size = 30,
   slug,
@@ -27,7 +27,7 @@ export async function fetchRoomChats({
         ...(typeof cursorId === "number" ? { cursorId } : {}),
         size,
       },
-      headers: buildRoomPasswordHeaders(password),
+      headers: buildRoomAccessTokenHeaders(accessToken),
       signal,
     },
   );

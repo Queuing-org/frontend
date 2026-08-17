@@ -44,6 +44,7 @@ Next.js routes (`src/app`)
 - TanStack Query owns REST-backed server state.
 - STOMP subscriptions deliver real-time events; handlers must reconcile those events with query cache and screen state deliberately.
 - App-wide follow presence and room membership use separate STOMP clients because their authentication, ownership, and reconnect lifecycles are independent. A terminal room event such as `user.session-replaced` must not stop the follow presence transport.
+- Room membership owns `roomAccessToken` in memory plus room-scoped `sessionStorage`. The token is issued by `ROOM_JOINED`, authenticates room topic subscriptions and room-internal REST requests, survives transport reconnects, and is never part of a URL, log, or TanStack Query key.
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
 - `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
@@ -54,7 +55,7 @@ Next.js routes (`src/app`)
 
 - API payload -> client -> type -> hook -> consuming UI
 - mutation success -> query invalidation or optimistic update
-- room password -> REST and WebSocket headers
+- first-join password / reconnect access token -> join payload, authenticated room subscriptions, REST headers, and terminal cleanup
 - STOMP event -> query cache or local state
 - modal/floating widget state -> route and component ownership
 - Enter submission -> Korean IME composition handling

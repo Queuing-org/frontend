@@ -110,11 +110,12 @@ describe("useRoomQueuePanel query visibility", () => {
         },
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
 
-    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, true);
+    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", "secret", true);
     expect(result.current.activeTab).toBe("all");
     expect(result.current.myPendingCount).toBeNull();
 
@@ -161,6 +162,7 @@ describe("useRoomQueuePanel query visibility", () => {
         currentUser: null,
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
@@ -180,6 +182,7 @@ describe("useRoomQueuePanel query visibility", () => {
         currentUser: null,
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
@@ -203,6 +206,7 @@ describe("useRoomQueuePanel query visibility", () => {
         currentUser: null,
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
@@ -237,6 +241,7 @@ describe("useRoomQueuePanel query visibility", () => {
         currentUser: null,
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
@@ -296,6 +301,7 @@ describe("useRoomQueuePanel query visibility", () => {
         },
         isCurrentUserLoading: false,
         roomMeta: null,
+        roomAccessToken: "secret",
         roomSlug: "room",
       }),
     );
@@ -313,7 +319,7 @@ describe("useRoomQueuePanel query visibility", () => {
       beforeEntryId: "entry-2",
       movedEntryId: "entry-1",
       orderedPendingEntryIds: ["entry-1", "entry-2"],
-      password: undefined,
+      accessToken: "secret",
       slug: "room",
     });
     expect(mocks.notify).not.toHaveBeenCalled();

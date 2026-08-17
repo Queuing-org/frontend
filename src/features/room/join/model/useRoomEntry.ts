@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Room } from "@/src/features/room/model/types";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
-import { writeStoredRoomJoinPassword } from "../lib/roomJoinPasswordStorage";
 import { useRoomJoinTransition } from "./useRoomJoinTransition";
 
 type UseRoomEntryParams = {
@@ -22,9 +21,6 @@ export function useRoomEntry({
   const joinTransition = useRoomJoinTransition({
     handoffOnSuccess: true,
     onJoined: (_result, target) => {
-      if (target.password) {
-        writeStoredRoomJoinPassword(target.slug, target.password);
-      }
       router.push(`/room/${encodeURIComponent(target.slug)}`);
     },
   });

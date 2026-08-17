@@ -23,11 +23,11 @@ export function useMoveRoomQueueEntry() {
   return useMutation<void, ApiError, MoveRoomQueueEntryVariables, {
     previousRoomQueueSnapshots: QueueOrderSnapshot[];
   }>({
-    mutationFn: ({ beforeEntryId, movedEntryId, password, slug }) =>
+    mutationFn: ({ accessToken, beforeEntryId, movedEntryId, slug }) =>
       moveRoomQueueEntry({
+        accessToken,
         beforeEntryId,
         movedEntryId,
-        password,
         slug,
       }),
     onMutate: async ({ orderedPendingEntryIds, slug }) => {

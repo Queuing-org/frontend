@@ -7,9 +7,9 @@ vi.mock("@/src/shared/api/axiosInstance", () => ({
   axiosInstance: { get: vi.fn() },
 }));
 
-vi.mock("@/src/shared/api/roomPasswordHeaders", () => ({
-  buildRoomPasswordHeaders: vi.fn((password?: string | null) =>
-    password ? { "X-Room-Password": password } : undefined,
+vi.mock("@/src/shared/api/roomAccessTokenHeaders", () => ({
+  buildRoomAccessTokenHeaders: vi.fn((accessToken?: string | null) =>
+    accessToken ? { "X-Room-Access-Token": accessToken } : undefined,
   ),
 }));
 
@@ -24,12 +24,12 @@ describe("room playback/participants request cancellation", () => {
       data: { result: { queueRevision: 1 } },
     });
 
-    await fetchRoomPlayback({ slug: "room", password: "secret", signal });
+    await fetchRoomPlayback({ slug: "room", accessToken: "secret", signal });
 
     expect(axiosInstance.get).toHaveBeenCalledWith(
       "/api/v1/rooms/room/playback",
       {
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         signal,
       },
     );
@@ -49,7 +49,7 @@ describe("room playback/participants request cancellation", () => {
 
     await fetchRoomParticipantsPage({
       slug: "room",
-      password: "secret",
+      accessToken: "secret",
       cursor: "next",
       signal,
     });
@@ -59,7 +59,7 @@ describe("room playback/participants request cancellation", () => {
       "/api/v1/rooms/room/participants",
       {
         params: { cursor: "next", size: 100 },
-        headers: { "X-Room-Password": "secret" },
+        headers: { "X-Room-Access-Token": "secret" },
         signal,
       },
     );

@@ -16,6 +16,7 @@ type UseRoomMusicPowerVoteParams = {
   hasCurrentUser: boolean;
   isCurrentUserLoading: boolean;
   isSelf: boolean;
+  roomAccessToken: string;
   roomSlug: string;
   targetSlug: string | null;
 };
@@ -35,6 +36,7 @@ export function useRoomMusicPowerVote({
   hasCurrentUser,
   isCurrentUserLoading,
   isSelf,
+  roomAccessToken,
   roomSlug,
   targetSlug,
 }: UseRoomMusicPowerVoteParams): RoomMusicPowerVoteControl {
@@ -46,6 +48,7 @@ export function useRoomMusicPowerVote({
   const query = useMusicPower(
     shouldLoad ? targetSlug : null,
     shouldLoad ? { entryId: currentEntryId!, roomSlug } : undefined,
+    shouldLoad ? roomAccessToken : undefined,
   );
   const mutation = useCurrentTrackMusicPowerVote();
   const pendingVote = mutation.variables;
@@ -102,6 +105,7 @@ export function useRoomMusicPowerVote({
     requestKeyRef.current = requestKey;
     mutation.mutate(
       {
+        accessToken: roomAccessToken,
         entryId: currentEntryId,
         roomSlug,
         targetUserSlug: targetSlug,

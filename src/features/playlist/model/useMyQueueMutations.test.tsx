@@ -137,6 +137,7 @@ describe("my queue mutations", () => {
 
     await act(async () => {
       await result.current.mutateAsync({
+        accessToken: "secret",
         entryId: "entry-1",
         slug: ROOM_SLUG,
       });
@@ -157,6 +158,7 @@ describe("my queue mutations", () => {
     let movePromise: Promise<void> | null = null;
     act(() => {
       movePromise = result.current.mutateAsync({
+        accessToken: "secret",
         beforeEntryId: "entry-2",
         movedEntryId: "entry-1",
         orderedPendingEntryIds: ["entry-1", "entry-2"],
@@ -203,6 +205,7 @@ describe("my queue mutations", () => {
 
     act(() => {
       movePromise = result.current.mutateAsync({
+        accessToken: "secret",
         beforeEntryId: "entry-2",
         movedEntryId: "entry-1",
         orderedPendingEntryIds: ["entry-1", "entry-2"],
@@ -245,6 +248,7 @@ describe("my queue mutations", () => {
 
     act(() => {
       movePromise = result.current.mutateAsync({
+        accessToken: "secret",
         beforeEntryId: "entry-1",
         movedEntryId: "entry-2",
         orderedPendingEntryIds: ["entry-2", "entry-1"],

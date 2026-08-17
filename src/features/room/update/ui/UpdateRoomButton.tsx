@@ -10,10 +10,15 @@ import styles from "./UpdateRoomButton.module.css";
 
 type Props = {
   currentUser: User | null;
+  roomAccessToken: string;
   roomMeta: RoomMeta | null;
 };
 
-export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
+export default function UpdateRoomButton({
+  currentUser,
+  roomAccessToken,
+  roomMeta,
+}: Props) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const initialTagSlugs = useMemo(
     () => roomMeta?.tags.map((tag) => tag.slug) ?? [],
@@ -37,6 +42,7 @@ export default function UpdateRoomButton({ currentUser, roomMeta }: Props) {
         <RoomFormModal
           open
           mode="edit"
+          roomAccessToken={roomAccessToken}
           roomSlug={roomMeta.slug}
           initialTitle={roomMeta.title}
           initialTagSlugs={initialTagSlugs}

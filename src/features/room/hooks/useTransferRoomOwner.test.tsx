@@ -31,6 +31,7 @@ describe("useTransferRoomOwner", () => {
 
     await act(async () => {
       await result.current.mutateAsync({
+        accessToken: "secret",
         slug: " room/sample ",
         userSlug: "new-owner",
       });

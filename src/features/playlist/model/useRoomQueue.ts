@@ -16,19 +16,19 @@ import { playlistKeys } from "./queryKeys";
 
 export function useRoomQueue(
   slug: string,
-  password?: string | null,
+  accessToken: string,
 ) {
   const queryClient = useQueryClient();
   const queryKey = useMemo(
-    () => playlistKeys.roomQueue(slug, password, false),
-    [password, slug],
+    () => playlistKeys.roomQueue(slug, false),
+    [slug],
   );
   const query = useSuspenseInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam, signal }) =>
       fetchRoomQueuePage({
         slug,
-        password,
+        accessToken,
         cursor: pageParam,
         mine: false,
         signal,

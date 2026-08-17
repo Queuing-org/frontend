@@ -71,7 +71,7 @@ type RoomPlaybackJoinedContentProps = {
   onLoadMoreParticipants: () => Promise<unknown>;
   resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
   roomChat: ReturnType<typeof useRoomChat>;
-  roomPassword: string | null;
+  roomAccessToken: string;
   participants: PlaylistParticipant[];
   roomPlayback?: RoomPlayback;
   setMobileTab: Dispatch<SetStateAction<MobileRoomTab>>;
@@ -92,7 +92,7 @@ export default function RoomPlaybackJoinedContent({
   onLoadMoreParticipants,
   resolveParticipantByUserSlug,
   roomChat,
-  roomPassword,
+  roomAccessToken,
   participants,
   roomPlayback,
   setMobileTab,
@@ -238,6 +238,7 @@ export default function RoomPlaybackJoinedContent({
                 {playback.isCurrentUserRoomOwner ? (
                   <UpdateRoomButton
                     currentUser={currentUser}
+                    roomAccessToken={roomAccessToken}
                     roomMeta={roomMeta}
                   />
                 ) : null}
@@ -270,7 +271,7 @@ export default function RoomPlaybackJoinedContent({
                 className={styles.mobileHeaderAddTrack}
                 label="노래신청"
                 loginLabel="로그인"
-                roomPassword={roomPassword}
+                roomAccessToken={roomAccessToken}
                 slug={slug}
                 variant="queueDock"
               />
@@ -330,7 +331,7 @@ export default function RoomPlaybackJoinedContent({
                         resolveParticipantByUserSlug
                       }
                       roomMeta={roomMeta}
-                      roomPassword={roomPassword}
+                      roomAccessToken={roomAccessToken}
                       roomSlug={slug}
                       scrollToLatestKey={chatScrollToLatestKey}
                       timestampMaxSeconds={timestampMaxSeconds}
@@ -357,7 +358,7 @@ export default function RoomPlaybackJoinedContent({
                   currentUser={currentUser ?? null}
                   isCurrentUserLoading={isCurrentUserLoading}
                   roomMeta={roomMeta}
-                  roomPassword={roomPassword}
+                  roomAccessToken={roomAccessToken}
                   roomSlug={slug}
                 />
               </section>
@@ -375,7 +376,7 @@ export default function RoomPlaybackJoinedContent({
                   onUserBlocked={handleUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
-                  roomPassword={roomPassword}
+                  roomAccessToken={roomAccessToken}
                   roomSlug={slug}
                 />
               </section>
@@ -459,6 +460,7 @@ export default function RoomPlaybackJoinedContent({
                 <div className={styles.roomActions}>
                   <UpdateRoomButton
                     currentUser={currentUser}
+                    roomAccessToken={roomAccessToken}
                     roomMeta={roomMeta}
                   />
                 </div>
@@ -506,7 +508,7 @@ export default function RoomPlaybackJoinedContent({
               participants={participants}
               resolveParticipantByUserSlug={resolveParticipantByUserSlug}
               roomMeta={roomMeta}
-              roomPassword={roomPassword}
+              roomAccessToken={roomAccessToken}
               roomSlug={slug}
               scrollToLatestKey={chatScrollToLatestKey}
               timestampMaxSeconds={timestampMaxSeconds}
@@ -553,7 +555,7 @@ export default function RoomPlaybackJoinedContent({
         participants={participants}
         reportMessageKey={currentRequesterReportMessageKey}
         roomMeta={roomMeta}
-        roomPassword={roomPassword}
+        roomAccessToken={roomAccessToken}
         roomSlug={slug}
         widgets={floatingWidgets.widgets}
         onActivateWidget={floatingWidgets.activateWidget}

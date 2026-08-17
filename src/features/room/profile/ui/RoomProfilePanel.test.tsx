@@ -164,7 +164,7 @@ function renderPanel(
       }
       resolveParticipantByUserSlug={resolveParticipantByUserSlug}
       roomMeta={options?.roomMeta ?? roomMeta}
-      roomPassword="secret"
+      roomAccessToken="secret"
       roomSlug="room"
     />,
   );
@@ -357,7 +357,7 @@ describe("RoomProfilePanel", () => {
         onUserBlocked={onUserBlocked}
         reportMessageKey="message-key"
         roomMeta={roomMeta}
-        roomPassword="secret"
+        roomAccessToken="secret"
         roomSlug="room"
       />,
     );
@@ -379,7 +379,7 @@ describe("RoomProfilePanel", () => {
         onUserBlocked={onUserBlocked}
         reportMessageKey="message-key"
         roomMeta={roomMeta}
-        roomPassword="secret"
+        roomAccessToken="secret"
         roomSlug="room"
       />,
     );
@@ -471,6 +471,7 @@ describe("RoomProfilePanel", () => {
         isCurrentUserLoading={false}
         kickTarget={{ userSlug: "target-user" }}
         onUserBlocked={onUserBlocked}
+        roomAccessToken="secret"
         roomMeta={roomMeta}
         roomSlug="room"
       />,
@@ -665,7 +666,7 @@ describe("RoomProfilePanel", () => {
     );
     expect(kickMutate).toHaveBeenCalledWith(
       {
-        password: "secret",
+        accessToken: "secret",
         slug: "room",
         userSlug: "target-user",
       },
@@ -705,7 +706,7 @@ describe("RoomProfilePanel", () => {
     expect(kickReset).toHaveBeenCalledOnce();
     expect(kickMutate).toHaveBeenCalledWith(
       {
-        password: "secret",
+        accessToken: "secret",
         slug: "room",
         userSlug: "target-user",
       },
@@ -724,7 +725,7 @@ describe("RoomProfilePanel", () => {
 
     expect(transferReset).toHaveBeenCalledOnce();
     expect(transferMutate).toHaveBeenCalledWith(
-      { slug: "room", userSlug: "target-user" },
+      { accessToken: "secret", slug: "room", userSlug: "target-user" },
       expect.objectContaining({ onError: expect.any(Function) }),
     );
     expect(transferMutate.mock.calls.at(-1)?.[1]).toHaveProperty("onSuccess");

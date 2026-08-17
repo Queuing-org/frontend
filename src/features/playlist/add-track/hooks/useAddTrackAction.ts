@@ -76,7 +76,7 @@ function getAddTrackErrorMessage(errorData: WsErrorData) {
   return "곡을 큐에 추가하지 못했습니다.";
 }
 
-export function useAddTrackAction(slug: string, roomPassword?: string | null) {
+export function useAddTrackAction(slug: string, roomAccessToken: string) {
   const queryClient = useQueryClient();
   const { notify } = useActionFeedback();
   const { data: me, isError, isLoading } = useMe();
@@ -120,11 +120,7 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
 
   const refreshInactiveMyQueueState = useCallback(
     (roomSlug: string) => {
-      const queryKey = playlistKeys.roomQueue(
-        roomSlug,
-        roomPassword,
-        true,
-      );
+      const queryKey = playlistKeys.roomQueue(roomSlug, true);
       const myQueueQuery = queryClient
         .getQueryCache()
         .find({ queryKey, exact: true });
@@ -134,8 +130,8 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
       }
 
       void fetchRoomQueuePage({
+        accessToken: roomAccessToken,
         slug: roomSlug,
-        password: roomPassword,
         mine: true,
       })
         .then((page) => {
@@ -148,7 +144,7 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
           // The regular invalidation remains as a fallback for the next tab visit.
         });
     },
-    [queryClient, roomPassword],
+    [queryClient, roomAccessToken],
   );
 
   const refreshQueueState = useCallback(
@@ -233,7 +229,7 @@ export function useAddTrackAction(slug: string, roomPassword?: string | null) {
           setIsModalOpen(false);
           form.reset();
         },
-        roomPassword,
+        roomAccessToken,
       );
 
       userEventSubscriptionRef.current = subscribeUserRoomEvents(({ body }) => {
