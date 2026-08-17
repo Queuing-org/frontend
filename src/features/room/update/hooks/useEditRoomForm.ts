@@ -327,7 +327,8 @@ export function useEditRoomForm({
       notify({
         dedupeKey: `room-update:${roomSlug}`,
         message:
-          didSaveRoomInfo && thumbnailUploadToken
+          (didSaveRoomInfo || didSaveRoomInfoBeforeThumbnailError) &&
+          thumbnailUploadToken
             ? "방 정보는 저장했지만 썸네일을 변경하지 못했습니다."
             : error instanceof Error && error.message
               ? error.message

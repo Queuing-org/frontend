@@ -23,6 +23,14 @@ const member: PlaylistParticipant = {
   userSlug: "member",
 };
 
+const guest: PlaylistParticipant = {
+  nickname: "게스트",
+  participantId: "participant-guest",
+  participantType: "GUEST",
+  profileImageUrl: null,
+  userSlug: null,
+};
+
 vi.mock("@/src/features/room/hooks/useKickRoomParticipant", () => ({
   useKickRoomParticipant: vi.fn(),
 }));
@@ -61,6 +69,12 @@ vi.mock("./RoomParticipantList", () => ({
         onClick={() => onKickParticipant(member)}
       >
         회원 내보내기
+      </button>
+      <button
+        type="button"
+        onClick={() => onKickParticipant(guest)}
+      >
+        게스트 내보내기
       </button>
       <button type="button" onClick={() => onTransferOwner(member)}>
         회원 방장 위임
@@ -247,5 +261,34 @@ describe("RoomParticipantsPanel", () => {
       tone: "error",
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("게스트 내보내기는 participantId target과 같은 feedback key를 사용한다", async () => {
+    const user = userEvent.setup();
+    renderPanel();
+
+    await user.click(screen.getByRole("button", { name: "게스트 내보내기" }));
+
+    expect(kickMutate).toHaveBeenCalledWith(
+      {
+        participantId: "participant-guest",
+        password: "secret",
+        slug: "room",
+      },
+      expect.objectContaining({
+        onError: expect.any(Function),
+        onSuccess: expect.any(Function),
+      }),
+    );
+
+    const options = kickMutate.mock.calls.at(-1)?.[1] as {
+      onSuccess: () => void;
+    };
+    act(() => options.onSuccess());
+    expect(notify).toHaveBeenCalledWith({
+      dedupeKey: "room-member:kick:room:participant-guest",
+      message: "'게스트'님을 방에서 내보냈습니다.",
+      tone: "default",
+    });
   });
 });

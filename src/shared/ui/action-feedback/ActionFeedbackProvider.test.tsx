@@ -151,6 +151,64 @@ describe("ActionFeedbackProvider", () => {
     expect(screen.getAllByRole("status")[0]).toHaveTextContent("알림 6");
   });
 
+  it("기존 key를 갱신하면 스택 앞으로 옮겨 다음 알림에도 보존한다", () => {
+    function StackUpdateHarness() {
+      const { notify } = useActionFeedback();
+      return (
+        <>
+          <button
+            onClick={() => {
+              for (let index = 1; index <= 5; index += 1) {
+                notify({
+                  dedupeKey: `item-${index}`,
+                  message: `알림 ${index}`,
+                  tone: "default",
+                });
+              }
+            }}
+          >
+            fill
+          </button>
+          <button
+            onClick={() =>
+              notify({
+                dedupeKey: "item-1",
+                message: "갱신한 알림 1",
+                tone: "default",
+              })
+            }
+          >
+            update oldest
+          </button>
+          <button
+            onClick={() =>
+              notify({
+                dedupeKey: "item-6",
+                message: "알림 6",
+                tone: "default",
+              })
+            }
+          >
+            add next
+          </button>
+        </>
+      );
+    }
+
+    renderProvider(<StackUpdateHarness />);
+    fireEvent.click(screen.getByRole("button", { name: "fill" }));
+    fireEvent.click(screen.getByRole("button", { name: "update oldest" }));
+    expect(screen.getAllByRole("status")[0]).toHaveTextContent(
+      "갱신한 알림 1",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "add next" }));
+
+    expect(screen.getAllByRole("status")).toHaveLength(5);
+    expect(screen.getByText("갱신한 알림 1")).toBeInTheDocument();
+    expect(screen.queryByText("알림 2")).not.toBeInTheDocument();
+  });
+
   it("route child가 교체되어도 알림을 유지한다", () => {
     renderProvider();
     fireEvent.click(screen.getByRole("button", { name: "default" }));
