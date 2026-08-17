@@ -1,0 +1,565 @@
+"use client";
+
+import Image from "next/image";
+import {
+  useCallback,
+  useRef,
+  useState,
+  type Dispatch,
+  type CSSProperties,
+  type SetStateAction,
+} from "react";
+import { useRoomMeta } from "@/src/features/room/hooks/useRoomMeta";
+import YouTubePlayer from "@/src/features/playlist/player/ui/YouTubePlayer";
+import type { LocalSeekRequest } from "@/src/features/playlist/player/hooks/useYouTubeIframePlayer";
+import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
+import UpdateRoomButton from "@/src/features/room/update/ui/UpdateRoomButton";
+import CurrentRequesterCard from "@/src/features/room/current-requester/ui/CurrentRequesterCard";
+import styles from "./RoomPlaybackScreen.module.css";
+import RoomInfo from "@/src/features/room/info/ui/RoomInfo";
+import RoomButtonControlBar from "@/src/features/room/control-bar/ui/RoomControlBar";
+import { useFloatingWidgetsState } from "@/src/features/room/floating/model/useFloatingWidgetsState";
+import RoomFloatingWidgets from "@/src/features/room/floating/ui/RoomFloatingWidgets";
+import ChatArea from "@/src/features/room/chat/ui/ChatArea";
+import { getDisplayRoomTags } from "@/src/features/room/model/getDisplayRoomTags";
+import RoomChatComposer from "@/src/features/room/chat/ui/RoomChatComposer";
+import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
+import { getLatestReportableChatMessageKey } from "@/src/features/room/chat/model/chatMessages";
+import type {
+  PlaylistParticipant,
+  RoomPlayback,
+} from "@/src/features/playlist/model/types";
+import type { User } from "@/src/features/user/model/types";
+import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
+import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
+import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
+import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
+import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
+import {
+  useRoomPlaybackViewModel,
+  type LivePlaybackState,
+} from "../hooks/useRoomPlaybackViewModel";
+import { useRoomOwnerSuccessionFeedback } from "../hooks/useRoomOwnerSuccessionFeedback";
+import { getRoomChatLayout } from "../model/roomChatLayout";
+import RoomLeaveConfirmDialog from "./RoomLeaveConfirmDialog";
+
+export type MobileRoomTab = "playback" | "queue" | "participants";
+
+const MOBILE_ROOM_TABS: {
+  id: MobileRoomTab;
+  iconSrc: string;
+  label: string;
+}[] = [
+  { id: "playback", iconSrc: "/icons/round_arrow.svg", label: "재생" },
+  { id: "queue", iconSrc: "/icons/queue.svg", label: "큐" },
+  { id: "participants", iconSrc: "/icons/hambuger.svg", label: "참가자" },
+];
+
+const EMPTY_BLOCKED_SENDER_SLUGS: ReadonlySet<string> = new Set();
+
+type RoomPlaybackJoinedContentProps = {
+  currentUser: User | null;
+  floatingWidgets: ReturnType<typeof useFloatingWidgetsState>;
+  hasNextParticipantsPage: boolean;
+  isCurrentUserLoading: boolean;
+  isFetchingNextParticipantsPage: boolean;
+  isMobileLayout: boolean;
+  isParticipantsLoadMoreError: boolean;
+  livePlaybackStatus: LivePlaybackState | null;
+  mobileTab: MobileRoomTab;
+  onLeaveRoom: () => boolean;
+  onLoadMoreParticipants: () => Promise<unknown>;
+  resolveParticipantByUserSlug: ResolveRoomParticipantByUserSlug;
+  roomChat: ReturnType<typeof useRoomChat>;
+  roomPassword: string | null;
+  participants: PlaylistParticipant[];
+  roomPlayback?: RoomPlayback;
+  setMobileTab: Dispatch<SetStateAction<MobileRoomTab>>;
+  slug: string;
+};
+
+export default function RoomPlaybackJoinedContent({
+  currentUser,
+  floatingWidgets,
+  hasNextParticipantsPage,
+  isCurrentUserLoading,
+  isFetchingNextParticipantsPage,
+  isMobileLayout,
+  isParticipantsLoadMoreError,
+  livePlaybackStatus,
+  mobileTab,
+  onLeaveRoom,
+  onLoadMoreParticipants,
+  resolveParticipantByUserSlug,
+  roomChat,
+  roomPassword,
+  participants,
+  roomPlayback,
+  setMobileTab,
+  slug,
+}: RoomPlaybackJoinedContentProps) {
+  const { data: roomMeta } = useRoomMeta(slug);
+  const playback = useRoomPlaybackViewModel({
+    currentUser,
+    livePlaybackStatus,
+    participants,
+    roomPlayback,
+    roomMeta,
+    slug,
+  });
+  const playbackKey = playback.currentVideoId
+    ? `${roomPlayback?.currentEntry?.entryId ?? "video"}:${playback.currentVideoId}`
+    : null;
+  const [localSeekRequest, setLocalSeekRequest] =
+    useState<LocalSeekRequest | null>(null);
+  const localSeekRequestIdRef = useRef(0);
+  const timestampMaxSeconds =
+    typeof playback.currentTrackDurationMs === "number" &&
+    playback.currentTrackDurationMs > 0
+      ? playback.currentTrackDurationMs / 1000
+      : null;
+  const handleTimestampSeek = useCallback(
+    (seconds: number) => {
+      if (!playbackKey || !playback.currentVideoId) {
+        return;
+      }
+
+      localSeekRequestIdRef.current += 1;
+      setLocalSeekRequest({
+        id: localSeekRequestIdRef.current,
+        playbackKey,
+        seconds,
+      });
+    },
+    [playback.currentVideoId, playbackKey],
+  );
+  const currentUserSlug = currentUser?.slug?.trim() || null;
+  const roomOwnerSlug = roomMeta.owner?.slug?.trim() || null;
+  useRoomOwnerSuccessionFeedback({
+    currentUserSlug,
+    isCurrentUserLoading,
+    ownerSlug: roomOwnerSlug,
+    roomSlug: slug,
+    roomTitle: roomMeta.title,
+  });
+  const chatDisabledReason = isCurrentUserLoading
+    ? "로그인 상태 확인 중입니다."
+    : currentUser
+      ? undefined
+      : "로그인 후 채팅할 수 있습니다.";
+  const showChatLoginAction = !isCurrentUserLoading && !currentUser;
+  const {
+    hasOlderMessages: hasOlderChatMessages,
+    historyErrorMessage: chatHistoryErrorMessage,
+    isLoadingOlderMessages,
+    isSending: isChatSending,
+    loadOlderMessages: handleLoadOlderChatMessages,
+    messages: chatMessages,
+    scrollToLatestKey: chatScrollToLatestKey,
+    sendMessage: handleSendChatMessage,
+  } = roomChat;
+  const currentRequesterReportMessageKey =
+    getLatestReportableChatMessageKey(
+      chatMessages,
+      playback.currentRequester?.slug,
+    );
+  const [blockedChatSenders, setBlockedChatSenders] = useState<{
+    roomSlug: string;
+    slugs: ReadonlySet<string>;
+  }>(() => ({ roomSlug: slug, slugs: new Set() }));
+  const blockedSenderSlugs =
+    blockedChatSenders.roomSlug === slug
+      ? blockedChatSenders.slugs
+      : EMPTY_BLOCKED_SENDER_SLUGS;
+  const handleUserBlocked = useCallback(
+    (userSlug: string) => {
+      const normalizedUserSlug = userSlug.trim();
+      if (!normalizedUserSlug) {
+        return;
+      }
+
+      setBlockedChatSenders((current) => {
+        const nextSlugs = new Set(
+          current.roomSlug === slug ? current.slugs : [],
+        );
+        nextSlugs.add(normalizedUserSlug);
+        return { roomSlug: slug, slugs: nextSlugs };
+      });
+    },
+    [slug],
+  );
+  const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
+  const mobileInlineChatRef = useRef<HTMLDivElement>(null);
+  const leaveButtonRef = useRef<HTMLButtonElement>(null);
+  const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
+  const closeLeaveDialog = useCallback(() => {
+    setIsLeaveDialogOpen(false);
+    requestAnimationFrame(() => leaveButtonRef.current?.focus());
+  }, []);
+  const leaveDialog = (
+    <RoomLeaveConfirmDialog
+      onCancel={closeLeaveDialog}
+      onLeaveRoom={onLeaveRoom}
+      onSuccess={() => setIsLeaveDialogOpen(false)}
+      open={isLeaveDialogOpen}
+      roomSlug={slug}
+      roomTitle={roomMeta.title}
+    />
+  );
+  const desktopChatLayout = getRoomChatLayout(
+    floatingWidgets.viewportSize,
+    Boolean(playback.currentRequester),
+  );
+  const desktopRoomStyle = floatingWidgets.isViewportReady
+    ? ({
+        "--room-chat-six-row-min-height": `${desktopChatLayout.chatMinHeight}px`,
+        "--room-song-stack-width": `${desktopChatLayout.songStackWidth}px`,
+      } as CSSProperties)
+    : undefined;
+
+  if (isMobileLayout) {
+    const mobileRoomTitle = roomMeta.title;
+    const mobileActiveUsersCount = roomMeta.activeUsersCount;
+    const mobileMaxParticipants = roomMeta.maxParticipants ?? "-";
+    const mobileTags = getDisplayRoomTags(roomMeta.tags);
+
+    return (
+      <div
+        className={`${styles.page} ${styles.mobilePage}`}
+        data-queuing-default-image={
+          playback.isQueuingDefaultRoomImage || undefined
+        }
+      >
+        <div className={styles.mobileRoomShell}>
+          <header className={styles.mobileRoomHeader}>
+            <div className={styles.mobileTitleRow}>
+              <h1 className={styles.mobileRoomTitle}>{mobileRoomTitle}</h1>
+              <div className={styles.mobileRoomActions}>
+                {playback.isCurrentUserRoomOwner ? (
+                  <UpdateRoomButton
+                    currentUser={currentUser}
+                    roomMeta={roomMeta}
+                  />
+                ) : null}
+                <button
+                  ref={leaveButtonRef}
+                  type="button"
+                  className={styles.mobileExitLink}
+                  aria-label="방 나가기"
+                  onClick={() => setIsLeaveDialogOpen(true)}
+                >
+                  나가기
+                </button>
+              </div>
+            </div>
+            <div className={styles.mobileMetaRow}>
+              <div className={styles.mobileMetaChips}>
+                <span className={styles.mobileUsersChip}>
+                  {mobileActiveUsersCount}/{mobileMaxParticipants}명
+                </span>
+                {roomMeta.hasPassword ? (
+                  <span className={styles.mobileLockChip}>비공개</span>
+                ) : null}
+                {mobileTags.map((tag) => (
+                  <span key={tag.slug} className={styles.mobileTagChip}>
+                    {tag.name}
+                  </span>
+                ))}
+              </div>
+              <AddTrackAction
+                className={styles.mobileHeaderAddTrack}
+                label="노래신청"
+                loginLabel="로그인"
+                roomPassword={roomPassword}
+                slug={slug}
+                variant="queueDock"
+              />
+            </div>
+          </header>
+          <main className={styles.mobileRoomContent}>
+            {mobileTab === "playback" ? (
+              <section
+                className={styles.mobilePlaybackPanel}
+                aria-label="재생 화면"
+              >
+                <YouTubePlayer
+                  key={slug}
+                  videoId={playback.currentVideoId}
+                  playbackStatus={playback.playbackStatus?.status ?? null}
+                  currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+                  localSeekRequest={localSeekRequest}
+                  playbackKey={playbackKey}
+                />
+                {playback.currentRequester ? (
+                  <CurrentRequesterCard
+                    durationMs={playback.currentTrackDurationMs}
+                    isOwner={playback.isCurrentRequesterRoomOwner}
+                    requester={playback.currentRequester}
+                    skipAction={
+                      playback.isCurrentUserRoomOwner ? (
+                        <SkipTrackButton isVisible slug={slug} />
+                      ) : undefined
+                    }
+                    story={playback.currentTrackStory}
+                    trackTitle={playback.currentTrackTitle}
+                  />
+                ) : null}
+                <div
+                  ref={mobileInlineChatRef}
+                  className={styles.mobileInlineChat}
+                  aria-label="채팅"
+                >
+                  <div className={styles.mobileChatList}>
+                    <ChatArea
+                      blockedSenderSlugs={blockedSenderSlugs}
+                      currentUser={currentUser}
+                      errorMessage={chatHistoryErrorMessage}
+                      hasOlderMessages={hasOlderChatMessages}
+                      isLoadingOlderMessages={isLoadingOlderMessages}
+                      messages={chatMessages}
+                      onLoadOlderMessages={handleLoadOlderChatMessages}
+                      onTimestampSeek={
+                        playback.currentVideoId
+                          ? handleTimestampSeek
+                          : undefined
+                      }
+                      hasUnloadedParticipants={hasNextParticipantsPage}
+                      onUserBlocked={handleUserBlocked}
+                      participants={participants}
+                      resolveParticipantByUserSlug={
+                        resolveParticipantByUserSlug
+                      }
+                      roomMeta={roomMeta}
+                      roomPassword={roomPassword}
+                      roomSlug={slug}
+                      scrollToLatestKey={chatScrollToLatestKey}
+                      timestampMaxSeconds={timestampMaxSeconds}
+                      wheelRegionRef={mobileInlineChatRef}
+                    />
+                  </div>
+                  <div className={styles.mobileChatComposer}>
+                    <RoomChatComposer
+                      disabledReason={chatDisabledReason}
+                      isSending={isChatSending}
+                      onLoginClick={redirectToGoogleLogin}
+                      onSendMessage={handleSendChatMessage}
+                      showLoginAction={showChatLoginAction}
+                    />
+                  </div>
+                </div>
+              </section>
+            ) : null}
+
+            {mobileTab === "queue" ? (
+              <section className={styles.mobilePanel} aria-label="큐">
+                <RoomQueuePanel
+                  currentEntry={roomPlayback?.currentEntry ?? null}
+                  currentUser={currentUser ?? null}
+                  isCurrentUserLoading={isCurrentUserLoading}
+                  roomMeta={roomMeta}
+                  roomPassword={roomPassword}
+                  roomSlug={slug}
+                />
+              </section>
+            ) : null}
+
+            {mobileTab === "participants" ? (
+              <section className={styles.mobilePanel} aria-label="참가자">
+                <RoomParticipantsPanel
+                  chatMessages={chatMessages}
+                  currentUser={currentUser ?? null}
+                  hasNextPage={hasNextParticipantsPage}
+                  isFetchingNextPage={isFetchingNextParticipantsPage}
+                  isLoadMoreError={isParticipantsLoadMoreError}
+                  onLoadMore={onLoadMoreParticipants}
+                  onUserBlocked={handleUserBlocked}
+                  participants={participants}
+                  roomMeta={roomMeta}
+                  roomPassword={roomPassword}
+                  roomSlug={slug}
+                />
+              </section>
+            ) : null}
+          </main>
+          <nav className={styles.mobileTabBar} aria-label="방 기능 탭">
+            {MOBILE_ROOM_TABS.map((tab) => {
+              const isActive = mobileTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  className={styles.mobileTabButton}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => setMobileTab(tab.id)}
+                  data-active={isActive}
+                >
+                  <Image
+                    src={tab.iconSrc}
+                    alt=""
+                    width={20}
+                    height={20}
+                    className={styles.mobileTabIcon}
+                  />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+        {leaveDialog}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={styles.page}
+      data-has-requester={Boolean(playback.currentRequester)}
+      data-queuing-default-image={
+        playback.isQueuingDefaultRoomImage || undefined
+      }
+      style={desktopRoomStyle}
+    >
+      <div className={styles.backgroundImageFrame} aria-hidden="true">
+        <Image
+          key={playback.backgroundImageSrc}
+          src={playback.backgroundImageSrc}
+          alt=""
+          fill
+          sizes="100vw"
+          priority
+          className={styles.backgroundImage}
+        />
+      </div>
+      <button
+        ref={leaveButtonRef}
+        type="button"
+        className={styles.desktopExitButton}
+        aria-label="방 나가기"
+        onClick={() => setIsLeaveDialogOpen(true)}
+      >
+        <Image
+          src="/icons/door.svg"
+          alt=""
+          aria-hidden="true"
+          width={13}
+          height={14}
+          className={styles.desktopExitIcon}
+        />
+        <span>나가기</span>
+      </button>
+      <div ref={desktopWheelRegionRef} className={styles.container}>
+        <div className={styles.mainArea}>
+          <RoomInfo
+            roomInfo={roomMeta}
+            isRoom
+            trailingContent={
+              playback.isCurrentUserRoomOwner ? (
+                <div className={styles.roomActions}>
+                  <UpdateRoomButton
+                    currentUser={currentUser}
+                    roomMeta={roomMeta}
+                  />
+                </div>
+              ) : null
+            }
+          />
+          <div className={styles.songInfoStack}>
+            <YouTubePlayer
+              key={slug}
+              videoId={playback.currentVideoId}
+              playbackStatus={playback.playbackStatus?.status ?? null}
+              currentTimeMs={playback.playbackStatus?.currentTime ?? null}
+              localSeekRequest={localSeekRequest}
+              playbackKey={playbackKey}
+            />
+            {playback.currentRequester ? (
+              <CurrentRequesterCard
+                durationMs={playback.currentTrackDurationMs}
+                isOwner={playback.isCurrentRequesterRoomOwner}
+                requester={playback.currentRequester}
+                skipAction={
+                  playback.isCurrentUserRoomOwner ? (
+                    <SkipTrackButton isVisible slug={slug} />
+                  ) : undefined
+                }
+                story={playback.currentTrackStory}
+                trackTitle={playback.currentTrackTitle}
+              />
+            ) : null}
+          </div>
+          <div className={styles.chatSection}>
+            <ChatArea
+              blockedSenderSlugs={blockedSenderSlugs}
+              currentUser={currentUser}
+              errorMessage={chatHistoryErrorMessage}
+              hasOlderMessages={hasOlderChatMessages}
+              isLoadingOlderMessages={isLoadingOlderMessages}
+              messages={chatMessages}
+              onLoadOlderMessages={handleLoadOlderChatMessages}
+              onTimestampSeek={
+                playback.currentVideoId ? handleTimestampSeek : undefined
+              }
+              hasUnloadedParticipants={hasNextParticipantsPage}
+              onUserBlocked={handleUserBlocked}
+              participants={participants}
+              resolveParticipantByUserSlug={resolveParticipantByUserSlug}
+              roomMeta={roomMeta}
+              roomPassword={roomPassword}
+              roomSlug={slug}
+              scrollToLatestKey={chatScrollToLatestKey}
+              timestampMaxSeconds={timestampMaxSeconds}
+              wheelRegionRef={desktopWheelRegionRef}
+            />
+          </div>
+          <div className={styles.controlBarDock}>
+            <RoomButtonControlBar
+              isChatOpen={floatingWidgets.widgets.chat.isOpen}
+              isParticipantsOpen={floatingWidgets.widgets.participants.isOpen}
+              isProfileOpen={floatingWidgets.widgets.profile.isOpen}
+              isQueueOpen={floatingWidgets.widgets.queue.isOpen}
+              onCloseAll={floatingWidgets.closeAllWidgets}
+              onToggleChat={() => floatingWidgets.toggleWidget("chat")}
+              onToggleParticipants={() =>
+                floatingWidgets.toggleWidget("participants")
+              }
+              onToggleProfile={() => floatingWidgets.toggleWidget("profile")}
+              onToggleQueue={() => floatingWidgets.toggleWidget("queue")}
+              onResetWidgetPositions={floatingWidgets.resetWidgetPositions}
+            />
+          </div>
+        </div>
+      </div>
+      <RoomFloatingWidgets
+        chatMessages={chatMessages}
+        chatDisabledReason={chatDisabledReason}
+        currentRequester={playback.currentRequester}
+        currentEntry={roomPlayback?.currentEntry ?? null}
+        currentTrackTitle={playback.currentTrackTitle}
+        currentUser={currentUser}
+        isChatSending={isChatSending}
+        isCurrentUserLoading={isCurrentUserLoading}
+        hasNextParticipantsPage={hasNextParticipantsPage}
+        isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
+        isParticipantsLoadMoreError={isParticipantsLoadMoreError}
+        onLoadMoreParticipants={onLoadMoreParticipants}
+        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
+        onChatLoginClick={
+          showChatLoginAction ? redirectToGoogleLogin : undefined
+        }
+        onUserBlocked={handleUserBlocked}
+        onSendChatMessage={handleSendChatMessage}
+        participants={participants}
+        reportMessageKey={currentRequesterReportMessageKey}
+        roomMeta={roomMeta}
+        roomPassword={roomPassword}
+        roomSlug={slug}
+        widgets={floatingWidgets.widgets}
+        onActivateWidget={floatingWidgets.activateWidget}
+        onWidgetStop={floatingWidgets.handleWidgetStop}
+      />
+      {leaveDialog}
+    </div>
+  );
+}
