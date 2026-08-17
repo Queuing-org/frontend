@@ -1,6 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchRoomMeta } from "@/src/features/room/api/fetchRoomMeta";
@@ -11,6 +10,10 @@ import { useRoomParticipants } from "@/src/features/playlist/model/useRoomPartic
 import { ApiError } from "@/src/shared/api/api-error";
 import { RoomJoinError } from "@/src/features/room/api/joinRoom.types";
 import { storeRoomJoinHandoff } from "@/src/features/room/join/model/roomJoinHandoff";
+import {
+  createTestQueryClient,
+  createTestQueryClientWrapper,
+} from "@/src/shared/test/queryClient";
 import RoomPlaybackScreen from "./RoomPlaybackScreen";
 
 const mocks = vi.hoisted(() => {
@@ -87,6 +90,20 @@ vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
   useActionFeedback: () => ({ notify: mocks.notify }),
 }));
 
+function renderRoomPlaybackScreen({ strict = false } = {}) {
+  const queryClient = createTestQueryClient();
+  const wrapper = createTestQueryClientWrapper(queryClient);
+  const screen = strict ? (
+    <StrictMode>
+      <RoomPlaybackScreen />
+    </StrictMode>
+  ) : (
+    <RoomPlaybackScreen />
+  );
+
+  return { queryClient, ...render(screen, { wrapper }) };
+}
+
 describe("RoomPlaybackScreen join reads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -111,15 +128,7 @@ describe("RoomPlaybackScreen join reads", () => {
       timestamp: 1,
       data: null,
     });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { unmount } = render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    const { queryClient, unmount } = renderRoomPlaybackScreen();
 
     await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(1));
     await waitFor(() =>
@@ -167,17 +176,7 @@ describe("RoomPlaybackScreen join reads", () => {
       timestamp: 1,
       data: null,
     });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-
-    const { unmount } = render(
-      <StrictMode>
-        <QueryClientProvider client={queryClient}>
-          <RoomPlaybackScreen />
-        </QueryClientProvider>
-      </StrictMode>,
-    );
+    const { unmount } = renderRoomPlaybackScreen({ strict: true });
 
     await waitFor(() => expect(fetchRoomMeta).toHaveBeenCalledTimes(1));
     const sharedQuerySignal = vi.mocked(fetchRoomMeta).mock.calls[0]?.[1];
@@ -209,14 +208,7 @@ describe("RoomPlaybackScreen join reads", () => {
         status: 401,
       }),
     );
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    renderRoomPlaybackScreen();
 
     const passwordInput = await screen.findByPlaceholderText("비밀번호 입력");
     await user.type(passwordInput, "wrong");
@@ -255,14 +247,7 @@ describe("RoomPlaybackScreen join reads", () => {
         }),
       )
       .mockResolvedValueOnce({ roomSlug: "room", timestamp: 1, data: null });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    renderRoomPlaybackScreen();
 
     const dialog = await screen.findByRole("dialog", {
       name: "이미 참여중인 방이 있습니다",
@@ -295,14 +280,7 @@ describe("RoomPlaybackScreen join reads", () => {
       result: { roomSlug: "room", timestamp: 1, data: null },
       target: { password: "secret", slug: "room" },
     });
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    render(
-      <QueryClientProvider client={queryClient}>
-        <RoomPlaybackScreen />
-      </QueryClientProvider>,
-    );
+    renderRoomPlaybackScreen();
 
     await waitFor(() => expect(releaseHandoff).toHaveBeenCalledOnce());
     expect(joinRoom).not.toHaveBeenCalled();

@@ -1,6 +1,4 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { publishLeaveRequest } from "@/src/features/room/api/websocket/publishLeaveRequest";
@@ -17,6 +15,10 @@ import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { ApiError } from "@/src/shared/api/api-error";
 import { userKeys } from "@/src/features/user/model/queryKeys";
+import {
+  createTestQueryClient,
+  createTestQueryClientWrapper,
+} from "@/src/shared/test/queryClient";
 
 const navigation = vi.hoisted(() => ({ replace: vi.fn() }));
 const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
@@ -47,6 +49,15 @@ vi.mock("@/src/shared/api/websocket/stompConnection", () => ({
   stopSocketAutoReconnect: vi.fn(),
 }));
 
+function createRealtimeTestContext() {
+  const queryClient = createTestQueryClient();
+
+  return {
+    queryClient,
+    wrapper: createTestQueryClientWrapper(queryClient),
+  };
+}
+
 describe("useRoomRealtimeEvents", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -58,7 +69,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("ROOM_INFO_UPDATED는 trackLimitMinutes를 검증하고 REST 메타의 썸네일로 동기화한다", async () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const authoritativeMeta = {
       title: "새 제목", slug: "room", thumbnailUrl: "https://img/new.jpg",
       hasPassword: false, maxParticipants: null, trackLimitMinutes: 30, tags: [], owner: null,
@@ -69,9 +80,6 @@ describe("useRoomRealtimeEvents", () => {
       handler = next;
       return { id: "room", unsubscribe: vi.fn() };
     });
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions: vi.fn(), initializeChatStateFromJoinData: vi.fn(),
       resetChatState: vi.fn(), setJoinErrorMessage: vi.fn(),
@@ -87,7 +95,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("ROOM_DELETED는 진행 중인 메타 재조회를 폐기하고 방 상태·비밀번호를 정리한다", async () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
@@ -106,9 +114,6 @@ describe("useRoomRealtimeEvents", () => {
     const cleanupChatSubscriptions = vi.fn();
     const resetChatState = vi.fn();
     const setLivePlaybackStatus = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions, initializeChatStateFromJoinData: vi.fn(), resetChatState,
       setJoinErrorMessage: vi.fn(), setLivePlaybackStatus, setStatus: vi.fn(), slug: "room",
@@ -144,16 +149,13 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("명시적 나가기는 publish 실패 시 구독을 유지하고 재시도할 수 있다", () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const unsubscribe = vi.fn();
     vi.mocked(subscribeRoomEvents).mockReturnValue({
       id: "room",
       unsubscribe,
     });
     vi.mocked(publishLeaveRequest).mockReturnValue(false);
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -194,9 +196,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("같은 방 session-replaced를 받으면 방 연결만 정리하고 재접속을 중단한다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
@@ -216,9 +216,6 @@ describe("useRoomRealtimeEvents", () => {
     const setStatus = vi.fn();
     const resetChatState = vi.fn();
     const cleanupChatSubscriptions = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -281,9 +278,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("STOMP ERROR frame의 session-replaced도 동일한 terminal room cleanup을 수행한다", () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
@@ -303,9 +298,6 @@ describe("useRoomRealtimeEvents", () => {
     const resetChatState = vi.fn();
     const setJoinErrorMessage = vi.fn();
     const setStatus = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -349,9 +341,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("곡 시작 cache update는 즉시 적용하고 관련 invalidation만 합친다", async () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const setQueriesData = vi.spyOn(queryClient, "setQueriesData");
     let roomEventHandler:
@@ -364,9 +354,6 @@ describe("useRoomRealtimeEvents", () => {
     });
     vi.mocked(addSocketListener).mockReturnValue(vi.fn());
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -448,7 +435,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("음악력 변경 이벤트는 재생 건별 cache 점수만 갱신하고 myVote를 보존한다", () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const firstKey = userKeys.musicPower("target", "room", "entry-1");
     const secondKey = userKeys.musicPower("target", "room", "entry-2");
     queryClient.setQueryData(firstKey, {
@@ -468,9 +455,6 @@ describe("useRoomRealtimeEvents", () => {
       roomEventHandler = handler;
       return { id: "room-events", unsubscribe: vi.fn() };
     });
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -513,9 +497,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("같은 room event 10회 burst를 query target별 1회로 제한한다", async () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const cancelQueries = vi.spyOn(queryClient, "cancelQueries");
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     let roomEventHandler:
@@ -526,9 +508,6 @@ describe("useRoomRealtimeEvents", () => {
       return { id: "room-events", unsubscribe: vi.fn() };
     });
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -602,9 +581,7 @@ describe("useRoomRealtimeEvents", () => {
 
   it("slug 전환과 unmount에서 예약한 invalidation을 폐기한다", () => {
     vi.useFakeTimers();
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
     const roomEventHandlers = new Map<
       string,
@@ -621,9 +598,6 @@ describe("useRoomRealtimeEvents", () => {
     const setLivePlaybackStatus = vi.fn();
     const setStatus = vi.fn();
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, rerender, unmount } = renderHook(
       ({ roomSlug }: { roomSlug: string }) =>
         useRoomRealtimeEvents({
@@ -670,9 +644,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("연결 종료 후 join부터 복구하고 중복 없이 다시 구독한다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     const fetchReconnectedMeta = vi.fn().mockResolvedValue({
       activeUsersCount: 2,
       hasPassword: false,
@@ -707,9 +679,6 @@ describe("useRoomRealtimeEvents", () => {
       .mockReturnValueOnce(subscriptions[1])
       .mockReturnValueOnce(subscriptions[2]);
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const cleanupChatSubscriptions = vi.fn();
     const initializeChatStateFromJoinData = vi.fn();
     const resetChatState = vi.fn();
@@ -810,9 +779,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("재입장 진행 중 방을 나가면 요청을 취소하고 leave를 한 번만 보낸다", async () => {
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
+    const { queryClient, wrapper } = createRealtimeTestContext();
     let socketListener:
       | Parameters<typeof addSocketListener>[0]
       | undefined;
@@ -826,9 +793,6 @@ describe("useRoomRealtimeEvents", () => {
     });
     vi.mocked(joinRoom).mockReturnValue(new Promise<never>(() => {}));
 
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result, unmount } = renderHook(
       () =>
         useRoomRealtimeEvents({
@@ -865,7 +829,7 @@ describe("useRoomRealtimeEvents", () => {
   });
 
   it("재접속 join이 room.not-found면 삭제 종료 흐름으로 홈 이동한다", async () => {
-    const queryClient = new QueryClient();
+    const { queryClient, wrapper } = createRealtimeTestContext();
     let socketListener: Parameters<typeof addSocketListener>[0] | undefined;
     vi.mocked(addSocketListener).mockImplementation((listener) => {
       socketListener = listener;
@@ -876,9 +840,6 @@ describe("useRoomRealtimeEvents", () => {
       status: 404, code: "room.not-found", message: "없는 방",
     }));
     const cleanupChatSubscriptions = vi.fn();
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
     const { result } = renderHook(() => useRoomRealtimeEvents({
       cleanupChatSubscriptions, initializeChatStateFromJoinData: vi.fn(),
       resetChatState: vi.fn(), setJoinErrorMessage: vi.fn(),
