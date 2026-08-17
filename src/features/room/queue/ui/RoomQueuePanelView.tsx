@@ -34,7 +34,7 @@ type RoomQueuePanelViewProps = {
   isFetchingNextAllQueuePage: boolean;
   isFetchingNextMyQueuePage: boolean;
   myEntries: PlaylistEntry[];
-  myPendingCount: number;
+  myPendingCount: number | null;
   queueErrorMessage: string;
   roomPassword?: string | null;
   roomSlug: string;

@@ -6,7 +6,7 @@ import styles from "./RoomQueueTabs.module.css";
 type Props = {
   activeTab: QueueTab;
   allCount: number;
-  myCount: number;
+  myCount: number | null;
   onChange: (nextTab: QueueTab) => void;
 };
 
@@ -38,7 +38,9 @@ export default function RoomQueueTabs({
         onClick={() => onChange("mine")}
       >
         내 노래
-        <span className={styles.tabCount}>{myCount}</span>
+        <span className={styles.tabCount} aria-live="polite">
+          {myCount ?? "…"}
+        </span>
       </button>
     </div>
   );

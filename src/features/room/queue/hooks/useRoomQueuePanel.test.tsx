@@ -92,6 +92,33 @@ describe("useRoomQueuePanel query visibility", () => {
 
   it("전체 탭에서도 로그인 사용자의 내 큐를 조회해 새로고침 count를 복원한다", () => {
     vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: undefined,
+      error: null,
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: true,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    const { result, rerender } = renderHook(() =>
+      useRoomQueuePanel({
+        currentUser: {
+          nickname: "사용자",
+          profileImageUrl: null,
+          slug: "user",
+          userId: 1,
+        },
+        isCurrentUserLoading: false,
+        roomMeta: null,
+        roomSlug: "room",
+      }),
+    );
+
+    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, true);
+    expect(result.current.activeTab).toBe("all");
+    expect(result.current.myPendingCount).toBeNull();
+
+    vi.mocked(useMyRoomQueue).mockReturnValue({
       data: {
         pages: [
           {
@@ -110,23 +137,22 @@ describe("useRoomQueuePanel query visibility", () => {
       isLoading: false,
       isRefetching: false,
     } as unknown as ReturnType<typeof useMyRoomQueue>);
-    const { result } = renderHook(() =>
-      useRoomQueuePanel({
-        currentUser: {
-          nickname: "사용자",
-          profileImageUrl: null,
-          slug: "user",
-          userId: 1,
-        },
-        isCurrentUserLoading: false,
-        roomMeta: null,
-        roomSlug: "room",
-      }),
-    );
+    rerender();
 
-    expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", undefined, true);
-    expect(result.current.activeTab).toBe("all");
     expect(result.current.myPendingCount).toBe(1);
+
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: undefined,
+      error: new Error("개인 큐 조회 실패"),
+      fetchNextQueuePage: vi.fn(),
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    rerender();
+
+    expect(result.current.myPendingCount).toBeNull();
   });
 
   it("곡 삭제 성공은 알림 없이 목록 갱신 결과만 사용한다", () => {

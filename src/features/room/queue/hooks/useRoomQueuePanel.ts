@@ -97,7 +97,10 @@ export function useRoomQueuePanel({
     () => myQueueData?.pages.flatMap((page) => page.items) ?? [],
     [myQueueData?.pages],
   );
-  const myPendingCount = myQueueData?.pages[0]?.totalPendingCount ?? 0;
+  const myPendingCount =
+    isCurrentUserLoading || (Boolean(currentUser) && !myQueueData)
+      ? null
+      : (myQueueData?.pages[0]?.totalPendingCount ?? 0);
   const isCurrentUserEntry = useCallback(
     (entry: PlaylistEntry) => isEntryRequestedByUser(entry, currentUser),
     [currentUser],
