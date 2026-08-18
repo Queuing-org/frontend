@@ -22,6 +22,7 @@ const mocks = vi.hoisted(() => {
   const ensureRoomSubscription = vi.fn();
   const leaveRoomSession = vi.fn();
   const replace = vi.fn();
+  const replaceDocumentLocation = vi.fn();
   const notify = vi.fn();
   const roomChat = {
     cleanupSubscriptions: vi.fn(),
@@ -34,6 +35,7 @@ const mocks = vi.hoisted(() => {
     leaveRoomSession,
     notify,
     replace,
+    replaceDocumentLocation,
     refetchParticipants,
     refetchRoomPlayback,
     roomChat,
@@ -46,6 +48,9 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/src/shared/lib/useMediaQuery", () => ({
   useMediaQuery: () => false,
+}));
+vi.mock("@/src/shared/lib/replaceDocumentLocation", () => ({
+  replaceDocumentLocation: mocks.replaceDocumentLocation,
 }));
 vi.mock("@/src/features/room/api/fetchRoomMeta", () => ({
   fetchRoomMeta: vi.fn(),
@@ -208,6 +213,26 @@ describe("RoomPlaybackScreen join reads", () => {
     expect(sharedQuerySignal?.aborted).toBe(false);
 
     unmount();
+  });
+
+  it("존재하지 않는 방은 저장 토큰을 지우고 루트로 교체 이동한다", async () => {
+    sessionStorage.setItem("room-access-token:room", "stale-token");
+    vi.mocked(fetchRoomMeta).mockRejectedValue(
+      new ApiError({
+        message: "존재하지 않는 방입니다.",
+        status: 404,
+      }),
+    );
+
+    renderRoomPlaybackScreen();
+
+    await waitFor(() =>
+      expect(mocks.replaceDocumentLocation).toHaveBeenCalledWith("/"),
+    );
+    expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
+    expect(joinRoom).not.toHaveBeenCalled();
+    expect(mocks.replace).not.toHaveBeenCalled();
+    expect(screen.queryByText("존재하지 않는 방입니다.")).not.toBeInTheDocument();
   });
 
   it("상세 경로 비밀번호 실패를 필드와 공통 알림에 표시하고 입력 시 해제한다", async () => {

@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-18-room-not-found-redirect](./2026-08-18-room-not-found-redirect/plan.md): ready — 존재하지 않는 방에서 루트 문서를 새로 불러 최신 방 목록을 조회하고 CI 통과
+
 - [2026-08-18-badge-award-modal](./2026-08-18-badge-award-modal/plan.md): ci-pending — PR #52의 칭호 획득 모달을 최신 640px·두 문장·텍스트 확인 버튼 시안으로 후속 교정하고 로컬 QA 통과
 
 - [2026-08-17-room-access-token](./2026-08-17-room-access-token/plan.md): blocked — PR #52 Codex 리뷰 중 leave 이동과 생성 후 join 재시도 수정·CI 통과, 썸네일 source 신호는 backend 계약 대기

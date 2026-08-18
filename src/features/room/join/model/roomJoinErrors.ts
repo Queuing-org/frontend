@@ -30,6 +30,13 @@ export function isRoomAccessDeniedError(error: unknown) {
   );
 }
 
+export function isRoomNotFoundError(error: unknown) {
+  return (
+    error instanceof ApiError &&
+    (error.status === 404 || error.code === "room.not-found")
+  );
+}
+
 export function shouldKeepPasswordFormAfterSubmit(error: ApiError) {
   return (
     isRoomAccessDeniedError(error)
