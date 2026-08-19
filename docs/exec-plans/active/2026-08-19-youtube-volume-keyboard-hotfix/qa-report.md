@@ -13,6 +13,7 @@
 - `input`, `textarea`, `contenteditable` 입력 중에는 hover가 포커스를 빼앗지 않는다.
 - 전역 `keydown` 처리나 프론트 볼륨 상태를 추가하지 않아 페이지 스크롤·채팅 입력과의 충돌을 피한다.
 - effect cleanup에서 `pointerenter` listener를 제거한다.
+- 후속: 임베드 환경에서 위·아래 키만 무시되는 재현을 반영해 플레이어 포커스 프록시가 볼륨 ±5, 좌우 seek, mute, fullscreen을 Player API로 처리한다.
 
 ## 검증 증거
 
@@ -22,6 +23,8 @@
 - `npm run build` — passed
 - `git diff --check` — passed
 - GitHub Actions `32250732264` — lint, test, build passed
+- Player API fallback 후 `npm run test` — 145 files, 563 tests passed
+- Player API fallback 후 targeted 1 file/7 tests, lint, build, diff-check — passed
 
 ## 잔여 위험
 

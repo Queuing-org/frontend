@@ -8,10 +8,15 @@ type YouTubePlayerInstance = {
   destroy: () => void;
   getCurrentTime: () => number;
   getIframe: () => HTMLIFrameElement;
+  getVolume: () => number;
+  isMuted: () => boolean;
   loadVideoById: (options: { videoId: string; startSeconds?: number }) => void;
+  mute: () => void;
   pauseVideo: () => void;
   playVideo: () => void;
   seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  setVolume: (volume: number) => void;
+  unMute: () => void;
 };
 
 type YouTubeNamespace = {
@@ -46,6 +51,8 @@ declare global {
 
 const YOUTUBE_IFRAME_API_URL = "https://www.youtube.com/iframe_api";
 const SEEK_THRESHOLD_SECONDS = 1.5;
+const KEYBOARD_SEEK_STEP_SECONDS = 5;
+const KEYBOARD_VOLUME_STEP = 5;
 const YOUTUBE_PLAYER_STATES = {
   ENDED: 0,
   PLAYING: 1,
@@ -322,14 +329,6 @@ export function useYouTubeIframePlayer({
 
     let isCancelled = false;
     let createdPlayer: YouTubePlayerInstance | null = null;
-    let playerIframe: HTMLIFrameElement | null = null;
-    const focusPlayerForKeyboardControls = () => {
-      if (!playerIframe || isTextEntryElement(document.activeElement)) {
-        return;
-      }
-
-      playerIframe.focus({ preventScroll: true });
-    };
 
     async function setupPlayer() {
       try {
@@ -361,16 +360,6 @@ export function useYouTubeIframePlayer({
                 return;
               }
 
-              playerIframe?.removeEventListener(
-                "pointerenter",
-                focusPlayerForKeyboardControls,
-              );
-              playerIframe = event.target.getIframe();
-              playerIframe.tabIndex = 0;
-              playerIframe.addEventListener(
-                "pointerenter",
-                focusPlayerForKeyboardControls,
-              );
               ensureYouTubeIframeAutoplayPermission(event.target);
               isReadyRef.current = true;
               onPlayerReadyRef.current?.();
@@ -408,10 +397,6 @@ export function useYouTubeIframePlayer({
 
     return () => {
       isCancelled = true;
-      playerIframe?.removeEventListener(
-        "pointerenter",
-        focusPlayerForKeyboardControls,
-      );
       if (createdPlayer && playerRef.current !== createdPlayer) {
         try {
           createdPlayer.destroy();
@@ -421,6 +406,109 @@ export function useYouTubeIframePlayer({
       }
     };
   }, [applyDesiredPlayback, ensurePlayerHost, videoId]);
+
+  useEffect(() => {
+    const keyboardTarget = playerMountRef.current;
+    if (!videoId || !keyboardTarget) {
+      return;
+    }
+
+    const focusPlayerKeyboardTarget = () => {
+      if (isTextEntryElement(document.activeElement)) {
+        return;
+      }
+
+      keyboardTarget.focus({ preventScroll: true });
+    };
+    const handlePlayerKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey
+      ) {
+        return;
+      }
+
+      const player = playerRef.current;
+      if (!player || !isReadyRef.current) {
+        return;
+      }
+
+      switch (event.key.toLowerCase()) {
+        case "arrowup": {
+          event.preventDefault();
+          const nextVolume = Math.min(
+            100,
+            player.getVolume() + KEYBOARD_VOLUME_STEP,
+          );
+          player.setVolume(nextVolume);
+          if (nextVolume > 0 && player.isMuted()) {
+            player.unMute();
+          }
+          return;
+        }
+        case "arrowdown":
+          event.preventDefault();
+          player.setVolume(
+            Math.max(0, player.getVolume() - KEYBOARD_VOLUME_STEP),
+          );
+          return;
+        case "arrowleft":
+          event.preventDefault();
+          player.seekTo(
+            Math.max(
+              0,
+              player.getCurrentTime() - KEYBOARD_SEEK_STEP_SECONDS,
+            ),
+            true,
+          );
+          return;
+        case "arrowright":
+          event.preventDefault();
+          player.seekTo(
+            player.getCurrentTime() + KEYBOARD_SEEK_STEP_SECONDS,
+            true,
+          );
+          return;
+        case "m":
+          event.preventDefault();
+          if (player.isMuted()) {
+            player.unMute();
+          } else {
+            player.mute();
+          }
+          return;
+        case "f": {
+          event.preventDefault();
+          const iframe = player.getIframe();
+          try {
+            const fullscreenRequest =
+              document.fullscreenElement === iframe
+                ? document.exitFullscreen()
+                : iframe.requestFullscreen();
+            void fullscreenRequest.catch(() => undefined);
+          } catch {
+            // Keep the player usable when fullscreen is unavailable.
+          }
+          return;
+        }
+      }
+    };
+
+    keyboardTarget.tabIndex = 0;
+    keyboardTarget.addEventListener("pointerenter", focusPlayerKeyboardTarget);
+    keyboardTarget.addEventListener("keydown", handlePlayerKeyDown);
+
+    return () => {
+      keyboardTarget.removeEventListener(
+        "pointerenter",
+        focusPlayerKeyboardTarget,
+      );
+      keyboardTarget.removeEventListener("keydown", handlePlayerKeyDown);
+      keyboardTarget.removeAttribute("tabindex");
+    };
+  }, [videoId]);
 
   useEffect(() => {
     if (videoId) {

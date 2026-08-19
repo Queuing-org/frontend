@@ -11,10 +11,15 @@ type MockPlayer = {
   destroy: ReturnType<typeof vi.fn>;
   getCurrentTime: ReturnType<typeof vi.fn>;
   getIframe: ReturnType<typeof vi.fn>;
+  getVolume: ReturnType<typeof vi.fn>;
+  isMuted: ReturnType<typeof vi.fn>;
   loadVideoById: ReturnType<typeof vi.fn>;
+  mute: ReturnType<typeof vi.fn>;
   pauseVideo: ReturnType<typeof vi.fn>;
   playVideo: ReturnType<typeof vi.fn>;
   seekTo: ReturnType<typeof vi.fn>;
+  setVolume: ReturnType<typeof vi.fn>;
+  unMute: ReturnType<typeof vi.fn>;
 };
 
 type PlayerOptions = {
@@ -52,15 +57,25 @@ function PlayerHarness({
 function installYouTubePlayerMock() {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("allow", "fullscreen; encrypted-media");
+  const requestFullscreen = vi.fn(() => Promise.resolve());
+  Object.defineProperty(iframe, "requestFullscreen", {
+    configurable: true,
+    value: requestFullscreen,
+  });
   const player: MockPlayer = {
     cueVideoById: vi.fn(),
     destroy: vi.fn(),
     getCurrentTime: vi.fn(() => 0),
     getIframe: vi.fn(() => iframe),
+    getVolume: vi.fn(() => 50),
+    isMuted: vi.fn(() => false),
     loadVideoById: vi.fn(),
+    mute: vi.fn(),
     pauseVideo: vi.fn(),
     playVideo: vi.fn(),
     seekTo: vi.fn(),
+    setVolume: vi.fn(),
+    unMute: vi.fn(),
   };
   let playerOptions: PlayerOptions | undefined;
 
@@ -77,6 +92,7 @@ function installYouTubePlayerMock() {
   return {
     iframe,
     player,
+    requestFullscreen,
     getPlayerOptions: () => playerOptions,
   };
 }
@@ -98,7 +114,8 @@ describe("getYouTubeIframeAllowWithAutoplay", () => {
 
 describe("useYouTubeIframePlayer", () => {
   it("iframe 키보드·autoplay 권한을 보강한 뒤 현재 곡 재생을 시도한다", async () => {
-    const { iframe, player, getPlayerOptions } = installYouTubePlayerMock();
+    const { iframe, player, requestFullscreen, getPlayerOptions } =
+      installYouTubePlayerMock();
 
     const { getByRole } = render(
       <>
@@ -121,14 +138,31 @@ describe("useYouTubeIframePlayer", () => {
       "allow",
       "fullscreen; encrypted-media; autoplay",
     );
-    expect(iframe).toHaveAttribute("tabindex", "0");
+    const keyboardTarget = iframe.parentElement?.parentElement;
+    expect(keyboardTarget).toHaveAttribute("tabindex", "0");
 
-    fireEvent.pointerEnter(iframe);
-    expect(iframe).toHaveFocus();
+    fireEvent.pointerEnter(keyboardTarget!);
+    expect(keyboardTarget).toHaveFocus();
+
+    fireEvent.keyDown(keyboardTarget!, { key: "ArrowUp" });
+    expect(player.setVolume).toHaveBeenLastCalledWith(55);
+
+    fireEvent.keyDown(keyboardTarget!, { key: "ArrowDown" });
+    expect(player.setVolume).toHaveBeenLastCalledWith(45);
+
+    player.seekTo.mockClear();
+    fireEvent.keyDown(keyboardTarget!, { key: "ArrowRight" });
+    expect(player.seekTo).toHaveBeenCalledWith(5, true);
+
+    fireEvent.keyDown(keyboardTarget!, { key: "m" });
+    expect(player.mute).toHaveBeenCalledOnce();
+
+    fireEvent.keyDown(keyboardTarget!, { key: "f" });
+    expect(requestFullscreen).toHaveBeenCalledOnce();
 
     const chatInput = getByRole("textbox", { name: "채팅 입력" });
     chatInput.focus();
-    fireEvent.pointerEnter(iframe);
+    fireEvent.pointerEnter(keyboardTarget!);
     expect(chatInput).toHaveFocus();
 
     expect(player.loadVideoById).toHaveBeenCalledWith({
