@@ -1,4 +1,4 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getYouTubeIframeAllowWithAutoplay,
@@ -66,6 +66,7 @@ function installYouTubePlayerMock() {
 
   function Player(_element: HTMLElement, options: PlayerOptions) {
     playerOptions = options;
+    _element.appendChild(iframe);
     return player;
   }
 
@@ -96,15 +97,21 @@ describe("getYouTubeIframeAllowWithAutoplay", () => {
 });
 
 describe("useYouTubeIframePlayer", () => {
-  it("iframe autoplay 권한을 위임한 뒤 현재 곡 재생을 시도한다", async () => {
+  it("iframe 키보드·autoplay 권한을 보강한 뒤 현재 곡 재생을 시도한다", async () => {
     const { iframe, player, getPlayerOptions } = installYouTubePlayerMock();
 
-    render(<PlayerHarness />);
+    const { getByRole } = render(
+      <>
+        <PlayerHarness />
+        <input aria-label="채팅 입력" />
+      </>,
+    );
 
     await waitFor(() => expect(getPlayerOptions()).toBeDefined());
     const options = getPlayerOptions();
 
     expect(options?.playerVars?.autoplay).toBe(1);
+    expect(options?.playerVars?.disablekb).toBe(0);
 
     act(() => {
       options?.events?.onReady?.({ target: player });
@@ -114,6 +121,16 @@ describe("useYouTubeIframePlayer", () => {
       "allow",
       "fullscreen; encrypted-media; autoplay",
     );
+    expect(iframe).toHaveAttribute("tabindex", "0");
+
+    fireEvent.pointerEnter(iframe);
+    expect(iframe).toHaveFocus();
+
+    const chatInput = getByRole("textbox", { name: "채팅 입력" });
+    chatInput.focus();
+    fireEvent.pointerEnter(iframe);
+    expect(chatInput).toHaveFocus();
+
     expect(player.loadVideoById).toHaveBeenCalledWith({
       videoId: "video-1",
       startSeconds: 5,

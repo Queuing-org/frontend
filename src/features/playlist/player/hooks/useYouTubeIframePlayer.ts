@@ -79,6 +79,14 @@ function ensureYouTubeIframeAutoplayPermission(
   }
 }
 
+function isTextEntryElement(element: Element | null) {
+  return (
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLTextAreaElement ||
+    (element instanceof HTMLElement && element.isContentEditable)
+  );
+}
+
 let youtubeIframeApiPromise: Promise<YouTubeNamespace> | null = null;
 
 function loadYouTubeIframeApi() {
@@ -314,6 +322,14 @@ export function useYouTubeIframePlayer({
 
     let isCancelled = false;
     let createdPlayer: YouTubePlayerInstance | null = null;
+    let playerIframe: HTMLIFrameElement | null = null;
+    const focusPlayerForKeyboardControls = () => {
+      if (!playerIframe || isTextEntryElement(document.activeElement)) {
+        return;
+      }
+
+      playerIframe.focus({ preventScroll: true });
+    };
 
     async function setupPlayer() {
       try {
@@ -334,6 +350,7 @@ export function useYouTubeIframePlayer({
           playerVars: {
             autoplay: 1,
             controls: 1,
+            disablekb: 0,
             playsinline: 1,
             rel: 0,
             origin: window.location.origin,
@@ -344,6 +361,16 @@ export function useYouTubeIframePlayer({
                 return;
               }
 
+              playerIframe?.removeEventListener(
+                "pointerenter",
+                focusPlayerForKeyboardControls,
+              );
+              playerIframe = event.target.getIframe();
+              playerIframe.tabIndex = 0;
+              playerIframe.addEventListener(
+                "pointerenter",
+                focusPlayerForKeyboardControls,
+              );
               ensureYouTubeIframeAutoplayPermission(event.target);
               isReadyRef.current = true;
               onPlayerReadyRef.current?.();
@@ -381,6 +408,10 @@ export function useYouTubeIframePlayer({
 
     return () => {
       isCancelled = true;
+      playerIframe?.removeEventListener(
+        "pointerenter",
+        focusPlayerForKeyboardControls,
+      );
       if (createdPlayer && playerRef.current !== createdPlayer) {
         try {
           createdPlayer.destroy();
