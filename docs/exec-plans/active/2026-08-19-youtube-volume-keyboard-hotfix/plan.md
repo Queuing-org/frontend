@@ -35,7 +35,7 @@
 - [x] 최신 원격 `main` fast-forward
 - [x] 구현 및 회귀 테스트
 - [x] 로컬 QA
-- [ ] `main` 커밋·push 및 CI 확인
+- [x] `main` 커밋·push 및 CI 확인 — `4f95f9a`, run `32250732264` passed
 
 ## 잔여 위험
 
