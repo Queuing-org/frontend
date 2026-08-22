@@ -35,10 +35,15 @@ npm run build
 `.env.local`
 
 ```bash
+EDGE_CONFIG=https://edge-config.vercel.com/{EDGE_CONFIG_ID}?token={READ_TOKEN}
 NEXT_PUBLIC_API_BASE_URL=https://api.queuing.cc
 NEXT_PUBLIC_WS_URL=wss://api.queuing.cc/ws
 NEXT_PUBLIC_SITE_URL=https://local.queuing.cc:3000
 ```
+
+`EDGE_CONFIG`는 서버 전용 Vercel Edge Config 연결 문자열이다. `maintenance`
+객체의 `enabled`, `startsAt`, `endsAt`, `message`를 점검 화면과 요청 차단에
+사용하며 `NEXT_PUBLIC_*`로 노출하지 않는다.
 
 ## Features
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ensureCsrf } from "../shared/api/csrf/ensureCsrf";
@@ -10,6 +11,8 @@ import FollowPresenceProvider from "../features/follow/presence/ui/FollowPresenc
 import ActionFeedbackProvider from "../shared/ui/action-feedback/ActionFeedbackProvider";
 
 export default function Providers({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isMaintenancePage = pathname === "/maintenance";
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -23,8 +26,16 @@ export default function Providers({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    if (isMaintenancePage) {
+      return;
+    }
+
     ensureCsrf().catch(() => {});
-  }, []);
+  }, [isMaintenancePage]);
+
+  if (isMaintenancePage) {
+    return children;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

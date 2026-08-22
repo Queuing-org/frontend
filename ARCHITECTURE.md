@@ -5,13 +5,21 @@ This file is the canonical high-level map of the current codebase. Update it in 
 ## System Map
 
 ```text
-Next.js routes (`src/app`)
+Vercel Edge Config -> Next.js request gate (`src/proxy.ts`)
+  -> Next.js routes (`src/app`)
   -> feature APIs, models, hooks, and UI (`src/features`)
     -> shared API, libraries, styles, and UI (`src/shared`)
       -> REST API and STOMP WebSocket backend
 ```
 
 ## Layers
+
+### `src/proxy.ts`
+
+- Owns request-time operational routing before App Router route resolution.
+- Reads the server-only maintenance configuration through `src/shared` and redirects matching page requests to `/maintenance` while maintenance is enabled.
+- Excludes the maintenance route, frontend API paths, Next.js assets, and public files so the maintenance response remains renderable.
+- Must not own domain API calls, authentication, or slow request-time orchestration.
 
 ### `src/app`
 
@@ -33,6 +41,7 @@ Next.js routes (`src/app`)
 - Owns cross-feature API infrastructure, generic libraries, styles, and reusable UI primitives.
 - Must not import from `src/features` or `src/app`.
 - Shared modules should remain domain-neutral unless a deliberate architecture decision documents an exception.
+- Operational configuration parsing and display formatting shared by Proxy and App Router live under `src/shared/config`; Edge Config write credentials never enter frontend runtime code.
 - Brand-only presentation such as the main logo may live in `src/shared/ui`; authenticated actions and room navigation remain in their owning auth and room features.
 - Domain-neutral management-menu focus, outside-click, Escape, placement, visual shell behavior, and opt-in viewport portal positioning live in `src/shared/ui/management-menu`; room and follow features provide only their allowed actions.
 - Room thumbnail file validation, temporary upload selection, and the shared temporary-upload mutation live in `src/features/room/hooks`; create and update flows own only their submit orchestration.
@@ -48,6 +57,7 @@ Next.js routes (`src/app`)
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
 - `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
+- Vercel Edge Config owns the app-wide maintenance switch and display metadata. `maintenance.enabled` is the authoritative request gate; its timestamps are display metadata and do not schedule activation automatically.
 - App-scoped action feedback survives route-child replacement, so terminal room cleanup can notify before navigating home without a `sessionStorage` handoff.
 - Public `UserProfile.relationship` is the authoritative follow-button state. Follow/search lists use cursor-based infinite queries and keep transient paging state inside TanStack Query.
 
@@ -59,6 +69,7 @@ Next.js routes (`src/app`)
 - STOMP event -> query cache or local state
 - modal/floating widget state -> route and component ownership
 - Enter submission -> Korean IME composition handling
+- Edge Config payload -> request gate -> maintenance page, paired with backend `503` and realtime shutdown behavior for already-connected clients
 
 Use the API, UI, QA, and incident skills under `.agents/skills/` when a change crosses these boundaries.
 
