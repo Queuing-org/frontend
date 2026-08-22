@@ -9,7 +9,7 @@
 ## 자동 검증
 
 - targeted: 4 files, 20 tests passed
-- `npm run test`: 149 files, 582 tests passed
+- `npm run test`: 149 files, 583 tests passed
 - `npm run lint`: passed
 - `npm run build`: passed; `/maintenance` dynamic route and Proxy generated
 - `git diff --check`: passed

@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-08-22-maintenance-mode](./2026-08-22-maintenance-mode/plan.md): implementing — Edge Config 점검 화면·요청 차단 로컬 QA 통과, backend issue #8 등록 및 Draft PR 게시 대기
+- [2026-08-22-maintenance-mode](./2026-08-22-maintenance-mode/plan.md): ci-pending — Draft PR #54, Edge Config 점검 화면·요청 차단 로컬 QA 통과 및 backend issue #8 연동
 
 - [2026-08-19-youtube-volume-keyboard-hotfix](./2026-08-19-youtube-volume-keyboard-hotfix/plan.md): publishing — Player API 볼륨 fallback 보강과 전체 로컬 QA 통과, main 게시 중
 

@@ -47,7 +47,7 @@
 - [x] Edge Config 계약·Proxy·점검 페이지 구현
 - [x] targeted/full QA
 - [x] fresh read-only QA
-- [ ] commit, push, Draft PR
+- [x] commit, push, Draft PR
 
 ## Verification
 
