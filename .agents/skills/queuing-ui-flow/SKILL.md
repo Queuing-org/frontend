@@ -52,6 +52,7 @@ Do not use it for API-only changes unless the UI behavior also changes.
 - A room screen owns cancellation of its in-flight join. An explicit route exit must cancel the join and leave the room so an app-scoped socket cannot retain a ghost participant. A WebSocket transport close keeps the room token and enters the reconnect flow instead of being treated as a leave.
 - `ROOM_INFO_UPDATED` keeps the screen joined, patches immediate display fields, refetches full room meta, invalidates room discovery data, and shows one deduped `방 정보가 변경되었어요` notification.
 - A `user.session-replaced` event is terminal for that room connection: clear room-local subscriptions/state, show the replacement message, and do not publish join again. Keep unrelated app-wide realtime clients alive.
+- STOMP subscription effects depend only on subscription identity such as destination, room slug, access token, activation state, or transport generation. Keep the latest UI event callbacks in refs; callback identity churn from renders must not cause `UNSUBSCRIBE → SUBSCRIBE` gaps.
 - CSS chip and modal sizing should be controlled in the relevant module, not by inline patching across call sites.
 - Do not introduce marketing-style landing sections for app surfaces; build the usable workflow.
 - Realtime or infinite lists need an explicit request, state, and mounted-DOM upper bound. Fetch per-row secondary data only for visible rows when the backend cannot provide a batch contract, and keep hover/focus-only animation work dormant otherwise.

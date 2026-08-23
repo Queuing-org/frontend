@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { StompSubscription } from "@stomp/stompjs";
 import { publishChatMessage } from "@/src/features/room/api/websocket/publishChatMessage";
 import { subscribeRoomChatEvents } from "@/src/features/room/api/websocket/subscribeRoomChatEvents";
@@ -57,6 +63,17 @@ export function useRoomChatRealtime({
   slug,
 }: UseRoomChatRealtimeParams) {
   const { notify } = useActionFeedback();
+  const currentUserSlug = currentUser?.slug ?? null;
+  const onMessageRef = useRef(onMessage);
+  const onMessageDeletedRef = useRef(onMessageDeleted);
+  const onPendingMessageBackfillRef = useRef(onPendingMessageBackfill);
+  const handleChatMessageBodyRef = useRef<
+    (roomSlug: string, body: string) => void
+  >(() => undefined);
+  const handleUserEventBodyRef = useRef<
+    (roomSlug: string, body: string) => void
+  >(() => undefined);
+  const previousCurrentUserSlugRef = useRef(currentUserSlug);
   const chatSubscriptionRef = useRef<{
     accessToken: string;
     slug: string;
@@ -77,6 +94,19 @@ export function useRoomChatRealtime({
   const runPendingCheckRef = useRef<() => void>(() => undefined);
   const [chatSendErrorMessage, setChatSendErrorMessage] = useState("");
   const [isChatSending, setIsChatSending] = useState(false);
+
+  useLayoutEffect(() => {
+    onMessageRef.current = onMessage;
+  }, [onMessage]);
+
+  useLayoutEffect(() => {
+    onMessageDeletedRef.current = onMessageDeleted;
+  }, [onMessageDeleted]);
+
+  useLayoutEffect(() => {
+    onPendingMessageBackfillRef.current = onPendingMessageBackfill;
+  }, [onPendingMessageBackfill]);
+
   const showChatSendError = useCallback(
     (message: string) => {
       setChatSendErrorMessage(message);
@@ -200,7 +230,7 @@ export function useRoomChatRealtime({
       const pendingContents = pendingSends.map((pending) => pending.content);
       const promise = (async () => {
         try {
-          return await onPendingMessageBackfill(pendingContents);
+          return await onPendingMessageBackfillRef.current(pendingContents);
         } catch {
           return [];
         }
@@ -214,7 +244,7 @@ export function useRoomChatRealtime({
 
       return request;
     },
-    [onPendingMessageBackfill],
+    [],
   );
 
   const resolvePersistedPendingChatSends = useCallback(
@@ -379,15 +409,15 @@ export function useRoomChatRealtime({
     userEventSubscriptionRef.current = null;
   }, []);
 
-  const cleanupSubscriptions = useCallback(() => {
+  const cleanupChatLifecycle = useCallback(() => {
     cleanupChatSubscription();
-    cleanupUserEventSubscription();
     clearAllPendingChatSends();
-  }, [
-    cleanupChatSubscription,
-    cleanupUserEventSubscription,
-    clearAllPendingChatSends,
-  ]);
+  }, [cleanupChatSubscription, clearAllPendingChatSends]);
+
+  const cleanupSubscriptions = useCallback(() => {
+    cleanupChatLifecycle();
+    cleanupUserEventSubscription();
+  }, [cleanupChatLifecycle, cleanupUserEventSubscription]);
 
   const reset = useCallback(() => {
     clearAllPendingChatSends();
@@ -399,11 +429,20 @@ export function useRoomChatRealtime({
     currentUserRef.current = currentUser;
   }, [currentUser]);
 
+  useEffect(() => {
+    if (previousCurrentUserSlugRef.current === currentUserSlug) {
+      return;
+    }
+
+    previousCurrentUserSlugRef.current = currentUserSlug;
+    clearAllPendingChatSends();
+  }, [clearAllPendingChatSends, currentUserSlug]);
+
   const handleChatMessageBody = useCallback(
     (roomSlug: string, body: string) => {
       const deletedMessage = parseChatMessageDeletedEvent(body, roomSlug);
       if (deletedMessage) {
-        onMessageDeleted(deletedMessage);
+        onMessageDeletedRef.current(deletedMessage);
         return;
       }
       const chatMessage = parseChatMessageEvent(body, roomSlug);
@@ -412,14 +451,18 @@ export function useRoomChatRealtime({
         return;
       }
 
-      onMessage(chatMessage);
+      onMessageRef.current(chatMessage);
 
       if (isChatMessageFromUser(chatMessage, currentUserRef.current)) {
         resolvePendingChatSend({ content: chatMessage.content });
       }
     },
-    [onMessage, onMessageDeleted, resolvePendingChatSend],
+    [resolvePendingChatSend],
   );
+
+  useLayoutEffect(() => {
+    handleChatMessageBodyRef.current = handleChatMessageBody;
+  }, [handleChatMessageBody]);
 
   const ensureChatSubscription = useCallback(
     (roomSlug: string, accessToken: string) => {
@@ -440,14 +483,49 @@ export function useRoomChatRealtime({
           ({ body }) => {
             if (!body) return;
 
-            handleChatMessageBody(roomSlug, body);
+            handleChatMessageBodyRef.current(roomSlug, body);
           },
           accessToken,
         ),
       };
     },
-    [cleanupChatSubscription, handleChatMessageBody],
+    [cleanupChatSubscription],
   );
+
+  const handleUserEventBody = useCallback(
+    (roomSlug: string, body: string) => {
+      let event: WsEvent;
+      try {
+        event = JSON.parse(body) as WsEvent;
+      } catch {
+        return;
+      }
+
+      const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
+      const eventRoomSlug =
+        typeof event.roomSlug === "string"
+          ? normalizeRoomSlug(event.roomSlug)
+          : normalizedRoomSlug;
+
+      if (
+        eventRoomSlug !== normalizedRoomSlug ||
+        event.type !== "ERROR" ||
+        pendingChatSendsRef.current.length <= 0 ||
+        !isWsErrorData(event.data)
+      ) {
+        return;
+      }
+
+      resolvePendingChatSend({
+        errorMessage: getVisibleChatSendErrorMessage(event.data),
+      });
+    },
+    [resolvePendingChatSend],
+  );
+
+  useLayoutEffect(() => {
+    handleUserEventBodyRef.current = handleUserEventBody;
+  }, [handleUserEventBody]);
 
   const ensureUserEventSubscription = useCallback(
     (roomSlug: string) => {
@@ -462,35 +540,11 @@ export function useRoomChatRealtime({
         subscription: subscribeUserRoomEvents(({ body }) => {
           if (!body) return;
 
-          let event: WsEvent;
-          try {
-            event = JSON.parse(body) as WsEvent;
-          } catch {
-            return;
-          }
-
-          const normalizedRoomSlug = normalizeRoomSlug(roomSlug);
-          const eventRoomSlug =
-            typeof event.roomSlug === "string"
-              ? normalizeRoomSlug(event.roomSlug)
-              : normalizedRoomSlug;
-
-          if (
-            eventRoomSlug !== normalizedRoomSlug ||
-            event.type !== "ERROR" ||
-            pendingChatSendsRef.current.length <= 0 ||
-            !isWsErrorData(event.data)
-          ) {
-            return;
-          }
-
-          resolvePendingChatSend({
-            errorMessage: getVisibleChatSendErrorMessage(event.data),
-          });
+          handleUserEventBodyRef.current(roomSlug, body);
         }),
       };
     },
-    [cleanupUserEventSubscription, resolvePendingChatSend],
+    [cleanupUserEventSubscription],
   );
 
   const sendMessage = useCallback(
@@ -549,29 +603,39 @@ export function useRoomChatRealtime({
     ],
   );
 
+  const hasRoomAccessToken = Boolean(roomAccessToken);
+
   useEffect(() => {
     if (!isEnabled || !slug || !roomAccessToken) {
-      cleanupSubscriptions();
+      cleanupChatLifecycle();
       return;
     }
 
     ensureChatSubscription(slug, roomAccessToken);
 
-    if (currentUser) {
+    return cleanupChatLifecycle;
+  }, [
+    cleanupChatLifecycle,
+    ensureChatSubscription,
+    isEnabled,
+    roomAccessToken,
+    slug,
+  ]);
+
+  useEffect(() => {
+    if (isEnabled && slug && hasRoomAccessToken && currentUserSlug) {
       ensureUserEventSubscription(slug);
     } else {
       cleanupUserEventSubscription();
     }
 
-    return cleanupSubscriptions;
+    return cleanupUserEventSubscription;
   }, [
-    cleanupSubscriptions,
     cleanupUserEventSubscription,
-    currentUser,
-    ensureChatSubscription,
+    currentUserSlug,
     ensureUserEventSubscription,
+    hasRoomAccessToken,
     isEnabled,
-    roomAccessToken,
     slug,
   ]);
 

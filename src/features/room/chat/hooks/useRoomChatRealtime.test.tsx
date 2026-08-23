@@ -2,12 +2,15 @@ import { act, renderHook } from "@testing-library/react";
 import type { IMessage, StompSubscription } from "@stomp/stompjs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { publishChatMessage } from "@/src/features/room/api/websocket/publishChatMessage";
+import { subscribeRoomChatEvents } from "@/src/features/room/api/websocket/subscribeRoomChatEvents";
 import { subscribeUserRoomEvents } from "@/src/features/room/api/websocket/subscribeUserRoomEvents";
 import { useRoomChatRealtime } from "./useRoomChatRealtime";
 
 const websocket = vi.hoisted(() => ({
   userEventHandler: null as ((message: IMessage) => void) | null,
   chatEventHandler: null as ((message: IMessage) => void) | null,
+  chatSubscriptions: [] as StompSubscription[],
+  userSubscriptions: [] as StompSubscription[],
   onMessageDeleted: vi.fn(),
 }));
 const { notify } = vi.hoisted(() => ({ notify: vi.fn() }));
@@ -18,7 +21,9 @@ vi.mock("@/src/features/room/api/websocket/publishChatMessage", () => ({
 vi.mock("@/src/features/room/api/websocket/subscribeRoomChatEvents", () => ({
   subscribeRoomChatEvents: vi.fn((_slug, handler: (message: IMessage) => void) => {
     websocket.chatEventHandler = handler;
-    return createSubscription();
+    const subscription = createSubscription();
+    websocket.chatSubscriptions.push(subscription);
+    return subscription;
   }),
 }));
 vi.mock("@/src/features/room/api/websocket/subscribeRoomEvents", () => ({
@@ -27,7 +32,9 @@ vi.mock("@/src/features/room/api/websocket/subscribeRoomEvents", () => ({
 vi.mock("@/src/features/room/api/websocket/subscribeUserRoomEvents", () => ({
   subscribeUserRoomEvents: vi.fn((handler: (message: IMessage) => void) => {
     websocket.userEventHandler = handler;
-    return createSubscription();
+    const subscription = createSubscription();
+    websocket.userSubscriptions.push(subscription);
+    return subscription;
   }),
 }));
 vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
@@ -84,11 +91,299 @@ function renderRealtimeChat(
   );
 }
 
-describe("useRoomChatRealtime 전송 오류 표시", () => {
+describe("useRoomChatRealtime", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     websocket.userEventHandler = null;
     websocket.chatEventHandler = null;
+    websocket.chatSubscriptions = [];
+    websocket.userSubscriptions = [];
+  });
+
+  it("같은 방의 callback이 바뀌어도 구독을 유지하고 최신 callback으로 전달한다", () => {
+    const currentUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const firstOnMessage = vi.fn();
+    const secondOnMessage = vi.fn();
+    const firstOnMessageDeleted = vi.fn();
+    const secondOnMessageDeleted = vi.fn();
+    const onPendingMessageBackfill = vi.fn(async () => [] as string[]);
+    const { rerender, unmount } = renderHook(
+      ({
+        onMessage,
+        onMessageDeleted,
+      }: {
+        onMessage: typeof firstOnMessage;
+        onMessageDeleted: typeof firstOnMessageDeleted;
+      }) =>
+        useRoomChatRealtime({
+          currentUser,
+          isEnabled: true,
+          onMessage,
+          onMessageDeleted,
+          onPendingMessageBackfill,
+          roomAccessToken: "access-token",
+          slug: "room",
+        }),
+      {
+        initialProps: {
+          onMessage: firstOnMessage,
+          onMessageDeleted: firstOnMessageDeleted,
+        },
+      },
+    );
+    const initialSubscription = websocket.chatSubscriptions[0];
+
+    rerender({
+      onMessage: secondOnMessage,
+      onMessageDeleted: secondOnMessageDeleted,
+    });
+
+    expect(subscribeRoomChatEvents).toHaveBeenCalledOnce();
+    expect(initialSubscription.unsubscribe).not.toHaveBeenCalled();
+
+    act(() => {
+      websocket.chatEventHandler?.({
+        body: JSON.stringify({
+          data: {
+            content: "렌더 이후 메시지",
+            messageId: 1,
+            messageType: "TEXT",
+            senderNickname: "다른 사용자",
+            senderProfileImageUrl: null,
+            senderSlug: "other-user",
+            sentAt: 1,
+          },
+          roomSlug: "room",
+          timestamp: 1,
+          type: "CHAT_MESSAGE",
+        }),
+      } as IMessage);
+      websocket.chatEventHandler?.({
+        body: JSON.stringify({
+          data: {
+            content: "삭제된 채팅입니다.",
+            deletedAt: 2,
+            messageKey: "message-2",
+          },
+          roomSlug: "room",
+          timestamp: 2,
+          type: "CHAT_MESSAGE_DELETED",
+        }),
+      } as IMessage);
+    });
+
+    expect(firstOnMessage).not.toHaveBeenCalled();
+    expect(secondOnMessage).toHaveBeenCalledOnce();
+    expect(firstOnMessageDeleted).not.toHaveBeenCalled();
+    expect(secondOnMessageDeleted).toHaveBeenCalledWith({
+      content: "삭제된 채팅입니다.",
+      deletedAt: 2,
+      messageKey: "message-2",
+    });
+
+    unmount();
+    expect(initialSubscription.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("room access token이 바뀔 때만 채팅 구독을 교체하고 user 구독은 유지한다", () => {
+    const currentUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const { rerender, unmount } = renderHook(
+      ({ roomAccessToken }: { roomAccessToken: string }) =>
+        useRoomChatRealtime({
+          currentUser,
+          isEnabled: true,
+          onMessage: vi.fn(),
+          onMessageDeleted: websocket.onMessageDeleted,
+          onPendingMessageBackfill: vi.fn(async () => [] as string[]),
+          roomAccessToken,
+          slug: "room",
+        }),
+      { initialProps: { roomAccessToken: "first-token" } },
+    );
+    const firstSubscription = websocket.chatSubscriptions[0];
+    const userSubscription = websocket.userSubscriptions[0];
+
+    rerender({ roomAccessToken: "second-token" });
+
+    expect(subscribeRoomChatEvents).toHaveBeenCalledTimes(2);
+    expect(firstSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(subscribeUserRoomEvents).toHaveBeenCalledOnce();
+    expect(userSubscription.unsubscribe).not.toHaveBeenCalled();
+
+    const secondSubscription = websocket.chatSubscriptions[1];
+    unmount();
+    expect(secondSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(userSubscription.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("같은 사용자 slug에서 사용자 객체만 바뀌면 구독과 pending을 유지한다", () => {
+    vi.useFakeTimers();
+    const firstUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const { result, rerender, unmount } = renderHook(
+      ({ currentUser }: { currentUser: typeof firstUser }) =>
+        useRoomChatRealtime({
+          currentUser,
+          isEnabled: true,
+          onMessage: vi.fn(),
+          onMessageDeleted: websocket.onMessageDeleted,
+          onPendingMessageBackfill: vi.fn(async () => [] as string[]),
+          roomAccessToken: "access-token",
+          slug: "room",
+        }),
+      { initialProps: { currentUser: firstUser } },
+    );
+    const chatSubscription = websocket.chatSubscriptions[0];
+    const userSubscription = websocket.userSubscriptions[0];
+
+    act(() => {
+      expect(result.current.sendMessage("전송 확인 대기")).toBe(true);
+    });
+    expect(vi.getTimerCount()).toBe(1);
+
+    rerender({
+      currentUser: {
+        ...firstUser,
+        nickname: "변경된 사용자",
+      },
+    });
+
+    expect(subscribeRoomChatEvents).toHaveBeenCalledOnce();
+    expect(subscribeUserRoomEvents).toHaveBeenCalledOnce();
+    expect(chatSubscription.unsubscribe).not.toHaveBeenCalled();
+    expect(userSubscription.unsubscribe).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("사용자 slug가 사라지면 채팅 구독은 유지하고 user 구독과 pending을 정리한다", async () => {
+    vi.useFakeTimers();
+    const currentUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const { result, rerender, unmount } = renderHook(
+      ({ user }: { user: typeof currentUser | null }) =>
+        useRoomChatRealtime({
+          currentUser: user,
+          isEnabled: true,
+          onMessage: vi.fn(),
+          onMessageDeleted: websocket.onMessageDeleted,
+          onPendingMessageBackfill: vi.fn(async () => [] as string[]),
+          roomAccessToken: "access-token",
+          slug: "room",
+        }),
+      { initialProps: { user: currentUser as typeof currentUser | null } },
+    );
+    const chatSubscription = websocket.chatSubscriptions[0];
+    const userSubscription = websocket.userSubscriptions[0];
+
+    act(() => {
+      expect(result.current.sendMessage("로그아웃 전 전송")).toBe(true);
+    });
+    expect(vi.getTimerCount()).toBe(1);
+
+    rerender({ user: null });
+
+    expect(subscribeRoomChatEvents).toHaveBeenCalledOnce();
+    expect(chatSubscription.unsubscribe).not.toHaveBeenCalled();
+    expect(userSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(8_000);
+    });
+    expect(result.current.sendErrorMessage).toBe("");
+    expect(notify).not.toHaveBeenCalled();
+
+    unmount();
+    expect(chatSubscription.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it("room slug가 바뀌면 두 구독을 교체하고 이전 pending을 정리한다", () => {
+    vi.useFakeTimers();
+    const currentUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const { result, rerender, unmount } = renderHook(
+      ({ slug }: { slug: string }) =>
+        useRoomChatRealtime({
+          currentUser,
+          isEnabled: true,
+          onMessage: vi.fn(),
+          onMessageDeleted: websocket.onMessageDeleted,
+          onPendingMessageBackfill: vi.fn(async () => [] as string[]),
+          roomAccessToken: "access-token",
+          slug,
+        }),
+      { initialProps: { slug: "first-room" } },
+    );
+    const firstChatSubscription = websocket.chatSubscriptions[0];
+    const firstUserSubscription = websocket.userSubscriptions[0];
+
+    act(() => {
+      expect(result.current.sendMessage("방 이동 전 전송")).toBe(true);
+    });
+    rerender({ slug: "second-room" });
+
+    expect(subscribeRoomChatEvents).toHaveBeenCalledTimes(2);
+    expect(subscribeUserRoomEvents).toHaveBeenCalledTimes(2);
+    expect(firstChatSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(firstUserSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+
+    unmount();
+  });
+
+  it("비활성화되면 두 구독과 이전 pending을 정리한다", () => {
+    vi.useFakeTimers();
+    const currentUser = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+    };
+    const { result, rerender, unmount } = renderHook(
+      ({ isEnabled }: { isEnabled: boolean }) =>
+        useRoomChatRealtime({
+          currentUser,
+          isEnabled,
+          onMessage: vi.fn(),
+          onMessageDeleted: websocket.onMessageDeleted,
+          onPendingMessageBackfill: vi.fn(async () => [] as string[]),
+          roomAccessToken: "access-token",
+          slug: "room",
+        }),
+      { initialProps: { isEnabled: true } },
+    );
+    const chatSubscription = websocket.chatSubscriptions[0];
+    const userSubscription = websocket.userSubscriptions[0];
+
+    act(() => {
+      expect(result.current.sendMessage("비활성화 전 전송")).toBe(true);
+    });
+    rerender({ isEnabled: false });
+
+    expect(chatSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(userSubscription.unsubscribe).toHaveBeenCalledOnce();
+    expect(vi.getTimerCount()).toBe(0);
+
+    unmount();
   });
 
   it("CHAT_MESSAGE_DELETED를 chat topic에서 삭제 callback으로 전달한다", () => {

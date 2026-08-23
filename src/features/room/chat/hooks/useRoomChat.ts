@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
+import type { ChatMessageDeletedData } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import { useRoomChatHistory } from "./useRoomChatHistory";
 import { useRoomChatRealtime } from "./useRoomChatRealtime";
@@ -36,6 +37,12 @@ export function useRoomChat({
     roomAccessToken,
     slug,
   });
+  const handleMessageDeleted = useCallback(
+    ({ messageKey, content }: ChatMessageDeletedData) => {
+      markMessageDeleted(messageKey, content);
+    },
+    [markMessageDeleted],
+  );
   const {
     cleanupSubscriptions,
     isSending,
@@ -46,8 +53,7 @@ export function useRoomChat({
     currentUser,
     isEnabled,
     onMessage: appendMessage,
-    onMessageDeleted: ({ messageKey, content }) =>
-      markMessageDeleted(messageKey, content),
+    onMessageDeleted: handleMessageDeleted,
     onPendingMessageBackfill: backfillLatestMessages,
     roomAccessToken,
     slug,
