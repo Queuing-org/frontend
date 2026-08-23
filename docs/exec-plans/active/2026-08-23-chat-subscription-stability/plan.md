@@ -42,7 +42,7 @@
 - [x] 실패 재현 테스트
 - [x] callback·subscription lifecycle 수정
 - [x] targeted/full QA와 fresh read-only review
-- [ ] commit, push, Draft PR
+- [x] commit, push, Draft PR #55
 
 ## Verification
 
