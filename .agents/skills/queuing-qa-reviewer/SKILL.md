@@ -59,6 +59,7 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Every API mutation has a deliberate success/error/cache path.
 - Any claim about a 500 or backend root cause is backed by reproducible evidence.
 - App-scoped STOMP changes are tested against room entry while the client is already active but reconnecting.
+- STOMP callback changes with the same destination and auth identity must keep one subscription, deliver subsequent events to the latest callback, and reserve unsubscribe/resubscribe for an actual subscription identity change.
 - Room join tests prove the user-event subscribe call precedes join publish without relying on an arbitrary timing delay.
 - Auth transition QA verifies that badge SSE activation does not remount app children and that follow presence remains alive when the room client is stopped by `user.session-replaced`.
 - Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
