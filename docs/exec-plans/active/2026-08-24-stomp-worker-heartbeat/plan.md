@@ -36,7 +36,7 @@
 - [x] Worker heartbeat 설정과 단위 테스트 구현
 - [x] targeted/full automated QA
 - [x] fresh read-only review — `pass`
-- [ ] commit, push, Draft PR
+- [x] commit, push, Draft PR #56
 
 ## Verification
 
