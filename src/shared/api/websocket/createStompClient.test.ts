@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createStompClient } from "./createStompClient";
 
-const { Client } = vi.hoisted(() => ({
+const { Client, TickerStrategy } = vi.hoisted(() => ({
   Client: vi.fn(),
+  TickerStrategy: {
+    Worker: "worker",
+  },
 }));
 
-vi.mock("@stomp/stompjs", () => ({ Client }));
+vi.mock("@stomp/stompjs", () => ({ Client, TickerStrategy }));
 
 type ClientConfig = {
   debug: (message: string) => void;
@@ -18,6 +21,19 @@ describe("createStompClient", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+  });
+
+  it("백그라운드 heartbeat에 Worker ticker와 기존 연결 기본값을 사용한다", () => {
+    createStompClient();
+
+    expect(Client).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reconnectDelay: 5000,
+        heartbeatIncoming: 4000,
+        heartbeatOutgoing: 4000,
+        heartbeatStrategy: TickerStrategy.Worker,
+      }),
+    );
   });
 
   it("production에서는 STOMP frame debug를 출력하지 않는다", () => {
