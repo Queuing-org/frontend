@@ -1,4 +1,4 @@
-import { Client } from "@stomp/stompjs";
+import { Client, TickerStrategy } from "@stomp/stompjs";
 import { WEB_SOCKET_URL } from "@/src/shared/api/config";
 
 type CreateStompClientOptions = {
@@ -28,6 +28,7 @@ export function createStompClient({
     reconnectDelay,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,
+    heartbeatStrategy: TickerStrategy.Worker,
     debug: createDebugLogger(debugLabel),
   });
 }

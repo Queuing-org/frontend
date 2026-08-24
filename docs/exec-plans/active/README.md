@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-24-stomp-worker-heartbeat](./2026-08-24-stomp-worker-heartbeat/plan.md): publishing — 공용 STOMP outgoing heartbeat Worker 전환과 전체 로컬 QA·fresh review 통과, 게시 진행
+
 - [2026-08-23-chat-subscription-stability](./2026-08-23-chat-subscription-stability/plan.md): ci-pending — Draft PR #55, callback 렌더 churn의 STOMP 재구독 차단과 token·room·사용자 전환 lifecycle 회귀 검증 완료
 
 - [2026-08-22-maintenance-mode](./2026-08-22-maintenance-mode/plan.md): ci-pending — Draft PR #54, Edge Config 점검 화면·요청 차단 로컬 QA 통과 및 backend issue #8 연동
