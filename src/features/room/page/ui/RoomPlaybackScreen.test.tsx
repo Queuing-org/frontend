@@ -7,6 +7,7 @@ import { joinRoom } from "@/src/features/room/api/joinRoom";
 import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
+import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { ApiError } from "@/src/shared/api/api-error";
 import { RoomJoinError } from "@/src/features/room/api/joinRoom.types";
 import { storeRoomJoinHandoff } from "@/src/features/room/join/model/roomJoinHandoff";
@@ -149,6 +150,10 @@ describe("RoomPlaybackScreen join reads", () => {
       .mockResolvedValueOnce(joinedRoomMeta);
     vi.mocked(joinRoom).mockResolvedValue(createJoinedResult());
     const { queryClient, unmount } = renderRoomPlaybackScreen();
+    const resetHistoryQueries = vi.spyOn(queryClient, "resetQueries");
+    queryClient.setQueryData(playlistKeys.roomQueueHistory("room"), {
+      stale: true,
+    });
 
     await waitFor(() => expect(joinRoom).toHaveBeenCalledTimes(1));
     await waitFor(() =>
@@ -177,6 +182,23 @@ describe("RoomPlaybackScreen join reads", () => {
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toEqual(
       joinedRoomMeta,
     );
+    expect(
+      queryClient.getQueryData(playlistKeys.roomQueueHistory("room")),
+    ).toBeUndefined();
+    expect(resetHistoryQueries).toHaveBeenCalledWith({
+      queryKey: ["roomQueueHistory", "room"],
+      exact: true,
+    });
+    const joinedPlaybackRenderIndex = vi.mocked(useRoomPlayback).mock.calls
+      .findIndex(([, accessToken, enabled]) =>
+        accessToken === "access-token" && enabled,
+      );
+    expect(joinedPlaybackRenderIndex).toBeGreaterThanOrEqual(0);
+    expect(
+      vi.mocked(useRoomPlayback).mock.invocationCallOrder[
+        joinedPlaybackRenderIndex
+      ],
+    ).toBeLessThan(resetHistoryQueries.mock.invocationCallOrder[0]);
     expect(mocks.refetchRoomPlayback).not.toHaveBeenCalled();
     expect(mocks.refetchParticipants).not.toHaveBeenCalled();
 

@@ -11,6 +11,11 @@ export type RoomQueueRequestParams = PlaylistProtectedRequestParams & {
   mine?: boolean;
 };
 
+export type RoomQueueHistoryRequestParams = PlaylistProtectedRequestParams & {
+  cursorId?: number | null;
+  size?: number;
+};
+
 export type RoomParticipantsRequestParams =
   PlaylistProtectedRequestParams & {
     cursor?: string | null;
@@ -107,3 +112,31 @@ export type RoomParticipantsPage = {
   hasNext: boolean;
   nextCursor: string | null;
 };
+
+export type RoomQueueHistorySource =
+  | "USER_REQUESTED"
+  | "AUTOMATIC_REPLAY";
+
+export type RoomQueueHistoryEntry = {
+  id: number;
+  title: string;
+  entryId: string;
+  skipped: boolean;
+  videoId: string;
+  provider: TrackProvider;
+  source: RoomQueueHistorySource;
+  endedAtMs: number;
+  durationMs: number;
+  queuedAtMs: number | null;
+  startedAtMs: number | null;
+  thumbnailUrl: string | null;
+  addedByUserSlug: string | null;
+};
+
+export type RoomQueueHistoryPage = {
+  items: RoomQueueHistoryEntry[];
+  hasNext: boolean;
+  nextCursor: number | null;
+};
+
+export type RoomQueueHistoryPageParam = number;

@@ -292,6 +292,15 @@ export function useRoomRealtimeEvents({
     [queryClient],
   );
 
+  const resetRoomQueueHistory = useCallback(
+    (roomSlug: string) =>
+      queryClient.resetQueries({
+        queryKey: playlistKeys.roomQueueHistoryPrefix(roomSlug),
+        exact: true,
+      }),
+    [queryClient],
+  );
+
   const handleRoomEvent = useCallback(
     (roomSlug: string, event: WsEvent) => {
       if (event.type === "ROOM_DELETED") {
@@ -400,6 +409,7 @@ export function useRoomRealtimeEvents({
             applyTrackStarted(current, trackStarted, event.timestamp),
         );
         scheduleRoomInvalidation(roomSlug, ["playback", "queue", "meta"]);
+        void resetRoomQueueHistory(roomSlug);
         return;
       }
 
@@ -409,6 +419,9 @@ export function useRoomRealtimeEvents({
         event.type === "QUEUE_REORDERED" ||
         event.type === "TRACK_ENDED"
       ) {
+        if (event.type === "TRACK_ENDED") {
+          void resetRoomQueueHistory(roomSlug);
+        }
         scheduleRoomInvalidation(
           roomSlug,
           event.type === "TRACK_ENDED"
@@ -427,7 +440,13 @@ export function useRoomRealtimeEvents({
         void queryClient.invalidateQueries({ queryKey: badgeKeys.me() });
       }
     },
-    [notify, queryClient, scheduleRoomInvalidation, setLivePlaybackStatus],
+    [
+      notify,
+      queryClient,
+      resetRoomQueueHistory,
+      scheduleRoomInvalidation,
+      setLivePlaybackStatus,
+    ],
   );
 
   const terminateDeletedRoom = useCallback((roomSlug: string) => {
@@ -448,6 +467,7 @@ export function useRoomRealtimeEvents({
     queryClient.removeQueries({ queryKey: playlistKeys.roomPlaybackPrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: playlistKeys.roomParticipantsPrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: playlistKeys.roomQueuePrefix(roomSlug) });
+    queryClient.removeQueries({ queryKey: playlistKeys.roomQueueHistoryPrefix(roomSlug) });
     queryClient.removeQueries({ queryKey: roomKeys.meta(roomSlug) });
     void queryClient.invalidateQueries({ queryKey: roomKeys.all() });
     notify({
@@ -540,6 +560,9 @@ export function useRoomRealtimeEvents({
         queryKey: playlistKeys.roomQueuePrefix(roomSlug),
       });
       void queryClient.removeQueries({
+        queryKey: playlistKeys.roomQueueHistoryPrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
         queryKey: roomKeys.meta(roomSlug),
       });
       stopSocketAutoReconnect();
@@ -582,6 +605,9 @@ export function useRoomRealtimeEvents({
       });
       void queryClient.removeQueries({
         queryKey: playlistKeys.roomQueuePrefix(roomSlug),
+      });
+      void queryClient.removeQueries({
+        queryKey: playlistKeys.roomQueueHistoryPrefix(roomSlug),
       });
       void queryClient.invalidateQueries({ queryKey: roomKeys.meta(roomSlug) });
       router.replace("/");

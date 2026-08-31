@@ -23,7 +23,10 @@ function renderSkipAction() {
   const wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  return renderHook(() => useSkipTrackAction("room"), { wrapper });
+  return {
+    queryClient,
+    ...renderHook(() => useSkipTrackAction("room"), { wrapper }),
+  };
 }
 
 describe("useSkipTrackAction", () => {
@@ -32,12 +35,17 @@ describe("useSkipTrackAction", () => {
   });
 
   it("SKIP 성공은 알림 없이 큐와 재생 상태 갱신만 예약한다", () => {
-    const { result } = renderSkipAction();
+    const { queryClient, result } = renderSkipAction();
+    const resetQueries = vi.spyOn(queryClient, "resetQueries");
 
     act(() => result.current.skipTrack());
 
     expect(publishNextTrack).toHaveBeenCalledWith("room");
     expect(scheduleQueryInvalidation).toHaveBeenCalledOnce();
+    expect(resetQueries).toHaveBeenCalledWith({
+      queryKey: ["roomQueueHistory", "room"],
+      exact: true,
+    });
     expect(notify).not.toHaveBeenCalled();
   });
 
