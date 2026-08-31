@@ -9,8 +9,10 @@ const DEFAULT_VISIBLE_QUEUE_ROWS = 12;
 
 type QueueRenderWindow = {
   endIndex: number;
+  itemCount: number;
   paddingBottom: number;
   paddingTop: number;
+  rowHeight: number;
   startIndex: number;
 };
 
@@ -46,9 +48,39 @@ export function getQueueRenderWindow({
 
   return {
     endIndex,
+    itemCount,
     paddingBottom: Math.max(0, itemCount - endIndex) * safeRowHeight,
     paddingTop: clampedStartIndex * safeRowHeight,
+    rowHeight: safeRowHeight,
     startIndex: clampedStartIndex,
+  };
+}
+
+export function resizeQueueRenderWindow(
+  currentWindow: QueueRenderWindow,
+  itemCount: number,
+): QueueRenderWindow {
+  const defaultWindowSize = Math.min(
+    QUEUE_MAX_MOUNTED_ITEMS_PER_LIST,
+    DEFAULT_VISIBLE_QUEUE_ROWS + QUEUE_RENDER_OVERSCAN * 2,
+  );
+  const requestedItemCount = Math.max(
+    defaultWindowSize,
+    currentWindow.endIndex - currentWindow.startIndex,
+  );
+  const startIndex = Math.min(
+    currentWindow.startIndex,
+    Math.max(0, itemCount - requestedItemCount),
+  );
+  const endIndex = Math.min(itemCount, startIndex + requestedItemCount);
+
+  return {
+    endIndex,
+    itemCount,
+    paddingBottom: Math.max(0, itemCount - endIndex) * currentWindow.rowHeight,
+    paddingTop: startIndex * currentWindow.rowHeight,
+    rowHeight: currentWindow.rowHeight,
+    startIndex,
   };
 }
 
@@ -114,8 +146,10 @@ export function useQueueRenderWindow(
       setRenderWindow((currentWindow) =>
         currentWindow.startIndex === nextWindow.startIndex &&
         currentWindow.endIndex === nextWindow.endIndex &&
+        currentWindow.itemCount === nextWindow.itemCount &&
         currentWindow.paddingTop === nextWindow.paddingTop &&
-        currentWindow.paddingBottom === nextWindow.paddingBottom
+        currentWindow.paddingBottom === nextWindow.paddingBottom &&
+        currentWindow.rowHeight === nextWindow.rowHeight
           ? currentWindow
           : nextWindow,
       );
@@ -152,5 +186,11 @@ export function useQueueRenderWindow(
     };
   }, [frozen, itemCount, listRef]);
 
-  return renderWindow;
+  // itemCount changes must be reflected in the same commit. Waiting for the
+  // passive measuring effect leaves the list at its previous total height for
+  // one commit, so a parent layout effect can align or restore scroll against
+  // stale geometry and then be displaced by the virtual spacer.
+  return renderWindow.itemCount === itemCount
+    ? renderWindow
+    : resizeQueueRenderWindow(renderWindow, itemCount);
 }

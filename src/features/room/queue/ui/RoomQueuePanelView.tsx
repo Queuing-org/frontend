@@ -1,11 +1,16 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import AddTrackAction from "@/src/features/playlist/add-track/ui/AddTrackAction";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
-import type { PlaylistEntry } from "@/src/features/playlist/model/types";
+import type {
+  PlaylistEntry,
+  RoomQueueHistoryEntry,
+} from "@/src/features/playlist/model/types";
 import type { QueueTab } from "../model/roomQueue";
 import RoomQueueListSection from "./RoomQueueListSection";
 import RoomQueueTabs from "./RoomQueueTabs";
+import { useQueueBidirectionalScroll } from "./useQueueBidirectionalScroll";
 import styles from "./RoomQueuePanel.module.css";
 
 type MovePayload = {
@@ -20,9 +25,14 @@ type RoomQueuePanelViewProps = {
   allPendingCount: number;
   canDeleteEntry: (entry: PlaylistEntry) => boolean;
   canDeleteEntryAsOwner: (entry: PlaylistEntry) => boolean;
+  currentEntry?: PlaylistEntry | null;
   emptyMessage: string;
+  hasNextHistoryPage: boolean;
   hasNextAllQueuePage: boolean;
   hasNextMyQueuePage: boolean;
+  historyEntries: RoomQueueHistoryEntry[];
+  historyErrorMessage: string;
+  includesLatestHistoryPage: boolean;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
   isEmptyLoading: boolean;
@@ -31,8 +41,11 @@ type RoomQueuePanelViewProps = {
   isMoveRoomPending: boolean;
   isOwner: boolean;
   isRefetching: boolean;
+  isFetchingNextHistoryPage: boolean;
   isFetchingNextAllQueuePage: boolean;
   isFetchingNextMyQueuePage: boolean;
+  isHistoryLoading: boolean;
+  isQueueLoading: boolean;
   myEntries: PlaylistEntry[];
   myPendingCount: number | null;
   queueErrorMessage: string;
@@ -43,8 +56,12 @@ type RoomQueuePanelViewProps = {
   onDeleteRoomEntry: (entryId: string) => void;
   onMoveMyEntry: (payload: MovePayload) => Promise<void>;
   onMoveRoomEntry: (payload: MovePayload) => Promise<void>;
-  onLoadMoreAllQueue: () => void;
-  onLoadMoreMyQueue: () => void;
+  onLoadMoreHistory: () => unknown;
+  onLoadMoreAllQueue: () => unknown;
+  onLoadMoreMyQueue: () => unknown;
+  onResetHistoryToLatest: () => unknown;
+  onRetryHistory: () => unknown;
+  onRetryQueue: () => unknown;
 };
 
 export default function RoomQueuePanelView({
@@ -53,9 +70,14 @@ export default function RoomQueuePanelView({
   allPendingCount,
   canDeleteEntry,
   canDeleteEntryAsOwner,
+  currentEntry,
   emptyMessage,
+  hasNextHistoryPage,
   hasNextAllQueuePage,
   hasNextMyQueuePage,
+  historyEntries,
+  historyErrorMessage,
+  includesLatestHistoryPage,
   isDeleteMyPending,
   isDeleteRoomPending,
   isEmptyLoading,
@@ -64,8 +86,11 @@ export default function RoomQueuePanelView({
   isMoveRoomPending,
   isOwner,
   isRefetching,
+  isFetchingNextHistoryPage,
   isFetchingNextAllQueuePage,
   isFetchingNextMyQueuePage,
+  isHistoryLoading,
+  isQueueLoading,
   myEntries,
   myPendingCount,
   queueErrorMessage,
@@ -76,9 +101,61 @@ export default function RoomQueuePanelView({
   onDeleteRoomEntry,
   onMoveMyEntry,
   onMoveRoomEntry,
+  onLoadMoreHistory,
   onLoadMoreAllQueue,
   onLoadMoreMyQueue,
+  onResetHistoryToLatest,
+  onRetryHistory,
+  onRetryQueue,
 }: RoomQueuePanelViewProps) {
+  const [isDragging, setIsDragging] = useState(false);
+  const historyEntryIds = useMemo(
+    () => historyEntries.map((entry) => entry.id),
+    [historyEntries],
+  );
+  const queueEntryIds = useMemo(
+    () =>
+      (activeTab === "all" ? allEntries : myEntries).map(
+        (entry) => entry.entryId,
+      ),
+    [activeTab, allEntries, myEntries],
+  );
+  const hasNextQueuePage =
+    activeTab === "all" ? hasNextAllQueuePage : hasNextMyQueuePage;
+  const isFetchingNextQueuePage =
+    activeTab === "all"
+      ? isFetchingNextAllQueuePage
+      : isFetchingNextMyQueuePage;
+  const loadNextQueuePage =
+    activeTab === "all" ? onLoadMoreAllQueue : onLoadMoreMyQueue;
+  const isMutationPending =
+    isMoveMyPending ||
+    isMoveRoomPending ||
+    isDeleteMyPending ||
+    isDeleteRoomPending;
+  const {
+    handleReturnToCurrent,
+    handleRetryHistory,
+    handleScroll,
+    scrollContainerRef,
+  } = useQueueBidirectionalScroll({
+    activeTab,
+    currentEntryId: currentEntry?.entryId ?? null,
+    hasHistoryError: Boolean(historyErrorMessage),
+    hasNextHistoryPage,
+    hasNextQueuePage,
+    hasQueueError: Boolean(queueErrorMessage),
+    historyEntryIds,
+    isFetchingHistory: isFetchingNextHistoryPage || isHistoryLoading,
+    isFetchingQueue: isFetchingNextQueuePage || isQueueLoading,
+    isInteractionBusy: isDragging || isMutationPending || isRefetching,
+    onLoadNextHistoryPage: onLoadMoreHistory,
+    onLoadNextQueuePage: loadNextQueuePage,
+    onResetHistoryToLatestPage: onResetHistoryToLatest,
+    onRetryHistoryPage: onRetryHistory,
+    queueEntryIds,
+  });
+
   return (
     <div className={styles.root}>
       <RoomQueueTabs
@@ -88,36 +165,93 @@ export default function RoomQueuePanelView({
         onChange={onChangeTab}
       />
       <div
+        ref={scrollContainerRef}
         className={styles.listArea}
         data-queue-scroll-container
         aria-label="재생목록"
         tabIndex={0}
+        onScroll={handleScroll}
       >
+        {activeTab === "all" && historyErrorMessage ? (
+          <div className={styles.directionError} role="alert">
+            <span>{historyErrorMessage}</span>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={handleRetryHistory}
+            >
+              지난 곡 다시 시도
+            </button>
+          </div>
+        ) : activeTab === "all" &&
+          (isHistoryLoading || isFetchingNextHistoryPage) ? (
+          <div className={styles.directionState} role="status">
+            <LoadingSpinner ariaLabel="지난 곡 불러오는 중" size={16} />
+          </div>
+        ) : null}
         <RoomQueueListSection
           activeTab={activeTab}
           allEntries={allEntries}
           canDeleteEntry={canDeleteEntry}
           canDeleteEntryAsOwner={canDeleteEntryAsOwner}
+          currentEntry={currentEntry}
           emptyMessage={emptyMessage}
           isEmptyLoading={isEmptyLoading}
           isCurrentUserEntry={isCurrentUserEntry}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}
+          isAllTimelineLoading={isHistoryLoading || isQueueLoading}
           isMoveMyPending={isMoveMyPending}
           isMoveRoomPending={isMoveRoomPending}
           isOwner={isOwner}
           hasNextAllQueuePage={hasNextAllQueuePage}
           hasNextMyQueuePage={hasNextMyQueuePage}
+          historyEntries={historyEntries}
+          includesLatestHistoryPage={includesLatestHistoryPage}
           myEntries={myEntries}
           onDeleteMyEntry={onDeleteMyEntry}
           onDeleteRoomEntry={onDeleteRoomEntry}
+          onDragStateChange={setIsDragging}
           onMoveMyEntry={onMoveMyEntry}
           onMoveRoomEntry={onMoveRoomEntry}
+          onReturnToCurrent={handleReturnToCurrent}
         />
+        {queueErrorMessage ? (
+          <div className={styles.directionError} role="alert">
+            <span>{queueErrorMessage}</span>
+            <button
+              type="button"
+              className={styles.retryButton}
+              onClick={() => void onRetryQueue()}
+            >
+              {activeTab === "all"
+                ? "대기곡 다시 시도"
+                : "내 신청곡 다시 시도"}
+            </button>
+          </div>
+        ) : isQueueLoading || isFetchingNextQueuePage ? (
+          <div className={styles.directionState} role="status">
+            <LoadingSpinner
+              ariaLabel={
+                activeTab === "all"
+                  ? "대기곡 불러오는 중"
+                  : "내 신청곡 불러오는 중"
+              }
+              size={16}
+            />
+          </div>
+        ) : null}
+        {activeTab === "all" ? (
+          <>
+            <div data-queue-content-end aria-hidden="true" />
+            <div
+              className={styles.scrollTail}
+              data-queue-tail-spacer
+              aria-hidden="true"
+            />
+          </>
+        ) : null}
       </div>
-      {queueErrorMessage ? (
-        <div className={styles.error}>{queueErrorMessage}</div>
-      ) : null}
       {isMoveMyPending || isMoveRoomPending ? (
         <div className={styles.refreshing}>
           <LoadingSpinner ariaLabel="큐 순서 변경 중" size={14} />
@@ -132,34 +266,6 @@ export default function RoomQueuePanelView({
         <div className={styles.refreshing}>
           <LoadingSpinner ariaLabel="최신 큐 목록 갱신 중" size={14} />
         </div>
-      ) : null}
-      {activeTab === "all" && hasNextAllQueuePage ? (
-        <button
-          type="button"
-          className={styles.loadMoreButton}
-          disabled={isFetchingNextAllQueuePage}
-          onClick={onLoadMoreAllQueue}
-        >
-          {isFetchingNextAllQueuePage ? (
-            <LoadingSpinner ariaLabel="대기곡 더 불러오는 중" size={16} />
-          ) : (
-            "대기곡 더 보기"
-          )}
-        </button>
-      ) : null}
-      {activeTab === "mine" && hasNextMyQueuePage ? (
-        <button
-          type="button"
-          className={styles.loadMoreButton}
-          disabled={isFetchingNextMyQueuePage}
-          onClick={onLoadMoreMyQueue}
-        >
-          {isFetchingNextMyQueuePage ? (
-            <LoadingSpinner ariaLabel="내 노래 더 불러오는 중" size={16} />
-          ) : (
-            "내 노래 더 보기"
-          )}
-        </button>
       ) : null}
       <div className={styles.addTrackDock}>
         <AddTrackAction

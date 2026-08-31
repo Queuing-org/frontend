@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
+import { useRoomQueueHistory } from "@/src/features/playlist/model/useRoomQueueHistory";
 import { useMoveMyQueueEntry } from "@/src/features/playlist/model/useMoveMyQueueEntry";
 import { useMoveRoomQueueEntry } from "@/src/features/playlist/model/useMoveRoomQueueEntry";
 import { useDeleteMyQueueEntry } from "@/src/features/playlist/model/useDeleteMyQueueEntry";
@@ -17,7 +18,6 @@ import {
   getPendingPersonalQueueEntryIds,
   isPendingQueueEntry,
   isValidPersonalQueueMove,
-  mergeCurrentEntryWithQueue,
   type QueueTab,
 } from "../model/roomQueue";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
@@ -59,14 +59,21 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const { notify } = useActionFeedback();
   const allQueueQuery = useRoomQueue(roomSlug, roomAccessToken);
+  const historyQuery = useRoomQueueHistory(
+    roomSlug,
+    roomAccessToken,
+    activeTab === "all",
+  );
   const {
     data: myQueueData,
     error: myQueueError,
     fetchNextQueuePage: fetchNextMyQueuePage,
     hasNextPage: hasNextMyQueuePage,
+    isFetchNextPageError: isMyQueueLoadMoreError,
     isFetchingNextPage: isFetchingNextMyQueuePage,
     isLoading: isMyQueueLoading,
     isRefetching: isMyRefetching,
+    refetch: refetchMyQueue,
   } = useMyRoomQueue(
     roomSlug,
     roomAccessToken,
@@ -84,14 +91,13 @@ export function useRoomQueuePanel({
 
   const allEntries = useMemo(
     () =>
-      mergeCurrentEntryWithQueue(
-        currentEntry,
-        allQueueQuery.data.pages.flatMap((page) => page.items),
-      ),
-    [allQueueQuery.data.pages, currentEntry],
+      allQueueQuery.data?.pages
+        .flatMap((page) => page.items)
+        .filter((entry) => entry.entryId !== currentEntry?.entryId) ?? [],
+    [allQueueQuery.data?.pages, currentEntry?.entryId],
   );
   const allPendingCount =
-    allQueueQuery.data.pages[0]?.totalPendingCount ?? 0;
+    allQueueQuery.data?.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const myEntries = useMemo(
     () => myQueueData?.pages.flatMap((page) => page.items) ?? [],
@@ -235,6 +241,7 @@ export function useRoomQueuePanel({
     allPendingCount,
     canDeleteEntry,
     canDeleteEntryAsOwner,
+    currentEntry,
     deleteMyQueueEntry,
     deleteRoomQueueEntries,
     emptyMessage,
@@ -242,24 +249,52 @@ export function useRoomQueuePanel({
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
+    hasNextHistoryPage: historyQuery.hasNextPage,
     hasNextAllQueuePage: allQueueQuery.hasNextPage,
     hasNextMyQueuePage,
+    historyEntries: historyQuery.entries,
+    historyErrorMessage: getQueueErrorMessage(historyQuery.error),
+    includesLatestHistoryPage: historyQuery.includesLatestPage,
     isEmptyLoading,
     isCurrentUserEntry,
     isOwner,
+    isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,
-    isRefetching: allQueueQuery.isRefetching || isMyRefetching,
+    isHistoryLoading: historyQuery.isLoading,
+    isQueueLoading:
+      activeTab === "all" ? allQueueQuery.isLoading : isMyQueueLoading,
+    isRefetching:
+      (allQueueQuery.isRefetching && !allQueueQuery.isFetchingNextPage) ||
+      (historyQuery.isRefetching && !historyQuery.isFetchingNextPage) ||
+      (isMyRefetching && !isFetchingNextMyQueuePage),
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,
     myPendingCount,
     queueErrorMessage,
+    loadNextHistoryPage: () => historyQuery.fetchNextPage(),
     loadNextAllQueuePage: () => {
-      void allQueueQuery.fetchNextQueuePage();
+      return allQueueQuery.fetchNextQueuePage();
     },
     loadNextMyQueuePage: () => {
-      void fetchNextMyQueuePage();
+      return fetchNextMyQueuePage();
+    },
+    resetHistoryToLatestPage: historyQuery.resetToLatestPage,
+    retryHistory: () =>
+      historyQuery.isFetchNextPageError
+        ? historyQuery.fetchNextPage()
+        : historyQuery.refetch(),
+    retryQueue: () => {
+      if (activeTab === "all") {
+        return allQueueQuery.isFetchNextPageError
+          ? allQueueQuery.fetchNextQueuePage()
+          : allQueueQuery.refetch();
+      }
+
+      return isMyQueueLoadMoreError
+        ? fetchNextMyQueuePage()
+        : refetchMyQueue();
     },
     setActiveTab,
   };

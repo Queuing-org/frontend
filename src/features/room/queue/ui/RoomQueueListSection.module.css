@@ -1,0 +1,51 @@
+.timeline {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.discontinuity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-block: 1px solid #e9ebee;
+  background: #f7f7f9;
+  color: #6c717a;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.returnButton {
+  padding: 6px 10px;
+  border: 1px solid #d8dbe0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #3c3c3c;
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+
+.returnButton:hover,
+.returnButton:focus-visible {
+  background: #eef0f3;
+}
+
+.returnButton:focus-visible {
+  outline: 2px solid rgba(66, 133, 244, 0.7);
+  outline-offset: 2px;
+}
+
+@media (min-width: 481px) and (max-height: 900px) {
+  .discontinuity {
+    gap: 6.4px;
+    padding: 11.2px 12.8px;
+    font-size: 9.6px;
+  }
+
+  .returnButton {
+    padding: 4.8px 8px;
+  }
+}

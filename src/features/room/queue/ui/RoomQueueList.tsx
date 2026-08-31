@@ -8,6 +8,7 @@ import { useQueueRenderWindow } from "./useQueueRenderWindow";
 
 type Props = {
   canDeleteEntry?: (entry: PlaylistEntry) => boolean;
+  currentAnchorEntryId?: string | null;
   emptyMessage: ReactNode;
   entries: PlaylistEntry[];
   highlightEntry?: (entry: PlaylistEntry) => boolean;
@@ -18,6 +19,7 @@ type Props = {
 
 export default function RoomQueueList({
   canDeleteEntry,
+  currentAnchorEntryId,
   emptyMessage,
   entries,
   highlightEntry,
@@ -48,6 +50,9 @@ export default function RoomQueueList({
       {entries.slice(startIndex, endIndex).map((entry) => (
         <RoomQueueCard
           key={entry.entryId}
+          data-queue-current-anchor={
+            entry.entryId === currentAnchorEntryId ? entry.entryId : undefined
+          }
           data-queue-virtual-item="true"
           entry={entry}
           highlighted={highlightEntry?.(entry) ?? false}
