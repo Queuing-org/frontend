@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import {
-  useQueryClient,
-  useSuspenseInfiniteQuery,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError as ApiErrorValue } from "@/src/shared/api/api-error";
 import {
   fetchRoomQueuePage,
@@ -23,7 +20,7 @@ export function useRoomQueue(
     () => playlistKeys.roomQueue(slug, false),
     [slug],
   );
-  const query = useSuspenseInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam, signal }) =>
       fetchRoomQueuePage({

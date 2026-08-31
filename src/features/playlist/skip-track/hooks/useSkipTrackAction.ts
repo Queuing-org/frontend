@@ -18,6 +18,10 @@ export function useSkipTrackAction(slug: string | null) {
 
     try {
       publishNextTrack(slug);
+      void queryClient.resetQueries({
+        queryKey: playlistKeys.roomQueueHistoryPrefix(slug),
+        exact: true,
+      });
       scheduleQueryInvalidation({
         queryClient,
         queryKeys: [

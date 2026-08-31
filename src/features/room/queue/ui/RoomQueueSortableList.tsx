@@ -1,6 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -41,6 +47,7 @@ type Props = {
   isDeletePending?: boolean;
   isMovePending?: boolean;
   onDelete?: (entryId: string) => void;
+  onDragStateChange?: (isDragging: boolean) => void;
   onMove?: (payload: MovePayload) => Promise<void>;
 };
 
@@ -245,6 +252,7 @@ export default function RoomQueueSortableList({
   isDeletePending = false,
   isMovePending = false,
   onDelete,
+  onDragStateChange,
   onMove,
 }: Props) {
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
@@ -289,16 +297,19 @@ export default function RoomQueueSortableList({
 
   function handleDragStart({ active }: DragStartEvent) {
     setActiveEntryId(String(active.id));
+    onDragStateChange?.(true);
   }
 
   function handleDragCancel() {
     setActiveEntryId(null);
+    onDragStateChange?.(false);
   }
 
   function handleDragEnd({ active, over }: DragEndEvent) {
     const activeEntryId = String(active.id);
     const overEntryId = over ? String(over.id) : null;
     setActiveEntryId(null);
+    onDragStateChange?.(false);
 
     if (!overEntryId || activeEntryId === overEntryId || isMovePending) {
       return;
@@ -340,6 +351,13 @@ export default function RoomQueueSortableList({
       () => setPendingOrder(null),
     );
   }
+
+  useEffect(
+    () => () => {
+      onDragStateChange?.(false);
+    },
+    [onDragStateChange],
+  );
 
   if (entries.length === 0) {
     return <div className={listStyles.state}>{emptyMessage}</div>;

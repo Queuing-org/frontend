@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
+import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { roomMetaQueryOptions } from "@/src/features/room/hooks/useRoomMeta";
 import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
 import { ApiError } from "@/src/shared/api/api-error";
@@ -163,6 +164,20 @@ export default function RoomPlaybackScreen() {
       setStatus,
       slug,
     });
+
+  useEffect(() => {
+    if (currentStatus !== "joined" || !currentRoomAccessToken) {
+      return;
+    }
+
+    // The history key intentionally excludes the room token. Reset only after
+    // the joined render has installed the newest token in the query function,
+    // otherwise an active reconnect can refetch with the rotated-out token.
+    void queryClient.resetQueries({
+      queryKey: playlistKeys.roomQueueHistoryPrefix(slug),
+      exact: true,
+    });
+  }, [currentRoomAccessToken, currentStatus, queryClient, slug]);
 
   const refreshRoomMetaAfterJoin = useCallback(
     (joinedRoomSlug: string) => {

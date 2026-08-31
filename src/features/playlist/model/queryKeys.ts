@@ -4,6 +4,10 @@ export const playlistKeys = {
   roomQueue: (slug: string | null, mine = false) =>
     ["roomQueue", slug, mine ? "mine" : "all"] as const,
   roomQueuePrefix: (slug: string) => ["roomQueue", slug] as const,
+  roomQueueHistory: (slug: string | null) =>
+    ["roomQueueHistory", slug] as const,
+  roomQueueHistoryPrefix: (slug: string) =>
+    ["roomQueueHistory", slug] as const,
   roomParticipants: (slug: string | null) =>
     ["roomParticipants", slug] as const,
   roomParticipantsPrefix: (slug: string) =>

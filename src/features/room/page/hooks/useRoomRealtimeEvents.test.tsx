@@ -104,6 +104,7 @@ describe("useRoomRealtimeEvents", () => {
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomQueueHistory("room"), { value: true });
     queryClient.setQueryData(roomKeys.meta("room"), { value: true });
     sessionStorage.setItem("room-access-token:room", "secret");
     let resolveMeta!: (value: never) => void;
@@ -137,6 +138,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(setLivePlaybackStatus).toHaveBeenCalledWith(null);
     expect(sessionStorage.getItem("room-access-token:room")).toBeNull();
     expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomQueueHistory("room"))).toBeUndefined();
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
     expect(metaSignal?.aborted).toBe(true);
     await act(async () => {
@@ -213,6 +215,7 @@ describe("useRoomRealtimeEvents", () => {
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomQueueHistory("room"), { value: true });
     queryClient.setQueryData(roomKeys.meta("room"), { value: true });
     let userEventHandler: ((message: { body: string }) => void) | undefined;
     const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
@@ -287,11 +290,13 @@ describe("useRoomRealtimeEvents", () => {
     expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
     expect(queryClient.getQueryData(playlistKeys.roomParticipants("room"))).toBeUndefined();
     expect(queryClient.getQueryData(playlistKeys.roomQueue("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomQueueHistory("room"))).toBeUndefined();
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
   });
 
   it("유저 이벤트로 강제 퇴장되면 저장 토큰과 방 연결을 정리한다", () => {
-    const { wrapper } = createRealtimeTestContext();
+    const { queryClient, wrapper } = createRealtimeTestContext();
+    queryClient.setQueryData(playlistKeys.roomQueueHistory("room"), { value: true });
     sessionStorage.setItem("room-access-token:room", "secret");
     let userEventHandler: ((message: { body: string }) => void) | undefined;
     const userSubscription = { id: "user-events", unsubscribe: vi.fn() };
@@ -346,6 +351,7 @@ describe("useRoomRealtimeEvents", () => {
     );
     expect(setStatus).toHaveBeenCalledWith("error");
     expect(navigation.replace).toHaveBeenCalledWith("/");
+    expect(queryClient.getQueryData(playlistKeys.roomQueueHistory("room"))).toBeUndefined();
   });
 
   it("STOMP ERROR frame의 session-replaced도 동일한 terminal room cleanup을 수행한다", () => {
@@ -353,6 +359,7 @@ describe("useRoomRealtimeEvents", () => {
     queryClient.setQueryData(playlistKeys.roomPlayback("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomParticipants("room"), { value: true });
     queryClient.setQueryData(playlistKeys.roomQueue("room"), { value: true });
+    queryClient.setQueryData(playlistKeys.roomQueueHistory("room"), { value: true });
     queryClient.setQueryData(roomKeys.meta("room"), { value: true });
     let socketListener: Parameters<typeof addSocketListener>[0] | undefined;
     vi.mocked(addSocketListener).mockImplementation((listener) => {
@@ -406,6 +413,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(queryClient.getQueryData(playlistKeys.roomPlayback("room"))).toBeUndefined();
     expect(queryClient.getQueryData(playlistKeys.roomParticipants("room"))).toBeUndefined();
     expect(queryClient.getQueryData(playlistKeys.roomQueue("room"))).toBeUndefined();
+    expect(queryClient.getQueryData(playlistKeys.roomQueueHistory("room"))).toBeUndefined();
     expect(queryClient.getQueryData(roomKeys.meta("room"))).toBeUndefined();
     expect(publishLeaveRequest).not.toHaveBeenCalled();
   });
@@ -414,6 +422,7 @@ describe("useRoomRealtimeEvents", () => {
     vi.useFakeTimers();
     const { queryClient, wrapper } = createRealtimeTestContext();
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const resetQueries = vi.spyOn(queryClient, "resetQueries");
     const setQueriesData = vi.spyOn(queryClient, "setQueriesData");
     let roomEventHandler:
       | Parameters<typeof subscribeRoomEvents>[1]
@@ -473,6 +482,10 @@ describe("useRoomRealtimeEvents", () => {
     });
 
     expect(setQueriesData).toHaveBeenCalledTimes(1);
+    expect(resetQueries).toHaveBeenCalledWith({
+      queryKey: ["roomQueueHistory", "room"],
+      exact: true,
+    });
     expect(invalidateQueries).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -483,6 +496,7 @@ describe("useRoomRealtimeEvents", () => {
     });
 
     invalidateQueries.mockClear();
+    resetQueries.mockClear();
     act(() => {
       roomEventHandler?.({
         body: JSON.stringify({
@@ -495,6 +509,10 @@ describe("useRoomRealtimeEvents", () => {
     });
 
     expect(invalidateQueries).not.toHaveBeenCalled();
+    expect(resetQueries).toHaveBeenCalledWith({
+      queryKey: ["roomQueueHistory", "room"],
+      exact: true,
+    });
     await act(async () => {
       await vi.advanceTimersByTimeAsync(75);
     });
@@ -571,6 +589,7 @@ describe("useRoomRealtimeEvents", () => {
     const { queryClient, wrapper } = createRealtimeTestContext();
     const cancelQueries = vi.spyOn(queryClient, "cancelQueries");
     const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+    const resetQueries = vi.spyOn(queryClient, "resetQueries");
     let roomEventHandler:
       | Parameters<typeof subscribeRoomEvents>[1]
       | undefined;
@@ -620,6 +639,7 @@ describe("useRoomRealtimeEvents", () => {
     expect(invalidateQueries).toHaveBeenCalledWith({
       queryKey: ["roomQueue", "room"],
     });
+    expect(resetQueries).not.toHaveBeenCalled();
 
     invalidateQueries.mockClear();
     cancelQueries.mockClear();

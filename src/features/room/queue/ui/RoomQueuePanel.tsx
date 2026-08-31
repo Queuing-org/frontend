@@ -76,9 +76,14 @@ function RoomQueuePanelContent({
       allPendingCount={queuePanel.allPendingCount}
       canDeleteEntry={queuePanel.canDeleteEntry}
       canDeleteEntryAsOwner={queuePanel.canDeleteEntryAsOwner}
+      currentEntry={queuePanel.currentEntry}
       emptyMessage={queuePanel.emptyMessage}
+      hasNextHistoryPage={queuePanel.hasNextHistoryPage}
       hasNextAllQueuePage={queuePanel.hasNextAllQueuePage}
       hasNextMyQueuePage={queuePanel.hasNextMyQueuePage}
+      historyEntries={queuePanel.historyEntries}
+      historyErrorMessage={queuePanel.historyErrorMessage}
+      includesLatestHistoryPage={queuePanel.includesLatestHistoryPage}
       isDeleteMyPending={queuePanel.deleteMyQueueEntry.isPending}
       isDeleteRoomPending={queuePanel.deleteRoomQueueEntries.isPending}
       isEmptyLoading={queuePanel.isEmptyLoading}
@@ -87,8 +92,11 @@ function RoomQueuePanelContent({
       isMoveRoomPending={queuePanel.moveRoomQueueEntry.isPending}
       isOwner={queuePanel.isOwner}
       isRefetching={queuePanel.isRefetching}
+      isFetchingNextHistoryPage={queuePanel.isFetchingNextHistoryPage}
       isFetchingNextAllQueuePage={queuePanel.isFetchingNextAllQueuePage}
       isFetchingNextMyQueuePage={queuePanel.isFetchingNextMyQueuePage}
+      isHistoryLoading={queuePanel.isHistoryLoading}
+      isQueueLoading={queuePanel.isQueueLoading}
       myEntries={queuePanel.myEntries}
       myPendingCount={queuePanel.myPendingCount}
       queueErrorMessage={queuePanel.queueErrorMessage}
@@ -99,8 +107,12 @@ function RoomQueuePanelContent({
       onDeleteRoomEntry={queuePanel.handleDeleteRoomEntry}
       onMoveMyEntry={queuePanel.handleMoveMyEntry}
       onMoveRoomEntry={queuePanel.handleMoveRoomEntry}
+      onLoadMoreHistory={queuePanel.loadNextHistoryPage}
       onLoadMoreAllQueue={queuePanel.loadNextAllQueuePage}
       onLoadMoreMyQueue={queuePanel.loadNextMyQueuePage}
+      onResetHistoryToLatest={queuePanel.resetHistoryToLatestPage}
+      onRetryHistory={queuePanel.retryHistory}
+      onRetryQueue={queuePanel.retryQueue}
     />
   );
 }

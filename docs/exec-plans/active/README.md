@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-08-31-bidirectional-queue-scroll](./2026-08-31-bidirectional-queue-scroll/plan.md): ci-pending — Draft PR #57, queue-history 기반 양방향 무한스크롤과 전체 로컬 QA·fresh review 통과
+
 - [2026-08-24-stomp-worker-heartbeat](./2026-08-24-stomp-worker-heartbeat/plan.md): ci-pending — Draft PR #56, 공용 STOMP outgoing heartbeat Worker 전환과 전체 로컬 QA·fresh review 통과
 
 - [2026-08-23-chat-subscription-stability](./2026-08-23-chat-subscription-stability/plan.md): ci-pending — Draft PR #55, callback 렌더 churn의 STOMP 재구독 차단과 token·room·사용자 전환 lifecycle 회귀 검증 완료

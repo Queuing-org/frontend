@@ -2,6 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
+import { useRoomQueueHistory } from "@/src/features/playlist/model/useRoomQueueHistory";
 import { ApiError } from "@/src/shared/api/api-error";
 import { useRoomQueuePanel } from "./useRoomQueuePanel";
 
@@ -18,6 +19,9 @@ vi.mock("@/src/features/playlist/model/useRoomQueue", () => ({
 }));
 vi.mock("@/src/features/playlist/model/useMyRoomQueue", () => ({
   useMyRoomQueue: vi.fn(),
+}));
+vi.mock("@/src/features/playlist/model/useRoomQueueHistory", () => ({
+  useRoomQueueHistory: vi.fn(),
 }));
 vi.mock("@/src/features/playlist/model/useMoveMyQueueEntry", () => ({
   useMoveMyQueueEntry: () => ({ isPending: false, mutateAsync: mocks.moveMine }),
@@ -76,8 +80,11 @@ describe("useRoomQueuePanel query visibility", () => {
       error: null,
       fetchNextQueuePage: vi.fn(),
       hasNextPage: false,
+      isFetchNextPageError: false,
       isFetchingNextPage: false,
+      isLoading: false,
       isRefetching: false,
+      refetch: vi.fn(),
     } as unknown as ReturnType<typeof useRoomQueue>);
     vi.mocked(useMyRoomQueue).mockReturnValue({
       data: undefined,
@@ -87,7 +94,22 @@ describe("useRoomQueuePanel query visibility", () => {
       isFetchingNextPage: false,
       isLoading: false,
       isRefetching: false,
+      isFetchNextPageError: false,
+      refetch: vi.fn(),
     } as unknown as ReturnType<typeof useMyRoomQueue>);
+    vi.mocked(useRoomQueueHistory).mockReturnValue({
+      entries: [],
+      error: null,
+      fetchNextPage: vi.fn(),
+      hasNextPage: false,
+      includesLatestPage: true,
+      isFetchNextPageError: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+      resetToLatestPage: vi.fn(),
+    } as unknown as ReturnType<typeof useRoomQueueHistory>);
   });
 
   it("전체 탭에서도 로그인 사용자의 내 큐를 조회해 새로고침 count를 복원한다", () => {
@@ -116,6 +138,11 @@ describe("useRoomQueuePanel query visibility", () => {
     );
 
     expect(useMyRoomQueue).toHaveBeenLastCalledWith("room", "secret", true);
+    expect(useRoomQueueHistory).toHaveBeenLastCalledWith(
+      "room",
+      "secret",
+      true,
+    );
     expect(result.current.activeTab).toBe("all");
     expect(result.current.myPendingCount).toBeNull();
 
@@ -307,6 +334,11 @@ describe("useRoomQueuePanel query visibility", () => {
     );
 
     act(() => result.current.setActiveTab("mine"));
+    expect(useRoomQueueHistory).toHaveBeenLastCalledWith(
+      "room",
+      "secret",
+      false,
+    );
     await act(() =>
       result.current.handleMoveMyEntry({
         beforeEntryId: "entry-2",
