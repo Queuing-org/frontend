@@ -7,8 +7,9 @@
 - query: 첫 페이지도 `size=100`; 다음 페이지는 숫자 `cursorId`와 `size=100`
 - every request forwards React Query `AbortSignal`
 - response: `ApiResponse<{ items, hasNext, nextCursor }>` unwrap
-- entry: numeric `id`, flat track metadata, timing fields, and `source: USER_REQUESTED | AUTOMATIC_REPLAY`
+- entry: numeric `id`, flat track metadata, timing fields, and `playbackOrigin: USER_REQUESTED | AUTOMATIC_REPLAY`
 - backend page/item order is newest-first; selector exposes oldest-first
+- 내 노래 탭은 `playbackOrigin=USER_REQUESTED`이면서 응답의 nullable `addedByUserSlug`와 현재 사용자의 공개 slug가 정확히 일치하는 항목만 소비하며, nickname이나 숫자 ID로 대체하지 않는다.
 - `hasNext=false`, missing cursor, or an already requested cursor stops pagination
 - TanStack infinite query stores at most 5 pages and reset returns to the newest first page
 

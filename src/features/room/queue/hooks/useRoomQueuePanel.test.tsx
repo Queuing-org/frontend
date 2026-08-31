@@ -4,6 +4,7 @@ import { useMyRoomQueue } from "@/src/features/playlist/model/useMyRoomQueue";
 import { useRoomQueue } from "@/src/features/playlist/model/useRoomQueue";
 import { useRoomQueueHistory } from "@/src/features/playlist/model/useRoomQueueHistory";
 import { ApiError } from "@/src/shared/api/api-error";
+import type { RoomQueueHistoryEntry } from "@/src/features/playlist/model/types";
 import { useRoomQueuePanel } from "./useRoomQueuePanel";
 
 const mocks = vi.hoisted(() => ({
@@ -59,6 +60,26 @@ const pendingEntry = {
   },
   updatedAtMs: 1,
 };
+
+const historyEntry = (
+  id: number,
+  addedByUserSlug: string | null,
+): RoomQueueHistoryEntry => ({
+  addedByUserSlug,
+  durationMs: 1_000,
+  endedAtMs: id,
+  entryId: `history-${id}`,
+  id,
+  provider: "YOUTUBE",
+  queuedAtMs: 1,
+  skipped: false,
+  playbackOrigin: "USER_REQUESTED",
+  startOffsetMs: 0,
+  startedAtMs: 2,
+  thumbnailUrl: null,
+  title: `지난 곡 ${id}`,
+  videoId: `history-video-${id}`,
+});
 
 describe("useRoomQueuePanel query visibility", () => {
   beforeEach(() => {
@@ -181,6 +202,104 @@ describe("useRoomQueuePanel query visibility", () => {
     rerender();
 
     expect(result.current.myPendingCount).toBeNull();
+  });
+
+  it("내 노래 탭은 공개 slug가 일치하는 history와 현재곡만 노출한다", () => {
+    vi.mocked(useRoomQueueHistory).mockReturnValue({
+      entries: [
+        historyEntry(1, "user"),
+        historyEntry(2, "other"),
+        historyEntry(3, null),
+        {
+          ...historyEntry(4, "user"),
+          playbackOrigin: "AUTOMATIC_REPLAY",
+        },
+      ],
+      error: null,
+      fetchNextPage: vi.fn(),
+      hasNextPage: true,
+      includesLatestPage: true,
+      isFetchNextPageError: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+      resetToLatestPage: vi.fn(),
+    } as unknown as ReturnType<typeof useRoomQueueHistory>);
+    const { result, rerender } = renderHook(
+      ({ currentEntry }) =>
+        useRoomQueuePanel({
+          currentEntry,
+          currentUser: {
+            nickname: "사용자",
+            profileImageUrl: null,
+            slug: "user",
+            userId: 1,
+          },
+          isCurrentUserLoading: false,
+          roomMeta: null,
+          roomAccessToken: "secret",
+          roomSlug: "room",
+        }),
+      { initialProps: { currentEntry: pendingEntry } },
+    );
+
+    act(() => result.current.setActiveTab("mine"));
+
+    expect(useRoomQueueHistory).toHaveBeenLastCalledWith(
+      "room",
+      "secret",
+      true,
+    );
+    expect(result.current.historyEntries.map(({ id }) => id)).toEqual([1]);
+    expect(result.current.currentEntry?.entryId).toBe("entry-1");
+
+    rerender({
+      currentEntry: {
+        ...pendingEntry,
+        addedBy: { ...pendingEntry.addedBy, slug: "other" },
+      },
+    });
+    expect(result.current.currentEntry).toBeNull();
+  });
+
+  it("비로그인 내 노래 탭은 cached history를 노출하거나 추가 조회하지 않는다", () => {
+    const fetchNextPage = vi.fn();
+    vi.mocked(useRoomQueueHistory).mockReturnValue({
+      entries: [historyEntry(1, "user")],
+      error: new Error("history 실패"),
+      fetchNextPage,
+      hasNextPage: true,
+      includesLatestPage: true,
+      isFetchNextPageError: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      isRefetching: false,
+      refetch: vi.fn(),
+      resetToLatestPage: vi.fn(),
+    } as unknown as ReturnType<typeof useRoomQueueHistory>);
+    const { result } = renderHook(() =>
+      useRoomQueuePanel({
+        currentUser: null,
+        isCurrentUserLoading: false,
+        roomMeta: null,
+        roomAccessToken: "secret",
+        roomSlug: "room",
+      }),
+    );
+
+    act(() => result.current.setActiveTab("mine"));
+    result.current.loadNextHistoryPage();
+
+    expect(useRoomQueueHistory).toHaveBeenLastCalledWith(
+      "room",
+      "secret",
+      false,
+    );
+    expect(result.current.historyEntries).toEqual([]);
+    expect(result.current.hasNextHistoryPage).toBe(false);
+    expect(result.current.historyErrorMessage).toBe("");
+    expect(fetchNextPage).not.toHaveBeenCalled();
   });
 
   it("곡 삭제 성공은 알림 없이 목록 갱신 결과만 사용한다", () => {
@@ -337,7 +456,7 @@ describe("useRoomQueuePanel query visibility", () => {
     expect(useRoomQueueHistory).toHaveBeenLastCalledWith(
       "room",
       "secret",
-      false,
+      true,
     );
     await act(() =>
       result.current.handleMoveMyEntry({

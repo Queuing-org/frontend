@@ -1,12 +1,12 @@
 # Delivery State
 
-- status: ci-pending
+- status: publishing
 - branch: dev
 - base: main
 - issue:
-- pr: https://github.com/Queuing-org/frontend/pull/57
+- pr: pending successor to merged PR #57
 - selected_skills: queuing-feature-delivery, queuing-orchestrator, queuing-api-boundary, queuing-ui-flow, frontend-architecture-guardrails, queuing-qa-reviewer
-- local_qa: test 152/621 passed; lint passed; build passed; fresh QA pass
-- ci: pending
+- local_qa: test 152/628 passed; lint passed; build passed; diff-check passed; fresh QA pass
+- ci: not-started
 - review_threads: not-started
-- next_action: monitor PR #57 checks and review feedback
+- next_action: dev push 후 successor Draft PR 생성

@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import type { PlaylistEntry } from "@/src/features/playlist/model/types";
+import type {
+  PlaylistEntry,
+  RoomQueueHistoryEntry,
+} from "@/src/features/playlist/model/types";
 import {
   getPendingPersonalQueueEntryIds,
   isEntryRequestedByUser,
+  isHistoryEntryRequestedByUser,
   isValidPersonalQueueMove,
   mergeCurrentEntryWithQueue,
 } from "./roomQueue";
@@ -32,6 +36,25 @@ const entry = (
   updatedAtMs: 1,
 });
 
+const historyEntry = (
+  addedByUserSlug: string | null,
+): RoomQueueHistoryEntry => ({
+  addedByUserSlug,
+  durationMs: 1,
+  endedAtMs: 3,
+  entryId: "history-entry",
+  id: 1,
+  provider: "YOUTUBE",
+  queuedAtMs: 1,
+  skipped: false,
+  playbackOrigin: "USER_REQUESTED",
+  startOffsetMs: 0,
+  startedAtMs: 2,
+  thumbnailUrl: null,
+  title: "지난 곡",
+  videoId: "history-video",
+});
+
 describe("개인 큐 순서와 공개 식별", () => {
   it("ownerOrdered 여부와 무관하게 모든 대기곡을 개인 순서 payload에 포함한다", () => {
     const ids = getPendingPersonalQueueEntryIds([
@@ -58,6 +81,15 @@ describe("개인 큐 순서와 공개 식별", () => {
     };
     expect(isEntryRequestedByUser(entry("mine", false), me)).toBe(true);
     expect(isEntryRequestedByUser(entry("guest", false, null), me)).toBe(false);
+    expect(isHistoryEntryRequestedByUser(historyEntry("me"), me)).toBe(true);
+    expect(
+      isHistoryEntryRequestedByUser(
+        { ...historyEntry("me"), playbackOrigin: "AUTOMATIC_REPLAY" },
+        me,
+      ),
+    ).toBe(false);
+    expect(isHistoryEntryRequestedByUser(historyEntry("other"), me)).toBe(false);
+    expect(isHistoryEntryRequestedByUser(historyEntry(null), me)).toBe(false);
   });
 
   it("현재 곡을 전체 queue 앞에 active로 합치고 중복 entry를 제거한다", () => {

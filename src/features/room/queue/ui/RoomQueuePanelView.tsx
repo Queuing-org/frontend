@@ -137,6 +137,7 @@ export default function RoomQueuePanelView({
     handleReturnToCurrent,
     handleRetryHistory,
     handleScroll,
+    handleWheel,
     scrollContainerRef,
   } = useQueueBidirectionalScroll({
     activeTab,
@@ -171,8 +172,9 @@ export default function RoomQueuePanelView({
         aria-label="재생목록"
         tabIndex={0}
         onScroll={handleScroll}
+        onWheel={handleWheel}
       >
-        {activeTab === "all" && historyErrorMessage ? (
+        {historyErrorMessage ? (
           <div className={styles.directionError} role="alert">
             <span>{historyErrorMessage}</span>
             <button
@@ -183,8 +185,7 @@ export default function RoomQueuePanelView({
               지난 곡 다시 시도
             </button>
           </div>
-        ) : activeTab === "all" &&
-          (isHistoryLoading || isFetchingNextHistoryPage) ? (
+        ) : isHistoryLoading || isFetchingNextHistoryPage ? (
           <div className={styles.directionState} role="status">
             <LoadingSpinner ariaLabel="지난 곡 불러오는 중" size={16} />
           </div>
@@ -200,7 +201,7 @@ export default function RoomQueuePanelView({
           isCurrentUserEntry={isCurrentUserEntry}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}
-          isAllTimelineLoading={isHistoryLoading || isQueueLoading}
+          isTimelineLoading={isHistoryLoading || isQueueLoading}
           isMoveMyPending={isMoveMyPending}
           isMoveRoomPending={isMoveRoomPending}
           isOwner={isOwner}
@@ -241,16 +242,12 @@ export default function RoomQueuePanelView({
             />
           </div>
         ) : null}
-        {activeTab === "all" ? (
-          <>
-            <div data-queue-content-end aria-hidden="true" />
-            <div
-              className={styles.scrollTail}
-              data-queue-tail-spacer
-              aria-hidden="true"
-            />
-          </>
-        ) : null}
+        <div data-queue-content-end aria-hidden="true" />
+        <div
+          className={styles.scrollTail}
+          data-queue-tail-spacer
+          aria-hidden="true"
+        />
       </div>
       {isMoveMyPending || isMoveRoomPending ? (
         <div className={styles.refreshing}>

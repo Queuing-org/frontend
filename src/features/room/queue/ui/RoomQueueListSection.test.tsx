@@ -44,7 +44,8 @@ const historyEntry = (id: number): RoomQueueHistoryEntry => ({
   provider: "YOUTUBE",
   queuedAtMs: 1,
   skipped: true,
-  source: "AUTOMATIC_REPLAY",
+  playbackOrigin: "AUTOMATIC_REPLAY",
+  startOffsetMs: 0,
   startedAtMs: 2,
   thumbnailUrl: null,
   title: `지난 곡 ${id}`,
@@ -159,6 +160,41 @@ describe("RoomQueueListSection move lock", () => {
     expect(
       screen.queryByLabelText("지난 곡 1 순서 변경"),
     ).not.toBeInTheDocument();
+    expect(screen.getByText("지난 곡 1").closest("li")).toHaveAttribute(
+      "data-history",
+      "true",
+    );
+  });
+
+  it("내 노래 탭도 지난 곡과 본인 현재곡을 대기곡 앞에 표시한다", () => {
+    render(
+      <RoomQueueListSection
+        {...baseProps}
+        activeTab="mine"
+        currentEntry={entry("now-playing", true)}
+        historyEntries={[historyEntry(1)]}
+      />,
+    );
+
+    expect(screen.getByText("지난 곡 1")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "현재 재생 중" }))
+      .toBeInTheDocument();
+    expect(screen.getByLabelText("mine-a 순서 변경"))
+      .toBeInTheDocument();
+  });
+
+  it("전체 대기곡이 없어도 내 대기곡 목록은 빈 상태로 가리지 않는다", () => {
+    render(
+      <RoomQueueListSection
+        {...baseProps}
+        activeTab="mine"
+        allEntries={[]}
+      />,
+    );
+
+    expect(screen.getByLabelText("mine-a 순서 변경"))
+      .toBeInTheDocument();
+    expect(screen.queryByText("비었음")).not.toBeInTheDocument();
   });
 
   it("최신 history가 밀려난 경계에서 현재 곡 복귀 동작을 제공한다", () => {

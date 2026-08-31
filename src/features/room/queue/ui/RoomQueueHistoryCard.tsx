@@ -22,6 +22,7 @@ export default function RoomQueueHistoryCard({ entry }: Props) {
   return (
     <li
       className={styles.item}
+      data-history="true"
       data-queue-history-id={entry.id}
       data-queue-history-item="true"
       data-queue-virtual-item="true"

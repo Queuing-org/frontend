@@ -30,7 +30,7 @@ type RoomQueueListSectionProps = {
   emptyMessage: string;
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
-  isAllTimelineLoading?: boolean;
+  isTimelineLoading?: boolean;
   isEmptyLoading: boolean;
   isCurrentUserEntry: (entry: PlaylistEntry) => boolean;
   isMoveMyPending: boolean;
@@ -58,7 +58,7 @@ export default function RoomQueueListSection({
   emptyMessage,
   isDeleteMyPending,
   isDeleteRoomPending,
-  isAllTimelineLoading = false,
+  isTimelineLoading = false,
   isEmptyLoading,
   isCurrentUserEntry,
   isMoveMyPending,
@@ -83,37 +83,34 @@ export default function RoomQueueListSection({
     emptyMessage
   );
 
-  if (activeTab === "mine") {
-    return (
-      <RoomQueueSortableList
-        canDeleteEntry={canDeleteEntry}
-        emptyMessage={emptyContent}
-        entries={myEntries}
-        isDeletePending={isDeleteMyPending}
-        isMovePending={isAnyMovePending}
-        hasUnloadedEntries={hasNextMyQueuePage}
-        onDragStateChange={onDragStateChange}
-        onDelete={onDeleteMyEntry}
-        onMove={onMoveMyEntry}
-      />
-    );
-  }
-
   const activeCurrentEntry = currentEntry
     ? mergeCurrentEntryWithQueue(currentEntry, [])[0]
     : null;
+  const pendingEntries = activeTab === "mine" ? myEntries : allEntries;
   const hasTimelineEntries =
     historyEntries.length > 0 ||
     Boolean(activeCurrentEntry) ||
-    allEntries.length > 0;
+    pendingEntries.length > 0;
 
   if (!hasTimelineEntries) {
-    return isAllTimelineLoading ? null : (
-      <div className={listStyles.state}>{emptyMessage}</div>
+    return isTimelineLoading ? null : (
+      <div className={listStyles.state}>{emptyContent}</div>
     );
   }
 
-  const pendingQueue = isOwner ? (
+  const pendingQueue = activeTab === "mine" ? (
+    <RoomQueueSortableList
+      canDeleteEntry={canDeleteEntry}
+      emptyMessage={null}
+      entries={myEntries}
+      isDeletePending={isDeleteMyPending}
+      isMovePending={isAnyMovePending}
+      hasUnloadedEntries={hasNextMyQueuePage}
+      onDragStateChange={onDragStateChange}
+      onDelete={onDeleteMyEntry}
+      onMove={onMoveMyEntry}
+    />
+  ) : isOwner ? (
     <RoomQueueSortableList
       canDeleteEntry={canDeleteEntryAsOwner}
       emptyMessage={null}
@@ -161,7 +158,7 @@ export default function RoomQueueListSection({
           highlightEntry={isCurrentUserEntry}
         />
       ) : null}
-      {allEntries.length > 0 ? pendingQueue : null}
+      {pendingEntries.length > 0 ? pendingQueue : null}
     </div>
   );
 }

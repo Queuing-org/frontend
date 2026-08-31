@@ -113,6 +113,22 @@ describe("RoomQueuePanelView", () => {
     expect(screen.getByText("대기곡 실패")).toBeInTheDocument();
   });
 
+  it("내 노래 탭에서도 지난 곡 조회 실패를 상단 재시도로 복구한다", () => {
+    const onRetryHistory = vi.fn();
+    renderView({
+      activeTab: "mine",
+      historyErrorMessage: "내 지난 곡 실패",
+      onRetryHistory,
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "지난 곡 다시 시도" }),
+    );
+
+    expect(onRetryHistory).toHaveBeenCalledOnce();
+    expect(screen.getByText("내 지난 곡 실패")).toBeInTheDocument();
+  });
+
   it("초기·추가 조회 loading을 기존 목록 영역의 방향별 상태로 표시한다", () => {
     renderView({
       isFetchingNextAllQueuePage: true,

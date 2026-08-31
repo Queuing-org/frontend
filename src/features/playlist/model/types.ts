@@ -113,7 +113,7 @@ export type RoomParticipantsPage = {
   nextCursor: string | null;
 };
 
-export type RoomQueueHistorySource =
+export type RoomQueuePlaybackOrigin =
   | "USER_REQUESTED"
   | "AUTOMATIC_REPLAY";
 
@@ -122,9 +122,10 @@ export type RoomQueueHistoryEntry = {
   title: string;
   entryId: string;
   skipped: boolean;
+  startOffsetMs: number;
   videoId: string;
   provider: TrackProvider;
-  source: RoomQueueHistorySource;
+  playbackOrigin: RoomQueuePlaybackOrigin;
   endedAtMs: number;
   durationMs: number;
   queuedAtMs: number | null;

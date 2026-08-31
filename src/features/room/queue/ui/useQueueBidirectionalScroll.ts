@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   type UIEvent,
+  type WheelEvent as ReactWheelEvent,
 } from "react";
 import type { QueueTab } from "../model/roomQueue";
 
@@ -113,17 +114,13 @@ export function useQueueBidirectionalScroll({
   const keepCurrentAlignedRef = useRef(false);
   const isCurrentAlignedRef = useRef(false);
   const getCurrentAnchor = useCallback(() => {
-    if (activeTab !== "all") {
-      return null;
-    }
-
     const container = scrollContainerRef.current;
     return container?.querySelector<HTMLElement>(
       currentEntryId
         ? "[data-queue-current-anchor]"
         : "[data-queue-current-boundary]",
     ) ?? null;
-  }, [activeTab, currentEntryId]);
+  }, [currentEntryId]);
 
   const updateTailSpacer = useCallback(() => {
     const container = scrollContainerRef.current;
@@ -193,6 +190,34 @@ export function useQueueBidirectionalScroll({
     };
   }, [historyEntryIds]);
 
+  const requestPreviousHistoryPage = useCallback(
+    (container: HTMLElement) => {
+      if (
+        container.scrollTop > QUEUE_SCROLL_EDGE_THRESHOLD ||
+        !hasNextHistoryPage ||
+        hasHistoryError ||
+        isFetchingHistory ||
+        isInteractionBusy ||
+        topRequestLatchedRef.current
+      ) {
+        return false;
+      }
+
+      topRequestLatchedRef.current = true;
+      captureHistoryAnchor();
+      void onLoadNextHistoryPage();
+      return true;
+    },
+    [
+      captureHistoryAnchor,
+      hasHistoryError,
+      hasNextHistoryPage,
+      isFetchingHistory,
+      isInteractionBusy,
+      onLoadNextHistoryPage,
+    ],
+  );
+
   const handleScroll = useCallback(
     (event: UIEvent<HTMLDivElement>) => {
       const container = event.currentTarget;
@@ -215,18 +240,7 @@ export function useQueueBidirectionalScroll({
         bottomRequestLatchedRef.current = false;
       }
 
-      if (
-        activeTab === "all" &&
-        isNearTop &&
-        hasNextHistoryPage &&
-        !hasHistoryError &&
-        !isFetchingHistory &&
-        !isInteractionBusy &&
-        !topRequestLatchedRef.current
-      ) {
-        topRequestLatchedRef.current = true;
-        captureHistoryAnchor();
-        void onLoadNextHistoryPage();
+      if (isNearTop && requestPreviousHistoryPage(container)) {
         return;
       }
 
@@ -243,19 +257,23 @@ export function useQueueBidirectionalScroll({
       }
     },
     [
-      activeTab,
-      captureHistoryAnchor,
       getCurrentAnchor,
-      hasHistoryError,
-      hasNextHistoryPage,
       hasNextQueuePage,
       hasQueueError,
-      isFetchingHistory,
       isFetchingQueue,
       isInteractionBusy,
-      onLoadNextHistoryPage,
       onLoadNextQueuePage,
+      requestPreviousHistoryPage,
     ],
+  );
+
+  const handleWheel = useCallback(
+    (event: ReactWheelEvent<HTMLDivElement>) => {
+      if (event.deltaY < 0) {
+        requestPreviousHistoryPage(event.currentTarget);
+      }
+    },
+    [requestPreviousHistoryPage],
   );
 
   const handleReturnToCurrent = useCallback(() => {
@@ -265,18 +283,22 @@ export function useQueueBidirectionalScroll({
   }, [alignCurrentToTop, onResetHistoryToLatestPage]);
 
   const handleRetryHistory = useCallback(() => {
-    if (activeTab === "all") {
-      captureHistoryAnchor();
-      topRequestLatchedRef.current = true;
-    }
+    captureHistoryAnchor();
+    topRequestLatchedRef.current = true;
     void onRetryHistoryPage();
-  }, [activeTab, captureHistoryAnchor, onRetryHistoryPage]);
+  }, [captureHistoryAnchor, onRetryHistoryPage]);
+
+  useLayoutEffect(() => {
+    if (isFetchingHistory) {
+      topRequestLatchedRef.current = false;
+    }
+  }, [isFetchingHistory]);
 
   useLayoutEffect(() => {
     pendingHistoryAnchorRef.current = null;
     topRequestLatchedRef.current = false;
     bottomRequestLatchedRef.current = false;
-    keepCurrentAlignedRef.current = activeTab === "all";
+    keepCurrentAlignedRef.current = true;
     isCurrentAlignedRef.current = false;
     updateTailSpacer();
     alignCurrentToTop();
@@ -345,7 +367,6 @@ export function useQueueBidirectionalScroll({
       }
       pendingHistoryAnchorRef.current = null;
     } else if (
-      activeTab === "all" &&
       previousHistoryLengthRef.current === 0 &&
       historyEntryIds.length > 0
     ) {
@@ -358,7 +379,6 @@ export function useQueueBidirectionalScroll({
     }
     previousHistoryLengthRef.current = historyEntryIds.length;
   }, [
-    activeTab,
     alignCurrentToTop,
     historyEntryIds,
     isFetchingHistory,
@@ -368,6 +388,7 @@ export function useQueueBidirectionalScroll({
     handleReturnToCurrent,
     handleRetryHistory,
     handleScroll,
+    handleWheel,
     scrollContainerRef,
   };
 }
