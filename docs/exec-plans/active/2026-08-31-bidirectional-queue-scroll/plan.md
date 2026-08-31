@@ -35,6 +35,7 @@
 2. `feat(queue): 재생목록 양방향 무한스크롤 적용`
 3. `docs(delivery): 양방향 무한스크롤 게시 상태 기록`
 4. `feat(queue): 내 노래 재생 기록 노출`
+5. `docs(delivery): 내 노래 기록 게시 상태 갱신`
 
 ## Progress
 
@@ -61,6 +62,7 @@
 - fresh read-only QA: `pass`; virtual geometry, stale anchor, retry, refetch busy, tail clamp findings closed
 - manual browser QA: unavailable because the in-app browser had no connected runtime; no desktop/mobile/public/private claim is made
 - delivery: `dev` pushed and Draft PR #57 opened against `main`
+- follow-up delivery: `dev` pushed and Draft PR #58 opened against `main`
 - follow-up targeted: room/playlist 26 files, 101 tests passed; final focused 2 files, 22 tests passed
 - follow-up full QA: 152 files, 628 tests passed; lint passed; build passed; `git diff --check` passed
 - follow-up fresh read-only QA: `pass`; 개인 필터, 짧은 목록 wheel, anchor/latch, DnD, 회색 상태 검토 완료
