@@ -184,11 +184,11 @@ describe("useAddTrackAction", () => {
 
     expect(mocks.setError).toHaveBeenCalledWith(
       "story",
-      "사연은 30자 이하로 입력해주세요.",
+      "노래 선정 이유는 30자 이하로 입력해주세요.",
     );
     expect(mocks.notify).toHaveBeenCalledWith({
       dedupeKey: "add-track:room:story",
-      message: "사연은 30자 이하로 입력해주세요.",
+      message: "노래 선정 이유는 30자 이하로 입력해주세요.",
       tone: "error",
     });
   });

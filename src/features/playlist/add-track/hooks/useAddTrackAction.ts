@@ -193,7 +193,7 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
 
     const story = form.storyValue.trim();
     if (story.length > ADD_TRACK_STORY_MAX_LENGTH) {
-      showError("story", "사연은 30자 이하로 입력해주세요.");
+      showError("story", "노래 선정 이유는 30자 이하로 입력해주세요.");
       return;
     }
 

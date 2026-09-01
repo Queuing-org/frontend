@@ -95,7 +95,7 @@
   border: 1px solid #d9d9d9;
   border-radius: 8px;
   color: #3c3c3c;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: var(--fw-medium);
   outline: none;
   transition:
@@ -172,18 +172,30 @@
 
 .actionButton {
   min-width: 83px;
-  padding: 0;
+  min-height: 40px;
+  padding: 0 18px;
   border: 0;
+  border-radius: 999px;
   background: transparent;
   color: #3c3c3c;
   font-size: 20px;
   font-weight: var(--fw-semibold);
   line-height: 1.4;
   cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
-.actionButton:hover:not(:disabled) {
+.actionButton:hover:not(:disabled),
+.actionButton:focus-visible:not(:disabled) {
+  background: #f7f7f9;
   color: #555555;
+}
+
+.actionButton:focus-visible {
+  outline: 2px solid #8d8d8d;
+  outline-offset: 2px;
 }
 
 .submitButton {
@@ -230,7 +242,7 @@
   .input {
     height: 64px;
     padding: 0 18px;
-    font-size: 19px;
+    font-size: 20px;
   }
 
   .textarea {
@@ -246,6 +258,7 @@
 
   .actionButton {
     min-width: 72px;
+    min-height: 44px;
     font-size: 22px;
   }
 }
@@ -259,9 +272,9 @@
   .fieldGroup + .fieldGroup { margin-top: 19.2px; }
   .label, .youtubeLink { font-size: 12.8px; }
   .characterCount { font-size: 11.2px; }
-  .input { height: 42.4px; padding: 11.2px 12.8px; font-size: 14.4px; }
+  .input { height: 42.4px; padding: 11.2px 12.8px; font-size: 12.8px; }
   .textarea { min-height: 89.6px; padding: 11.2px 12.8px; font-size: 12.8px; }
   .error { margin-top: 9.6px; font-size: 14.4px; }
   .actions { gap: 16px; padding-top: 32px; }
-  .actionButton { min-width: 66.4px; font-size: 16px; }
+  .actionButton { min-width: 66.4px; min-height: 32px; padding: 0 14.4px; font-size: 16px; }
 }
