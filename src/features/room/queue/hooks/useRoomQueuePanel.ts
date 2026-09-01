@@ -122,11 +122,13 @@ export function useRoomQueuePanel({
           ),
     [activeTab, currentUser, historyQuery.entries],
   );
-  const visibleCurrentEntry =
-    activeTab === "all" ||
-    (currentEntry && isCurrentUserEntry(currentEntry))
-      ? currentEntry
-      : null;
+  const isAutomaticReplay =
+    currentEntry?.status.playbackOrigin === "AUTOMATIC_REPLAY";
+  const shouldShowCurrentEntry =
+    !isAutomaticReplay &&
+    (activeTab === "all" ||
+      Boolean(currentEntry && isCurrentUserEntry(currentEntry)));
+  const visibleCurrentEntry = shouldShowCurrentEntry ? currentEntry : null;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isCurrentUserEntry(entry);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -278,6 +280,7 @@ export function useRoomQueuePanel({
     includesLatestHistoryPage:
       !isHistoryEnabled || historyQuery.includesLatestPage,
     isEmptyLoading,
+    isAutomaticReplayActive: activeTab === "all" && isAutomaticReplay,
     isCurrentUserEntry,
     isOwner,
     isFetchingNextHistoryPage:

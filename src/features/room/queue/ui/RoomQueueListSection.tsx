@@ -32,6 +32,7 @@ type RoomQueueListSectionProps = {
   isDeleteRoomPending: boolean;
   isTimelineLoading?: boolean;
   isEmptyLoading: boolean;
+  isAutomaticReplayActive: boolean;
   isCurrentUserEntry: (entry: PlaylistEntry) => boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
@@ -60,6 +61,7 @@ export default function RoomQueueListSection({
   isDeleteRoomPending,
   isTimelineLoading = false,
   isEmptyLoading,
+  isAutomaticReplayActive,
   isCurrentUserEntry,
   isMoveMyPending,
   isMoveRoomPending,
@@ -83,7 +85,7 @@ export default function RoomQueueListSection({
     emptyMessage
   );
 
-  const activeCurrentEntry = currentEntry
+  const activeCurrentEntry = currentEntry && !isAutomaticReplayActive
     ? mergeCurrentEntryWithQueue(currentEntry, [])[0]
     : null;
   const pendingEntries = activeTab === "mine" ? myEntries : allEntries;
@@ -93,7 +95,13 @@ export default function RoomQueueListSection({
     pendingEntries.length > 0;
 
   if (!hasTimelineEntries) {
-    return isTimelineLoading ? null : (
+    if (isTimelineLoading) {
+      return null;
+    }
+
+    return isAutomaticReplayActive ? (
+      <AutomaticReplayState fillAvailableSpace />
+    ) : (
       <div className={listStyles.state}>{emptyContent}</div>
     );
   }
@@ -158,7 +166,31 @@ export default function RoomQueueListSection({
           highlightEntry={isCurrentUserEntry}
         />
       ) : null}
+      {isAutomaticReplayActive ? <AutomaticReplayState /> : null}
       {pendingEntries.length > 0 ? pendingQueue : null}
+    </div>
+  );
+}
+
+function AutomaticReplayState({
+  fillAvailableSpace = false,
+}: {
+  fillAvailableSpace?: boolean;
+}) {
+  return (
+    <div
+      className={styles.automaticReplayState}
+      data-fill-available-space={fillAvailableSpace}
+      role="status"
+    >
+      <span className={styles.automaticReplayIcon} aria-hidden="true">
+        <span className={styles.automaticReplayBar} data-bar="first" />
+        <span className={styles.automaticReplayBar} data-bar="second" />
+        <span className={styles.automaticReplayBar} data-bar="third" />
+      </span>
+      <span className={styles.automaticReplayMessage}>
+        현재 자동 재생 중입니다
+      </span>
     </div>
   );
 }

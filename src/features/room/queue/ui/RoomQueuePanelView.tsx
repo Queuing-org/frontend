@@ -36,6 +36,7 @@ type RoomQueuePanelViewProps = {
   isDeleteMyPending: boolean;
   isDeleteRoomPending: boolean;
   isEmptyLoading: boolean;
+  isAutomaticReplayActive: boolean;
   isCurrentUserEntry: (entry: PlaylistEntry) => boolean;
   isMoveMyPending: boolean;
   isMoveRoomPending: boolean;
@@ -81,6 +82,7 @@ export default function RoomQueuePanelView({
   isDeleteMyPending,
   isDeleteRoomPending,
   isEmptyLoading,
+  isAutomaticReplayActive,
   isCurrentUserEntry,
   isMoveMyPending,
   isMoveRoomPending,
@@ -198,6 +200,7 @@ export default function RoomQueuePanelView({
           currentEntry={currentEntry}
           emptyMessage={emptyMessage}
           isEmptyLoading={isEmptyLoading}
+          isAutomaticReplayActive={isAutomaticReplayActive}
           isCurrentUserEntry={isCurrentUserEntry}
           isDeleteMyPending={isDeleteMyPending}
           isDeleteRoomPending={isDeleteRoomPending}

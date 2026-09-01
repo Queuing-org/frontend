@@ -263,6 +263,35 @@ describe("useRoomQueuePanel query visibility", () => {
     expect(result.current.currentEntry).toBeNull();
   });
 
+  it("자동 순환 현재곡은 전체 트랙 카드에서 숨기고 전체 탭 상태만 노출한다", () => {
+    const automaticReplayEntry = {
+      ...pendingEntry,
+      status: {
+        ...pendingEntry.status,
+        isActive: true,
+        playbackOrigin: "AUTOMATIC_REPLAY" as const,
+      },
+    };
+    const { result } = renderHook(() =>
+      useRoomQueuePanel({
+        currentEntry: automaticReplayEntry,
+        currentUser: null,
+        isCurrentUserLoading: false,
+        roomMeta: null,
+        roomAccessToken: "secret",
+        roomSlug: "room",
+      }),
+    );
+
+    expect(result.current.currentEntry).toBeNull();
+    expect(result.current.isAutomaticReplayActive).toBe(true);
+
+    act(() => result.current.setActiveTab("mine"));
+
+    expect(result.current.currentEntry).toBeNull();
+    expect(result.current.isAutomaticReplayActive).toBe(false);
+  });
+
   it("비로그인 내 노래 탭은 cached history를 노출하거나 추가 조회하지 않는다", () => {
     const fetchNextPage = vi.fn();
     vi.mocked(useRoomQueueHistory).mockReturnValue({

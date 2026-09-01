@@ -3,6 +3,7 @@ import type { ImgHTMLAttributes } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type {
   PlaylistEntry,
+  RoomQueuePlaybackOrigin,
   RoomQueueHistoryEntry,
 } from "@/src/features/playlist/model/types";
 import RoomQueueListSection from "./RoomQueueListSection";
@@ -14,7 +15,11 @@ vi.mock("next/image", () => ({
   ),
 }));
 
-const entry = (entryId: string, isActive = false): PlaylistEntry => ({
+const entry = (
+  entryId: string,
+  isActive = false,
+  playbackOrigin?: RoomQueuePlaybackOrigin,
+): PlaylistEntry => ({
   addedBy: { avatarUrl: null, nickname: "나", slug: "me" },
   createdAtMs: 1,
   entryId,
@@ -23,6 +28,7 @@ const entry = (entryId: string, isActive = false): PlaylistEntry => ({
     isActive,
     isPlayed: false,
     ownerOrdered: false,
+    playbackOrigin,
     skipped: false,
   },
   track: {
@@ -64,6 +70,7 @@ const baseProps = {
   isDeleteMyPending: false,
   isDeleteRoomPending: false,
   isEmptyLoading: false,
+  isAutomaticReplayActive: false,
   isCurrentUserEntry: (queueEntry: PlaylistEntry) =>
     queueEntry.addedBy.slug === "me",
   isMoveMyPending: false,
@@ -126,6 +133,51 @@ describe("RoomQueueListSection move lock", () => {
     expect(activeEntry).not.toBeNull();
     expect(activeEntry).toHaveAttribute("data-current-user", "true");
     expect(activeEntry).toHaveAttribute("data-active", "true");
+  });
+
+  it("자동 순환 재생만 있으면 현재곡 카드 대신 움직이는 상태를 표시한다", () => {
+    render(
+      <RoomQueueListSection
+        {...baseProps}
+        activeTab="all"
+        allEntries={[]}
+        currentEntry={entry(
+          "automatic-track",
+          true,
+          "AUTOMATIC_REPLAY",
+        )}
+        isAutomaticReplayActive
+        myEntries={[]}
+      />,
+    );
+
+    const state = screen.getByRole("status");
+    expect(state).toHaveTextContent("현재 자동 재생 중입니다");
+    expect(state.querySelectorAll("[data-bar]")).toHaveLength(3);
+    expect(screen.queryByText("automatic-track")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "현재 재생 중" }))
+      .not.toBeInTheDocument();
+  });
+
+  it("자동 순환 중에도 지난 곡과 대기곡은 유지하고 현재곡만 대체한다", () => {
+    render(
+      <RoomQueueListSection
+        {...baseProps}
+        activeTab="all"
+        currentEntry={entry(
+          "automatic-track",
+          true,
+          "AUTOMATIC_REPLAY",
+        )}
+        historyEntries={[historyEntry(1)]}
+        isAutomaticReplayActive
+      />,
+    );
+
+    expect(screen.getByText("지난 곡 1")).toBeInTheDocument();
+    expect(screen.getByLabelText("all-a 순서 변경")).toBeInTheDocument();
+    expect(screen.getByText("현재 자동 재생 중입니다")).toBeInTheDocument();
+    expect(screen.queryByText("automatic-track")).not.toBeInTheDocument();
   });
 
   it("내 노래 순서 동기화가 끝날 때까지 전체 트랙 드래그도 잠근다", () => {

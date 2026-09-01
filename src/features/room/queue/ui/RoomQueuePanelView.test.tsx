@@ -7,7 +7,15 @@ vi.mock("@/src/features/playlist/add-track/ui/AddTrackAction", () => ({
   default: () => <button type="button">곡 추가</button>,
 }));
 vi.mock("./RoomQueueListSection", () => ({
-  default: () => <div>재생목록 내용</div>,
+  default: ({
+    isAutomaticReplayActive,
+  }: {
+    isAutomaticReplayActive: boolean;
+  }) => (
+    <div data-automatic-replay={isAutomaticReplayActive}>
+      재생목록 내용
+    </div>
+  ),
 }));
 vi.mock("./RoomQueueTabs", () => ({
   default: () => <div>재생목록 탭</div>,
@@ -30,6 +38,7 @@ const baseProps: ComponentProps<typeof RoomQueuePanelView> = {
   isDeleteMyPending: false,
   isDeleteRoomPending: false,
   isEmptyLoading: false,
+  isAutomaticReplayActive: false,
   isCurrentUserEntry: () => false,
   isFetchingNextHistoryPage: false,
   isFetchingNextAllQueuePage: false,
@@ -69,6 +78,15 @@ describe("RoomQueuePanelView", () => {
     renderView();
 
     expect(screen.getByLabelText("재생목록")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("자동 순환 재생 상태를 목록 경계로 전달한다", () => {
+    renderView({ isAutomaticReplayActive: true });
+
+    expect(screen.getByText("재생목록 내용")).toHaveAttribute(
+      "data-automatic-replay",
+      "true",
+    );
   });
 
   it("다음 page가 있어도 상시 더 보기 버튼을 렌더링하지 않는다", () => {

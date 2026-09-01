@@ -51,11 +51,16 @@ export type PlaylistTrack = {
   thumbnailUrl: string | null;
 };
 
+export type RoomQueuePlaybackOrigin =
+  | "USER_REQUESTED"
+  | "AUTOMATIC_REPLAY";
+
 export type PlaylistEntryStatus = {
   skipped: boolean;
   isActive: boolean;
   isPlayed: boolean;
   ownerOrdered: boolean;
+  playbackOrigin?: RoomQueuePlaybackOrigin;
 };
 
 export type PlaylistAddedBy = {
@@ -112,10 +117,6 @@ export type RoomParticipantsPage = {
   hasNext: boolean;
   nextCursor: string | null;
 };
-
-export type RoomQueuePlaybackOrigin =
-  | "USER_REQUESTED"
-  | "AUTOMATIC_REPLAY";
 
 export type RoomQueueHistoryEntry = {
   id: number;

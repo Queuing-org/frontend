@@ -3,6 +3,72 @@
   overflow-x: hidden;
 }
 
+.automaticReplayState {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 22px;
+  box-sizing: border-box;
+  padding: 32px 20px;
+  color: #2f3033;
+  text-align: center;
+}
+
+.automaticReplayState[data-fill-available-space="true"] {
+  min-height: 100%;
+}
+
+.automaticReplayIcon {
+  display: inline-flex;
+  width: 80px;
+  height: 80px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: 50%;
+  background: #f1f6ff;
+}
+
+.automaticReplayBar {
+  width: 4px;
+  border-radius: 999px;
+  background: #3f7ef5;
+  transform-origin: center;
+  animation: automaticReplayPulse 760ms ease-in-out infinite alternate;
+}
+
+.automaticReplayBar[data-bar="first"] {
+  height: 24px;
+  animation-delay: -380ms;
+}
+
+.automaticReplayBar[data-bar="second"] {
+  height: 16px;
+  animation-delay: -190ms;
+}
+
+.automaticReplayBar[data-bar="third"] {
+  height: 32px;
+}
+
+.automaticReplayMessage {
+  font-size: 16px;
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+}
+
+@keyframes automaticReplayPulse {
+  from {
+    transform: scaleY(0.45);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
 .discontinuity {
   display: flex;
   flex-direction: column;
@@ -39,6 +105,42 @@
 }
 
 @media (min-width: 481px) and (max-height: 900px) {
+  .automaticReplayState {
+    min-height: 144px;
+    gap: 17.6px;
+    padding: 25.6px 16px;
+  }
+
+  .automaticReplayState[data-fill-available-space="true"] {
+    min-height: 100%;
+  }
+
+  .automaticReplayIcon {
+    width: 64px;
+    height: 64px;
+    gap: 4px;
+  }
+
+  .automaticReplayBar {
+    width: 3.2px;
+  }
+
+  .automaticReplayBar[data-bar="first"] {
+    height: 19.2px;
+  }
+
+  .automaticReplayBar[data-bar="second"] {
+    height: 12.8px;
+  }
+
+  .automaticReplayBar[data-bar="third"] {
+    height: 25.6px;
+  }
+
+  .automaticReplayMessage {
+    font-size: 12.8px;
+  }
+
   .discontinuity {
     gap: 6.4px;
     padding: 11.2px 12.8px;
@@ -47,5 +149,11 @@
 
   .returnButton {
     padding: 4.8px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .automaticReplayBar {
+    animation: none;
   }
 }
