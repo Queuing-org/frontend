@@ -41,7 +41,7 @@
 - [x] lint, test, build
 - [x] fresh QA review — final pass
 - [x] local commit
-- [ ] push, draft PR
+- [x] push, Draft PR #59 갱신
 
 ## Verification
 

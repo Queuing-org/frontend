@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-09-01-room-self-participant-menu](./2026-09-01-room-self-participant-menu/plan.md): publishing — 내 참가자 첫 행·`(나)`·Settings/Friends modal과 reconnect identity QA 통과, draft PR 게시 중
+- [2026-09-01-room-self-participant-menu](./2026-09-01-room-self-participant-menu/plan.md): ci-pending — Draft PR #59, 내 참가자 첫 행·`(나)`·Settings/Friends modal과 reconnect identity QA 통과
 
 - [2026-09-01-profile-room-request-polish](./2026-09-01-profile-room-request-polish/plan.md): ready — Draft PR #59, 최애곡 두 줄 표시·방 편집 치수·노래 신청 문구와 hover/타이포 구현 및 로컬·CI QA 통과
 
