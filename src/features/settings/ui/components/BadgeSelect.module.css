@@ -98,10 +98,6 @@
   cursor: pointer;
 }
 
-.option[data-owned="true"] {
-  font-weight: var(--fw-bold);
-}
-
 .option[data-active="true"] {
   background: #eef6ff;
   color: #2564eb;

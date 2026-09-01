@@ -377,7 +377,6 @@ export default function BadgeSelect({
               aria-describedby={describedBy}
               aria-selected={isSelected}
               data-active={isActive}
-              data-owned={Boolean(option.badge)}
               onMouseDown={(event) => event.preventDefault()}
               onMouseEnter={() => {
                 setActiveIndex(index);
