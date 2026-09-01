@@ -39,7 +39,7 @@
 - [x] 커스텀 리스트박스, portal tooltip 및 UI 테스트
 - [x] targeted/full local verification
 - [x] fresh read-only QA
-- [ ] commit, push, Draft PR #58 갱신
+- [x] commit, push, Draft PR #58 갱신
 
 ## Verification
 
