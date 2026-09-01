@@ -153,6 +153,7 @@ describe("RoomQueueListSection move lock", () => {
 
     const state = screen.getByRole("status");
     expect(state).toHaveTextContent("현재 자동 재생 중입니다");
+    expect(state).toHaveAttribute("data-fill-available-space", "true");
     expect(state.querySelectorAll("[data-bar]")).toHaveLength(3);
     expect(screen.queryByText("automatic-track")).not.toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "현재 재생 중" }))
@@ -176,7 +177,14 @@ describe("RoomQueueListSection move lock", () => {
 
     expect(screen.getByText("지난 곡 1")).toBeInTheDocument();
     expect(screen.getByLabelText("all-a 순서 변경")).toBeInTheDocument();
-    expect(screen.getByText("현재 자동 재생 중입니다")).toBeInTheDocument();
+    expect(
+      screen
+        .getByText("현재 자동 재생 중입니다")
+        .closest('[role="status"]'),
+    ).toHaveAttribute(
+      "data-fill-available-space",
+      "false",
+    );
     expect(screen.queryByText("automatic-track")).not.toBeInTheDocument();
   });
 

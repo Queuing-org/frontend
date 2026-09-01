@@ -65,3 +65,11 @@
 
 - 실제 backend 자동 순환 응답과 브라우저 높이별 중앙 정렬은 로컬 fixture 기준이다.
 - 현재 세션에 연결된 브라우저가 없어 실제 화면 캡처 QA는 수행하지 못했다.
+
+## Follow-up: visual size and alignment
+
+- [x] 사용자 runtime screenshot으로 과도한 원 크기와 상단 치우침 재현
+- [x] 원 59x59px, 내부 padding 12px, 막대 width 3px 적용
+- [x] 자동재생 단독 상태가 list area의 실제 높이를 채우도록 `height: 100%` 적용
+- [x] targeted 2 files / 17 tests, lint, build, diff-check 통과
+- [x] fresh QA의 DnD live-region test selector finding 1건 수정 후 재검증 pass

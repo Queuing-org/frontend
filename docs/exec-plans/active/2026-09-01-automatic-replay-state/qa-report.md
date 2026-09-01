@@ -28,3 +28,15 @@
 ## Residual risk
 
 - 실제 방에서 backend가 `AUTOMATIC_REPLAY`를 반환하는 통합 흐름과 패널 높이별 중앙 정렬은 게시 후 브라우저에서 확인이 필요하다.
+
+## Visual follow-up
+
+- 사용자 runtime screenshot에서 원형 아이콘 과대 크기와 빈 상태 상단 치우침을 확인했다.
+- 원 59x59px, padding 12px, 막대 width 3px을 기본/compact 구간에서 동일하게 유지한다.
+- standalone 상태에만 `height: 100%`를 적용하고 timeline 상태에는 기존 min-height를 유지한다.
+- targeted Vitest: 2 files / 17 tests pass
+- lint: pass
+- build: pass
+- diff-check: pass
+- fresh QA: DnD live-region selector finding 1건 수정 후 2 files / 17 tests 및 diff-check pass
+- 수정 후 실제 브라우저 screenshot은 현재 세션에서 확인하지 못했다.
