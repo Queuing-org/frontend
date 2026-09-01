@@ -23,7 +23,7 @@ vi.mock("@/src/features/badge/hooks/useSetRepresentativeBadge", () => ({
   useSetRepresentativeBadge: vi.fn(),
 }));
 vi.mock("../hooks/useProfileSettingsForm", () => ({
-  STATUS_MESSAGE_MAX_LENGTH: 20,
+  STATUS_MESSAGE_MAX_LENGTH: 40,
   useProfileSettingsForm: vi.fn(),
 }));
 vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
@@ -184,9 +184,9 @@ describe("설정 칭호 목록", () => {
     expect(screen.getByText("2/19")).toBeInTheDocument();
     expect(screen.getByLabelText("최애곡")).toHaveAttribute(
       "maxlength",
-      "20",
+      "40",
     );
-    expect(screen.getByText("2/20")).toBeInTheDocument();
+    expect(screen.getByText("2/40")).toBeInTheDocument();
   });
 
   it("획득한 칭호를 선택하면 badgeCode만 대표 칭호 mutation에 전달한다", async () => {

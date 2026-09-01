@@ -152,7 +152,7 @@ export default function ProfileSettingsForm({
           </span>
         </div>
         <span id="settings-status-message-hint" className={styles.srOnly}>
-          최대 20자, 빈 문자열로 저장하면 삭제됩니다.
+          최대 {STATUS_MESSAGE_MAX_LENGTH}자, 빈 문자열로 저장하면 삭제됩니다.
         </span>
         <span id="settings-status-message-error" className={styles.srOnly}>
           최애곡 입력을 확인해 주세요.
