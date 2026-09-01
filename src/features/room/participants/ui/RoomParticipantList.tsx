@@ -17,6 +17,7 @@ import type { RoomOwner } from "@/src/features/room/model/types";
 import type { User } from "@/src/features/user/model/types";
 import RoomParticipantCard from "./RoomParticipantCard";
 import {
+  getCurrentParticipantFirst,
   getParticipantIdentityKey,
   getParticipantKickTarget,
   getParticipantKickTargetKey,
@@ -37,6 +38,8 @@ type Props = {
   kickingParticipantKey: string | null;
   onBlockParticipant: (participant: PlaylistParticipant) => void;
   onKickParticipant: (participant: PlaylistParticipant) => void;
+  onOpenFriends: () => void;
+  onOpenSettings: () => void;
   onReportParticipant: (participant: PlaylistParticipant) => void;
   onTransferOwner: (participant: PlaylistParticipant) => void;
   owner: RoomOwner | null;
@@ -132,6 +135,8 @@ export default function RoomParticipantList({
   kickingParticipantKey,
   onBlockParticipant,
   onKickParticipant,
+  onOpenFriends,
+  onOpenSettings,
   onReportParticipant,
   onTransferOwner,
   owner,
@@ -144,6 +149,10 @@ export default function RoomParticipantList({
   >(null);
   const [windowStart, setWindowStart] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const orderedParticipants = useMemo(
+    () => getCurrentParticipantFirst(participants, currentUser),
+    [currentUser, participants],
+  );
   const closeParticipantMenu = useCallback(() => {
     setExpandedParticipantKey(null);
   }, []);
@@ -154,7 +163,7 @@ export default function RoomParticipantList({
   }, []);
   const maxWindowStart = Math.max(
     0,
-    participants.length - PARTICIPANT_CARD_DOM_LIMIT,
+    orderedParticipants.length - PARTICIPANT_CARD_DOM_LIMIT,
   );
   const effectiveWindowStart = Math.min(windowStart, maxWindowStart);
   const handleListScroll = useCallback(
@@ -180,7 +189,7 @@ export default function RoomParticipantList({
           return null;
         }
 
-        return participants
+        return orderedParticipants
           .slice(
             boundedWindowStart,
             boundedWindowStart + PARTICIPANT_CARD_DOM_LIMIT,
@@ -193,16 +202,16 @@ export default function RoomParticipantList({
           : null;
       });
     },
-    [maxWindowStart, participants],
+    [maxWindowStart, orderedParticipants],
   );
 
   const visibleParticipants = useMemo(
     () =>
-      participants.slice(
+      orderedParticipants.slice(
         effectiveWindowStart,
         effectiveWindowStart + PARTICIPANT_CARD_DOM_LIMIT,
       ),
-    [effectiveWindowStart, participants],
+    [effectiveWindowStart, orderedParticipants],
   );
   const participantBadgeSlugs = useMemo(() => {
     const seenSlugs = new Set<string>();
@@ -234,7 +243,7 @@ export default function RoomParticipantList({
     ]),
   );
 
-  const activeExpandedParticipantKey = participants.some(
+  const activeExpandedParticipantKey = orderedParticipants.some(
     (participant) =>
       getParticipantIdentityKey(participant) === expandedParticipantKey,
   )
@@ -252,7 +261,9 @@ export default function RoomParticipantList({
       <div
         className={styles.virtualList}
         style={
-          { "--participant-count": participants.length } as CSSProperties
+          {
+            "--participant-count": orderedParticipants.length,
+          } as CSSProperties
         }
       >
         {visibleParticipants.map((participant, visibleIndex) => {
@@ -283,7 +294,7 @@ export default function RoomParticipantList({
               ? (["transfer"] as const)
               : []),
           ];
-          const hasActions = actions.length > 0;
+          const hasActions = isCurrentUser || actions.length > 0;
           const isCurrentKickPending =
             isKickPending &&
             kickTargetKey != null &&
@@ -311,6 +322,7 @@ export default function RoomParticipantList({
               <RoomParticipantCard
                 actions={actions}
                 expanded={expanded}
+                isCurrentUser={isCurrentUser}
                 isKickPending={isCurrentKickPending}
                 isOwner={isOwner}
                 isTransferPending={isCurrentTransferPending}
@@ -319,6 +331,8 @@ export default function RoomParticipantList({
                 onBlockParticipant={onBlockParticipant}
                 onClose={closeParticipantMenu}
                 onKickParticipant={onKickParticipant}
+                onOpenFriends={onOpenFriends}
+                onOpenSettings={onOpenSettings}
                 onReportParticipant={onReportParticipant}
                 onToggle={toggleParticipantMenu}
                 onTransferOwner={onTransferOwner}

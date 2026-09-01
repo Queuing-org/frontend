@@ -39,6 +39,53 @@ export function isSameUser(
   );
 }
 
+export function getCurrentParticipantFirst(
+  participants: readonly PlaylistParticipant[],
+  user: { slug?: string | null } | null | undefined,
+) {
+  const currentParticipantIndex = participants.findIndex((participant) =>
+    isSameUser(participant, user),
+  );
+
+  if (currentParticipantIndex <= 0) {
+    return participants;
+  }
+
+  return [
+    participants[currentParticipantIndex],
+    ...participants.slice(0, currentParticipantIndex),
+    ...participants.slice(currentParticipantIndex + 1),
+  ];
+}
+
+export function includeCurrentParticipant(
+  participants: PlaylistParticipant[],
+  currentParticipant: PlaylistParticipant | null | undefined,
+) {
+  if (!currentParticipant) {
+    return participants;
+  }
+
+  const currentParticipantKey = getParticipantIdentityKey(currentParticipant);
+  const currentUserSlug = getParticipantUserSlug(currentParticipant);
+  const alreadyIncluded = participants.some((participant) => {
+    if (getParticipantIdentityKey(participant) === currentParticipantKey) {
+      return true;
+    }
+
+    const participantUserSlug = getParticipantUserSlug(participant);
+    return Boolean(
+      currentUserSlug &&
+        participantUserSlug &&
+        currentUserSlug === participantUserSlug,
+    );
+  });
+
+  return alreadyIncluded
+    ? participants
+    : [currentParticipant, ...participants];
+}
+
 export function isParticipantRoomOwner(
   owner: { slug?: string | null } | null | undefined,
   participant: PlaylistParticipant | null | undefined,

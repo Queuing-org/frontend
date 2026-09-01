@@ -33,6 +33,8 @@ import type { User } from "@/src/features/user/model/types";
 import RoomQueuePanel from "@/src/features/room/queue/ui/RoomQueuePanel";
 import RoomParticipantsPanel from "@/src/features/room/participants/ui/RoomParticipantsPanel";
 import type { ResolveRoomParticipantByUserSlug } from "@/src/features/room/participants/model/roomParticipantPaging";
+import FollowModal from "@/src/features/follow/ui/FollowModal";
+import SettingsModal from "@/src/features/settings/ui/SettingsModal";
 import { redirectToGoogleLogin } from "@/src/features/auth/login-with-google/api/login";
 import SkipTrackButton from "@/src/features/playlist/skip-track/ui/SkipTrackButton";
 import {
@@ -44,6 +46,7 @@ import { getRoomChatLayout } from "../model/roomChatLayout";
 import RoomLeaveConfirmDialog from "./RoomLeaveConfirmDialog";
 
 export type MobileRoomTab = "playback" | "queue" | "participants";
+type RoomSelfModal = "friends" | "settings";
 
 const MOBILE_ROOM_TABS: {
   id: MobileRoomTab;
@@ -190,6 +193,27 @@ export default function RoomPlaybackJoinedContent({
   );
   const desktopWheelRegionRef = useRef<HTMLDivElement>(null);
   const mobileInlineChatRef = useRef<HTMLDivElement>(null);
+  const [activeSelfModal, setActiveSelfModal] =
+    useState<RoomSelfModal | null>(null);
+  const closeSelfModal = useCallback(() => setActiveSelfModal(null), []);
+  const openFriendsModal = useCallback(
+    () => setActiveSelfModal("friends"),
+    [],
+  );
+  const openSettingsModal = useCallback(
+    () => setActiveSelfModal("settings"),
+    [],
+  );
+  const selfModal = (
+    <>
+      {activeSelfModal === "settings" ? (
+        <SettingsModal open onClose={closeSelfModal} />
+      ) : null}
+      {activeSelfModal === "friends" ? (
+        <FollowModal open onClose={closeSelfModal} />
+      ) : null}
+    </>
+  );
   const leaveButtonRef = useRef<HTMLButtonElement>(null);
   const [isLeaveDialogOpen, setIsLeaveDialogOpen] = useState(false);
   const closeLeaveDialog = useCallback(() => {
@@ -373,6 +397,8 @@ export default function RoomPlaybackJoinedContent({
                   isFetchingNextPage={isFetchingNextParticipantsPage}
                   isLoadMoreError={isParticipantsLoadMoreError}
                   onLoadMore={onLoadMoreParticipants}
+                  onOpenFriends={openFriendsModal}
+                  onOpenSettings={openSettingsModal}
                   onUserBlocked={handleUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}
@@ -409,6 +435,7 @@ export default function RoomPlaybackJoinedContent({
           </nav>
         </div>
         {leaveDialog}
+        {selfModal}
       </div>
     );
   }
@@ -546,6 +573,8 @@ export default function RoomPlaybackJoinedContent({
         isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
         isParticipantsLoadMoreError={isParticipantsLoadMoreError}
         onLoadMoreParticipants={onLoadMoreParticipants}
+        onOpenFriends={openFriendsModal}
+        onOpenSettings={openSettingsModal}
         resolveParticipantByUserSlug={resolveParticipantByUserSlug}
         onChatLoginClick={
           showChatLoginAction ? redirectToGoogleLogin : undefined
@@ -562,6 +591,7 @@ export default function RoomPlaybackJoinedContent({
         onWidgetStop={floatingWidgets.handleWidgetStop}
       />
       {leaveDialog}
+      {selfModal}
     </div>
   );
 }

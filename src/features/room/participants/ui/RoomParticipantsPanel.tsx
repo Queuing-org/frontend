@@ -36,6 +36,8 @@ type Props = {
   isFetchingNextPage: boolean;
   isLoadMoreError: boolean;
   onLoadMore: () => Promise<unknown>;
+  onOpenFriends: () => void;
+  onOpenSettings: () => void;
   onUserBlocked: (userSlug: string) => void;
   participants: PlaylistParticipant[];
   roomMeta: RoomMeta | null;
@@ -50,6 +52,8 @@ export default function RoomParticipantsPanel({
   isFetchingNextPage,
   isLoadMoreError,
   onLoadMore,
+  onOpenFriends,
+  onOpenSettings,
   onUserBlocked,
   participants,
   roomMeta,
@@ -153,6 +157,8 @@ export default function RoomParticipantsPanel({
             kickParticipant.variables ?? null,
           )}
           onBlockParticipant={handleBlockParticipant}
+          onOpenFriends={onOpenFriends}
+          onOpenSettings={onOpenSettings}
           onKickParticipant={(participant) => {
             const target = getParticipantKickTarget(participant);
             const feedbackTarget = target?.userSlug ?? target?.participantId;

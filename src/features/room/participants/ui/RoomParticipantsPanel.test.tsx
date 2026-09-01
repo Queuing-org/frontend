@@ -14,6 +14,8 @@ const transferMutate = vi.fn();
 const transferReset = vi.fn();
 const onUserBlocked = vi.fn();
 const onLoadMore = vi.fn();
+const onOpenFriends = vi.fn();
+const onOpenSettings = vi.fn();
 
 const member: PlaylistParticipant = {
   nickname: "회원",
@@ -136,6 +138,8 @@ function renderPanel(messages = [
       isFetchingNextPage={false}
       isLoadMoreError={false}
       onLoadMore={onLoadMore}
+      onOpenFriends={onOpenFriends}
+      onOpenSettings={onOpenSettings}
       onUserBlocked={onUserBlocked}
       participants={[member]}
       roomMeta={{

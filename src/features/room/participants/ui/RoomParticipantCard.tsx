@@ -7,12 +7,14 @@ import RoomMemberManagementMenu, {
   type RoomMemberManagementAction,
 } from "@/src/features/room/management/ui/RoomMemberManagementMenu";
 import type { ParticipantKickTarget } from "../model/participantIdentity";
+import RoomSelfManagementMenu from "./RoomSelfManagementMenu";
 import styles from "./RoomParticipantsPanel.module.css";
 
 type Props = {
   actions: readonly RoomMemberManagementAction[];
   badgeUserSlug: string | null;
   expanded: boolean;
+  isCurrentUser: boolean;
   isKickPending: boolean;
   isOwner: boolean;
   isTransferPending: boolean;
@@ -21,6 +23,8 @@ type Props = {
   onBlockParticipant: (participant: PlaylistParticipant) => void;
   onClose: () => void;
   onKickParticipant: (participant: PlaylistParticipant) => void;
+  onOpenFriends: () => void;
+  onOpenSettings: () => void;
   onReportParticipant: (participant: PlaylistParticipant) => void;
   onToggle: (participantKey: string) => void;
   onTransferOwner: (participant: PlaylistParticipant) => void;
@@ -34,6 +38,7 @@ export default function RoomParticipantCard({
   actions,
   badgeUserSlug,
   expanded,
+  isCurrentUser,
   isKickPending,
   isOwner,
   isTransferPending,
@@ -42,6 +47,8 @@ export default function RoomParticipantCard({
   onBlockParticipant,
   onClose,
   onKickParticipant,
+  onOpenFriends,
+  onOpenSettings,
   onReportParticipant,
   onToggle,
   onTransferOwner,
@@ -52,7 +59,7 @@ export default function RoomParticipantCard({
 }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const actionsId = useId();
-  const hasActions = actions.length > 0;
+  const hasActions = isCurrentUser || actions.length > 0;
 
   const handleToggle = () => {
     onToggle(participantKey);
@@ -84,6 +91,9 @@ export default function RoomParticipantCard({
         <div className={styles.meta}>
           <div className={styles.nameRow}>
             <div className={styles.nickname}>{participant.nickname}</div>
+            {isCurrentUser ? (
+              <span className={styles.currentUserLabel}>(나)</span>
+            ) : null}
             {isOwner ? (
               <Image
                 src="/icons/onwer_black.svg"
@@ -105,7 +115,11 @@ export default function RoomParticipantCard({
             ref={triggerRef}
             type="button"
             className={styles.participantMenuButton}
-            aria-label={`${participant.nickname} 참가자 관리 메뉴`}
+            aria-label={
+              isCurrentUser
+                ? `${participant.nickname} 내 프로필 메뉴`
+                : `${participant.nickname} 참가자 관리 메뉴`
+            }
             aria-haspopup="menu"
             aria-expanded={expanded}
             aria-controls={expanded ? actionsId : undefined}
@@ -113,7 +127,18 @@ export default function RoomParticipantCard({
           >
             <MoreVertical aria-hidden="true" size={18} />
           </button>
-          {expanded ? (
+          {expanded && isCurrentUser ? (
+            <RoomSelfManagementMenu
+              anchorBoundaryRef={listRef}
+              label={`${participant.nickname} 내 프로필 관리`}
+              menuId={actionsId}
+              onClose={onClose}
+              onOpenFriends={onOpenFriends}
+              onOpenSettings={onOpenSettings}
+              triggerRef={triggerRef}
+            />
+          ) : null}
+          {expanded && !isCurrentUser ? (
             <RoomMemberManagementMenu
               actions={actions}
               isKickPending={isKickPending}
