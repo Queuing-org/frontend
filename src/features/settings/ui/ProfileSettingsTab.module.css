@@ -120,8 +120,7 @@
   border: 0;
 }
 
-.textInput,
-.selectField {
+.textInput {
   width: 100%;
   height: 40px;
   box-sizing: border-box;
@@ -134,10 +133,6 @@
   font-size: 15px;
   font-weight: var(--fw-medium);
   line-height: 1.2;
-}
-
-.selectField[aria-invalid="true"] {
-  border-color: #d94b4b;
 }
 
 .textInput {
@@ -182,33 +177,6 @@
 
 .textInput[data-feedback="error"]:focus-visible {
   box-shadow: 0 0 0 3px rgb(217 75 75 / 12%);
-}
-
-.selectControl {
-  position: relative;
-  min-width: 0;
-}
-
-.selectField {
-  appearance: none;
-  padding: 0 40px 0 14px;
-  outline: none;
-  cursor: pointer;
-}
-
-.selectField:disabled {
-  cursor: default;
-  opacity: 0.65;
-}
-
-.selectField:focus-visible {
-  outline: 2px solid #5b8cff;
-  outline-offset: 2px;
-}
-
-.badgeOptionOwned {
-  color: #3c3c3c;
-  font-weight: var(--fw-bold);
 }
 
 .textInput::placeholder {
@@ -265,19 +233,6 @@
 .completeButton:disabled {
   cursor: default;
   opacity: 0.45;
-}
-
-.chevron {
-  position: absolute;
-  top: 50%;
-  right: 16px;
-  flex: 0 0 auto;
-  width: 10px;
-  height: 10px;
-  border-right: 2px solid #a8a8ad;
-  border-bottom: 2px solid #a8a8ad;
-  pointer-events: none;
-  transform: translateY(-65%) rotate(45deg);
 }
 
 .feedbackArea {
@@ -398,13 +353,11 @@
   }
 
   .fieldLabel,
-  .textInput,
-  .selectField {
+  .textInput {
     font-size: 13px;
   }
 
-  .textInput,
-  .selectField {
+  .textInput {
     height: 38px;
   }
 
@@ -470,8 +423,7 @@
     font-size: 12.8px;
   }
 
-  .textInput,
-  .selectField {
+  .textInput {
     height: 32px;
     border-radius: 6.4px;
     font-size: 12px;

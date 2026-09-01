@@ -6,16 +6,15 @@ import {
   STATUS_MESSAGE_MAX_LENGTH,
 } from "../../model/profileSettingsLimits";
 import type { ProfileFieldFeedback } from "../../hooks/useProfileSettingsForm";
+import type { UserBadge } from "@/src/features/badge/model/types";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
+import BadgeSelect from "./BadgeSelect";
 import styles from "../ProfileSettingsTab.module.css";
 
 type ProfileSettingsFormProps = {
   badgeDisabled: boolean;
   badgeInvalid: boolean;
-  badgeOptions: Array<{
-    badgeCode: string;
-    name: string;
-  }>;
+  badgeOptions: UserBadge[];
   badgeStatusMessage: string | null;
   badgeValue: string;
   canUpdateProfile: boolean;
@@ -163,31 +162,14 @@ export default function ProfileSettingsForm({
         <label className={styles.fieldLabel} htmlFor="settings-badge">
           칭호
         </label>
-        <div className={styles.selectControl}>
-          <select
-            id="settings-badge"
-            className={styles.selectField}
-            value={badgeValue}
-            onChange={(event) => onBadgeChange(event.target.value)}
-            disabled={badgeDisabled}
-            aria-invalid={badgeInvalid}
-            aria-describedby={badgeInvalid ? "settings-badge-error" : undefined}
-          >
-            <option value="">
-              {hasProfile ? "칭호 없음" : "로그인이 필요합니다"}
-            </option>
-            {badgeOptions.map((badge) => (
-              <option
-                key={badge.badgeCode}
-                value={badge.badgeCode}
-                className={styles.badgeOptionOwned}
-              >
-                {badge.name}
-              </option>
-            ))}
-          </select>
-          <span className={styles.chevron} aria-hidden="true" />
-        </div>
+        <BadgeSelect
+          disabled={badgeDisabled}
+          emptyLabel={hasProfile ? "칭호 없음" : "로그인이 필요합니다"}
+          invalid={badgeInvalid}
+          options={badgeOptions}
+          value={badgeValue}
+          onChange={onBadgeChange}
+        />
         <span id="settings-badge-error" className={styles.srOnly}>
           대표 칭호 저장에 실패했습니다.
         </span>
