@@ -63,7 +63,7 @@ function Harness({
   onRetryHistoryPage = () => undefined,
   queueEntryIds = [],
 }: HarnessProps) {
-  const { handleRetryHistory, handleScroll, scrollContainerRef } =
+  const { handleRetryHistory, handleScroll, handleWheel, scrollContainerRef } =
     useQueueBidirectionalScroll({
       activeTab,
       currentEntryId,
@@ -128,6 +128,7 @@ function Harness({
       data-testid="scroll-container"
       data-queue-scroll-container
       onScroll={handleScroll}
+      onWheel={handleWheel}
     >
       {historyEntryIds.map((historyId, index) => (
         <div
@@ -247,7 +248,7 @@ describe("useQueueBidirectionalScroll", () => {
     expect(container.scrollTop).toBe(222);
   });
 
-  it("내 신청곡 탭에서는 곡 변경과 탭을 유지하고 전체 탭 복귀 때만 정렬한다", () => {
+  it("내 신청곡 탭에서도 본인 현재곡이 바뀌면 새 현재 행을 최상단에 맞춘다", () => {
     const { getByTestId, rerender } = render(
       <Harness activeTab="mine" currentEntryId="current-a" currentTop={222} />,
     );
@@ -257,7 +258,7 @@ describe("useQueueBidirectionalScroll", () => {
     rerender(
       <Harness activeTab="mine" currentEntryId="current-b" currentTop={444} />,
     );
-    expect(container.scrollTop).toBe(55);
+    expect(container.scrollTop).toBe(444);
 
     rerender(
       <Harness activeTab="all" currentEntryId="current-b" currentTop={444} />,
@@ -379,7 +380,7 @@ describe("useQueueBidirectionalScroll", () => {
     expect(container.scrollTop).toBe(592);
   });
 
-  it("history 요청 중 mine 탭으로 바꾸면 이전 anchor 보정을 폐기한다", () => {
+  it("history 요청 중 mine 탭으로 바꾸면 이전 anchor 대신 개인 경계를 정렬한다", () => {
     const loadHistory = vi.fn();
     const { getByTestId, rerender } = render(
       <Harness
@@ -415,7 +416,72 @@ describe("useQueueBidirectionalScroll", () => {
       />,
     );
 
-    expect(container.scrollTop).toBe(55);
+    expect(container.scrollTop).toBe(370);
+  });
+
+  it("내 신청곡 탭도 상단 경계에서 이전 history page를 조회한다", () => {
+    const loadHistory = vi.fn();
+    const { getByTestId } = render(
+      <Harness
+        activeTab="mine"
+        hasNextHistoryPage
+        historyEntryIds={[1, 2, 3]}
+        onLoadNextHistoryPage={loadHistory}
+      />,
+    );
+    const container = getByTestId("scroll-container");
+    setScrollDimensions(container, { clientHeight: 300, scrollHeight: 522 });
+    container.scrollTop = 0;
+
+    fireEvent.scroll(container);
+
+    expect(loadHistory).toHaveBeenCalledOnce();
+  });
+
+  it("개인 history가 비어 스크롤되지 않아도 위쪽 wheel로 이전 page를 조회한다", () => {
+    const loadHistory = vi.fn();
+    const { getByTestId, rerender } = render(
+      <Harness
+        activeTab="mine"
+        currentEntryId={null}
+        currentTop={0}
+        hasNextHistoryPage
+        historyEntryIds={[]}
+        onLoadNextHistoryPage={loadHistory}
+      />,
+    );
+    const container = getByTestId("scroll-container");
+    setScrollDimensions(container, { clientHeight: 300, scrollHeight: 300 });
+    container.scrollTop = 0;
+
+    fireEvent.wheel(container, { deltaY: -100 });
+
+    expect(loadHistory).toHaveBeenCalledOnce();
+
+    rerender(
+      <Harness
+        activeTab="mine"
+        currentEntryId={null}
+        currentTop={0}
+        hasNextHistoryPage
+        historyEntryIds={[]}
+        isFetchingHistory
+        onLoadNextHistoryPage={loadHistory}
+      />,
+    );
+    rerender(
+      <Harness
+        activeTab="mine"
+        currentEntryId={null}
+        currentTop={0}
+        hasNextHistoryPage
+        historyEntryIds={[]}
+        onLoadNextHistoryPage={loadHistory}
+      />,
+    );
+    fireEvent.wheel(getByTestId("scroll-container"), { deltaY: -100 });
+
+    expect(loadHistory).toHaveBeenCalledTimes(2);
   });
 
   it("history 재시도도 prepend 전 anchor를 보존한다", () => {

@@ -16,6 +16,7 @@ import type { User } from "@/src/features/user/model/types";
 import {
   isEntryRequestedByUser,
   getPendingPersonalQueueEntryIds,
+  isHistoryEntryRequestedByUser,
   isPendingQueueEntry,
   isValidPersonalQueueMove,
   type QueueTab,
@@ -59,10 +60,11 @@ export function useRoomQueuePanel({
   const [activeTab, setActiveTab] = useState<QueueTab>("all");
   const { notify } = useActionFeedback();
   const allQueueQuery = useRoomQueue(roomSlug, roomAccessToken);
+  const isHistoryEnabled = activeTab === "all" || Boolean(currentUser);
   const historyQuery = useRoomQueueHistory(
     roomSlug,
     roomAccessToken,
-    activeTab === "all",
+    isHistoryEnabled,
   );
   const {
     data: myQueueData,
@@ -111,6 +113,22 @@ export function useRoomQueuePanel({
     (entry: PlaylistEntry) => isEntryRequestedByUser(entry, currentUser),
     [currentUser],
   );
+  const historyEntries = useMemo(
+    () =>
+      activeTab === "all"
+        ? historyQuery.entries
+        : historyQuery.entries.filter((entry) =>
+            isHistoryEntryRequestedByUser(entry, currentUser),
+          ),
+    [activeTab, currentUser, historyQuery.entries],
+  );
+  const isAutomaticReplay =
+    currentEntry?.status.playbackOrigin === "AUTOMATIC_REPLAY";
+  const shouldShowCurrentEntry =
+    !isAutomaticReplay &&
+    (activeTab === "all" ||
+      Boolean(currentEntry && isCurrentUserEntry(currentEntry)));
+  const visibleCurrentEntry = shouldShowCurrentEntry ? currentEntry : null;
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isCurrentUserEntry(entry);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>
@@ -118,7 +136,8 @@ export function useRoomQueuePanel({
 
   let emptyMessage = "플레이리스트가 아직 비어 있습니다.";
   const isEmptyLoading =
-    activeTab === "mine" && (isCurrentUserLoading || isMyQueueLoading);
+    activeTab === "mine" &&
+    (isCurrentUserLoading || isMyQueueLoading || historyQuery.isLoading);
   if (activeTab === "mine") {
     if (!isEmptyLoading && !currentUser) {
       emptyMessage = "내 노래를 확인할 수 없습니다.";
@@ -241,7 +260,7 @@ export function useRoomQueuePanel({
     allPendingCount,
     canDeleteEntry,
     canDeleteEntryAsOwner,
-    currentEntry,
+    currentEntry: visibleCurrentEntry,
     deleteMyQueueEntry,
     deleteRoomQueueEntries,
     emptyMessage,
@@ -249,42 +268,55 @@ export function useRoomQueuePanel({
     handleDeleteRoomEntry,
     handleMoveMyEntry,
     handleMoveRoomEntry,
-    hasNextHistoryPage: historyQuery.hasNextPage,
+    hasNextHistoryPage:
+      isHistoryEnabled && Boolean(historyQuery.hasNextPage),
     hasNextAllQueuePage: allQueueQuery.hasNextPage,
     hasNextMyQueuePage,
-    historyEntries: historyQuery.entries,
-    historyErrorMessage: getQueueErrorMessage(historyQuery.error),
-    includesLatestHistoryPage: historyQuery.includesLatestPage,
+    historyEntries,
+    historyErrorMessage:
+      activeTab === "mine" && !currentUser
+        ? ""
+        : getQueueErrorMessage(historyQuery.error),
+    includesLatestHistoryPage:
+      !isHistoryEnabled || historyQuery.includesLatestPage,
     isEmptyLoading,
+    isAutomaticReplayActive: activeTab === "all" && isAutomaticReplay,
     isCurrentUserEntry,
     isOwner,
-    isFetchingNextHistoryPage: historyQuery.isFetchingNextPage,
+    isFetchingNextHistoryPage:
+      isHistoryEnabled && historyQuery.isFetchingNextPage,
     isFetchingNextAllQueuePage: allQueueQuery.isFetchingNextPage,
     isFetchingNextMyQueuePage,
-    isHistoryLoading: historyQuery.isLoading,
+    isHistoryLoading: isHistoryEnabled && historyQuery.isLoading,
     isQueueLoading:
       activeTab === "all" ? allQueueQuery.isLoading : isMyQueueLoading,
     isRefetching:
       (allQueueQuery.isRefetching && !allQueueQuery.isFetchingNextPage) ||
-      (historyQuery.isRefetching && !historyQuery.isFetchingNextPage) ||
+      (isHistoryEnabled &&
+        historyQuery.isRefetching &&
+        !historyQuery.isFetchingNextPage) ||
       (isMyRefetching && !isFetchingNextMyQueuePage),
     moveMyQueueEntry,
     moveRoomQueueEntry,
     myEntries,
     myPendingCount,
     queueErrorMessage,
-    loadNextHistoryPage: () => historyQuery.fetchNextPage(),
+    loadNextHistoryPage: () =>
+      isHistoryEnabled ? historyQuery.fetchNextPage() : undefined,
     loadNextAllQueuePage: () => {
       return allQueueQuery.fetchNextQueuePage();
     },
     loadNextMyQueuePage: () => {
       return fetchNextMyQueuePage();
     },
-    resetHistoryToLatestPage: historyQuery.resetToLatestPage,
+    resetHistoryToLatestPage: () =>
+      isHistoryEnabled ? historyQuery.resetToLatestPage() : undefined,
     retryHistory: () =>
-      historyQuery.isFetchNextPageError
-        ? historyQuery.fetchNextPage()
-        : historyQuery.refetch(),
+      isHistoryEnabled
+        ? historyQuery.isFetchNextPageError
+          ? historyQuery.fetchNextPage()
+          : historyQuery.refetch()
+        : undefined,
     retryQueue: () => {
       if (activeTab === "all") {
         return allQueueQuery.isFetchNextPageError

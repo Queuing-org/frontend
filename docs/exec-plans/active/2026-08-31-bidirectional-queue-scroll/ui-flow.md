@@ -20,8 +20,11 @@
 
 ## Mine tab
 
-- no history/current rows.
-- current track changes do not switch tabs or scroll.
+- 기존 history query를 공유하되 현재 사용자의 공개 slug와 일치하는 history만 렌더링한다.
+- 현재곡도 본인 신청곡일 때만 history와 pending 사이에 렌더링한다.
+- 진입과 본인 현재곡 변경 시 history/current 경계를 최상단에 맞춘다.
+- 지난 곡과 현재곡은 같은 회색 배경을 쓰고 정렬·삭제 대상에서 제외한다.
+- 상단에서 개인 history, 하단에서 개인 pending queue를 한 페이지씩 조회한다.
 - within 96px of bottom, fetch one personal queue page unless loading, refetching, dragging, or mutating.
 
 ## Failure and accessibility

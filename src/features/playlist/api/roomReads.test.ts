@@ -108,7 +108,13 @@ describe("v26.8.0 방 조회 API", () => {
   it("playback 응답을 분리된 현재 재생 객체로 파싱한다", async () => {
     const playback = {
       currentEntryId: "entry-1",
-      currentEntry: queueEntry("entry-1"),
+      currentEntry: {
+        ...queueEntry("entry-1"),
+        status: {
+          ...queueEntry("entry-1").status,
+          playbackOrigin: "AUTOMATIC_REPLAY",
+        },
+      },
       playbackStatus: {
         status: "PLAYING",
         videoId: "video",
@@ -124,6 +130,9 @@ describe("v26.8.0 방 조회 API", () => {
     await expect(
       fetchRoomPlayback({ accessToken: "secret", slug: "room" }),
     ).resolves.toEqual(playback);
+    expect(playback.currentEntry.status.playbackOrigin).toBe(
+      "AUTOMATIC_REPLAY",
+    );
   });
 
   it("participant 첫 페이지와 명시적으로 요청한 cursor 페이지만 조회한다", async () => {

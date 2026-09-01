@@ -4,6 +4,7 @@ export type BadgeSummary = {
 };
 
 export type UserBadge = BadgeSummary & {
+  acquisitionRate: number | null;
   description: string;
   category: string;
   acquired: true;

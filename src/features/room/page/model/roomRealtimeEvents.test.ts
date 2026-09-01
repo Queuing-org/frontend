@@ -59,6 +59,29 @@ describe("방 실시간 이벤트 guard와 캐시 변환", () => {
       .toEqual(trackStarted.addedBy);
   });
 
+  it("같은 현재곡의 TRACK_STARTED 갱신에서 playback origin을 보존한다", () => {
+    const current = applyTrackStarted(undefined, trackStarted, 100);
+
+    const updated = applyTrackStarted(
+      {
+        ...current,
+        currentEntry: {
+          ...current.currentEntry!,
+          status: {
+            ...current.currentEntry!.status,
+            playbackOrigin: "AUTOMATIC_REPLAY",
+          },
+        },
+      },
+      trackStarted,
+      200,
+    );
+
+    expect(updated.currentEntry?.status.playbackOrigin).toBe(
+      "AUTOMATIC_REPLAY",
+    );
+  });
+
   it("필수 필드가 빠진 이벤트를 거부한다", () => {
     expect(isTrackStartedData({ ...trackStarted, addedBy: {} })).toBe(false);
   });

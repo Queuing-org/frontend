@@ -28,6 +28,11 @@
   background: rgb(59 130 246 / 8%);
 }
 
+.item[data-history="true"],
+.item[data-history="true"]:hover {
+  background: #f7f7f9;
+}
+
 .item[data-drag-disabled="false"]:hover {
   cursor: move;
 }

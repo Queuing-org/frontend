@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import Image from "next/image";
 import {
   getRepresentativeBadge,
@@ -21,14 +20,7 @@ export default function ProfileSettingsTab() {
   const myBadgesQuery = useMyBadges(Boolean(form.me));
   const clearRepresentativeBadge = useClearRepresentativeBadge();
   const setRepresentativeBadge = useSetRepresentativeBadge();
-  const badgeOptions = useMemo(
-    () =>
-      getUserBadgeItems(myBadgesQuery.data).map((badge) => ({
-        badgeCode: badge.badgeCode,
-        name: badge.name,
-      })),
-    [myBadgesQuery.data],
-  );
+  const badgeOptions = getUserBadgeItems(myBadgesQuery.data);
   const representativeBadge = getRepresentativeBadge(myBadgesQuery.data);
   const isBadgeLoading = myBadgesQuery.isLoading;
   const isBadgePending =

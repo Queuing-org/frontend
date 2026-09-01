@@ -28,6 +28,7 @@ describe("칭호 API 계약", () => {
         {
           badgeCode: "ROOM_CREATE_00001",
           name: "방 팠음",
+          acquisitionRate: "12.34",
           description: "설명",
           category: "ROOM_CREATION",
           acquired: true as const,
@@ -44,10 +45,93 @@ describe("칭호 API 계약", () => {
       data: { result: response },
     });
 
-    await expect(fetchMyBadges()).resolves.toEqual(response);
+    await expect(fetchMyBadges()).resolves.toEqual({
+      ...response,
+      badges: [{ ...response.badges[0], acquisitionRate: 12.34 }],
+    });
     expect(axiosInstance.get).toHaveBeenCalledWith(
       "/api/v1/user-profiles/me/badges",
     );
+  });
+
+  it("두 칭호 GET 응답의 숫자 획득률을 number로 유지한다", async () => {
+    const response = {
+      badges: [
+        {
+          badgeCode: "ROOM_CREATE_00001",
+          name: "방 팠음",
+          acquisitionRate: 42,
+          description: "누적 방 생성 1회 달성",
+          category: "ROOM_CREATION",
+          acquired: true as const,
+          acquiredAt: "2026-07-29T00:00:00.000Z",
+          representative: false,
+        },
+      ],
+      representativeBadge: null,
+      userSlug: "user-slug",
+    };
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: { result: response },
+    });
+
+    await expect(fetchMyBadges()).resolves.toEqual(response);
+    await expect(fetchPublicUserBadges("user-slug")).resolves.toEqual(response);
+  });
+
+  it.each(["", "not-a-number", -0.01, 100.01, Number.POSITIVE_INFINITY])(
+    "잘못된 획득률 %p는 null로 정규화한다",
+    async (acquisitionRate) => {
+      vi.mocked(axiosInstance.get).mockResolvedValue({
+        data: {
+          result: {
+            badges: [
+              {
+                badgeCode: "ROOM_CREATE_00001",
+                name: "방 팠음",
+                acquisitionRate,
+                description: "누적 방 생성 1회 달성",
+                category: "ROOM_CREATION",
+                acquired: true,
+                acquiredAt: "2026-07-29T00:00:00.000Z",
+                representative: false,
+              },
+            ],
+            representativeBadge: null,
+          },
+        },
+      });
+
+      await expect(fetchMyBadges()).resolves.toMatchObject({
+        badges: [{ acquisitionRate: null }],
+      });
+    },
+  );
+
+  it.each([0, 100])("경계 획득률 %p는 유효한 값으로 유지한다", async (acquisitionRate) => {
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: {
+        result: {
+          badges: [
+            {
+              badgeCode: "ROOM_CREATE_00001",
+              name: "방 팠음",
+              acquisitionRate,
+              description: "누적 방 생성 1회 달성",
+              category: "ROOM_CREATION",
+              acquired: true,
+              acquiredAt: "2026-07-29T00:00:00.000Z",
+              representative: false,
+            },
+          ],
+          representativeBadge: null,
+        },
+      },
+    });
+
+    await expect(fetchMyBadges()).resolves.toMatchObject({
+      badges: [{ acquisitionRate }],
+    });
   });
 
   it("대표 칭호 설정 payload는 badgeCode만 전송한다", async () => {
@@ -63,7 +147,25 @@ describe("칭호 API 계약", () => {
   });
 
   it("공개 칭호 조회는 query signal과 5분 freshness를 사용한다", async () => {
-    const response = { badges: [], representativeBadge: null };
+    const response = {
+      badges: [
+        {
+          badgeCode: "ROOM_CREATE_00001",
+          name: "방 팠음",
+          acquisitionRate: "12.34",
+          description: "누적 방 생성 1회 달성",
+          category: "ROOM_CREATION",
+          acquired: true as const,
+          acquiredAt: "2026-07-29T00:00:00.000Z",
+          representative: false,
+        },
+      ],
+      representativeBadge: null,
+    };
+    const normalizedResponse = {
+      ...response,
+      badges: [{ ...response.badges[0], acquisitionRate: 12.34 }],
+    };
     vi.mocked(axiosInstance.get).mockResolvedValue({
       data: { result: response },
     });
@@ -78,7 +180,7 @@ describe("칭호 API 계약", () => {
 
     await expect(
       queryFn({ signal: abortController.signal } as never),
-    ).resolves.toEqual(response);
+    ).resolves.toEqual(normalizedResponse);
     expect(axiosInstance.get).toHaveBeenCalledWith(
       "/api/v1/user-profiles/user%20slug/badges",
       { signal: abortController.signal },
@@ -86,7 +188,7 @@ describe("칭호 API 계약", () => {
 
     await expect(
       fetchPublicUserBadges("user slug", abortController.signal),
-    ).resolves.toEqual(response);
+    ).resolves.toEqual(normalizedResponse);
   });
 
   it("대표 칭호를 동일 경로 DELETE로 해제한다", async () => {

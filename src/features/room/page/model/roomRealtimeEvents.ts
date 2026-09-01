@@ -221,6 +221,7 @@ export function applyTrackStarted(
         isActive: true,
         isPlayed: false,
         ownerOrdered: previousEntry?.status.ownerOrdered ?? false,
+        playbackOrigin: previousEntry?.status.playbackOrigin,
       },
       addedBy: data.addedBy,
       entryId: data.entryId,

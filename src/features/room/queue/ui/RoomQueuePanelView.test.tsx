@@ -7,7 +7,15 @@ vi.mock("@/src/features/playlist/add-track/ui/AddTrackAction", () => ({
   default: () => <button type="button">곡 추가</button>,
 }));
 vi.mock("./RoomQueueListSection", () => ({
-  default: () => <div>재생목록 내용</div>,
+  default: ({
+    isAutomaticReplayActive,
+  }: {
+    isAutomaticReplayActive: boolean;
+  }) => (
+    <div data-automatic-replay={isAutomaticReplayActive}>
+      재생목록 내용
+    </div>
+  ),
 }));
 vi.mock("./RoomQueueTabs", () => ({
   default: () => <div>재생목록 탭</div>,
@@ -30,6 +38,7 @@ const baseProps: ComponentProps<typeof RoomQueuePanelView> = {
   isDeleteMyPending: false,
   isDeleteRoomPending: false,
   isEmptyLoading: false,
+  isAutomaticReplayActive: false,
   isCurrentUserEntry: () => false,
   isFetchingNextHistoryPage: false,
   isFetchingNextAllQueuePage: false,
@@ -69,6 +78,15 @@ describe("RoomQueuePanelView", () => {
     renderView();
 
     expect(screen.getByLabelText("재생목록")).toHaveAttribute("tabindex", "0");
+  });
+
+  it("자동 순환 재생 상태를 목록 경계로 전달한다", () => {
+    renderView({ isAutomaticReplayActive: true });
+
+    expect(screen.getByText("재생목록 내용")).toHaveAttribute(
+      "data-automatic-replay",
+      "true",
+    );
   });
 
   it("다음 page가 있어도 상시 더 보기 버튼을 렌더링하지 않는다", () => {
@@ -111,6 +129,22 @@ describe("RoomQueuePanelView", () => {
     expect(onRetryQueue).toHaveBeenCalledOnce();
     expect(screen.getByText("지난 곡 실패")).toBeInTheDocument();
     expect(screen.getByText("대기곡 실패")).toBeInTheDocument();
+  });
+
+  it("내 노래 탭에서도 지난 곡 조회 실패를 상단 재시도로 복구한다", () => {
+    const onRetryHistory = vi.fn();
+    renderView({
+      activeTab: "mine",
+      historyErrorMessage: "내 지난 곡 실패",
+      onRetryHistory,
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "지난 곡 다시 시도" }),
+    );
+
+    expect(onRetryHistory).toHaveBeenCalledOnce();
+    expect(screen.getByText("내 지난 곡 실패")).toBeInTheDocument();
   });
 
   it("초기·추가 조회 loading을 기존 목록 영역의 방향별 상태로 표시한다", () => {

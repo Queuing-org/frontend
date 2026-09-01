@@ -51,11 +51,16 @@ export type PlaylistTrack = {
   thumbnailUrl: string | null;
 };
 
+export type RoomQueuePlaybackOrigin =
+  | "USER_REQUESTED"
+  | "AUTOMATIC_REPLAY";
+
 export type PlaylistEntryStatus = {
   skipped: boolean;
   isActive: boolean;
   isPlayed: boolean;
   ownerOrdered: boolean;
+  playbackOrigin?: RoomQueuePlaybackOrigin;
 };
 
 export type PlaylistAddedBy = {
@@ -113,18 +118,15 @@ export type RoomParticipantsPage = {
   nextCursor: string | null;
 };
 
-export type RoomQueueHistorySource =
-  | "USER_REQUESTED"
-  | "AUTOMATIC_REPLAY";
-
 export type RoomQueueHistoryEntry = {
   id: number;
   title: string;
   entryId: string;
   skipped: boolean;
+  startOffsetMs: number;
   videoId: string;
   provider: TrackProvider;
-  source: RoomQueueHistorySource;
+  playbackOrigin: RoomQueuePlaybackOrigin;
   endedAtMs: number;
   durationMs: number;
   queuedAtMs: number | null;

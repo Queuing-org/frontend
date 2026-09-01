@@ -1,4 +1,7 @@
-import type { PlaylistEntry } from "@/src/features/playlist/model/types";
+import type {
+  PlaylistEntry,
+  RoomQueueHistoryEntry,
+} from "@/src/features/playlist/model/types";
 import type { User } from "@/src/features/user/model/types";
 
 export type QueueTab = "all" | "mine";
@@ -66,4 +69,20 @@ export function isEntryRequestedByUser(
 
   const requesterSlug = entry.addedBy.slug?.trim();
   return Boolean(requesterSlug && requesterSlug === currentUser.slug);
+}
+
+export function isHistoryEntryRequestedByUser(
+  entry: RoomQueueHistoryEntry,
+  currentUser: User | null | undefined,
+) {
+  if (!currentUser) {
+    return false;
+  }
+
+  const requesterSlug = entry.addedByUserSlug?.trim();
+  return Boolean(
+    entry.playbackOrigin === "USER_REQUESTED" &&
+      requesterSlug &&
+      requesterSlug === currentUser.slug,
+  );
 }
