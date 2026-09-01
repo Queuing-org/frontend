@@ -11,12 +11,8 @@
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  container-type: size;
   scrollbar-width: none;
-}
-
-.listArea[data-center-automatic-replay="true"] {
-  display: flex;
-  flex-direction: column;
 }
 
 .listArea::-webkit-scrollbar {

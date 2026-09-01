@@ -41,13 +41,22 @@
 - fresh QA: DnD live-region selector finding 1건 수정 후 2 files / 17 tests 및 diff-check pass
 - 수정 후 실제 브라우저 screenshot은 현재 세션에서 확인하지 못했다.
 
-## Parent-owned centering follow-up
+## Superseded parent-owned centering follow-up
 
 - 사용자 runtime screenshot에서 자식 `height: 100%`가 콘텐츠 높이만 차지해 중앙 정렬에 실패함을 확인했다.
 - 자동재생 단독 상태일 때 list area를 column flex container로 만들고 standalone 상태를 `flex: 1`로 배치했다.
-- 대기곡·히스토리·수동 현재곡이 있으면 조건부 flex layout을 적용하지 않는다.
-- targeted Vitest: 2 files / 18 tests pass
+- 로컬 검증은 통과했지만 실제 runtime에는 화면 위 history가 존재해 단독 상태 조건이 false였고 중앙 정렬이 적용되지 않았다.
+- 해당 조건부 flex 구현은 다음 follow-up에서 제거했다.
+
+## List viewport height follow-up
+
+- list area를 size query container로 지정했다.
+- no-history와 timeline 분기 모두 자동재생 상태에 `fillAvailableSpace=true`를 전달한다.
+- 자동재생 상태는 `100%` fallback 뒤 `100cqh`로 list viewport 한 화면 높이를 차지한다.
+- history는 위, pending은 아래에 유지되고 current boundary를 상단 정렬하면 아이콘·문구가 현재 list viewport 중앙에 온다.
+- targeted Vitest: 2 files / 17 tests pass
 - lint: pass
 - build: pass
 - diff-check: pass
-- fresh QA: parent-child flex, loading/error, virtualization, exact icon size, reduced-motion pass
+- fresh QA: 4 files / 38 tests pass
+- residual: jsdom은 container query unit의 실제 layout을 계산하지 않는다.

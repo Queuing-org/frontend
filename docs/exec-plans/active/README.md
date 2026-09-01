@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-09-01-automatic-replay-state](./2026-09-01-automatic-replay-state/plan.md): ci-pending — 자동 순환 상태를 59px 아이콘과 parent flex 기반 list area 중앙으로 교정하고 로컬 QA·fresh review 통과
+- [2026-09-01-automatic-replay-state](./2026-09-01-automatic-replay-state/plan.md): ci-pending — 자동 순환 상태를 59px 아이콘과 `100cqh` 기반 list viewport 중앙으로 교정하고 로컬 QA·fresh review 통과
 
 - [2026-09-01-settings-badge-tooltip](./2026-09-01-settings-badge-tooltip/plan.md): ci-pending — Draft PR #58에 설정 칭호 acquisitionRate 정규화와 접근성 리스트박스·획득 상세 portal tooltip 게시 완료
 

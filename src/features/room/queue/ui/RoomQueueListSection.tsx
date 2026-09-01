@@ -166,7 +166,9 @@ export default function RoomQueueListSection({
           highlightEntry={isCurrentUserEntry}
         />
       ) : null}
-      {isAutomaticReplayActive ? <AutomaticReplayState /> : null}
+      {isAutomaticReplayActive ? (
+        <AutomaticReplayState fillAvailableSpace />
+      ) : null}
       {pendingEntries.length > 0 ? pendingQueue : null}
     </div>
   );

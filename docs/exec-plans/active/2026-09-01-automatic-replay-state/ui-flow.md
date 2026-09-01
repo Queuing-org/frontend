@@ -7,8 +7,8 @@
 - list section은 현재곡 카드 대신 3개 막대 아이콘과 `현재 자동 재생 중입니다` 상태를 표시한다.
 - 자동 재생 아이콘은 59x59px 원, 내부 padding 12px, 3px 막대 세 개를 사용한다.
 - 지난 곡 또는 대기곡이 있으면 그대로 유지하며 자동 순환 상태는 history/current/pending 경계에 표시한다.
-- 다른 항목이 없으면 list area가 column flex container가 되고 자동 순환 상태가 `flex: 1`로 남은 높이를 채워 세로·가로 중앙의 빈 상태를 대신한다.
-- 대기곡·히스토리·수동 현재곡이 생기면 조건부 flex layout을 해제해 기존 scroll/virtualization 흐름을 유지한다.
+- list area는 size query container이며 자동 순환 상태는 history/pending 유무와 관계없이 `100cqh`로 현재 목록 viewport 한 화면을 차지한다.
+- current boundary가 viewport 상단에 정렬되면 자동 순환 아이콘·문구는 해당 화면의 세로·가로 중앙에 오고, history는 위·pending은 아래에 유지된다.
 
 ## 내 노래
 

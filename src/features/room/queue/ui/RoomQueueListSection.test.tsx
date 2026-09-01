@@ -181,10 +181,7 @@ describe("RoomQueueListSection move lock", () => {
       screen
         .getByText("현재 자동 재생 중입니다")
         .closest('[role="status"]'),
-    ).toHaveAttribute(
-      "data-fill-available-space",
-      "false",
-    );
+    ).toHaveAttribute("data-fill-available-space", "true");
     expect(screen.queryByText("automatic-track")).not.toBeInTheDocument();
   });
 

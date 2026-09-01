@@ -74,10 +74,18 @@
 - [x] targeted 2 files / 17 tests, lint, build, diff-check 통과
 - [x] fresh QA의 DnD live-region test selector finding 1건 수정 후 재검증 pass
 
-## Follow-up: parent-owned centering
+## Superseded follow-up: parent-owned centering
 
 - [x] 사용자 runtime screenshot으로 `height: 100%` 수정이 실제 중앙 정렬에 실패함을 재현
-- [x] 자동재생 단독 상태에서만 list area를 column flex container로 전환
-- [x] standalone 자동재생 상태를 `flex: 1`로 남은 목록 영역에 배치
-- [x] 대기곡이 생기면 중앙 정렬 layout을 해제하는 회귀 테스트 추가
-- [x] targeted 2 files / 18 tests, lint, build, diff-check, fresh QA 통과
+- [x] 자동재생 단독 상태의 parent flex 방식을 시도하고 로컬 검증
+- [x] history가 존재하는 runtime에서 조건이 false가 되어 동작하지 않음을 후속 screenshot으로 확인
+- [x] 조건부 parent flex 구현과 전용 테스트 제거
+
+## Follow-up: list viewport height centering
+
+- [x] history가 화면 위로 스크롤된 상태에서도 timeline branch가 존재함을 원인으로 확정
+- [x] list area를 size query container로 지정
+- [x] history/pending 유무와 관계없이 자동재생 상태를 `100cqh`로 렌더링
+- [x] history branch도 `fillAvailableSpace=true`인지 회귀 테스트로 고정
+- [x] targeted 2 files / 17 tests, lint, build, diff-check 통과
+- [x] fresh QA 4 files / 38 tests pass
