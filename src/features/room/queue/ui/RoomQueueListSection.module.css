@@ -17,7 +17,7 @@
 }
 
 .automaticReplayState[data-fill-available-space="true"] {
-  height: 100%;
+  flex: 1;
   min-height: 0;
 }
 
@@ -112,11 +112,6 @@
     min-height: 144px;
     gap: 17.6px;
     padding: 25.6px 16px;
-  }
-
-  .automaticReplayState[data-fill-available-space="true"] {
-    height: 100%;
-    min-height: 0;
   }
 
   .automaticReplayMessage {

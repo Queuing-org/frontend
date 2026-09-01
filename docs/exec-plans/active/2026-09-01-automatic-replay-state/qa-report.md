@@ -40,3 +40,14 @@
 - diff-check: pass
 - fresh QA: DnD live-region selector finding 1건 수정 후 2 files / 17 tests 및 diff-check pass
 - 수정 후 실제 브라우저 screenshot은 현재 세션에서 확인하지 못했다.
+
+## Parent-owned centering follow-up
+
+- 사용자 runtime screenshot에서 자식 `height: 100%`가 콘텐츠 높이만 차지해 중앙 정렬에 실패함을 확인했다.
+- 자동재생 단독 상태일 때 list area를 column flex container로 만들고 standalone 상태를 `flex: 1`로 배치했다.
+- 대기곡·히스토리·수동 현재곡이 있으면 조건부 flex layout을 적용하지 않는다.
+- targeted Vitest: 2 files / 18 tests pass
+- lint: pass
+- build: pass
+- diff-check: pass
+- fresh QA: parent-child flex, loading/error, virtualization, exact icon size, reduced-motion pass

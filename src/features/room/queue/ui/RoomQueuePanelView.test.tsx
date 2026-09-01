@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
+import type { PlaylistEntry } from "@/src/features/playlist/model/types";
 import RoomQueuePanelView from "./RoomQueuePanelView";
 
 vi.mock("@/src/features/playlist/add-track/ui/AddTrackAction", () => ({
@@ -20,6 +21,27 @@ vi.mock("./RoomQueueListSection", () => ({
 vi.mock("./RoomQueueTabs", () => ({
   default: () => <div>재생목록 탭</div>,
 }));
+
+const queueEntry: PlaylistEntry = {
+  addedBy: { avatarUrl: null, nickname: "신청자", slug: "requester" },
+  createdAtMs: 1,
+  entryId: "pending-entry",
+  order: 1,
+  status: {
+    isActive: false,
+    isPlayed: false,
+    ownerOrdered: false,
+    skipped: false,
+  },
+  track: {
+    durationMs: 1_000,
+    provider: "YOUTUBE",
+    thumbnailUrl: null,
+    title: "대기곡",
+    videoId: "pending-video",
+  },
+  updatedAtMs: 1,
+};
 
 const baseProps: ComponentProps<typeof RoomQueuePanelView> = {
   activeTab: "all",
@@ -86,6 +108,29 @@ describe("RoomQueuePanelView", () => {
     expect(screen.getByText("재생목록 내용")).toHaveAttribute(
       "data-automatic-replay",
       "true",
+    );
+  });
+
+  it("자동 순환만 있을 때 목록 영역을 중앙 정렬하고 대기곡이 있으면 해제한다", () => {
+    const { rerender } = renderView({ isAutomaticReplayActive: true });
+    const listArea = screen.getByLabelText("재생목록");
+
+    expect(listArea).toHaveAttribute(
+      "data-center-automatic-replay",
+      "true",
+    );
+
+    rerender(
+      <RoomQueuePanelView
+        {...baseProps}
+        allEntries={[queueEntry]}
+        isAutomaticReplayActive
+      />,
+    );
+
+    expect(listArea).toHaveAttribute(
+      "data-center-automatic-replay",
+      "false",
     );
   });
 

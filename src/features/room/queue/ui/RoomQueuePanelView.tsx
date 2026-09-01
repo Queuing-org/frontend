@@ -115,13 +115,17 @@ export default function RoomQueuePanelView({
     () => historyEntries.map((entry) => entry.id),
     [historyEntries],
   );
+  const visibleQueueEntries =
+    activeTab === "all" ? allEntries : myEntries;
   const queueEntryIds = useMemo(
-    () =>
-      (activeTab === "all" ? allEntries : myEntries).map(
-        (entry) => entry.entryId,
-      ),
-    [activeTab, allEntries, myEntries],
+    () => visibleQueueEntries.map((entry) => entry.entryId),
+    [visibleQueueEntries],
   );
+  const shouldCenterAutomaticReplay =
+    isAutomaticReplayActive &&
+    !currentEntry &&
+    historyEntries.length === 0 &&
+    visibleQueueEntries.length === 0;
   const hasNextQueuePage =
     activeTab === "all" ? hasNextAllQueuePage : hasNextMyQueuePage;
   const isFetchingNextQueuePage =
@@ -170,6 +174,7 @@ export default function RoomQueuePanelView({
       <div
         ref={scrollContainerRef}
         className={styles.listArea}
+        data-center-automatic-replay={shouldCenterAutomaticReplay}
         data-queue-scroll-container
         aria-label="재생목록"
         tabIndex={0}

@@ -73,3 +73,11 @@
 - [x] 자동재생 단독 상태가 list area의 실제 높이를 채우도록 `height: 100%` 적용
 - [x] targeted 2 files / 17 tests, lint, build, diff-check 통과
 - [x] fresh QA의 DnD live-region test selector finding 1건 수정 후 재검증 pass
+
+## Follow-up: parent-owned centering
+
+- [x] 사용자 runtime screenshot으로 `height: 100%` 수정이 실제 중앙 정렬에 실패함을 재현
+- [x] 자동재생 단독 상태에서만 list area를 column flex container로 전환
+- [x] standalone 자동재생 상태를 `flex: 1`로 남은 목록 영역에 배치
+- [x] 대기곡이 생기면 중앙 정렬 layout을 해제하는 회귀 테스트 추가
+- [x] targeted 2 files / 18 tests, lint, build, diff-check, fresh QA 통과

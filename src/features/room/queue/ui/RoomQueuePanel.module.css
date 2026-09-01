@@ -14,6 +14,11 @@
   scrollbar-width: none;
 }
 
+.listArea[data-center-automatic-replay="true"] {
+  display: flex;
+  flex-direction: column;
+}
+
 .listArea::-webkit-scrollbar {
   display: none;
   width: 0;
