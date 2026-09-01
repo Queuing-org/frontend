@@ -21,3 +21,8 @@
 
 - 배포 API의 공개 OpenAPI/Swagger 경로가 404라 `statusMessage`의 실제 서버 상한은 통합 확인이 남아 있다. 과거 프런트 계약은 255자였고 이번 상한은 40자다.
 - in-app Browser에 사용 가능한 브라우저가 없어 computed layout과 실제 hover를 스크린샷으로 확인하지 못했다. CSS 소스·빌드·fresh review까지만 검증했다.
+
+## Publication
+
+- `dev` push passed.
+- 기존 PR #58이 push 전에 병합되어 새 변경은 Draft PR #59로 게시했다.
