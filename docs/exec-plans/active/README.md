@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-09-01-automatic-replay-state](./2026-09-01-automatic-replay-state/plan.md): ci-pending — playback origin 기반 자동 순환 상태와 설정 칭호 굵기 후속 정리, 전체 로컬 QA와 fresh review 통과
+
 - [2026-09-01-settings-badge-tooltip](./2026-09-01-settings-badge-tooltip/plan.md): ci-pending — Draft PR #58에 설정 칭호 acquisitionRate 정규화와 접근성 리스트박스·획득 상세 portal tooltip 게시 완료
 
 - [2026-08-31-bidirectional-queue-scroll](./2026-08-31-bidirectional-queue-scroll/plan.md): ci-pending — Draft PR #58, 내 노래 history 필터·회색 카드와 전체 로컬 QA·fresh review 통과
