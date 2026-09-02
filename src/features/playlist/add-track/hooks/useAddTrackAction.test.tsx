@@ -69,7 +69,10 @@ describe("useAddTrackAction", () => {
       setErrorMessage: mocks.setErrorMessage,
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "사연",
-      videoId: "video-id",
+      queueSource: {
+        videoId: "video-id",
+        youtubePlaylist: false,
+      },
     } as unknown as ReturnType<typeof useAddTrackForm>);
     vi.mocked(subscribeRoomEvents).mockReturnValue({
       id: "room-events",
@@ -109,6 +112,7 @@ describe("useAddTrackAction", () => {
     expect(publishAddTrack).toHaveBeenCalledWith("room", {
       story: "사연",
       videoId: "video-id",
+      youtubePlaylist: false,
     });
     expect(result.current.isModalOpen).toBe(false);
     expect(mocks.reset).toHaveBeenCalled();
@@ -152,7 +156,7 @@ describe("useAddTrackAction", () => {
       setErrorMessage: mocks.setErrorMessage,
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "",
-      videoId: null,
+      queueSource: null,
     } as unknown as ReturnType<typeof useAddTrackForm>);
     const { result } = renderAddTrackAction();
 
@@ -160,11 +164,11 @@ describe("useAddTrackAction", () => {
 
     expect(mocks.setError).toHaveBeenCalledWith(
       "url",
-      "올바른 유튜브 링크를 입력해주세요.",
+      "올바른 유튜브 영상 또는 재생목록 링크를 입력해주세요.",
     );
     expect(mocks.notify).toHaveBeenCalledWith({
       dedupeKey: "add-track:room:url",
-      message: "올바른 유튜브 링크를 입력해주세요.",
+      message: "올바른 유튜브 영상 또는 재생목록 링크를 입력해주세요.",
       tone: "error",
     });
   });
@@ -176,7 +180,10 @@ describe("useAddTrackAction", () => {
       setErrorMessage: mocks.setErrorMessage,
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "가".repeat(31),
-      videoId: "video-id",
+      queueSource: {
+        videoId: "video-id",
+        youtubePlaylist: false,
+      },
     } as unknown as ReturnType<typeof useAddTrackForm>);
     const { result } = renderAddTrackAction();
 
@@ -190,6 +197,31 @@ describe("useAddTrackAction", () => {
       dedupeKey: "add-track:room:story",
       message: "노래 선정 이유는 30자 이하로 입력해주세요.",
       tone: "error",
+    });
+  });
+
+  it("재생목록 URL은 원본 URL과 youtubePlaylist 옵션을 함께 보낸다", () => {
+    const playlistUrl =
+      "https://www.youtube.com/watch?v=current&list=PL_playlist-1";
+    vi.mocked(useAddTrackForm).mockReturnValue({
+      reset: mocks.reset,
+      setError: mocks.setError,
+      setErrorMessage: mocks.setErrorMessage,
+      setIsSubmitting: mocks.setIsSubmitting,
+      storyValue: "사연",
+      queueSource: {
+        videoId: playlistUrl,
+        youtubePlaylist: true,
+      },
+    } as unknown as ReturnType<typeof useAddTrackForm>);
+    const { result } = renderAddTrackAction();
+
+    act(() => result.current.submit());
+
+    expect(publishAddTrack).toHaveBeenCalledWith("room", {
+      story: "사연",
+      videoId: playlistUrl,
+      youtubePlaylist: true,
     });
   });
 

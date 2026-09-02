@@ -44,7 +44,7 @@ export default function AddTrackFormFields({
           type="url"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="함께 듣고 싶은 영상의 URL을 붙여넣으세요"
+          placeholder="함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요"
           className={styles.input}
           disabled={submitting}
           autoFocus

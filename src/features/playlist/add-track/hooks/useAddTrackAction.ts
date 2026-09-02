@@ -186,8 +186,11 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
   };
 
   const submit = () => {
-    if (!form.videoId) {
-      showError("url", "올바른 유튜브 링크를 입력해주세요.");
+    if (!form.queueSource) {
+      showError(
+        "url",
+        "올바른 유튜브 영상 또는 재생목록 링크를 입력해주세요.",
+      );
       return;
     }
 
@@ -271,12 +274,13 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
 
       pendingAddTrackRef.current = {
         timeoutId,
-        videoId: form.videoId,
+        videoId: form.queueSource.videoId,
       };
 
       publishAddTrack(normalizedSlug, {
         story: story ? story : null,
-        videoId: form.videoId,
+        videoId: form.queueSource.videoId,
+        youtubePlaylist: form.queueSource.youtubePlaylist,
       });
     } catch (error) {
       clearPendingAddTrack();

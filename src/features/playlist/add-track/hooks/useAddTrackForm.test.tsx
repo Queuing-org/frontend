@@ -6,6 +6,20 @@ import {
 } from "./useAddTrackForm";
 
 describe("useAddTrackForm", () => {
+  it("재생목록 URL을 제출 가능한 queue source로 만든다", () => {
+    const { result } = renderHook(() => useAddTrackForm());
+    const playlistUrl =
+      "https://www.youtube.com/watch?v=current&list=PL_playlist-1";
+
+    act(() => result.current.updateInputValue(playlistUrl));
+
+    expect(result.current.canSubmit).toBe(true);
+    expect(result.current.queueSource).toEqual({
+      videoId: playlistUrl,
+      youtubePlaylist: true,
+    });
+  });
+
   it("30자를 넘긴 사연을 유지해 제출 검증이 오류를 표시할 수 있게 한다", () => {
     const { result } = renderHook(() => useAddTrackForm());
 

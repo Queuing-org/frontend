@@ -30,11 +30,21 @@ describe("AddTrackFormFields", () => {
     ).toBeInTheDocument();
   });
 
+  it("영상과 재생목록 URL을 모두 지원한다고 안내한다", () => {
+    renderFields("url");
+
+    expect(
+      screen.getByPlaceholderText(
+        "함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요",
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("URL 오류를 URL 입력의 aria-invalid와 SR 설명에 연결한다", () => {
     renderFields("url");
 
     const input = screen.getByPlaceholderText(
-      "함께 듣고 싶은 영상의 URL을 붙여넣으세요",
+      "함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요",
     );
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAttribute("aria-describedby", "add-track-error");

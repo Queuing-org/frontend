@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { extractYouTubeVideoId } from "../model/extractYouTubeVideoId";
+import { parseYouTubeQueueSource } from "../model/parseYouTubeQueueSource";
 
 export const ADD_TRACK_STORY_MAX_LENGTH = 30;
 export type AddTrackErrorField = "url" | "story" | "form" | null;
@@ -12,8 +12,8 @@ export function useAddTrackForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [errorField, setErrorField] = useState<AddTrackErrorField>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const videoId = useMemo(
-    () => extractYouTubeVideoId(inputValue),
+  const queueSource = useMemo(
+    () => parseYouTubeQueueSource(inputValue),
     [inputValue],
   );
 
@@ -42,7 +42,7 @@ export function useAddTrackForm() {
   };
 
   return {
-    canSubmit: Boolean(videoId),
+    canSubmit: Boolean(queueSource),
     errorMessage,
     errorField,
     inputValue,
@@ -59,6 +59,6 @@ export function useAddTrackForm() {
     storyValue,
     updateInputValue,
     updateStoryValue,
-    videoId,
+    queueSource,
   };
 }
