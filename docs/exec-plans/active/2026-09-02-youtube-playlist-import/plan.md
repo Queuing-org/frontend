@@ -18,6 +18,7 @@
 ## Selected Skills
 
 - queuing-feature-delivery
+- queuing-pr-review-cycle
 - queuing-api-boundary
 - queuing-ui-flow
 - frontend-architecture-guardrails
@@ -66,3 +67,23 @@
 
 - 실제 YouTube 재생목록 조회 성공 여부와 최대 수집 범위는 backend와 YouTube 응답에 의존한다.
 - `watch&list=...`처럼 `?`가 없는 비표준 URL과 `/shorts/...?...list=...`는 지원하지 않는다.
+
+## Follow-up: explicit playlist scope
+
+- [x] 사용자 후속 요구를 actionable finding으로 분류
+- [x] 재생목록 감지 시 현재 영상/재생목록 노래 함께 추가 선택 UI 제공
+- [x] 순수 재생목록 URL의 노래 추가 명시 선택과 제약 안내
+- [x] targeted/full verification 및 structured QA
+- [x] 후속 feature commit (`5b21b8c`)
+- [x] delivery docs commit과 Draft PR #60 push
+
+후속 검증 결과:
+
+- targeted Vitest: 5 files / 39 tests pass
+- lint: pass
+- full test 1차: 687/688 pass, 범위 밖 queue virtualization test 5초 timeout
+- queue virtualization isolated rerun: 7/7 pass
+- full test 2차: 155 files / 688 tests pass
+- build: pass
+- git diff --check: pass
+- structured QA: pass, blocker 없음

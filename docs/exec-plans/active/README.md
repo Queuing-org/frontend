@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-09-02-youtube-playlist-import](./2026-09-02-youtube-playlist-import/plan.md): ci-pending — Draft PR #60, YouTube 재생목록 URL을 backend `youtubePlaylist` 계약으로 전달하고 로컬·fresh QA 통과
+- [2026-09-02-youtube-playlist-import](./2026-09-02-youtube-playlist-import/plan.md): ci-pending — Draft PR #60, 재생목록 감지 시 현재 영상/재생목록 노래 추가 선택을 요구하고 후속 로컬 QA 통과
 
 - [2026-09-01-room-self-participant-menu](./2026-09-01-room-self-participant-menu/plan.md): ci-pending — Draft PR #59, 내 참가자 첫 행·`(나)`·Settings/Friends modal과 reconnect identity QA 통과
 
