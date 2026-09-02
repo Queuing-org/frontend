@@ -70,6 +70,10 @@ describe("useAddTrackAction", () => {
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "사연",
       queueSource: {
+        kind: "video",
+        videoId: "video-id",
+      },
+      queueRequest: {
         videoId: "video-id",
         youtubePlaylist: false,
       },
@@ -157,6 +161,7 @@ describe("useAddTrackAction", () => {
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "",
       queueSource: null,
+      queueRequest: null,
     } as unknown as ReturnType<typeof useAddTrackForm>);
     const { result } = renderAddTrackAction();
 
@@ -181,6 +186,10 @@ describe("useAddTrackAction", () => {
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "가".repeat(31),
       queueSource: {
+        kind: "video",
+        videoId: "video-id",
+      },
+      queueRequest: {
         videoId: "video-id",
         youtubePlaylist: false,
       },
@@ -210,6 +219,11 @@ describe("useAddTrackAction", () => {
       setIsSubmitting: mocks.setIsSubmitting,
       storyValue: "사연",
       queueSource: {
+        currentVideoId: "current",
+        kind: "playlist",
+        playlistUrl,
+      },
+      queueRequest: {
         videoId: playlistUrl,
         youtubePlaylist: true,
       },
@@ -223,6 +237,60 @@ describe("useAddTrackAction", () => {
       videoId: playlistUrl,
       youtubePlaylist: true,
     });
+  });
+
+  it("재생목록 추가 범위를 선택하지 않으면 요청하지 않고 선택 오류를 표시한다", () => {
+    const playlistUrl =
+      "https://www.youtube.com/watch?v=current&list=PL_playlist-1";
+    vi.mocked(useAddTrackForm).mockReturnValue({
+      reset: mocks.reset,
+      setError: mocks.setError,
+      setErrorMessage: mocks.setErrorMessage,
+      setIsSubmitting: mocks.setIsSubmitting,
+      storyValue: "",
+      queueSource: {
+        currentVideoId: "current",
+        kind: "playlist",
+        playlistUrl,
+      },
+      queueRequest: null,
+    } as unknown as ReturnType<typeof useAddTrackForm>);
+    const { result } = renderAddTrackAction();
+
+    act(() => result.current.submit());
+
+    expect(publishAddTrack).not.toHaveBeenCalled();
+    expect(mocks.setError).toHaveBeenCalledWith(
+      "queueMode",
+      "현재 영상만 추가할지 재생목록 노래도 함께 추가할지 선택해주세요.",
+    );
+  });
+
+  it("현재 영상이 없는 재생목록은 전체 추가 선택을 요구한다", () => {
+    const playlistUrl =
+      "https://www.youtube.com/playlist?list=PL_playlist-1";
+    vi.mocked(useAddTrackForm).mockReturnValue({
+      reset: mocks.reset,
+      setError: mocks.setError,
+      setErrorMessage: mocks.setErrorMessage,
+      setIsSubmitting: mocks.setIsSubmitting,
+      storyValue: "",
+      queueSource: {
+        currentVideoId: null,
+        kind: "playlist",
+        playlistUrl,
+      },
+      queueRequest: null,
+    } as unknown as ReturnType<typeof useAddTrackForm>);
+    const { result } = renderAddTrackAction();
+
+    act(() => result.current.submit());
+
+    expect(publishAddTrack).not.toHaveBeenCalled();
+    expect(mocks.setError).toHaveBeenCalledWith(
+      "queueMode",
+      "재생목록 노래 추가 여부를 선택해주세요.",
+    );
   });
 
   it("곡 길이 제한 WebSocket 오류는 URL 필드와 빨간 알림에 연결한다", () => {

@@ -1,4 +1,17 @@
-export type YouTubeQueueSource = {
+export type YouTubeQueueMode = "single" | "playlist";
+
+export type YouTubeQueueSource =
+  | {
+      kind: "video";
+      videoId: string;
+    }
+  | {
+      currentVideoId: string | null;
+      kind: "playlist";
+      playlistUrl: string;
+    };
+
+export type YouTubeQueueRequest = {
   videoId: string;
   youtubePlaylist: boolean;
 };
@@ -32,6 +45,18 @@ function isPlaylistPath(hostname: string, pathname: string) {
   );
 }
 
+function getCurrentVideoId(parsedUrl: URL, hostname: string) {
+  if (isYouTubeHost(hostname) && parsedUrl.pathname === "/watch") {
+    return parsedUrl.searchParams.get("v")?.trim() || null;
+  }
+
+  if (hostname === "youtu.be") {
+    return parsedUrl.pathname.split("/").filter(Boolean)[0]?.trim() || null;
+  }
+
+  return null;
+}
+
 export function parseYouTubeQueueSource(
   input: string,
 ): YouTubeQueueSource | null {
@@ -55,19 +80,43 @@ export function parseYouTubeQueueSource(
     }
 
     return {
-      videoId: parsedUrl.toString(),
+      currentVideoId: getCurrentVideoId(parsedUrl, hostname),
+      kind: "playlist",
+      playlistUrl: parsedUrl.toString(),
+    };
+  }
+
+  const videoId = getCurrentVideoId(parsedUrl, hostname);
+  return videoId ? { kind: "video", videoId } : null;
+}
+
+export function createYouTubeQueueRequest(
+  source: YouTubeQueueSource | null,
+  mode: YouTubeQueueMode | null,
+): YouTubeQueueRequest | null {
+  if (!source) {
+    return null;
+  }
+
+  if (source.kind === "video") {
+    return {
+      videoId: source.videoId,
+      youtubePlaylist: false,
+    };
+  }
+
+  if (mode === "playlist") {
+    return {
+      videoId: source.playlistUrl,
       youtubePlaylist: true,
     };
   }
 
-  if (isYouTubeHost(hostname) && parsedUrl.pathname === "/watch") {
-    const videoId = parsedUrl.searchParams.get("v")?.trim();
-    return videoId ? { videoId, youtubePlaylist: false } : null;
-  }
-
-  if (hostname === "youtu.be") {
-    const videoId = parsedUrl.pathname.split("/").filter(Boolean)[0]?.trim();
-    return videoId ? { videoId, youtubePlaylist: false } : null;
+  if (mode === "single" && source.currentVideoId) {
+    return {
+      videoId: source.currentVideoId,
+      youtubePlaylist: false,
+    };
   }
 
   return null;

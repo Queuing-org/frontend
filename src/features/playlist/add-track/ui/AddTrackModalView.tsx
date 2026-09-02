@@ -6,6 +6,7 @@ import { useDialogA11y } from "@/src/shared/ui/dialog/useDialogA11y";
 import AddTrackFormFields from "./AddTrackFormFields";
 import styles from "./AddTrackModal.module.css";
 import type { AddTrackErrorField } from "../hooks/useAddTrackForm";
+import type { YouTubeQueueMode } from "../model/parseYouTubeQueueSource";
 
 type AddTrackModalProps = {
   disabled?: boolean;
@@ -17,8 +18,12 @@ type AddTrackModalProps = {
   storyValue: string;
   errorMessage: string;
   errorField: AddTrackErrorField;
+  playlistDetected: boolean;
+  queueMode: YouTubeQueueMode | null;
+  singleTrackAvailable: boolean;
   onChange: (value: string) => void;
   onClose: () => void;
+  onQueueModeChange: (mode: YouTubeQueueMode) => void;
   onStoryChange: (value: string) => void;
   onSubmit: () => void;
 };
@@ -33,8 +38,12 @@ export default function AddTrackModal({
   storyValue,
   errorMessage,
   errorField,
+  playlistDetected,
+  queueMode,
+  singleTrackAvailable,
   onChange,
   onClose,
+  onQueueModeChange,
   onStoryChange,
   onSubmit,
 }: AddTrackModalProps) {
@@ -57,12 +66,16 @@ export default function AddTrackModal({
             <AddTrackFormFields
               errorMessage={errorMessage}
               errorField={errorField}
+              playlistDetected={playlistDetected}
+              queueMode={queueMode}
+              singleTrackAvailable={singleTrackAvailable}
               storyLength={storyLength}
               storyMaxLength={storyMaxLength}
               storyValue={storyValue}
               submitting={submitting}
               value={value}
               onChange={onChange}
+              onQueueModeChange={onQueueModeChange}
               onStoryChange={onStoryChange}
             />
 

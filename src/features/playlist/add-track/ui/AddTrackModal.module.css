@@ -51,6 +51,82 @@
   margin-top: 24px;
 }
 
+.queueModeFieldset {
+  min-width: 0;
+  margin: 20px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.queueModeFieldset + .fieldGroup {
+  margin-top: 24px;
+}
+
+.queueModeLegend {
+  margin-bottom: 12px;
+  color: #8d8d8d;
+  font-size: 15px;
+  font-weight: var(--fw-regular);
+  line-height: 1.4;
+}
+
+.queueModeOptions {
+  display: grid;
+  gap: 8px;
+}
+
+.queueModeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  color: #3c3c3c;
+  font-size: 15px;
+  font-weight: var(--fw-medium);
+  line-height: 1.4;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.queueModeOption:has(.queueModeRadio:checked) {
+  border-color: #8d8d8d;
+  background: #f7f7f9;
+}
+
+.queueModeFieldset[aria-invalid="true"] .queueModeOption {
+  border-color: #d94b4b;
+}
+
+.queueModeOption:has(.queueModeRadio:focus-visible) {
+  outline: 2px solid #8d8d8d;
+  outline-offset: 2px;
+}
+
+.queueModeOptionDisabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.queueModeRadio {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  accent-color: #3c3c3c;
+}
+
+.queueModeNote {
+  display: block;
+  margin-top: 2px;
+  color: #8d8d8d;
+  font-size: 12px;
+  font-weight: var(--fw-regular);
+}
+
 .labelRow {
   display: flex;
   align-items: center;
@@ -230,6 +306,28 @@
     margin-top: 28px;
   }
 
+  .queueModeFieldset {
+    margin-top: 24px;
+  }
+
+  .queueModeFieldset + .fieldGroup {
+    margin-top: 28px;
+  }
+
+  .queueModeLegend,
+  .queueModeOption {
+    font-size: 18px;
+  }
+
+  .queueModeNote {
+    font-size: 14px;
+  }
+
+  .queueModeRadio {
+    width: 18px;
+    height: 18px;
+  }
+
   .label,
   .youtubeLink {
     font-size: 20px;
@@ -270,6 +368,13 @@
   .form { margin-top: 33.6px; }
   .fieldGroup { gap: 11.2px; }
   .fieldGroup + .fieldGroup { margin-top: 19.2px; }
+  .queueModeFieldset { margin-top: 16px; }
+  .queueModeFieldset + .fieldGroup { margin-top: 19.2px; }
+  .queueModeLegend, .queueModeOption { font-size: 12px; }
+  .queueModeLegend { margin-bottom: 9.6px; }
+  .queueModeOption { gap: 8px; padding: 8px 9.6px; border-radius: 6.4px; }
+  .queueModeRadio { width: 12.8px; height: 12.8px; margin-top: 1.6px; }
+  .queueModeNote { margin-top: 1.6px; font-size: 9.6px; }
   .label, .youtubeLink { font-size: 12.8px; }
   .characterCount { font-size: 11.2px; }
   .input { height: 42.4px; padding: 11.2px 12.8px; font-size: 12.8px; }
