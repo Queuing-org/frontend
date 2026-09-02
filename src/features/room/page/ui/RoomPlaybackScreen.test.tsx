@@ -8,6 +8,8 @@ import { roomKeys } from "@/src/features/room/model/queryKeys";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
+import type { User } from "@/src/features/user/model/types";
 import { ApiError } from "@/src/shared/api/api-error";
 import { RoomJoinError } from "@/src/features/room/api/joinRoom.types";
 import { storeRoomJoinHandoff } from "@/src/features/room/join/model/roomJoinHandoff";
@@ -25,6 +27,11 @@ const mocks = vi.hoisted(() => {
   const replace = vi.fn();
   const replaceDocumentLocation = vi.fn();
   const notify = vi.fn();
+  const joinedContentProps = vi.fn();
+  const meQuery: { data: User | null; isLoading: boolean } = {
+    data: null,
+    isLoading: false,
+  };
   const roomChat = {
     cleanupSubscriptions: vi.fn(),
     initializeFromJoinData: vi.fn(),
@@ -33,7 +40,9 @@ const mocks = vi.hoisted(() => {
 
   return {
     ensureRoomSubscription,
+    joinedContentProps,
     leaveRoomSession,
+    meQuery,
     notify,
     replace,
     replaceDocumentLocation,
@@ -78,7 +87,7 @@ vi.mock("@/src/features/playlist/model/useRoomParticipants", () => ({
   })),
 }));
 vi.mock("@/src/features/user/session/hooks/useMe", () => ({
-  useMe: () => ({ data: null, isLoading: false }),
+  useMe: () => mocks.meQuery,
 }));
 vi.mock("@/src/features/room/chat/hooks/useRoomChat", () => ({
   useRoomChat: () => mocks.roomChat,
@@ -94,6 +103,12 @@ vi.mock("@/src/features/room/floating/model/useFloatingWidgetsState", () => ({
 }));
 vi.mock("@/src/shared/ui/action-feedback/ActionFeedbackProvider", () => ({
   useActionFeedback: () => ({ notify: mocks.notify }),
+}));
+vi.mock("./RoomPlaybackJoinedContent", () => ({
+  default: (props: { participants: PlaylistParticipant[] }) => {
+    mocks.joinedContentProps(props);
+    return <div>joined room content</div>;
+  },
 }));
 
 function renderRoomPlaybackScreen({ strict = false } = {}) {
@@ -131,6 +146,8 @@ function createJoinedResult(roomAccessToken = "access-token") {
 describe("RoomPlaybackScreen join reads", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.meQuery.data = null;
+    mocks.meQuery.isLoading = false;
     localStorage.clear();
     sessionStorage.clear();
   });
@@ -421,6 +438,68 @@ describe("RoomPlaybackScreen join reads", () => {
     expect(mocks.ensureRoomSubscription).toHaveBeenCalledWith(
       "room",
       "handoff-token",
+    );
+  });
+
+  it("현재 참가자가 첫 조회 page 밖이어도 ROOM_JOINED 참가자를 목록 첫 행에 포함한다", async () => {
+    const otherParticipant: PlaylistParticipant = {
+      nickname: "다른 참가자",
+      participantId: "participant-other",
+      participantType: "USER",
+      profileImageUrl: null,
+      userSlug: "other",
+    };
+    mocks.meQuery.data = {
+      nickname: "사용자",
+      profileImageUrl: null,
+      slug: "user",
+      userId: 1,
+    };
+    vi.mocked(fetchRoomMeta).mockResolvedValue({
+      activeUsersCount: 101,
+      hasPassword: false,
+      isPublic: true,
+      slug: "room",
+      tags: [],
+      title: "큰 방",
+    } as never);
+    vi.mocked(joinRoom).mockResolvedValue(createJoinedResult());
+    vi.mocked(useRoomPlayback).mockReturnValue({
+      data: { queueRevision: 1 },
+      error: null,
+      isError: false,
+      isLoading: false,
+      refetch: mocks.refetchRoomPlayback,
+    } as never);
+    vi.mocked(useRoomParticipants).mockReturnValue({
+      data: {
+        pageParams: [null],
+        pages: [
+          {
+            hasNext: true,
+            items: [otherParticipant],
+            nextCursor: "next-page",
+          },
+        ],
+      },
+      error: null,
+      fetchNextPage: vi.fn(),
+      hasNextPage: true,
+      isError: false,
+      isFetchNextPageError: false,
+      isFetchingNextPage: false,
+      isLoading: false,
+      refetch: mocks.refetchParticipants,
+    } as never);
+
+    renderRoomPlaybackScreen();
+
+    await screen.findByText("joined room content");
+    const latestProps = mocks.joinedContentProps.mock.calls.at(-1)?.[0] as {
+      participants: PlaylistParticipant[];
+    };
+    expect(latestProps.participants.map(({ participantId }) => participantId)).toEqual(
+      ["participant", "participant-other"],
     );
   });
 });

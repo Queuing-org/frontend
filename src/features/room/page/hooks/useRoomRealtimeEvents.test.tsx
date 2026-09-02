@@ -778,13 +778,14 @@ describe("useRoomRealtimeEvents", () => {
     const setJoinErrorMessage = vi.fn();
     const setLivePlaybackStatus = vi.fn();
     const setStatus = vi.fn();
+    const onCurrentParticipantChanged = vi.fn();
     const onRoomAccessTokenChanged = vi.fn();
     const joinedData = {
       participant: {
         participantType: "USER" as const,
-        participantId: "participant",
+        participantId: "reconnected-participant",
         userSlug: "user",
-        nickname: "사용자",
+        nickname: "재연결 사용자",
         profileImageUrl: null,
       },
       recentChatMessages: [],
@@ -801,6 +802,7 @@ describe("useRoomRealtimeEvents", () => {
         useRoomRealtimeEvents({
           cleanupChatSubscriptions,
           initializeChatStateFromJoinData,
+          onCurrentParticipantChanged,
           onRoomAccessTokenChanged,
           resetChatState,
           setJoinErrorMessage,
@@ -844,6 +846,9 @@ describe("useRoomRealtimeEvents", () => {
       expect(subscribeRoomEvents).toHaveBeenCalledTimes(2),
     );
     expect(initializeChatStateFromJoinData).toHaveBeenCalledWith(joinedData);
+    expect(onCurrentParticipantChanged).toHaveBeenCalledWith(
+      joinedData.participant,
+    );
     expect(onRoomAccessTokenChanged).toHaveBeenCalledWith("rotated-token");
     expect(sessionStorage.getItem("room-access-token:room")).toBe(
       "rotated-token",

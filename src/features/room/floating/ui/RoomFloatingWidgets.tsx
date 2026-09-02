@@ -37,6 +37,8 @@ type Props = {
   isParticipantsLoadMoreError: boolean;
   onLoadMoreParticipants: () => Promise<unknown>;
   onChatLoginClick?: () => void;
+  onOpenFriends: () => void;
+  onOpenSettings: () => void;
   onUserBlocked: (userSlug: string) => void;
   onSendChatMessage: (message: string) => boolean;
   onActivateWidget: (widgetId: WidgetId) => void;
@@ -64,6 +66,8 @@ export default function RoomFloatingWidgets({
   isParticipantsLoadMoreError,
   onLoadMoreParticipants,
   onChatLoginClick,
+  onOpenFriends,
+  onOpenSettings,
   onUserBlocked,
   onSendChatMessage,
   onActivateWidget,
@@ -163,6 +167,8 @@ export default function RoomFloatingWidgets({
                   isFetchingNextPage={isFetchingNextParticipantsPage}
                   isLoadMoreError={isParticipantsLoadMoreError}
                   onLoadMore={onLoadMoreParticipants}
+                  onOpenFriends={onOpenFriends}
+                  onOpenSettings={onOpenSettings}
                   onUserBlocked={onUserBlocked}
                   participants={participants}
                   roomMeta={roomMeta}

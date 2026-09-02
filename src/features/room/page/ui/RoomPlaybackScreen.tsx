@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRoomPlayback } from "@/src/features/playlist/model/useRoomPlayback";
 import { useRoomParticipants } from "@/src/features/playlist/model/useRoomParticipants";
+import type { PlaylistParticipant } from "@/src/features/playlist/model/types";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { roomMetaQueryOptions } from "@/src/features/room/hooks/useRoomMeta";
 import type { JoinRoomResult } from "@/src/features/room/api/joinRoom";
@@ -35,6 +36,7 @@ import { useRoomChat } from "@/src/features/room/chat/hooks/useRoomChat";
 import { useMe } from "@/src/features/user/session/hooks/useMe";
 import type { RoomMeta } from "@/src/features/room/model/types";
 import { createRoomParticipantPageCoordinator } from "@/src/features/room/participants/model/roomParticipantPaging";
+import { includeCurrentParticipant } from "@/src/features/room/participants/model/participantIdentity";
 import type { LivePlaybackState } from "../hooks/useRoomPlaybackViewModel";
 import { useRoomRealtimeEvents } from "../hooks/useRoomRealtimeEvents";
 import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
@@ -64,6 +66,8 @@ export default function RoomPlaybackScreen() {
   const [joinErrorMessage, setJoinErrorMessage] = useState("");
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const [roomAccessToken, setRoomAccessToken] = useState<string | null>(null);
+  const [currentParticipant, setCurrentParticipant] =
+    useState<PlaylistParticipant | null>(null);
   const [livePlaybackStatus, setLivePlaybackStatus] =
     useState<LivePlaybackState | null>(null);
   const [mobileTab, setMobileTab] = useState<MobileRoomTab>("playback");
@@ -104,8 +108,12 @@ export default function RoomPlaybackScreen() {
     currentStatus === "joined",
   );
   const participants = useMemo(
-    () => participantPages?.pages.flatMap((page) => page.items) ?? [],
-    [participantPages],
+    () =>
+      includeCurrentParticipant(
+        participantPages?.pages.flatMap((page) => page.items) ?? [],
+        currentParticipant,
+      ),
+    [currentParticipant, participantPages],
   );
   const participantPageCoordinator = useMemo(
     () => createRoomParticipantPageCoordinator(slug),
@@ -157,6 +165,7 @@ export default function RoomPlaybackScreen() {
     useRoomRealtimeEvents({
       cleanupChatSubscriptions,
       initializeChatStateFromJoinData,
+      onCurrentParticipantChanged: setCurrentParticipant,
       onRoomAccessTokenChanged: setRoomAccessToken,
       resetChatState,
       setJoinErrorMessage,
@@ -206,6 +215,7 @@ export default function RoomPlaybackScreen() {
     ensureRoomSubscription(target.slug, joinedAccessToken);
     refreshRoomMetaAfterJoin(target.slug);
     setJoinStateSlug(target.slug);
+    setCurrentParticipant(joinResult.data.participant);
     setRoomAccessToken(joinedAccessToken);
     setStatus("joined");
     setJoinErrorMessage("");
@@ -270,6 +280,7 @@ export default function RoomPlaybackScreen() {
     activeJoinAbortControllerRef.current?.abort();
     activeJoinAbortControllerRef.current = abortController;
     const storedAccessToken = readStoredRoomAccessToken(slug);
+    setCurrentParticipant(null);
     resetChatState();
 
     (async () => {

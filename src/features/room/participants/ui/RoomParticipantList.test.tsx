@@ -83,6 +83,8 @@ const participants: PlaylistParticipant[] = [
 const callbacks = {
   onBlockParticipant: vi.fn(),
   onKickParticipant: vi.fn(),
+  onOpenFriends: vi.fn(),
+  onOpenSettings: vi.fn(),
   onReportParticipant: vi.fn(),
   onTransferOwner: vi.fn(),
 };
@@ -214,6 +216,70 @@ describe("RoomParticipantList", () => {
     );
     expect(screen.queryByText("회원 0")).toBeNull();
     expect(screen.getByText("회원 100")).toBeVisible();
+  });
+
+  it("현재 사용자를 첫 행으로 옮기고 닉네임 오른쪽에 (나)를 표시한다", () => {
+    renderList({
+      canModerateParticipants: false,
+      currentUser: {
+        nickname: "회원",
+        profileImageUrl: null,
+        slug: "member",
+        userId: 2,
+      },
+    });
+
+    const rows = screen
+      .getByLabelText("참가자 목록")
+      .querySelectorAll("[data-participant-key]");
+    expect(rows[0]).toHaveAttribute(
+      "data-participant-key",
+      "participant:participant-member",
+    );
+    expect(screen.getByText("회원").parentElement?.children[1]).toHaveTextContent(
+      "(나)",
+    );
+  });
+
+  it("내가 방장이면 닉네임, (나), 왕관 순서로 표시한다", () => {
+    renderList();
+
+    const nameRow = screen.getByText("방장").parentElement;
+    expect(nameRow?.children[0]).toHaveTextContent("방장");
+    expect(nameRow?.children[1]).toHaveTextContent("(나)");
+    expect(nameRow?.children[2]).toHaveAttribute("aria-label", "방장");
+  });
+
+  it("내 메뉴에서 Setting과 Friends 진입만 제공한다", async () => {
+    const user = userEvent.setup();
+    renderList({
+      canModerateParticipants: false,
+      currentUser: {
+        nickname: "회원",
+        profileImageUrl: null,
+        slug: "member",
+        userId: 2,
+      },
+    });
+    const trigger = screen.getByRole("button", {
+      name: "회원 내 프로필 메뉴",
+    });
+
+    await user.click(trigger);
+    expect(
+      screen.getByRole("menu", { name: "회원 내 프로필 관리" }),
+    ).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "Setting" })).toBeVisible();
+    expect(screen.getByRole("menuitem", { name: "Friends" })).toBeVisible();
+    expect(screen.queryByRole("menuitem", { name: "팔로우" })).toBeNull();
+
+    await user.click(screen.getByRole("menuitem", { name: "Setting" }));
+    expect(callbacks.onOpenSettings).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    await user.click(trigger);
+    await user.click(screen.getByRole("menuitem", { name: "Friends" }));
+    expect(callbacks.onOpenFriends).toHaveBeenCalledOnce();
   });
 
   it("방장은 회원의 더보기 버튼으로 채팅과 같은 관리 메뉴를 열고 다시 닫는다", async () => {

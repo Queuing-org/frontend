@@ -67,8 +67,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.name[data-line-clamp="2"],
-.statusCardValue[data-line-clamp="2"] {
+.name[data-line-clamp="2"] {
   display: -webkit-box;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -122,8 +121,16 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.statusCardValue[data-line-clamp="2"] {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
 .favoriteSongValueSlot {
-  height: 1lh;
+  min-height: 1lh;
+}
+.favoriteSongValueSlot[data-line-clamp="2"] {
+  min-height: 2lh;
 }
 .musicPowerRow {
   min-width: 0;

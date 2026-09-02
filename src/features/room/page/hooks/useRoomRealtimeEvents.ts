@@ -73,6 +73,7 @@ const PARTICIPANT_KICKED_ERROR_CODE = "room.participant-kicked";
 const SESSION_REPLACED_ERROR_CODE = "user.session-replaced";
 const SESSION_REPLACED_MESSAGE =
   "현재 방은 다른 창에서 마지막으로 열렸습니다.";
+const ignoreCurrentParticipantChange = () => undefined;
 type RoomInvalidationTarget =
   | "meta"
   | "participants"
@@ -129,6 +130,9 @@ type UseRoomRealtimeEventsParams = {
   initializeChatStateFromJoinData: (
     data: JoinRoomResult["data"],
   ) => void;
+  onCurrentParticipantChanged?: (
+    participant: JoinRoomResult["data"]["participant"],
+  ) => void;
   onRoomAccessTokenChanged?: (accessToken: string | null) => void;
   resetChatState: () => void;
   setJoinErrorMessage: (message: string) => void;
@@ -145,6 +149,7 @@ type RoomSubscriptionConfig = {
 export function useRoomRealtimeEvents({
   cleanupChatSubscriptions,
   initializeChatStateFromJoinData,
+  onCurrentParticipantChanged = ignoreCurrentParticipantChange,
   onRoomAccessTokenChanged = () => undefined,
   resetChatState,
   setJoinErrorMessage,
@@ -670,6 +675,7 @@ export function useRoomRealtimeEvents({
       const nextConfig = { accessToken, slug: config.slug };
       writeStoredRoomAccessToken(config.slug, accessToken);
       roomSubscriptionConfigRef.current = nextConfig;
+      onCurrentParticipantChanged(joinResult.data.participant);
       onRoomAccessTokenChanged(accessToken);
       initializeChatStateFromJoinData(joinResult.data);
       subscribeWithConfig(nextConfig, true);
@@ -681,6 +687,7 @@ export function useRoomRealtimeEvents({
     [
       initializeChatStateFromJoinData,
       invalidateRoomReads,
+      onCurrentParticipantChanged,
       onRoomAccessTokenChanged,
       setJoinErrorMessage,
       setStatus,

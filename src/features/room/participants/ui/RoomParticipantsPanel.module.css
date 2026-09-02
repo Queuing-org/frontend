@@ -156,6 +156,14 @@
   white-space: nowrap;
 }
 
+.currentUserLabel {
+  flex-shrink: 0;
+  color: #3c3c3c;
+  font-size: 12px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+}
+
 .badgeLabel {
   display: inline-flex;
   max-width: 100%;
@@ -356,6 +364,10 @@
 
   .nickname {
     font-size: 11.2px;
+  }
+
+  .currentUserLabel {
+    font-size: 9.6px;
   }
 
   .ownerIcon {

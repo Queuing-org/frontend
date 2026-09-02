@@ -55,7 +55,7 @@ export default function AddTrackFormFields({
 
       <label className={styles.fieldGroup}>
         <div className={styles.labelRow}>
-          <span className={styles.label}>사연 (선택)</span>
+          <span className={styles.label}>노래 선정 이유 (선택)</span>
           <span className={styles.characterCount}>
             {storyLength}/{storyMaxLength}
           </span>
@@ -63,7 +63,7 @@ export default function AddTrackFormFields({
         <textarea
           value={storyValue}
           onChange={(event) => onStoryChange(event.target.value)}
-          placeholder="함께 듣고 싶은 이유나 전하고 싶은 말을 적어주세요"
+          placeholder="이 노래를 선정한 이유나 전하고 싶은 말을 적어주세요"
           className={styles.textarea}
           disabled={submitting}
           rows={4}

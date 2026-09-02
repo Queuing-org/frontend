@@ -145,7 +145,7 @@ describe("프로필 통합 저장 폼", () => {
     expect(result.current.canUpdateProfile).toBe(false);
   });
 
-  it("줄바꿈을 제거하고 20자로 제한한다", () => {
+  it("줄바꿈을 제거하고 최애곡 최대 길이로 제한한다", () => {
     const { result } = renderProfileForm();
 
     act(() =>

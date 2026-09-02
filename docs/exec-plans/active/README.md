@@ -1,5 +1,9 @@
 # Active Execution Plans
 
+- [2026-09-01-room-self-participant-menu](./2026-09-01-room-self-participant-menu/plan.md): ci-pending — Draft PR #59, 내 참가자 첫 행·`(나)`·Settings/Friends modal과 reconnect identity QA 통과
+
+- [2026-09-01-profile-room-request-polish](./2026-09-01-profile-room-request-polish/plan.md): ready — Draft PR #59, 최애곡 두 줄 표시·방 편집 치수·노래 신청 문구와 hover/타이포 구현 및 로컬·CI QA 통과
+
 - [2026-09-01-automatic-replay-state](./2026-09-01-automatic-replay-state/plan.md): ci-pending — 자동 순환 상태를 59px 아이콘과 `100cqh` 기반 list viewport 중앙으로 교정하고 로컬 QA·fresh review 통과
 
 - [2026-09-01-settings-badge-tooltip](./2026-09-01-settings-badge-tooltip/plan.md): ci-pending — Draft PR #58에 설정 칭호 acquisitionRate 정규화와 접근성 리스트박스·획득 상세 portal tooltip 게시 완료
