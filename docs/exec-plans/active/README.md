@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-09-02-youtube-playlist-import](./2026-09-02-youtube-playlist-import/plan.md): ci-pending — Draft PR #60, 재생목록 감지 시 현재 영상/재생목록 노래 추가 선택을 요구하고 후속 로컬 QA 통과
+
 - [2026-09-01-room-self-participant-menu](./2026-09-01-room-self-participant-menu/plan.md): ci-pending — Draft PR #59, 내 참가자 첫 행·`(나)`·Settings/Friends modal과 reconnect identity QA 통과
 
 - [2026-09-01-profile-room-request-polish](./2026-09-01-profile-room-request-polish/plan.md): ready — Draft PR #59, 최애곡 두 줄 표시·방 편집 치수·노래 신청 문구와 hover/타이포 구현 및 로컬·CI QA 통과

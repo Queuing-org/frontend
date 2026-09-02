@@ -68,8 +68,15 @@ export default function AddTrackAction({
         storyValue={form.storyValue}
         errorMessage={form.errorMessage}
         errorField={form.errorField}
+        playlistDetected={form.queueSource?.kind === "playlist"}
+        queueMode={form.queueMode}
+        singleTrackAvailable={
+          form.queueSource?.kind === "playlist" &&
+          Boolean(form.queueSource.currentVideoId)
+        }
         onChange={form.updateInputValue}
         onClose={action.closeModal}
+        onQueueModeChange={form.updateQueueMode}
         onStoryChange={form.updateStoryValue}
         onSubmit={action.submit}
       />

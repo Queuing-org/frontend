@@ -1,10 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { extractYouTubeVideoId } from "../model/extractYouTubeVideoId";
+import {
+  createYouTubeQueueRequest,
+  parseYouTubeQueueSource,
+  type YouTubeQueueMode,
+} from "../model/parseYouTubeQueueSource";
 
 export const ADD_TRACK_STORY_MAX_LENGTH = 30;
-export type AddTrackErrorField = "url" | "story" | "form" | null;
+export type AddTrackErrorField =
+  | "url"
+  | "queueMode"
+  | "story"
+  | "form"
+  | null;
 
 export function useAddTrackForm() {
   const [inputValue, setInputValue] = useState("");
@@ -12,14 +21,40 @@ export function useAddTrackForm() {
   const [errorMessage, setErrorMessage] = useState("");
   const [errorField, setErrorField] = useState<AddTrackErrorField>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const videoId = useMemo(
-    () => extractYouTubeVideoId(inputValue),
+  const [queueMode, setQueueMode] = useState<YouTubeQueueMode | null>(null);
+  const queueSource = useMemo(
+    () => parseYouTubeQueueSource(inputValue),
     [inputValue],
+  );
+  const queueRequest = useMemo(
+    () => createYouTubeQueueRequest(queueSource, queueMode),
+    [queueMode, queueSource],
   );
 
   const updateInputValue = (value: string) => {
     setInputValue(value);
-    if (errorField === "url" || errorField === "form") {
+    setQueueMode(null);
+    if (
+      errorField === "url" ||
+      errorField === "queueMode" ||
+      errorField === "form"
+    ) {
+      setErrorMessage("");
+      setErrorField(null);
+    }
+  };
+
+  const updateQueueMode = (mode: YouTubeQueueMode) => {
+    if (
+      mode === "single" &&
+      queueSource?.kind === "playlist" &&
+      !queueSource.currentVideoId
+    ) {
+      return;
+    }
+
+    setQueueMode(mode);
+    if (errorField === "queueMode" || errorField === "form") {
       setErrorMessage("");
       setErrorField(null);
     }
@@ -39,14 +74,17 @@ export function useAddTrackForm() {
     setErrorMessage("");
     setErrorField(null);
     setIsSubmitting(false);
+    setQueueMode(null);
   };
 
   return {
-    canSubmit: Boolean(videoId),
+    canSubmit: Boolean(queueRequest),
     errorMessage,
     errorField,
     inputValue,
     isSubmitting,
+    queueMode,
+    queueRequest,
     reset,
     setErrorMessage,
     setError: (field: AddTrackErrorField, message: string) => {
@@ -58,7 +96,8 @@ export function useAddTrackForm() {
     storyMaxLength: ADD_TRACK_STORY_MAX_LENGTH,
     storyValue,
     updateInputValue,
+    updateQueueMode,
     updateStoryValue,
-    videoId,
+    queueSource,
   };
 }

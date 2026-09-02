@@ -174,7 +174,7 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
   };
 
   const showError = (
-    field: "url" | "story" | "form",
+    field: "url" | "queueMode" | "story" | "form",
     message: string,
   ) => {
     form.setError(field, message);
@@ -186,10 +186,28 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
   };
 
   const submit = () => {
-    if (!form.videoId) {
-      showError("url", "올바른 유튜브 링크를 입력해주세요.");
+    if (!form.queueSource) {
+      showError(
+        "url",
+        "올바른 유튜브 영상 또는 재생목록 링크를 입력해주세요.",
+      );
       return;
     }
+
+    if (!form.queueRequest) {
+      const hasCurrentVideo =
+        form.queueSource.kind === "playlist" &&
+        Boolean(form.queueSource.currentVideoId);
+      showError(
+        "queueMode",
+        hasCurrentVideo
+          ? "현재 영상만 추가할지 재생목록 노래도 함께 추가할지 선택해주세요."
+          : "재생목록 노래 추가 여부를 선택해주세요.",
+      );
+      return;
+    }
+
+    const queueRequest = form.queueRequest;
 
     const story = form.storyValue.trim();
     if (story.length > ADD_TRACK_STORY_MAX_LENGTH) {
@@ -271,12 +289,13 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
 
       pendingAddTrackRef.current = {
         timeoutId,
-        videoId: form.videoId,
+        videoId: queueRequest.videoId,
       };
 
       publishAddTrack(normalizedSlug, {
         story: story ? story : null,
-        videoId: form.videoId,
+        videoId: queueRequest.videoId,
+        youtubePlaylist: queueRequest.youtubePlaylist,
       });
     } catch (error) {
       clearPendingAddTrack();
