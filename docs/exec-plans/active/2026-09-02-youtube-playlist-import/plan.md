@@ -43,7 +43,7 @@
 - [x] targeted/full local verification
 - [x] fresh read-only QA
 - [x] feature commit (`d0915a2`)
-- [ ] docs commit, push, Draft PR 게시
+- [x] docs commit, push, Draft PR #60 게시
 
 ## Verification
 
