@@ -6,6 +6,7 @@ import ProfileSettingsTab from "./ProfileSettingsTab";
 import styles from "./SettingsModal.module.css";
 
 type SettingsModalProps = {
+  dimBackdrop?: boolean;
   open: boolean;
   onClose: () => void;
 };
@@ -20,7 +21,11 @@ const settingsTabs: Array<{
   { key: "account", label: "계정 관리" },
 ];
 
-export default function SettingsModal({ open, onClose }: SettingsModalProps) {
+export default function SettingsModal({
+  dimBackdrop = false,
+  open,
+  onClose,
+}: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
 
   if (!open) {
@@ -38,7 +43,12 @@ export default function SettingsModal({ open, onClose }: SettingsModalProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={closeModal} role="presentation">
+    <div
+      className={styles.overlay}
+      data-dim-backdrop={dimBackdrop || undefined}
+      onClick={closeModal}
+      role="presentation"
+    >
       <section
         className={styles.modal}
         onClick={(event) => event.stopPropagation()}

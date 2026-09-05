@@ -207,10 +207,10 @@ export default function RoomPlaybackJoinedContent({
   const selfModal = (
     <>
       {activeSelfModal === "settings" ? (
-        <SettingsModal open onClose={closeSelfModal} />
+        <SettingsModal dimBackdrop open onClose={closeSelfModal} />
       ) : null}
       {activeSelfModal === "friends" ? (
-        <FollowModal open onClose={closeSelfModal} />
+        <FollowModal dimBackdrop open onClose={closeSelfModal} />
       ) : null}
     </>
   );
