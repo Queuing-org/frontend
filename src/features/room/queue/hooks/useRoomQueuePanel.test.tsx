@@ -211,6 +211,10 @@ describe("useRoomQueuePanel query visibility", () => {
         historyEntry(2, "other"),
         historyEntry(3, null),
         {
+          ...historyEntry(5, "user"),
+          entryId: pendingEntry.entryId,
+        },
+        {
           ...historyEntry(4, "user"),
           playbackOrigin: "AUTOMATIC_REPLAY",
         },

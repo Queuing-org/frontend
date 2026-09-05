@@ -10,11 +10,16 @@ import type { FollowUser } from "../model/types";
 import FollowProfileModal from "./FollowProfileModal";
 
 type FollowModalProps = {
+  dimBackdrop?: boolean;
   open: boolean;
   onClose: () => void;
 };
 
-export default function FollowModal({ open, onClose }: FollowModalProps) {
+export default function FollowModal({
+  dimBackdrop = false,
+  open,
+  onClose,
+}: FollowModalProps) {
   const modal = useFollowModalState({ onClose, open });
   const addFriendButtonRef = useRef<HTMLButtonElement>(null);
   const selectedUserTriggerRef = useRef<HTMLButtonElement | null>(null);
@@ -49,6 +54,7 @@ export default function FollowModal({ open, onClose }: FollowModalProps) {
     <div
       className={styles.overlay}
       data-add-friend-open={modal.isAddFriendOpen || undefined}
+      data-dim-backdrop={dimBackdrop || undefined}
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           modal.closeModal();
