@@ -45,6 +45,7 @@ Vercel Edge Config -> Next.js request gate (`src/proxy.ts`)
 - Brand-only presentation such as the main logo may live in `src/shared/ui`; authenticated actions and room navigation remain in their owning auth and room features.
 - Domain-neutral management-menu focus, outside-click, Escape, placement, visual shell behavior, and opt-in viewport portal positioning live in `src/shared/ui/management-menu`; room and follow features provide only their allowed actions.
 - Room thumbnail file validation, temporary upload selection, and the shared temporary-upload mutation live in `src/features/room/hooks`; create and update flows own only their submit orchestration.
+- Domain-neutral overflow marquee presentation lives in `src/shared/ui/overflow-marquee`; queue cards and playlist suggestions share hover, keyboard activation, and reduced-motion behavior.
 - Domain-neutral floating-panel chrome and drag handles live in `src/shared/ui/floating-panel`; room and follow features own placement state and panel-specific content.
 - ESLint rejects imports from `src/shared` into `src/features` or `src/app`, and rejects imports from the room feature back into the home feature.
 
@@ -54,6 +55,7 @@ Vercel Edge Config -> Next.js request gate (`src/proxy.ts`)
 - STOMP subscriptions deliver real-time events; handlers must reconcile those events with query cache and screen state deliberately.
 - App-wide follow presence and room membership use separate STOMP clients because their authentication, ownership, and reconnect lifecycles are independent. A terminal room event such as `user.session-replaced` must not stop the follow presence transport.
 - Room membership owns `roomAccessToken` in memory plus room-scoped `sessionStorage`. The token is issued by `ROOM_JOINED`, authenticates room topic subscriptions and room-internal REST requests, survives transport reconnects, and is never part of a URL, log, or TanStack Query key.
+- Room-session nickname projections live in the room domain. Timestamped room events reconcile REST caches and project chat display names; the session projection survives transport reconnects and is cleared on explicit leave. Stored chat history remains unchanged.
 - Local component state owns transient UI state such as modal visibility, hover state, inputs, and local panel behavior.
 - `FollowModal` owns the selected follow user and originating card trigger while its nested profile dialog is open, so close and block flows can restore focus without list-owned expansion state.
 - `localStorage` is reserved for persistence that must survive navigation or reload, such as scoped room interaction state.
