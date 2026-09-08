@@ -102,8 +102,9 @@ export function useRoomQueuePanel({
     allQueueQuery.data?.pages[0]?.totalPendingCount ?? 0;
   const isOwner = isRoomOwner(roomMeta?.owner, currentUser);
   const myEntries = useMemo(
-    () => myQueueData?.pages.flatMap((page) => page.items) ?? [],
-    [myQueueData?.pages],
+    () => myQueueData?.pages.flatMap((page) => page.items)
+      .filter((entry) => entry.entryId !== currentEntry?.entryId) ?? [],
+    [myQueueData?.pages, currentEntry?.entryId],
   );
   const myPendingCount =
     isCurrentUserLoading || (Boolean(currentUser) && !myQueueData)

@@ -267,6 +267,20 @@ describe("useRoomQueuePanel query visibility", () => {
     expect(result.current.currentEntry).toBeNull();
   });
 
+  it("개인 큐의 현재 entryId만 모든 페이지에서 제외하고 같은 영상의 별도 신청과 서버 카운트를 유지한다", () => {
+    const repeated = { ...pendingEntry, entryId: "another-request" };
+    vi.mocked(useMyRoomQueue).mockReturnValue({
+      data: { pages: [{ items: [pendingEntry], totalPendingCount: 1 }, { items: [repeated], totalPendingCount: 1 }] },
+      error: null, fetchNextQueuePage: vi.fn(), hasNextPage: false, isFetchingNextPage: false, isLoading: false, isRefetching: false, isFetchNextPageError: false, refetch: vi.fn(),
+    } as unknown as ReturnType<typeof useMyRoomQueue>);
+    const { result, rerender } = renderHook(({ currentEntry }) => useRoomQueuePanel({ currentEntry, currentUser: { nickname: "사용자", profileImageUrl: null, slug: "user", userId: 1 }, isCurrentUserLoading: false, roomMeta: null, roomAccessToken: "secret", roomSlug: "room" }), { initialProps: { currentEntry: pendingEntry } });
+    act(() => result.current.setActiveTab("mine"));
+    expect(result.current.myEntries.map((entry) => entry.entryId)).toEqual(["another-request"]);
+    expect(result.current.myPendingCount).toBe(1);
+    rerender({ currentEntry: repeated });
+    expect(result.current.myEntries.map((entry) => entry.entryId)).toEqual(["entry-1"]);
+  });
+
   it("자동 순환 현재곡은 전체 트랙 카드에서 숨기고 전체 탭 상태만 노출한다", () => {
     const automaticReplayEntry = {
       ...pendingEntry,
