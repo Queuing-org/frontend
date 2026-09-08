@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ApiError } from "@/src/shared/api/api-error";
 import { badgeKeys } from "@/src/features/badge/model/queryKeys";
 import { followKeys } from "@/src/features/follow/model/queryKeys";
+import { trackSuggestionKeys } from "@/src/features/playlist/model/trackSuggestionKeys";
 import { userKeys } from "@/src/features/user/model/queryKeys";
 import { withdrawMe, type WithdrawMeParams } from "../api/withdrawMe";
 
@@ -12,8 +13,10 @@ export function useWithdrawMe() {
 
   return useMutation<void, ApiError, WithdrawMeParams>({
     mutationFn: withdrawMe,
-    onSuccess: () => {
+    onSuccess: async () => {
+      await qc.cancelQueries({ queryKey: userKeys.me(), exact: true });
       qc.setQueryData(userKeys.me(), null);
+      qc.removeQueries({ queryKey: trackSuggestionKeys.all() });
       qc.removeQueries({ queryKey: badgeKeys.all() });
       qc.removeQueries({ queryKey: followKeys.all() });
       qc.removeQueries({ queryKey: userKeys.profileRoot() });

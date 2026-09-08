@@ -17,7 +17,7 @@ import {
 vi.mock("next/image", () => ({
   default: ({ alt }: { alt: string }) => <span aria-label={alt} />,
 }));
-vi.mock("@/src/features/room/ui/OverflowMarquee", () => ({
+vi.mock("@/src/shared/ui/overflow-marquee/OverflowMarquee", () => ({
   default: ({ text }: { text: string }) => <span>{text}</span>,
 }));
 

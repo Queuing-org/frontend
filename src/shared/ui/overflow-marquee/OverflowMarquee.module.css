@@ -44,3 +44,20 @@
     transform: translateX(var(--marquee-offset));
   }
 }
+
+:global([data-marquee-active="true"])
+  .viewport[data-overflowing="true"][data-activation="group-hover"]
+  .track {
+  animation: marquee-scroll var(--marquee-duration) linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .viewport .track {
+    animation: none !important;
+  }
+  .viewport[data-overflowing="true"] {
+    overflow-x: auto;
+  }
+  .copy[aria-hidden="true"] {
+    display: none;
+  }
+}

@@ -4,7 +4,7 @@ import type { ComponentPropsWithoutRef, PointerEvent } from "react";
 import { forwardRef, useState } from "react";
 import Image from "next/image";
 import type { PlaylistEntry } from "@/src/features/playlist/model/types";
-import OverflowMarquee from "@/src/features/room/ui/OverflowMarquee";
+import OverflowMarquee from "@/src/shared/ui/overflow-marquee/OverflowMarquee";
 import { formatQueueDuration } from "../model/roomQueue";
 import styles from "./RoomQueueCard.module.css";
 

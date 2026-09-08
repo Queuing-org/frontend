@@ -46,6 +46,7 @@ type Props = {
   className?: string;
   contentClassName?: string;
   text: string;
+  focusable?: boolean;
 };
 
 type MarqueeMetrics = {
@@ -68,10 +69,7 @@ export function getMarqueeMetrics(
 
   return {
     distance,
-    duration: Math.min(
-      36,
-      Math.max(8, distance / PIXELS_PER_SECOND),
-    ),
+    duration: Math.min(36, Math.max(8, distance / PIXELS_PER_SECOND)),
     overflowing,
   };
 }
@@ -82,6 +80,7 @@ export default function OverflowMarquee({
   className,
   contentClassName,
   text,
+  focusable = true,
 }: Props) {
   const viewportRef = useRef<HTMLSpanElement>(null);
   const copyRef = useRef<HTMLSpanElement>(null);
@@ -123,7 +122,7 @@ export default function OverflowMarquee({
       className={[styles.viewport, className].filter(Boolean).join(" ")}
       data-activation={activation}
       data-overflowing={metrics.overflowing}
-      tabIndex={metrics.overflowing ? 0 : undefined}
+      tabIndex={focusable && metrics.overflowing ? 0 : undefined}
       title={metrics.overflowing ? text : undefined}
     >
       <span className={styles.track} style={marqueeStyle}>

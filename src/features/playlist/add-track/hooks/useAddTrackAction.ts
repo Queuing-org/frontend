@@ -5,6 +5,7 @@ import { type InfiniteData, useQueryClient } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { publishAddTrack } from "@/src/features/playlist/api/websocket/publishAddTrack";
 import { fetchRoomQueuePage } from "@/src/features/playlist/api/fetchRoomQueue";
+import { trackSuggestionKeys } from "@/src/features/playlist/model/trackSuggestionKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import type {
   RoomQueuePage,
@@ -152,6 +153,7 @@ export function useAddTrackAction(slug: string, roomAccessToken: string) {
       scheduleQueryInvalidation({
         queryClient,
         queryKeys: [
+          trackSuggestionKeys.frequentRoot(),
           playlistKeys.roomQueuePrefix(roomSlug),
           playlistKeys.roomPlaybackPrefix(roomSlug),
         ],

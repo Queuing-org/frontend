@@ -9,7 +9,7 @@ import { userKeys } from "../../model/queryKeys";
 export function useMe() {
   return useQuery<User | null, ApiError>({
     queryKey: userKeys.me(),
-    queryFn: fetchMe,
+    queryFn: ({ signal }) => fetchMe(signal),
     staleTime: 0,
   });
 }
