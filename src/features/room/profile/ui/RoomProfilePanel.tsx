@@ -10,6 +10,7 @@ import {
 } from "react";
 import { getRepresentativeBadge } from "@/src/features/badge/model/badgeDisplay";
 import { usePublicUserBadges } from "@/src/features/badge/hooks/usePublicUserBadges";
+import { useRoomNickname } from "@/src/features/room/model/RoomNicknamesContext";
 import { useUserProfile } from "@/src/features/user/profile/hooks/useUserProfile";
 import UserProfileContent from "@/src/features/user/profile/ui/UserProfileContent";
 import FollowToggleButton from "@/src/features/follow/follow/ui/FollowToggleButton";
@@ -157,8 +158,8 @@ export default function RoomProfilePanel({
     publicProfile?.representativeBadge === undefined
       ? getRepresentativeBadge(publicBadges)
       : publicProfile.representativeBadge;
-  const displayNickname =
-    publicProfile?.nickname ?? currentRequester?.nickname ?? "";
+  const displayNickname = useRoomNickname(targetSlug,
+    publicProfile?.nickname ?? currentRequester?.nickname ?? "");
   const displayAvatarUrl =
     publicProfile?.profileImageUrl ?? currentRequester?.avatarUrl ?? null;
   const musicPowerVote = useRoomMusicPowerVote({

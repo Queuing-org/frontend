@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
     isLoading: false,
   };
   const roomChat = {
+    messages: [],
     cleanupSubscriptions: vi.fn(),
     initializeFromJoinData: vi.fn(),
     reset: vi.fn(),

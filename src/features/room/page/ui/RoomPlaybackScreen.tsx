@@ -43,6 +43,8 @@ import QueryBoundary from "@/src/shared/ui/query-boundary/QueryBoundary";
 import LoadingSpinner from "@/src/shared/ui/loading-spinner/LoadingSpinner";
 import { MOBILE_VIEWPORT_MEDIA_QUERY } from "@/src/shared/lib/viewportDensity";
 import { useActionFeedback } from "@/src/shared/ui/action-feedback/ActionFeedbackProvider";
+import { applyNickname, applyChatNicknames, EMPTY_ROOM_NICKNAMES } from "../../model/roomParticipantNicknames";
+import { RoomNicknamesContext } from "../../model/RoomNicknamesContext";
 import RoomPlaybackJoinedContent, {
   type MobileRoomTab,
 } from "./RoomPlaybackJoinedContent";
@@ -107,14 +109,6 @@ export default function RoomPlaybackScreen() {
     currentRoomAccessToken,
     currentStatus === "joined",
   );
-  const participants = useMemo(
-    () =>
-      includeCurrentParticipant(
-        participantPages?.pages.flatMap((page) => page.items) ?? [],
-        currentParticipant,
-      ),
-    [currentParticipant, participantPages],
-  );
   const participantPageCoordinator = useMemo(
     () => createRoomParticipantPageCoordinator(slug),
     [slug],
@@ -161,7 +155,7 @@ export default function RoomPlaybackScreen() {
     initializeFromJoinData: initializeChatStateFromJoinData,
     reset: resetChatState,
   } = roomChat;
-  const { ensureRoomSubscription, leaveRoomSession } =
+  const { ensureRoomSubscription, leaveRoomSession, nicknames = EMPTY_ROOM_NICKNAMES } =
     useRoomRealtimeEvents({
       cleanupChatSubscriptions,
       initializeChatStateFromJoinData,
@@ -173,6 +167,17 @@ export default function RoomPlaybackScreen() {
       setStatus,
       slug,
     });
+
+  const participants = useMemo(
+    () =>
+      includeCurrentParticipant(
+        participantPages?.pages.flatMap((page) => page.items) ?? [],
+        currentParticipant ? applyNickname(currentParticipant, currentParticipant.userSlug, nicknames) : null,
+      ),
+    [currentParticipant, participantPages, nicknames],
+  );
+  const displayedMessages = useMemo(() => applyChatNicknames(roomChat.messages, nicknames), [roomChat.messages, nicknames]);
+  const displayedRoomChat = { ...roomChat, messages: displayedMessages };
 
   useEffect(() => {
     if (currentStatus !== "joined" || !currentRoomAccessToken) {
@@ -483,28 +488,30 @@ export default function RoomPlaybackScreen() {
       errorTitle="방 정보를 불러오지 못했습니다."
       resetKeys={[slug]}
     >
-      <RoomPlaybackJoinedContent
-        currentUser={currentUser ?? null}
-        floatingWidgets={floatingWidgets}
-        hasNextParticipantsPage={hasNextParticipantsPage}
-        isCurrentUserLoading={isCurrentUserLoading}
-        isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
-        isMobileLayout={isMobileLayout}
-        isParticipantsLoadMoreError={isParticipantsLoadMoreError}
-        livePlaybackStatus={livePlaybackStatus}
-        mobileTab={mobileTab}
-        onLeaveRoom={() =>
-          leaveRoomSession({ requirePublishSuccess: true })
-        }
-        onLoadMoreParticipants={handleLoadNextParticipantsPage}
-        resolveParticipantByUserSlug={resolveParticipantByUserSlug}
-        roomChat={roomChat}
-        roomAccessToken={currentRoomAccessToken}
-        participants={participants}
-        roomPlayback={roomPlayback}
-        setMobileTab={setMobileTab}
-        slug={slug}
-      />
+      <RoomNicknamesContext value={nicknames}>
+        <RoomPlaybackJoinedContent
+          currentUser={currentUser ?? null}
+          floatingWidgets={floatingWidgets}
+          hasNextParticipantsPage={hasNextParticipantsPage}
+          isCurrentUserLoading={isCurrentUserLoading}
+          isFetchingNextParticipantsPage={isFetchingNextParticipantsPage}
+          isMobileLayout={isMobileLayout}
+          isParticipantsLoadMoreError={isParticipantsLoadMoreError}
+          livePlaybackStatus={livePlaybackStatus}
+          mobileTab={mobileTab}
+          onLeaveRoom={() =>
+            leaveRoomSession({ requirePublishSuccess: true })
+          }
+          onLoadMoreParticipants={handleLoadNextParticipantsPage}
+          resolveParticipantByUserSlug={resolveParticipantByUserSlug}
+          roomChat={displayedRoomChat}
+          roomAccessToken={currentRoomAccessToken}
+          participants={participants}
+          roomPlayback={roomPlayback}
+          setMobileTab={setMobileTab}
+          slug={slug}
+        />
+      </RoomNicknamesContext>
     </QueryBoundary>
   );
 }
