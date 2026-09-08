@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-09-08-track-search-realtime](./2026-09-08-track-search-realtime/plan.md): implementing — 노래 검색·친구 UI·큐 중복·실시간 닉네임 통합 개선
+- [2026-09-08-track-search-realtime](./2026-09-08-track-search-realtime/plan.md): ci-pending — Draft PR #62, 노래 검색·친구 UI·큐 중복·실시간 닉네임 통합 개선, 713 tests/lint/build/독립 QA 통과
 
 - [2026-09-05-room-queue-modal-polish](./2026-09-05-room-queue-modal-polish/plan.md): ci-pending — Draft PR #61, 내 노래 현재곡 중복·신청 폼 간격·방 modal dim/높이·Friends 상세 padding 교정 및 로컬 QA 통과
 
