@@ -99,8 +99,18 @@ vi.mock("@/src/features/room/floating/ui/RoomFloatingWidgets", () => ({
   ),
 }));
 vi.mock("@/src/features/settings/ui/SettingsModal", () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
-    <div role="dialog" aria-label="Setting modal">
+  default: ({
+    dimBackdrop,
+    onClose,
+  }: {
+    dimBackdrop?: boolean;
+    onClose: () => void;
+  }) => (
+    <div
+      role="dialog"
+      aria-label="Setting modal"
+      data-dim-backdrop={dimBackdrop || undefined}
+    >
       <button type="button" onClick={onClose}>
         Setting 닫기
       </button>
@@ -108,8 +118,18 @@ vi.mock("@/src/features/settings/ui/SettingsModal", () => ({
   ),
 }));
 vi.mock("@/src/features/follow/ui/FollowModal", () => ({
-  default: ({ onClose }: { onClose: () => void }) => (
-    <div role="dialog" aria-label="Friends modal">
+  default: ({
+    dimBackdrop,
+    onClose,
+  }: {
+    dimBackdrop?: boolean;
+    onClose: () => void;
+  }) => (
+    <div
+      role="dialog"
+      aria-label="Friends modal"
+      data-dim-backdrop={dimBackdrop || undefined}
+    >
       <button type="button" onClick={onClose}>
         Friends 닫기
       </button>
@@ -181,13 +201,19 @@ describe("RoomPlaybackJoinedContent self modals", () => {
     renderContent({ isMobileLayout: true });
 
     await user.click(screen.getByRole("button", { name: "모바일 Setting 열기" }));
-    expect(screen.getByRole("dialog", { name: "Setting modal" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Setting modal" })).toHaveAttribute(
+      "data-dim-backdrop",
+      "true",
+    );
 
     await user.click(screen.getByRole("button", { name: "Setting 닫기" }));
     expect(screen.queryByRole("dialog", { name: "Setting modal" })).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "모바일 Friends 열기" }));
-    expect(screen.getByRole("dialog", { name: "Friends modal" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Friends modal" })).toHaveAttribute(
+      "data-dim-backdrop",
+      "true",
+    );
   });
 
   it("데스크톱 draggable widget의 요청도 화면 최상위 modal layer로 전달한다", async () => {
@@ -197,12 +223,18 @@ describe("RoomPlaybackJoinedContent self modals", () => {
     await user.click(
       screen.getByRole("button", { name: "데스크톱 Setting 열기" }),
     );
-    expect(screen.getByRole("dialog", { name: "Setting modal" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Setting modal" })).toHaveAttribute(
+      "data-dim-backdrop",
+      "true",
+    );
 
     await user.click(screen.getByRole("button", { name: "Setting 닫기" }));
     await user.click(
       screen.getByRole("button", { name: "데스크톱 Friends 열기" }),
     );
-    expect(screen.getByRole("dialog", { name: "Friends modal" })).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Friends modal" })).toHaveAttribute(
+      "data-dim-backdrop",
+      "true",
+    );
   });
 });

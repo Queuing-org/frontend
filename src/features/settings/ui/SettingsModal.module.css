@@ -8,6 +8,10 @@
   padding: 24px 24px 154px;
 }
 
+.overlay[data-dim-backdrop="true"] {
+  background: rgba(0, 0, 0, 0.64);
+}
+
 .modal {
   --panel-horizontal-padding: 16px;
   --panel-content-width: 1060px;
@@ -168,7 +172,6 @@
   .modal {
     --panel-horizontal-padding: 12.8px;
     --panel-content-width: 848px;
-    height: 432px;
     border-radius: 16px;
   }
 

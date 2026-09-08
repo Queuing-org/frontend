@@ -113,15 +113,6 @@ export function useRoomQueuePanel({
     (entry: PlaylistEntry) => isEntryRequestedByUser(entry, currentUser),
     [currentUser],
   );
-  const historyEntries = useMemo(
-    () =>
-      activeTab === "all"
-        ? historyQuery.entries
-        : historyQuery.entries.filter((entry) =>
-            isHistoryEntryRequestedByUser(entry, currentUser),
-          ),
-    [activeTab, currentUser, historyQuery.entries],
-  );
   const isAutomaticReplay =
     currentEntry?.status.playbackOrigin === "AUTOMATIC_REPLAY";
   const shouldShowCurrentEntry =
@@ -129,6 +120,23 @@ export function useRoomQueuePanel({
     (activeTab === "all" ||
       Boolean(currentEntry && isCurrentUserEntry(currentEntry)));
   const visibleCurrentEntry = shouldShowCurrentEntry ? currentEntry : null;
+  const visibleCurrentEntryId = visibleCurrentEntry?.entryId;
+  const historyEntries = useMemo(
+    () => {
+      const tabHistoryEntries = activeTab === "all"
+        ? historyQuery.entries
+        : historyQuery.entries.filter((entry) =>
+            isHistoryEntryRequestedByUser(entry, currentUser),
+          );
+
+      return visibleCurrentEntryId
+        ? tabHistoryEntries.filter(
+            (entry) => entry.entryId !== visibleCurrentEntryId,
+          )
+        : tabHistoryEntries;
+    },
+    [activeTab, currentUser, historyQuery.entries, visibleCurrentEntryId],
+  );
   const canDeleteEntry = (entry: PlaylistEntry) =>
     isPendingQueueEntry(entry) && isCurrentUserEntry(entry);
   const canDeleteEntryAsOwner = (entry: PlaylistEntry) =>

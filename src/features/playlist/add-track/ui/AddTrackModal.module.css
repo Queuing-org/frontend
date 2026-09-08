@@ -48,7 +48,7 @@
 }
 
 .fieldGroup + .fieldGroup {
-  margin-top: 24px;
+  margin-top: 40px;
 }
 
 .queueModeFieldset {
@@ -59,7 +59,7 @@
 }
 
 .queueModeFieldset + .fieldGroup {
-  margin-top: 24px;
+  margin-top: 40px;
 }
 
 .queueModeLegend {
@@ -303,7 +303,7 @@
   }
 
   .fieldGroup + .fieldGroup {
-    margin-top: 28px;
+    margin-top: 40px;
   }
 
   .queueModeFieldset {
@@ -311,7 +311,7 @@
   }
 
   .queueModeFieldset + .fieldGroup {
-    margin-top: 28px;
+    margin-top: 40px;
   }
 
   .queueModeLegend,
@@ -367,9 +367,9 @@
   .title { font-size: 19.2px; }
   .form { margin-top: 33.6px; }
   .fieldGroup { gap: 11.2px; }
-  .fieldGroup + .fieldGroup { margin-top: 19.2px; }
+  .fieldGroup + .fieldGroup { margin-top: 40px; }
   .queueModeFieldset { margin-top: 16px; }
-  .queueModeFieldset + .fieldGroup { margin-top: 19.2px; }
+  .queueModeFieldset + .fieldGroup { margin-top: 40px; }
   .queueModeLegend, .queueModeOption { font-size: 12px; }
   .queueModeLegend { margin-bottom: 9.6px; }
   .queueModeOption { gap: 8px; padding: 8px 9.6px; border-radius: 6.4px; }
