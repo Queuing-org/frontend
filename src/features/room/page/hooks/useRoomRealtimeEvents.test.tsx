@@ -68,6 +68,27 @@ describe("useRoomRealtimeEvents", () => {
     sessionStorage.clear();
   });
 
+  it("기존 구독의 닉네임 이벤트를 반영하고 재연결에는 유지하며 퇴장 시 정리한다", () => {
+    const { queryClient, wrapper } = createRealtimeTestContext();
+    let handler: Parameters<typeof subscribeRoomEvents>[1] | undefined;
+    let listener: Parameters<typeof addSocketListener>[0] | undefined;
+    vi.mocked(addSocketListener).mockImplementation((next) => { listener = next; return vi.fn(); });
+    vi.mocked(subscribeRoomEvents).mockImplementation((_slug, next) => { handler = next; return { id: "room", unsubscribe: vi.fn() }; });
+    queryClient.setQueryData(userKeys.profile("user"), { slug: "user", nickname: "이전" });
+    const callbacks = { cleanupChatSubscriptions: vi.fn(), initializeChatStateFromJoinData: vi.fn(), resetChatState: vi.fn(), setJoinErrorMessage: vi.fn(), setLivePlaybackStatus: vi.fn(), setStatus: vi.fn(), slug: "room" };
+    const { result } = renderHook(() => useRoomRealtimeEvents(callbacks), { wrapper });
+    act(() => result.current.ensureRoomSubscription("room", "access-token"));
+    const send = (roomSlug: string, timestamp: number, nickname: string) => handler?.({ body: JSON.stringify({ type: "ROOM_PARTICIPANT_NICKNAME_CHANGED", roomSlug, timestamp, data: { userSlug: "user", nickname } }) } as never);
+    act(() => { send("other", 300, "다른 방"); send("room", 200, "최신"); send("room", 100, "과거"); });
+    expect(queryClient.getQueryData(userKeys.profile("user"))).toMatchObject({ nickname: "최신" });
+    expect(result.current.nicknames.get("user")?.nickname).toBe("최신");
+    expect(subscribeRoomEvents).toHaveBeenCalledTimes(1);
+    act(() => listener?.onWebSocketClose?.({} as never));
+    expect(result.current.nicknames.get("user")?.nickname).toBe("최신");
+    act(() => result.current.leaveRoomSession());
+    expect(result.current.nicknames.size).toBe(0);
+  });
+
   it("ROOM_INFO_UPDATED는 trackLimitMinutes를 검증하고 REST 메타의 썸네일로 동기화한다", async () => {
     const { queryClient, wrapper } = createRealtimeTestContext();
     const authoritativeMeta = {
@@ -486,7 +507,7 @@ describe("useRoomRealtimeEvents", () => {
       queryKey: ["roomQueueHistory", "room"],
       exact: true,
     });
-    expect(invalidateQueries).not.toHaveBeenCalled();
+    expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({ queryKey: ["trackSuggestions", "frequent"] });
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(75);
@@ -508,7 +529,7 @@ describe("useRoomRealtimeEvents", () => {
       } as never);
     });
 
-    expect(invalidateQueries).not.toHaveBeenCalled();
+    expect(invalidateQueries).toHaveBeenCalledExactlyOnceWith({ queryKey: ["trackSuggestions", "frequent"] });
     expect(resetQueries).toHaveBeenCalledWith({
       queryKey: ["roomQueueHistory", "room"],
       exact: true,

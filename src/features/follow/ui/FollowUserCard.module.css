@@ -101,12 +101,12 @@
 .status {
   color: #8d8d8d;
   font-size: 12px;
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-regular);
   line-height: 1.4;
 }
 
 .status[data-in-room="true"] {
-  color: #2f86ed;
+  color: #3b82f6;
 }
 
 .roomAction {

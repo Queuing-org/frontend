@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { createTestQueryClient, createTestQueryClientWrapper } from "@/src/shared/test/queryClient";
 import AddTrackFormFields from "./AddTrackFormFields";
 
 function renderFields(
@@ -26,6 +27,7 @@ function renderFields(
       submitting={false}
       value=""
     />,
+    { wrapper: createTestQueryClientWrapper(createTestQueryClient()) },
   );
   return { onQueueModeChange };
 }
@@ -47,7 +49,7 @@ describe("AddTrackFormFields", () => {
 
     expect(
       screen.getByPlaceholderText(
-        "함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요",
+        "노래 제목을 검색하거나 영상·재생목록 URL을 붙여넣으세요",
       ),
     ).toBeInTheDocument();
   });
@@ -56,7 +58,7 @@ describe("AddTrackFormFields", () => {
     renderFields("url");
 
     const input = screen.getByPlaceholderText(
-      "함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요",
+      "노래 제목을 검색하거나 영상·재생목록 URL을 붙여넣으세요",
     );
     expect(input).toHaveAttribute("aria-invalid", "true");
     expect(input).toHaveAttribute("aria-describedby", "add-track-error");

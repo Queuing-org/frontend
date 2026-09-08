@@ -105,7 +105,7 @@ describe("FollowProfileModal", () => {
     expect(dialog.firstElementChild).toHaveStyle({ height: "160px" });
   });
 
-  it("모바일에서는 12px 상하 안전 여백을 제외하고 380px 기본 높이를 유지한다", () => {
+  it("모바일에서는 12px 상하 안전 여백을 제외하고 431px 기본 높이를 유지한다", () => {
     Object.defineProperty(window, "innerWidth", { configurable: true, value: 375 });
     Object.defineProperty(window, "innerHeight", { configurable: true, value: 500 });
 
@@ -121,7 +121,7 @@ describe("FollowProfileModal", () => {
       name: "공개 닉네임 프로필 상세",
     });
     expect(dialog).not.toHaveAttribute("data-height-constrained");
-    expect(dialog.firstElementChild).toHaveStyle({ height: "380px" });
+    expect(dialog.firstElementChild).toHaveStyle({ height: "431px" });
   });
 
   it("프로필 통계와 음악력 값을 2줄 텍스트로 표시한다", () => {
@@ -155,7 +155,7 @@ describe("FollowProfileModal", () => {
     expect(
       screen.getByRole("dialog", { name: "공개 닉네임 프로필 상세" })
         .firstElementChild,
-    ).toHaveStyle({ height: "304px", width: "240px" });
+    ).toHaveStyle({ height: "344.8px", width: "240px" });
     expect(screen.queryByRole("button", { name: "음악력 올리기" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "음악력 내리기" })).not.toBeInTheDocument();
   });

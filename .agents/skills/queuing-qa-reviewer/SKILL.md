@@ -65,6 +65,7 @@ Do not use it as a vague second implementation pass. QA must compare concrete bo
 - Room reconnect tests prove join handshake -> single topic subscription -> room read invalidation order, and route cleanup proves explicit leave or cancelled-join cleanup.
 - Queue pagination tests prove first-page-only entry, cursor/revision pairing, `totalPendingCount`, conflict reset, and inclusion of every pending personal entry in reorder payloads regardless of `ownerOrdered`.
 - Drag-and-drop regressions require a repeated real or faithful pointer cycle that checks the original row count, computed visibility, and cleared inline transform/animation after every drop; a mocked overlay prop or callback-only test is insufficient evidence.
+- Account exit QA must leave an identity GET in flight, complete logout/withdrawal, then resolve the old response. Assert that the GET was cancelled, `me` stays null, and account-specific suggestion caches are removed. Setting identity data to null alone does not cancel a pending query.
 - Account-specific failures require same-account and same-backend-state comparisons before assigning a frontend root cause.
 - Shared controls still behave consistently across home and search.
 - Hover-only controls remain reachable by focus where practical.

@@ -1,5 +1,6 @@
 "use client";
 
+import TrackSearchInput from "./TrackSearchInput";
 import styles from "./AddTrackModal.module.css";
 import type { AddTrackErrorField } from "../hooks/useAddTrackForm";
 import type { YouTubeQueueMode } from "../model/parseYouTubeQueueSource";
@@ -39,7 +40,7 @@ export default function AddTrackFormFields({
     <>
       <label className={styles.fieldGroup}>
         <div className={styles.labelRow}>
-          <span className={styles.label}>유튜브 링크 (https://...)</span>
+          <span className={styles.label}>노래 제목 또는 유튜브 링크</span>
           <a
             href="https://www.youtube.com/"
             target="_blank"
@@ -49,17 +50,7 @@ export default function AddTrackFormFields({
             찾으러 가기
           </a>
         </div>
-        <input
-          type="url"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="함께 듣고 싶은 영상 또는 재생목록 URL을 붙여넣으세요"
-          className={styles.input}
-          disabled={submitting}
-          autoFocus
-          aria-invalid={errorField === "url"}
-          aria-describedby={errorField === "url" ? "add-track-error" : undefined}
-        />
+        <TrackSearchInput value={value} onChange={onChange} disabled={submitting} invalid={errorField === "url"} />
       </label>
 
       {playlistDetected ? (

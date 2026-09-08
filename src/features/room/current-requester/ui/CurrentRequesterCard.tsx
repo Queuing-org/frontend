@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import type { CurrentRequesterProfile } from "@/src/features/room/profile/model/types";
-import OverflowMarquee from "@/src/features/room/ui/OverflowMarquee";
+import OverflowMarquee from "@/src/shared/ui/overflow-marquee/OverflowMarquee";
 import styles from "./CurrentRequesterCard.module.css";
 
 type CurrentRequesterCardProps = {

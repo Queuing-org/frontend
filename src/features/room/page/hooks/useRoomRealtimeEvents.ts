@@ -11,6 +11,7 @@ import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import type { StompSubscription } from "@stomp/stompjs";
 import { useRouter } from "next/navigation";
 import type { RoomPlayback } from "@/src/features/playlist/model/types";
+import { trackSuggestionKeys } from "@/src/features/playlist/model/trackSuggestionKeys";
 import { playlistKeys } from "@/src/features/playlist/model/queryKeys";
 import { subscribeRoomEvents } from "@/src/features/room/api/websocket/subscribeRoomEvents";
 import type {
@@ -65,6 +66,7 @@ import {
   isTrackStartedData,
   parseRoomWsEvent,
 } from "../model/roomRealtimeEvents";
+import { useRoomParticipantNicknames } from "./useRoomParticipantNicknames";
 import type { LivePlaybackState } from "./useRoomPlaybackViewModel";
 
 type JoinStatus = "joining" | "joined" | "error" | "needs-password";
@@ -158,6 +160,8 @@ export function useRoomRealtimeEvents({
   slug,
 }: UseRoomRealtimeEventsParams) {
   const queryClient = useQueryClient();
+  const { nicknames, acceptNicknameEvent, clearNicknames } =
+    useRoomParticipantNicknames(slug);
   const router = useRouter();
   const { notify } = useActionFeedback();
   const roomSubscriptionRef = useRef<StompSubscription | null>(null);
@@ -215,6 +219,7 @@ export function useRoomRealtimeEvents({
     cleanupBrokerSubscription();
     cleanupUserSubscription();
     roomSubscriptionConfigRef.current = null;
+    clearNicknames();
     reconnectPendingRef.current = false;
   }, [
     cancelRejoin,
@@ -222,6 +227,7 @@ export function useRoomRealtimeEvents({
     cleanupBrokerSubscription,
     cleanupUserSubscription,
     clearScheduledRoomInvalidations,
+    clearNicknames,
   ]);
 
   const leaveRoomSession = useCallback(
@@ -241,6 +247,7 @@ export function useRoomRealtimeEvents({
       cleanupBrokerSubscription();
       cleanupUserSubscription();
       roomSubscriptionConfigRef.current = null;
+      clearNicknames();
       reconnectPendingRef.current = false;
       if (config) {
         clearStoredRoomAccessToken(config.slug);
@@ -254,6 +261,7 @@ export function useRoomRealtimeEvents({
       cleanupBrokerSubscription,
       cleanupUserSubscription,
       clearScheduledRoomInvalidations,
+      clearNicknames,
     ],
   );
 
@@ -298,16 +306,22 @@ export function useRoomRealtimeEvents({
   );
 
   const resetRoomQueueHistory = useCallback(
-    (roomSlug: string) =>
-      queryClient.resetQueries({
+    (roomSlug: string) => {
+      void queryClient.invalidateQueries({ queryKey: trackSuggestionKeys.frequentRoot() });
+      return queryClient.resetQueries({
         queryKey: playlistKeys.roomQueueHistoryPrefix(roomSlug),
         exact: true,
-      }),
+      });
+    },
     [queryClient],
   );
 
   const handleRoomEvent = useCallback(
     (roomSlug: string, event: WsEvent) => {
+      if (event.type === "ROOM_PARTICIPANT_NICKNAME_CHANGED") {
+        acceptNicknameEvent(event);
+        return;
+      }
       if (event.type === "ROOM_DELETED") {
         terminateDeletedRoomRef.current(roomSlug);
         return;
@@ -446,6 +460,7 @@ export function useRoomRealtimeEvents({
       }
     },
     [
+      acceptNicknameEvent,
       notify,
       queryClient,
       resetRoomQueueHistory,
@@ -463,6 +478,7 @@ export function useRoomRealtimeEvents({
     cleanupBrokerSubscription();
     cleanupUserSubscription();
     roomSubscriptionConfigRef.current = null;
+    clearNicknames();
     reconnectPendingRef.current = false;
     cleanupChatSubscriptions();
     resetChatState();
@@ -486,6 +502,7 @@ export function useRoomRealtimeEvents({
     cancelRejoin,
     cancelRoomMetaRefresh,
     clearScheduledRoomInvalidations,
+    clearNicknames,
     cleanupBrokerSubscription,
     cleanupChatSubscriptions,
     cleanupUserSubscription,
@@ -547,6 +564,7 @@ export function useRoomRealtimeEvents({
       cleanupBrokerSubscription();
       cleanupUserSubscription();
       roomSubscriptionConfigRef.current = null;
+      clearNicknames();
       reconnectPendingRef.current = false;
       cleanupChatSubscriptions();
       resetChatState();
@@ -576,6 +594,7 @@ export function useRoomRealtimeEvents({
       cancelRejoin,
       cancelRoomMetaRefresh,
       clearScheduledRoomInvalidations,
+      clearNicknames,
       cleanupBrokerSubscription,
       cleanupChatSubscriptions,
       cleanupUserSubscription,
@@ -910,6 +929,7 @@ export function useRoomRealtimeEvents({
   );
 
   return {
+    nicknames,
     cleanupRoomSubscription,
     ensureRoomSubscription,
     leaveRoomSession,

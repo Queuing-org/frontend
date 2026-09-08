@@ -17,6 +17,7 @@ export default function FollowPresenceCard({
   return (
     <FollowUserCard
       nickname={user.nickname}
+      statusLabel={visibleRoom ? `${visibleRoom.title} 참여 중` : user.online === undefined ? undefined : user.online ? "온라인" : "오프라인"}
       onSelect={
         onSelect ? (trigger) => onSelect(user, trigger) : undefined
       }

@@ -16,6 +16,7 @@ type Props = {
     href: string;
     label: string;
   };
+  statusLabel?: string;
   trailingAction?: ReactNode;
 };
 
@@ -26,6 +27,7 @@ export default function FollowUserCard({
   profileImageUrl,
   roomLink,
   trailingAction,
+  statusLabel,
 }: Props) {
   const roomTooltipId = useId();
   const profileImageSrc = profileImageUrl || "/Basic_Profile.png";
@@ -52,6 +54,7 @@ export default function FollowUserCard({
 
       <span className={styles.meta}>
         <span className={styles.nickname}>{nickname}</span>
+        {statusLabel ? <span className={styles.status} data-in-room={Boolean(roomLink)}>{statusLabel}</span> : null}
       </span>
     </>
   );

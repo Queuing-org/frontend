@@ -30,8 +30,8 @@ import {
 import styles from "./FollowProfileModal.module.css";
 
 const PROFILE_PANEL_SIZE = {
-  compact: { height: 304, width: 240 },
-  normal: { height: 380, width: 300 },
+  compact: { height: 344.8, width: 240 },
+  normal: { height: 431, width: 300 },
 } as const;
 const PROFILE_PANEL_SAFE_MARGIN = {
   compact: 142.4,
@@ -156,6 +156,7 @@ export default function FollowProfileModal({ onBlocked, onClose, user }: Props) 
             >
               <FloatingPanelShell
                 contentClassName={styles.profilePanelContent}
+                contentPadding="none"
                 height={panelHeight}
                 width={panelSize.width}
               >

@@ -1,0 +1,11 @@
+# Delivery State
+- status: ci-pending
+- branch: dev
+- base: main
+- issue: 없음
+- pr: https://github.com/Queuing-org/frontend/pull/62
+- selected_skills: plan.md 참조
+- local_qa: pass — lint, 713 tests, build, 독립 QA
+- ci: pending
+- review_threads: 없음
+- next_action: PR #62 CI/리뷰 확인, 브라우저 연결 후 시각·터치 검증
