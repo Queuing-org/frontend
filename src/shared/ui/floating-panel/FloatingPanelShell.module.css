@@ -121,3 +121,5 @@
     padding: 16px;
   }
 }
+
+.panel .content[data-content-padding="none"] { padding: 0; }

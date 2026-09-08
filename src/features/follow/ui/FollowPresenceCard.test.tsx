@@ -21,7 +21,7 @@ const baseUser: FollowUser = {
 };
 
 describe("FollowPresenceCard", () => {
-  it("온라인 사용자가 참여 중인 방은 상태 문구 없이 화살표 링크만 제공한다", () => {
+  it("온라인 사용자가 참여 중인 방은 상태 문구와 화살표 링크를 제공한다", () => {
     render(
       <FollowPresenceCard
         user={{
@@ -31,7 +31,7 @@ describe("FollowPresenceCard", () => {
       />,
     );
 
-    expect(screen.queryByText("새벽 재즈 참여 중")).not.toBeInTheDocument();
+    expect(screen.getByText("새벽 재즈 참여 중")).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "새벽 재즈 방으로 이동" }),
     ).toHaveAttribute("href", "/room/late-night-jazz");
@@ -41,17 +41,17 @@ describe("FollowPresenceCard", () => {
     ).toHaveAttribute("aria-describedby", tooltip.id);
   });
 
-  it("방에 참여하지 않은 온라인 사용자는 접근성 라벨이 있는 초록점만 표시한다", () => {
+  it("방에 참여하지 않은 온라인 사용자는 접근성 라벨이 있는 초록점과 문구를 표시한다", () => {
     const { container } = render(<FollowPresenceCard user={baseUser} />);
 
-    expect(screen.queryByText("온라인")).not.toBeInTheDocument();
+    expect(screen.getByText("온라인")).toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(
       container.querySelector('[data-online="true"][aria-label="온라인"]'),
     ).toBeInTheDocument();
   });
 
-  it("오프라인이면 stale room을 숨기고 접근성 라벨이 있는 빨간점만 표시한다", () => {
+  it("오프라인이면 stale room을 숨기고 접근성 라벨이 있는 빨간점과 문구를 표시한다", () => {
     const { container } = render(
       <FollowPresenceCard
         user={{
@@ -62,7 +62,7 @@ describe("FollowPresenceCard", () => {
       />,
     );
 
-    expect(screen.queryByText("오프라인")).not.toBeInTheDocument();
+    expect(screen.getByText("오프라인")).toBeInTheDocument();
     expect(screen.queryByText("새벽 재즈 참여 중")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(

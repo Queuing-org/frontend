@@ -7,6 +7,7 @@ type Props = {
   children: ReactNode;
   compactHeader?: boolean;
   contentClassName?: string;
+  contentPadding?: "default" | "none";
   density?: "auto" | "compact" | "normal";
   height: number;
   width: number;
@@ -16,6 +17,7 @@ export default function FloatingPanelShell({
   children,
   compactHeader = false,
   contentClassName,
+  contentPadding = "default",
   density = "auto",
   height,
   width,
@@ -56,6 +58,7 @@ export default function FloatingPanelShell({
         <span className={styles.handle} />
       </div>
       <div
+        data-content-padding={contentPadding}
         className={[styles.content, contentClassName].filter(Boolean).join(" ")}
       >
         {children}
