@@ -28,7 +28,6 @@ export default function TrackSearchInput({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const [composing, setComposing] = useState(false);
   const compositionRef = useRef(false);
   const [active, setActive] = useState(-1);
   const [position, setPosition] = useState({
@@ -37,7 +36,7 @@ export default function TrackSearchInput({
     width: 0,
     maxHeight: 0,
   });
-  const suggestions = useTrackSuggestions(value, open && !disabled, composing);
+  const suggestions = useTrackSuggestions(value, open && !disabled);
   const visible =
     open &&
     !disabled &&
@@ -161,12 +160,10 @@ export default function TrackSearchInput({
         onBlur={() => setOpen(false)}
         onCompositionStart={() => {
           compositionRef.current = true;
-          setComposing(true);
           setActive(-1);
         }}
         onCompositionEnd={() => {
           compositionRef.current = false;
-          setComposing(false);
         }}
         onKeyDown={(event) => {
           if (

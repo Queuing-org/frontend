@@ -103,7 +103,7 @@ describe("TrackSearchInput", () => {
     ).toHaveAttribute("aria-selected", "true");
     client.clear();
   });
-  it("300ms 디바운스, 조합 중 요청·Enter 차단, 잘못된 URL 제목 검색 차단", async () => {
+  it("300ms 디바운스와 조합 중 자동 검색, Enter 선택·잘못된 URL 검색 차단", async () => {
     vi.useFakeTimers();
     const { input, client } = setup();
     fireEvent.change(input, { target: { value: "아이유" } });
@@ -123,8 +123,19 @@ describe("TrackSearchInput", () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(400);
     });
-    expect(searchYouTubeVideos).toHaveBeenCalledTimes(1);
+    expect(searchYouTubeVideos).toHaveBeenCalledTimes(2);
+    expect(searchYouTubeVideos).toHaveBeenLastCalledWith(
+      "아이유 좋은",
+      expect.any(AbortSignal),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    fireEvent.mouseEnter(screen.getByRole("option"));
     fireEvent.keyDown(input, { key: "Enter", isComposing: true });
+    expect(input).toHaveValue("아이유 좋은");
+    fireEvent.keyDown(input, { key: "Enter" });
     expect(input).toHaveValue("아이유 좋은");
     fireEvent.compositionEnd(input);
     await act(async () => {
@@ -139,6 +150,33 @@ describe("TrackSearchInput", () => {
       await vi.advanceTimersByTimeAsync(400);
     });
     expect(searchYouTubeVideos).toHaveBeenCalledTimes(2);
+    client.clear();
+  });
+  it("조합 종료 없이 긴 입력 버스트를 검색 한 번으로 합치고 유휴 중 재요청하지 않는다", async () => {
+    vi.useFakeTimers();
+    const { input, client } = setup();
+    fireEvent.compositionStart(input);
+    for (let index = 1; index <= 40; index += 1) {
+      fireEvent.change(input, { target: { value: "가".repeat(index) } });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(50);
+      });
+    }
+    expect(searchYouTubeVideos).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(250);
+    });
+    expect(searchYouTubeVideos).toHaveBeenCalledTimes(1);
+    expect(searchYouTubeVideos).toHaveBeenLastCalledWith(
+      "가".repeat(40),
+      expect.any(AbortSignal),
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(searchYouTubeVideos).toHaveBeenCalledTimes(1);
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     client.clear();
   });
   it("검색 교체·닫기 시 취소하고 역순 응답을 새 결과로 표시하지 않는다", async () => {
