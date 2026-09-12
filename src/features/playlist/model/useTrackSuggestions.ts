@@ -11,17 +11,15 @@ import {
 import { classifyTrackInput } from "./trackSuggestions";
 import { trackSuggestionKeys } from "./trackSuggestionKeys";
 
-export function useTrackSuggestions(
-  value: string,
-  open: boolean,
-  composing: boolean,
-) {
+export function useTrackSuggestions(value: string, open: boolean) {
   const queryClient = useQueryClient();
   const me = useMe();
   const userSlug = !me.isError ? me.data?.slug ?? null : null;
   const input = classifyTrackInput(value);
-  const debouncedQuery = useDebouncedValue(composing ? "" : input.query, 300);
-  const enabled = Boolean(userSlug) && open && !composing;
+  // IME can keep the last syllable composing after typing stops.
+  // Debounce text changes; composition only guards keyboard selection in the UI.
+  const debouncedQuery = useDebouncedValue(input.query, 300);
+  const enabled = Boolean(userSlug) && open;
   const frequent = useQuery({
     queryKey: trackSuggestionKeys.frequent(userSlug),
     queryFn: ({ signal }) => fetchFrequentTracks(signal),
@@ -62,7 +60,6 @@ export function useTrackSuggestions(
         ? query.data ?? []
         : [],
     loading:
-      composing ||
       (input.kind === "search" && input.query !== debouncedQuery) ||
       query.isFetching,
     error: query.error,

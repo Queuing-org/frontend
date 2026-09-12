@@ -1,5 +1,7 @@
 # Active Execution Plans
 
+- [2026-09-13-profile-search-fix](./2026-09-13-profile-search-fix/plan.md): ci-pending — Draft PR #63, 프로필 이용 시간 정렬·한글 자동 검색 대기 수정, lint/714 tests/build/독립 QA 통과
+
 - [2026-09-08-track-search-realtime](./2026-09-08-track-search-realtime/plan.md): ci-pending — Draft PR #62, 노래 검색·친구 UI·큐 중복·실시간 닉네임 통합 개선, 713 tests/lint/build/독립 QA 통과
 
 - [2026-09-05-room-queue-modal-polish](./2026-09-05-room-queue-modal-polish/plan.md): ci-pending — Draft PR #61, 내 노래 현재곡 중복·신청 폼 간격·방 modal dim/높이·Friends 상세 padding 교정 및 로컬 QA 통과
