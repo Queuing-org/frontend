@@ -1,6 +1,6 @@
 # Active Execution Plans
 
-- [2026-09-13-profile-search-fix](./2026-09-13-profile-search-fix/plan.md): implementing — 프로필 이용 시간 정렬 및 한글 조합 중 자동 검색 대기 수정
+- [2026-09-13-profile-search-fix](./2026-09-13-profile-search-fix/plan.md): ci-pending — Draft PR #63, 프로필 이용 시간 정렬·한글 자동 검색 대기 수정, lint/714 tests/build/독립 QA 통과
 
 - [2026-09-08-track-search-realtime](./2026-09-08-track-search-realtime/plan.md): ci-pending — Draft PR #62, 노래 검색·친구 UI·큐 중복·실시간 닉네임 통합 개선, 713 tests/lint/build/독립 QA 통과
 
